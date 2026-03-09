@@ -15,6 +15,11 @@ import json
 from .models import Shipment, Container, ShipmentMilestone, Document
 from apps.accounts.models import Company
 from apps.invoicing.models import Invoice
+from apps.accounts.utils import filter_by_user_company, check_company_access
+import logging
+
+logger = logging.getLogger('apps.shipments')
+
 
 
 @login_required
@@ -25,17 +30,21 @@ def dashboard(request):
     month_start = today.replace(day=1)
     last_6_months = today - timedelta(days=180)
     
+    # Base queryset filtered by user's company
+    base_qs = filter_by_user_company(Shipment.objects.all(), request.user)
+    invoice_qs = filter_by_user_company(Invoice.objects.all(), request.user)
+    
     # Stat cards
-    active_shipments = Shipment.objects.filter(
+    active_shipments = base_qs.filter(
         status__in=['booked', 'picked_up', 'in_transit', 'customs', 'out_for_delivery']
     ).count()
     
-    monthly_revenue = Shipment.objects.filter(
+    monthly_revenue = base_qs.filter(
         status='delivered',
         actual_delivery_date__gte=month_start
     ).aggregate(total=Sum('revenue'))['total'] or 0
     
-    pending_invoices = Invoice.objects.filter(
+    pending_invoices = invoice_qs.filter(
         status__in=['draft', 'sent', 'overdue']
     )
     pending_invoices_count = pending_invoices.count()
@@ -44,7 +53,7 @@ def dashboard(request):
     ).aggregate(total=Sum('calculated_balance'))['total'] or 0
     
     # On-time delivery rate
-    delivered_shipments = Shipment.objects.filter(status='delivered')
+    delivered_shipments = base_qs.filter(status='delivered')
     total_delivered = delivered_shipments.count()
     on_time_delivered = delivered_shipments.filter(
         actual_delivery_date__lte=models.F('estimated_delivery_date')
@@ -59,7 +68,7 @@ def dashboard(request):
         month_start_date = month_date.replace(day=1)
         month_end_date = (month_start_date + timedelta(days=32)).replace(day=1) - timedelta(days=1)
         
-        month_revenue = Shipment.objects.filter(
+        month_revenue = base_qs.filter(
             status='delivered',
             actual_delivery_date__gte=month_start_date,
             actual_delivery_date__lte=month_end_date
@@ -69,7 +78,7 @@ def dashboard(request):
         revenue_data.append(float(month_revenue))
     
     # Shipment status distribution
-    status_counts = Shipment.objects.values('status').annotate(count=Count('id'))
+    status_counts = base_qs.values('status').annotate(count=Count('id'))
     status_data = {
         'in_transit': 0,
         'delivered': 0,
@@ -87,7 +96,7 @@ def dashboard(request):
             status_data['booked'] = item['count']
     
     # Recent shipments
-    recent_shipments = Shipment.objects.select_related('customer').order_by('-created_at')[:10]
+    recent_shipments = base_qs.select_related('customer').order_by('-created_at')[:10]
     
     context = {
         # Stats
@@ -112,7 +121,9 @@ def dashboard(request):
 @login_required
 def shipment_list(request):
     """List all shipments with filters"""
-    shipments = Shipment.objects.select_related('customer').all()
+    shipments = filter_by_user_company(
+        Shipment.objects.select_related('customer').all(), request.user
+    )
     
     # Search
     search = request.GET.get('search')
@@ -168,6 +179,7 @@ def shipment_list(request):
 def shipment_detail(request, pk):
     """Shipment detail view with tracking map"""
     shipment = get_object_or_404(Shipment.objects.select_related('customer', 'carrier', 'shipper', 'consignee'), pk=pk)
+    check_company_access(shipment.customer, request.user)
     
     # Get milestones
     milestones = shipment.milestones.all()
@@ -291,6 +303,7 @@ def shipment_create(request):
             created_by=request.user
         )
         
+        logger.info(f'Shipment created: {shipment.shipment_number} for {shipment.customer} by {request.user}')
         messages.success(request, f'Shipment {shipment.shipment_number} created successfully!')
         return redirect('shipments:shipment_detail', pk=shipment.pk)
     
@@ -363,6 +376,7 @@ def shipment_edit(request, pk):
         
         shipment.save()
         
+        logger.info(f'Shipment updated: {shipment.shipment_number} by {request.user}')
         messages.success(request, f'Shipment {shipment.shipment_number} updated successfully!')
         return redirect('shipments:shipment_detail', pk=shipment.pk)
     
@@ -390,6 +404,7 @@ def shipment_delete(request, pk):
     if request.method == 'POST':
         shipment_number = shipment.shipment_number
         shipment.delete()
+        logger.info(f'Shipment deleted: {shipment_number} by {request.user}')
         messages.success(request, f'Shipment {shipment_number} deleted successfully!')
         return redirect('shipments:shipment_list')
     
@@ -413,6 +428,7 @@ def document_upload(request, pk):
             uploaded_by=request.user
         )
         document.save()
+        logger.info(f'Document uploaded: {document.title} for shipment {shipment.shipment_number} by {request.user}')
         messages.success(request, 'Document uploaded successfully!')
     
     return redirect('shipments:shipment_detail', pk=pk)
@@ -574,15 +590,16 @@ def update_status(request, pk):
             old_status = shipment.get_status_display()
             shipment.status = new_status
             shipment.save()
-            # Record milestone
             ShipmentMilestone.objects.create(
                 shipment=shipment,
                 status=f'Status changed to {shipment.get_status_display()}',
                 notes=f'Status updated from {old_status}',
                 created_by=request.user
             )
+            logger.info(f'Shipment {shipment.shipment_number} status: {old_status} → {shipment.get_status_display()} by {request.user}')
             messages.success(request, f'Status updated to {shipment.get_status_display()}.')
         else:
+            logger.warning(f'Invalid status update attempted on shipment {pk} by {request.user}: {new_status}')
             messages.error(request, 'Invalid status.')
     return redirect('shipments:shipment_detail', pk=pk)
 

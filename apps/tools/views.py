@@ -11,6 +11,10 @@ import random
 from datetime import datetime, timedelta
 
 from .models import RateQuote
+import logging
+
+logger = logging.getLogger('apps.shipments')
+
 
 
 # Sample carrier data for demo
@@ -202,7 +206,7 @@ def calculate_rates(request):
         service_level = data.get('service_level', 'standard')
         
         rates = calculate_mock_rates(origin, destination, weight, shipment_type, service_level)
-        
+        logger.info(f'Rate comparison calculated: {origin} → {destination}, {weight}lbs, {shipment_type} by {request.user}')
         return JsonResponse({
             'success': True,
             'rates': rates,
@@ -227,7 +231,7 @@ def generate_quote_pdf(request):
         profit = Decimal(data.get('profit', 0))
         
         # For now, return success
-        # In production, generate PDF with ReportLab
+        logger.info(f'Quote PDF generated for {origin} → {destination}, cost ${carrier_cost} by {request.user}')
         return JsonResponse({
             'success': True,
             'message': 'Quote generated successfully',

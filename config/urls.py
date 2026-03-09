@@ -9,6 +9,10 @@ from django.contrib.auth import views as auth_views
 from apps.accounts import views as account_views
 from apps.shipments import views as shipment_views
 
+# Custom error handlers
+handler403 = 'django.views.defaults.permission_denied'
+handler404 = 'django.views.defaults.page_not_found'
+
 urlpatterns = [
     # Admin
     path('admin/', admin.site.urls),

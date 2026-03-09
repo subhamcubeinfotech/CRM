@@ -7,6 +7,12 @@ from django.contrib.auth import logout
 from django.core.paginator import Paginator
 from .models import Company
 from .forms import CompanyForm
+from .utils import filter_by_user_company, check_company_access
+import logging
+
+logger = logging.getLogger('apps.accounts')
+
+
 def custom_logout(request):
     """Log out the user and redirect to login page"""
     logout(request)
@@ -15,23 +21,28 @@ def custom_logout(request):
 
 @login_required
 def company_list(request):
-    """List all companies"""
-    companies = Company.objects.all().order_by('name')
-    
-    # Filter by type
+    """List all companies — customers see only their own company"""
+    if request.user.role == 'customer':
+        if request.user.company:
+            companies = Company.objects.filter(pk=request.user.company.pk)
+        else:
+            companies = Company.objects.none()
+    else:
+        companies = Company.objects.all().order_by('name')
+        # Filter by type
+        company_type = request.GET.get('type')
+        if company_type:
+            companies = companies.filter(company_type=company_type)
+        # Search
+        search = request.GET.get('search')
+        if search:
+            companies = companies.filter(name__icontains=search)
+
     company_type = request.GET.get('type')
-    if company_type:
-        companies = companies.filter(company_type=company_type)
-    
-    # Search
     search = request.GET.get('search')
-    if search:
-        companies = companies.filter(name__icontains=search)
-    
     paginator = Paginator(companies, 25)
     page = request.GET.get('page')
     companies = paginator.get_page(page)
-    
     context = {
         'companies': companies,
         'company_type': company_type,
@@ -86,6 +97,9 @@ def carrier_list(request):
 def company_detail(request, pk):
     """View company details"""
     company = get_object_or_404(Company, pk=pk)
+    # Customer can only view their own company
+    if request.user.role == 'customer' and request.user.company:
+        check_company_access(company, request.user)
     
     context = {
         'company': company,
@@ -93,6 +107,42 @@ def company_detail(request, pk):
         'invoices': company.invoices.all()[:10] if company.company_type == 'customer' else None,
     }
     return render(request, 'accounts/company_detail.html', context)
+
+
+@login_required
+def company_edit(request, pk):
+    """Edit an existing company"""
+    company = get_object_or_404(Company, pk=pk)
+    if request.method == 'POST':
+        form = CompanyForm(request.POST, instance=company)
+        if form.is_valid():
+            form.save()
+            logger.info(f'Company updated: {company.name} (ID: {pk}) by {request.user}')
+            return redirect('accounts:company_detail', pk=pk)
+        else:
+            logger.warning(f'Company edit form invalid for ID {pk}: {form.errors}')
+    else:
+        form = CompanyForm(instance=company)
+    context = {
+        'form': form,
+        'company': company,
+        'title': f'Edit {company.name}',
+        'is_edit': True
+    }
+    return render(request, 'accounts/company_form.html', context)
+
+
+@login_required
+def company_delete(request, pk):
+    """Delete a company"""
+    company = get_object_or_404(Company, pk=pk)
+    if request.method == 'POST':
+        name = company.name
+        company.delete()
+        logger.info(f'Company deleted: {name} (ID: {pk}) by {request.user}')
+        return redirect('accounts:company_list')
+    context = {'company': company}
+    return render(request, 'accounts/company_confirm_delete.html', context)
 
 
 @login_required

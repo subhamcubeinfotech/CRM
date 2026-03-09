@@ -1,6 +1,10 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
+import logging
+
+logger = logging.getLogger('apps.accounts')
+
 
 @login_required
 def customer_dashboard(request):
@@ -41,5 +45,6 @@ def customer_inventory(request):
 def create_order(request):
     if request.method == 'POST':
         # Logic to create Order based on selected inventory items
+        logger.info(f'Customer order creation requested by {request.user}')
         return JsonResponse({'status': 'success', 'order_id': 'ORD-2025-001'})
     return render(request, 'customers/create_order.html')

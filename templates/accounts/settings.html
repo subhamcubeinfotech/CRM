@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+
+{% block title %}Account Settings - FreightPro{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-3 mb-4">
+        <div class="list-group rounded shadow-sm">
+            <a href="#notifications" class="list-group-item list-group-item-action active" data-bs-toggle="list">
+                <i class="fas fa-bell me-2"></i>Notifications
+            </a>
+            <a href="#security" class="list-group-item list-group-item-action" data-bs-toggle="list">
+                <i class="fas fa-shield-alt me-2"></i>Security
+            </a>
+            <a href="#preferences" class="list-group-item list-group-item-action" data-bs-toggle="list">
+                <i class="fas fa-sliders-h me-2"></i>Preferences
+            </a>
+        </div>
+    </div>
+    
+    <div class="col-md-9 mb-4">
+        <div class="tab-content">
+            <!-- Notifications Tab -->
+            <div class="tab-pane fade show active" id="notifications">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+                        <h5 class="card-title mb-0">Notification Preferences</h5>
+                        <p class="text-muted small">Choose what updates you want to receive</p>
+                    </div>
+                    <div class="card-body">
+                        <form action="#" method="post">
+                            {% csrf_token %}
+                            <div class="mb-4 bg-light p-3 rounded">
+                                <h6 class="mb-3"><i class="fas fa-envelope text-primary me-2"></i>Email Notifications</h6>
+                                
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input" type="checkbox" id="emailShipmentCreated" checked>
+                                    <label class="form-check-label" for="emailShipmentCreated">New shipment created</label>
+                                </div>
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input" type="checkbox" id="emailShipmentDelivered" checked>
+                                    <label class="form-check-label" for="emailShipmentDelivered">Shipment delivered</label>
+                                </div>
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input" type="checkbox" id="emailInvoice" checked>
+                                    <label class="form-check-label" for="emailInvoice">New invoice available</label>
+                                </div>
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input" type="checkbox" id="emailMarketing">
+                                    <label class="form-check-label" for="emailMarketing">Marketing and promotional emails</label>
+                                </div>
+                            </div>
+                            
+                            <div class="text-end">
+                                <button type="button" class="btn btn-primary px-4">Save Preferences</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Security Tab -->
+            <div class="tab-pane fade" id="security">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+                        <h5 class="card-title mb-0">Account Security</h5>
+                        <p class="text-muted small">Keep your account safe</p>
+                    </div>
+                    <div class="card-body">
+                        <form action="#" method="post">
+                            {% csrf_token %}
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Current Password</label>
+                                <input type="password" class="form-control">
+                            </div>
+                            
+                            <hr class="my-4">
+                            
+                            <div class="row mb-4">
+                                <div class="col-md-6 mb-3 mb-md-0">
+                                    <label class="form-label">New Password</label>
+                                    <input type="password" class="form-control">
+                                    <div class="form-text">Minimum 8 characters with letters & numbers.</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Confirm New Password</label>
+                                    <input type="password" class="form-control">
+                                </div>
+                            </div>
+                            
+                            <div class="mb-4 bg-light p-3 rounded">
+                                <h6 class="mb-3"><i class="fas fa-mobile-alt text-primary me-2"></i>Two-Factor Authentication (2FA)</h6>
+                                <p class="small text-muted mb-2">Add an extra layer of security to your account.</p>
+                                <button type="button" class="btn btn-outline-success btn-sm">Enable 2FA</button>
+                            </div>
+                            
+                            <div class="text-end border-top pt-4">
+                                <button type="button" class="btn btn-primary px-4">Update Password</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Preferences Tab -->
+            <div class="tab-pane fade" id="preferences">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+                        <h5 class="card-title mb-0">System Preferences</h5>
+                    </div>
+                    <div class="card-body">
+                        <form action="#" method="post">
+                            {% csrf_token %}
+                            
+                            <div class="row mb-4">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Dashboard Default View</label>
+                                    <select class="form-select">
+                                        <option value="overview">Overview (Charts & Stats)</option>
+                                        <option value="shipments">Active Shipments Map</option>
+                                        <option value="financials">Financial Summary</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Timezone</label>
+                                    <select class="form-select">
+                                        <option value="UTC">UTC (Universal Time)</option>
+                                        <option value="EST">EST (Eastern Standard Time)</option>
+                                        <option value="CST">CST (Central Standard Time)</option>
+                                        <option value="PST">PST (Pacific Standard Time)</option>
+                                        <option value="IST" selected>IST (Indian Standard Time)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label class="form-label">Language / Region</label>
+                                <select class="form-select w-50">
+                                    <option value="en-us" selected>English (US) - USD $</option>
+                                    <option value="en-gb">English (UK) - GBP £</option>
+                                    <option value="hi-in">Hindi (India) - INR ₹</option>
+                                </select>
+                            </div>
+                            
+                            <div class="text-end border-top pt-4">
+                                <button type="button" class="btn btn-primary px-4">Save Preferences</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+</div>
+{% endblock %}

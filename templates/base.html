@@ -37,6 +37,9 @@
         .navbar {
             background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1030;
         }
         
         .navbar-brand {
@@ -49,6 +52,11 @@
             min-height: calc(100vh - 56px);
             background: #fff;
             box-shadow: 2px 0 4px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 60px; /* Offset for navbar height */
+            height: calc(100vh - 60px);
+            overflow-y: auto;
+            z-index: 1020;
         }
         
         .sidebar .nav-link {
@@ -263,21 +271,14 @@
             </button>
             
             <div class="collapse navbar-collapse" id="navbarNav">
-                <form class="d-flex mx-auto" action="{% url 'shipments:shipment_list' %}" method="get">
-                    <div class="input-group">
-                        <input type="search" name="search" class="form-control" placeholder="Search shipments..." aria-label="Search">
-                        <button class="btn btn-light" type="submit"><i class="fas fa-search"></i></button>
-                    </div>
-                </form>
-                
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-user-circle me-1"></i>{{ request.user.username }}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i>Profile</a></li>
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i>Settings</a></li>
+                            <li><a class="dropdown-item" href="{% url 'accounts:profile' %}"><i class="fas fa-user me-2"></i>Profile</a></li>
+                            <li><a class="dropdown-item" href="{% url 'accounts:settings' %}"><i class="fas fa-cog me-2"></i>Settings</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <form action="{% url 'logout' %}" method="post">
@@ -297,7 +298,6 @@
     <div class="container-fluid">
         <div class="row">
             <!-- Sidebar -->
-            {% if not request.user.is_customer %}
             <nav class="col-md-2 d-none d-md-block sidebar py-3">
                 <ul class="nav flex-column">
                     <li class="nav-item">
@@ -321,7 +321,7 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if '/companies/' in request.path %}active{% endif %}" href="{% url 'accounts:company_list' %}">
+                        <a class="nav-link {% if '/companies/' in request.path and '/profile/' not in request.path and '/settings/' not in request.path %}active{% endif %}" href="{% url 'accounts:company_list' %}">
                             <i class="fas fa-building"></i>Companies
                         </a>
                     </li>
@@ -349,10 +349,9 @@
                     {% endif %}
                 </ul>
             </nav>
-            {% endif %}
             
             <!-- Main Content -->
-            <main class="col-md-{% if request.user.is_customer %}12{% else %}10{% endif %} ms-sm-auto main-content py-4">
+            <main class="col-md-10 ms-sm-auto main-content py-4">
                 <!-- Messages -->
                 {% if messages %}
                     {% for message in messages %}

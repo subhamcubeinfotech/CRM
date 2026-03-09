@@ -10,8 +10,6 @@ services:
       - .:/app
     environment:
       - DJANGO_DEBUG=True
-    # The command is kept simple. We override it here to ensure migrations run
-    # and to watch for changes locally because of the volume mount.
     command: >
       sh -c "python manage.py makemigrations &&
              python manage.py migrate &&

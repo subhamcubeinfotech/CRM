@@ -1,0 +1,303 @@
+[2026-03-09 08:55:24] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-09 08:55:48] INFO django.utils.autoreload autoreload.trigger_reload:265 — /app/apps/accounts/views.py changed, reloading.
+[2026-03-09 08:55:50] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-09 08:57:07] INFO django.utils.autoreload autoreload.trigger_reload:265 — /app/apps/shipments/views.py changed, reloading.
+[2026-03-09 08:57:08] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-09 08:57:12] INFO django.utils.autoreload autoreload.trigger_reload:265 — /app/apps/inventory/views.py changed, reloading.
+[2026-03-09 08:57:14] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-09 08:57:38] INFO django.utils.autoreload autoreload.trigger_reload:265 — /app/apps/customers/views.py changed, reloading.
+[2026-03-09 08:57:40] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-09 08:59:17] INFO django.utils.autoreload autoreload.trigger_reload:265 — /app/apps/marketing/views.py changed, reloading.
+[2026-03-09 08:59:18] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-09 08:59:28] INFO django.utils.autoreload autoreload.trigger_reload:265 — /app/apps/orders/views.py changed, reloading.
+[2026-03-09 08:59:29] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-09 09:00:49] INFO django.utils.autoreload autoreload.trigger_reload:265 — /app/config/settings.py changed, reloading.
+[2026-03-09 09:00:51] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-09 09:01:39] INFO django.server basehttp.log_message:213 — "GET /admin/accounts/customuser/add/ HTTP/1.1" 200 22566
+[2026-03-09 09:01:39] INFO django.server basehttp.log_message:213 — "GET /static/admin/css/base.css HTTP/1.1" 304 0
+[2026-03-09 09:01:39] INFO django.server basehttp.log_message:213 — "GET /static/admin/css/dark_mode.css HTTP/1.1" 304 0
+[2026-03-09 09:01:39] INFO django.server basehttp.log_message:213 — "GET /static/admin/css/forms.css HTTP/1.1" 304 0
+[2026-03-09 09:01:39] INFO django.server basehttp.log_message:213 — "GET /static/admin/css/responsive.css HTTP/1.1" 304 0
+[2026-03-09 09:01:39] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/theme.js HTTP/1.1" 304 0
+[2026-03-09 09:01:39] INFO django.server basehttp.log_message:213 — "GET /static/admin/css/nav_sidebar.css HTTP/1.1" 304 0
+[2026-03-09 09:01:39] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/vendor/jquery/jquery.js HTTP/1.1" 304 0
+[2026-03-09 09:01:39] INFO django.server basehttp.log_message:213 — "GET /static/admin/css/unusable_password_field.css HTTP/1.1" 304 0
+[2026-03-09 09:01:39] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/jquery.init.js HTTP/1.1" 304 0
+[2026-03-09 09:01:39] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/core.js HTTP/1.1" 304 0
+[2026-03-09 09:01:39] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/admin/RelatedObjectLookups.js HTTP/1.1" 304 0
+[2026-03-09 09:01:40] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/actions.js HTTP/1.1" 304 0
+[2026-03-09 09:01:40] INFO django.server basehttp.log_message:213 — "GET /static/admin/css/widgets.css HTTP/1.1" 304 0
+[2026-03-09 09:01:40] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/urlify.js HTTP/1.1" 304 0
+[2026-03-09 09:01:40] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/prepopulate.js HTTP/1.1" 304 0
+[2026-03-09 09:01:40] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/vendor/xregexp/xregexp.js HTTP/1.1" 304 0
+[2026-03-09 09:01:40] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/prepopulate_init.js HTTP/1.1" 304 0
+[2026-03-09 09:01:40] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-09 09:01:40] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/nav_sidebar.js HTTP/1.1" 304 0
+[2026-03-09 09:01:40] INFO django.server basehttp.log_message:213 — "GET /static/admin/img/icon-addlink.svg HTTP/1.1" 304 0
+[2026-03-09 09:01:40] INFO django.server basehttp.log_message:213 — "GET /static/admin/img/icon-changelink.svg HTTP/1.1" 304 0
+[2026-03-09 09:01:40] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/change_form.js HTTP/1.1" 304 0
+[2026-03-09 09:01:40] INFO django.server basehttp.log_message:213 — "GET /static/admin/img/icon-deletelink.svg HTTP/1.1" 304 0
+[2026-03-09 09:01:40] INFO django.server basehttp.log_message:213 — "GET /static/admin/img/icon-viewlink.svg HTTP/1.1" 304 0
+[2026-03-09 09:01:40] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/unusable_password_field.js HTTP/1.1" 304 0
+[2026-03-09 09:01:44] WARNING django.request log.log_response:253 — Not Found: /a
+[2026-03-09 09:01:44] WARNING django.server basehttp.log_message:213 — "GET /a HTTP/1.1" 404 6063
+[2026-03-09 09:01:51] INFO django.server basehttp.log_message:213 — "GET / HTTP/1.1" 200 7654
+[2026-03-09 09:02:00] INFO django.server basehttp.log_message:213 — "GET /login/ HTTP/1.1" 200 4831
+[2026-03-09 09:03:19] INFO django.server basehttp.log_message:213 — "GET /login/ HTTP/1.1" 200 4757
+[2026-03-09 09:03:47] INFO django.server basehttp.log_message:213 — "POST /login/ HTTP/1.1" 302 0
+[2026-03-09 09:03:47] INFO django.server basehttp.log_message:213 — "GET /dashboard/ HTTP/1.1" 200 34634
+[2026-03-09 09:37:40] INFO django.server basehttp.log_message:213 — "GET /shipments/ HTTP/1.1" 200 78964
+[2026-03-09 09:37:52] INFO django.server basehttp.log_message:213 — "GET /shipments/113/ HTTP/1.1" 200 41804
+[2026-03-09 09:38:00] INFO django.server basehttp.log_message:213 — "GET /shipments/113/shipping-confirmation/ HTTP/1.1" 200 5876
+[2026-03-09 09:43:30] INFO django.utils.autoreload autoreload.trigger_reload:265 — /app/config/settings.py changed, reloading.
+[2026-03-09 09:43:34] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-09 09:45:04] INFO django.server basehttp.log_message:213 — "GET /admin/ HTTP/1.1" 200 16283
+[2026-03-09 09:45:04] INFO django.server basehttp.log_message:213 — "GET /static/admin/css/base.css HTTP/1.1" 304 0
+[2026-03-09 09:45:04] INFO django.server basehttp.log_message:213 — "GET /static/admin/css/dark_mode.css HTTP/1.1" 304 0
+[2026-03-09 09:45:04] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/theme.js HTTP/1.1" 304 0
+[2026-03-09 09:45:04] INFO django.server basehttp.log_message:213 — "GET /static/admin/css/nav_sidebar.css HTTP/1.1" 304 0
+[2026-03-09 09:45:04] INFO django.server basehttp.log_message:213 — "GET /static/admin/css/dashboard.css HTTP/1.1" 304 0
+[2026-03-09 09:45:04] INFO django.server basehttp.log_message:213 — "GET /static/admin/css/responsive.css HTTP/1.1" 304 0
+[2026-03-09 09:45:04] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/nav_sidebar.js HTTP/1.1" 304 0
+[2026-03-09 09:45:15] INFO django.server basehttp.log_message:213 — "GET /admin/accounts/customuser/ HTTP/1.1" 200 26738
+[2026-03-09 09:45:15] INFO django.server basehttp.log_message:213 — "GET /static/admin/css/changelists.css HTTP/1.1" 304 0
+[2026-03-09 09:45:15] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/jquery.init.js HTTP/1.1" 304 0
+[2026-03-09 09:45:15] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/vendor/jquery/jquery.js HTTP/1.1" 304 0
+[2026-03-09 09:45:15] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/actions.js HTTP/1.1" 304 0
+[2026-03-09 09:45:15] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/urlify.js HTTP/1.1" 304 0
+[2026-03-09 09:45:15] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/core.js HTTP/1.1" 304 0
+[2026-03-09 09:45:15] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/admin/RelatedObjectLookups.js HTTP/1.1" 304 0
+[2026-03-09 09:45:15] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/prepopulate.js HTTP/1.1" 304 0
+[2026-03-09 09:45:15] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/vendor/xregexp/xregexp.js HTTP/1.1" 304 0
+[2026-03-09 09:45:15] INFO django.server basehttp.log_message:213 — "GET /static/admin/img/search.svg HTTP/1.1" 304 0
+[2026-03-09 09:45:15] INFO django.server basehttp.log_message:213 — "GET /static/admin/img/icon-no.svg HTTP/1.1" 304 0
+[2026-03-09 09:45:15] INFO django.server basehttp.log_message:213 — "GET /static/admin/img/icon-yes.svg HTTP/1.1" 304 0
+[2026-03-09 09:45:15] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-09 09:45:15] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/filters.js HTTP/1.1" 304 0
+[2026-03-09 09:53:51] INFO django.server basehttp.log_message:213 — "GET / HTTP/1.1" 200 7654
+[2026-03-09 09:53:52] INFO django.server basehttp.log_message:213 — "GET / HTTP/1.1" 200 7654
+[2026-03-09 09:53:52] INFO django.server basehttp.log_message:213 — "GET /admin/ HTTP/1.1" 200 16283
+[2026-03-09 09:54:20] INFO django.server basehttp.log_message:213 — "GET /login/ HTTP/1.1" 200 4757
+[2026-03-09 09:55:07] INFO django.server basehttp.log_message:213 — "POST /login/ HTTP/1.1" 302 0
+[2026-03-09 09:55:15] INFO django.server basehttp.log_message:213 — "GET /dashboard/ HTTP/1.1" 200 32333
+[2026-03-09 09:55:22] INFO django.server basehttp.log_message:213 — "GET /shipments/create/ HTTP/1.1" 302 0
+[2026-03-09 09:55:46] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 173779
+[2026-03-09 09:55:55] INFO apps.orders views.order_create:119 — New order creation page accessed by customer1 (Customer)
+[2026-03-09 09:55:59] INFO django.server basehttp.log_message:213 — "GET /orders/create/ HTTP/1.1" 200 29755
+[2026-03-09 09:59:39] INFO django.utils.autoreload autoreload.trigger_reload:265 — /app/apps/shipments/views.py changed, reloading.
+[2026-03-09 09:59:47] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-09 10:00:03] INFO django.utils.autoreload autoreload.trigger_reload:265 — /app/apps/orders/views.py changed, reloading.
+[2026-03-09 10:00:04] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-09 10:00:26] INFO django.utils.autoreload autoreload.trigger_reload:265 — /app/apps/accounts/views.py changed, reloading.
+[2026-03-09 10:00:28] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-09 10:01:00] INFO django.utils.autoreload autoreload.trigger_reload:265 — /app/apps/accounts/views.py changed, reloading.
+[2026-03-09 10:01:02] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-09 10:01:21] INFO django.utils.autoreload autoreload.trigger_reload:265 — /app/config/urls.py changed, reloading.
+[2026-03-09 10:01:23] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-09 10:01:45] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 18904
+[2026-03-09 10:01:47] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 18904
+[2026-03-09 10:01:48] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 18904
+[2026-03-09 10:01:50] INFO apps.orders views.order_create:126 — New order creation page accessed by customer1 (Customer)
+[2026-03-09 10:01:50] INFO django.server basehttp.log_message:213 — "GET /orders/create/ HTTP/1.1" 200 29755
+[2026-03-09 10:01:53] INFO django.server basehttp.log_message:213 — "GET /dashboard/ HTTP/1.1" 200 32263
+[2026-03-09 10:01:55] INFO django.server basehttp.log_message:213 — "GET /shipments/create/ HTTP/1.1" 302 0
+[2026-03-09 10:01:55] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 19269
+[2026-03-09 10:02:00] INFO apps.orders views.order_create:126 — New order creation page accessed by customer1 (Customer)
+[2026-03-09 10:02:01] INFO django.server basehttp.log_message:213 — "GET /orders/create/ HTTP/1.1" 200 29755
+[2026-03-09 10:02:02] INFO django.server basehttp.log_message:213 — "GET /dashboard/ HTTP/1.1" 200 32263
+[2026-03-09 10:02:03] INFO django.utils.autoreload autoreload.trigger_reload:265 — /app/apps/accounts/utils.py changed, reloading.
+[2026-03-09 10:02:05] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-09 10:02:25] INFO django.server basehttp.log_message:213 — "GET /admin/accounts/customuser/ HTTP/1.1" 302 0
+[2026-03-09 10:02:25] INFO django.server basehttp.log_message:213 — "GET /admin/login/?next=/admin/accounts/customuser/ HTTP/1.1" 200 3731
+[2026-03-09 10:02:25] INFO django.server basehttp.log_message:213 — "GET /static/admin/css/base.css HTTP/1.1" 304 0
+[2026-03-09 10:02:25] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/theme.js HTTP/1.1" 304 0
+[2026-03-09 10:02:25] INFO django.server basehttp.log_message:213 — "GET /static/admin/css/nav_sidebar.css HTTP/1.1" 304 0
+[2026-03-09 10:02:25] INFO django.server basehttp.log_message:213 — "GET /static/admin/css/responsive.css HTTP/1.1" 304 0
+[2026-03-09 10:02:25] INFO django.server basehttp.log_message:213 — "GET /static/admin/css/dark_mode.css HTTP/1.1" 304 0
+[2026-03-09 10:02:25] INFO django.server basehttp.log_message:213 — "GET /static/admin/css/login.css HTTP/1.1" 200 951
+[2026-03-09 10:02:25] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/nav_sidebar.js HTTP/1.1" 304 0
+[2026-03-09 10:02:29] INFO django.server basehttp.log_message:213 — "POST /admin/login/?next=/admin/accounts/customuser/ HTTP/1.1" 302 0
+[2026-03-09 10:02:29] INFO django.server basehttp.log_message:213 — "GET /admin/accounts/customuser/ HTTP/1.1" 200 26738
+[2026-03-09 10:02:29] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/jquery.init.js HTTP/1.1" 304 0
+[2026-03-09 10:02:29] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/vendor/jquery/jquery.js HTTP/1.1" 304 0
+[2026-03-09 10:02:29] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/prepopulate.js HTTP/1.1" 304 0
+[2026-03-09 10:02:29] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/actions.js HTTP/1.1" 304 0
+[2026-03-09 10:02:29] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/admin/RelatedObjectLookups.js HTTP/1.1" 304 0
+[2026-03-09 10:02:29] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/urlify.js HTTP/1.1" 304 0
+[2026-03-09 10:02:29] INFO django.server basehttp.log_message:213 — "GET /static/admin/css/changelists.css HTTP/1.1" 304 0
+[2026-03-09 10:02:29] INFO django.server basehttp.log_message:213 — "GET /static/admin/img/search.svg HTTP/1.1" 304 0
+[2026-03-09 10:02:29] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/vendor/xregexp/xregexp.js HTTP/1.1" 304 0
+[2026-03-09 10:02:29] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/core.js HTTP/1.1" 304 0
+[2026-03-09 10:02:29] INFO django.server basehttp.log_message:213 — "GET /static/admin/img/icon-no.svg HTTP/1.1" 304 0
+[2026-03-09 10:02:29] INFO django.server basehttp.log_message:213 — "GET /static/admin/img/icon-yes.svg HTTP/1.1" 304 0
+[2026-03-09 10:02:29] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/filters.js HTTP/1.1" 304 0
+[2026-03-09 10:02:30] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-09 10:02:34] INFO django.server basehttp.log_message:213 — "GET /admin/accounts/customuser/2/change/ HTTP/1.1" 200 40343
+[2026-03-09 10:02:34] INFO django.server basehttp.log_message:213 — "GET /static/admin/css/forms.css HTTP/1.1" 304 0
+[2026-03-09 10:02:34] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/SelectBox.js HTTP/1.1" 200 4530
+[2026-03-09 10:02:34] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/SelectFilter2.js HTTP/1.1" 200 15845
+[2026-03-09 10:02:34] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/prepopulate_init.js HTTP/1.1" 304 0
+[2026-03-09 10:02:34] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/admin/DateTimeShortcuts.js HTTP/1.1" 200 19319
+[2026-03-09 10:02:34] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/calendar.js HTTP/1.1" 200 9141
+[2026-03-09 10:02:34] INFO django.server basehttp.log_message:213 — "GET /static/admin/css/widgets.css HTTP/1.1" 304 0
+[2026-03-09 10:02:34] INFO django.server basehttp.log_message:213 — "GET /static/admin/img/icon-changelink.svg HTTP/1.1" 304 0
+[2026-03-09 10:02:35] INFO django.server basehttp.log_message:213 — "GET /static/admin/img/icon-addlink.svg HTTP/1.1" 304 0
+[2026-03-09 10:02:35] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-09 10:02:35] INFO django.server basehttp.log_message:213 — "GET /static/admin/img/icon-deletelink.svg HTTP/1.1" 304 0
+[2026-03-09 10:02:35] INFO django.server basehttp.log_message:213 — "GET /static/admin/img/icon-viewlink.svg HTTP/1.1" 304 0
+[2026-03-09 10:02:35] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/change_form.js HTTP/1.1" 304 0
+[2026-03-09 10:02:35] INFO django.server basehttp.log_message:213 — "GET /static/admin/img/selector-icons.svg HTTP/1.1" 200 3291
+[2026-03-09 10:02:35] INFO django.server basehttp.log_message:213 — "GET /static/admin/img/icon-calendar.svg HTTP/1.1" 200 1086
+[2026-03-09 10:02:35] INFO django.server basehttp.log_message:213 — "GET /static/admin/img/icon-clock.svg HTTP/1.1" 200 677
+[2026-03-09 10:02:41] INFO django.server basehttp.log_message:213 — "POST /admin/accounts/customuser/2/change/ HTTP/1.1" 200 40580
+[2026-03-09 10:02:41] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-09 10:02:59] INFO django.server basehttp.log_message:213 — "POST /admin/accounts/customuser/2/change/ HTTP/1.1" 302 0
+[2026-03-09 10:02:59] INFO django.server basehttp.log_message:213 — "GET /admin/accounts/customuser/ HTTP/1.1" 200 26962
+[2026-03-09 10:02:59] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-09 10:03:11] INFO django.server basehttp.log_message:213 — "GET /dashboard/ HTTP/1.1" 200 34634
+[2026-03-09 10:03:26] INFO django.server basehttp.log_message:213 — "POST /logout/ HTTP/1.1" 302 0
+[2026-03-09 10:03:26] INFO django.server basehttp.log_message:213 — "GET /login/ HTTP/1.1" 200 4757
+[2026-03-09 10:03:39] INFO django.server basehttp.log_message:213 — "POST /login/ HTTP/1.1" 302 0
+[2026-03-09 10:03:39] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:03:39] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:03:39] INFO django.server basehttp.log_message:213 — "GET /dashboard/ HTTP/1.1" 200 32263
+[2026-03-09 10:03:47] INFO django.server basehttp.log_message:213 — "GET /shipments/create/ HTTP/1.1" 302 0
+[2026-03-09 10:03:47] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:03:47] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:03:47] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 19269
+[2026-03-09 10:04:42] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:04:42] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:04:42] INFO django.server basehttp.log_message:213 — "GET /dashboard/ HTTP/1.1" 200 32263
+[2026-03-09 10:06:46] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:06:46] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:06:46] INFO django.server basehttp.log_message:213 — "GET /dashboard/ HTTP/1.1" 200 33868
+[2026-03-09 10:06:51] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:06:52] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:06:59] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:06:59] INFO django.server basehttp.log_message:213 — "GET /shipments/ HTTP/1.1" 200 52567
+[2026-03-09 10:06:59] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 20509
+[2026-03-09 10:07:10] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:07:10] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:07:14] INFO django.server basehttp.log_message:213 — "GET /dashboard/ HTTP/1.1" 200 33868
+[2026-03-09 10:07:40] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:07:40] INFO django.server basehttp.log_message:213 — "GET /shipments/ HTTP/1.1" 200 52567
+[2026-03-09 10:07:46] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:07:46] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:07:46] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 20509
+[2026-03-09 10:08:06] INFO django.server basehttp.log_message:213 — "GET /companies/ HTTP/1.1" 200 16769
+[2026-03-09 10:08:32] INFO django.server basehttp.log_message:213 — "GET /inventory/ HTTP/1.1" 200 21595
+[2026-03-09 10:08:50] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:08:50] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:08:50] INFO django.server basehttp.log_message:213 — "GET /dashboard/ HTTP/1.1" 200 33975
+[2026-03-09 10:08:54] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:08:54] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:08:58] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 20616
+[2026-03-09 10:08:58] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:08:58] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:08:58] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:08:58] INFO django.server basehttp.log_message:213 — "GET /shipments/ HTTP/1.1" 200 52674
+[2026-03-09 10:08:58] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 20616
+[2026-03-09 10:09:00] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:09:01] INFO django.server basehttp.log_message:213 — "GET /shipments/ HTTP/1.1" 200 52674
+[2026-03-09 10:10:01] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:10:01] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:10:01] INFO django.server basehttp.log_message:213 — "GET /dashboard/ HTTP/1.1" 200 33539
+[2026-03-09 10:10:02] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:10:03] INFO django.server basehttp.log_message:213 — "GET /shipments/ HTTP/1.1" 200 52238
+[2026-03-09 10:11:22] INFO django.utils.autoreload autoreload.trigger_reload:265 — /app/apps/accounts/urls.py changed, reloading.
+[2026-03-09 10:14:24] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-09 10:19:29] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-09 10:19:36] INFO django.server basehttp.log_message:213 — "GET / HTTP/1.1" 200 7654
+[2026-03-09 10:19:46] INFO django.server basehttp.log_message:213 — "GET /login/ HTTP/1.1" 200 4757
+[2026-03-09 10:19:48] INFO django.server basehttp.log_message:213 — "GET / HTTP/1.1" 200 7654
+[2026-03-09 10:19:51] INFO django.server basehttp.log_message:213 — "GET /login/ HTTP/1.1" 200 4757
+[2026-03-09 10:20:05] INFO django.server basehttp.log_message:213 — "POST /login/ HTTP/1.1" 302 0
+[2026-03-09 10:20:05] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:20:05] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:20:06] INFO django.server basehttp.log_message:213 — "GET /dashboard/ HTTP/1.1" 200 33576
+[2026-03-09 10:20:14] INFO django.server basehttp.log_message:213 — "GET /companies/ HTTP/1.1" 200 16477
+[2026-03-09 10:20:15] INFO django.server basehttp.log_message:213 — "GET /companies/create/ HTTP/1.1" 200 18507
+[2026-03-09 10:20:21] INFO django.server basehttp.log_message:213 — "GET /companies/1/edit/ HTTP/1.1" 200 18943
+[2026-03-09 10:20:23] INFO django.server basehttp.log_message:213 — "GET /companies/1/ HTTP/1.1" 200 28773
+[2026-03-09 10:20:29] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:20:29] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:20:29] INFO django.server basehttp.log_message:213 — "GET /dashboard/ HTTP/1.1" 200 33576
+[2026-03-09 10:20:30] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:20:30] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:20:30] INFO django.server basehttp.log_message:213 — "GET /dashboard/ HTTP/1.1" 200 33576
+[2026-03-09 10:20:31] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:20:31] INFO django.server basehttp.log_message:213 — "GET /shipments/ HTTP/1.1" 200 52275
+[2026-03-09 10:20:32] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:20:32] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:20:47] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 20217
+[2026-03-09 10:20:47] INFO django.server basehttp.log_message:213 — "GET /companies/profile/ HTTP/1.1" 200 15279
+[2026-03-09 10:22:01] INFO django.server basehttp.log_message:213 — "GET /companies/settings/ HTTP/1.1" 200 20338
+[2026-03-09 10:22:10] INFO django.server basehttp.log_message:213 — "GET /companies/ HTTP/1.1" 200 16477
+[2026-03-09 10:22:22] INFO django.server basehttp.log_message:213 — "GET /companies/profile/ HTTP/1.1" 200 15460
+[2026-03-09 10:22:45] INFO django.server basehttp.log_message:213 — "GET /inventory/ HTTP/1.1" 200 21303
+[2026-03-09 10:22:52] INFO django.utils.autoreload autoreload.trigger_reload:265 — /app/apps/accounts/views_profile.py changed, reloading.
+[2026-03-09 10:23:13] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-09 10:23:43] INFO django.server basehttp.log_message:213 — "GET /companies/profile/ HTTP/1.1" 200 15859
+[2026-03-09 10:24:15] INFO django.server basehttp.log_message:213 — "GET /companies/profile/ HTTP/1.1" 200 15859
+[2026-03-09 10:24:46] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:24:46] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:25:08] INFO django.server basehttp.log_message:213 — "GET /companies/settings/ HTTP/1.1" 200 20338
+[2026-03-09 10:25:08] INFO django.server basehttp.log_message:213 — "GET /inventory/ HTTP/1.1" 200 21303
+[2026-03-09 10:25:09] INFO django.server basehttp.log_message:213 — "GET /dashboard/ HTTP/1.1" 200 33576
+[2026-03-09 10:25:13] INFO django.server basehttp.log_message:213 — "GET /companies/profile/ HTTP/1.1" 200 15859
+[2026-03-09 10:26:26] INFO django.server basehttp.log_message:213 — "POST /companies/profile/ HTTP/1.1" 302 0
+[2026-03-09 10:26:27] INFO django.server basehttp.log_message:213 — "GET /companies/profile/ HTTP/1.1" 200 16155
+[2026-03-09 10:26:28] INFO django.server basehttp.log_message:213 — "GET /media/avatars/photo-1761766137706-2512a163cf9c.avif HTTP/1.1" 200 12743
+[2026-03-09 10:27:23] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:27:23] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:27:23] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:27:23] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:27:23] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:27:24] INFO django.server basehttp.log_message:213 — "POST /companies/profile/ HTTP/1.1" 302 0
+[2026-03-09 10:27:24] INFO django.server basehttp.log_message:213 — "GET /companies/profile/ HTTP/1.1" 200 15792
+[2026-03-09 10:27:24] INFO django.server basehttp.log_message:213 — "GET /shipments/ HTTP/1.1" 200 52275
+[2026-03-09 10:27:25] INFO django.server basehttp.log_message:213 — "GET /media/avatars/photo-1761766137706-2512a163cf9c.avif HTTP/1.1" 304 0
+[2026-03-09 10:27:25] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 20217
+[2026-03-09 10:27:26] INFO django.server basehttp.log_message:213 — "GET /dashboard/ HTTP/1.1" 200 33576
+[2026-03-09 10:27:58] INFO django.server basehttp.log_message:213 — "POST /companies/profile/ HTTP/1.1" 302 0
+[2026-03-09 10:27:58] INFO django.server basehttp.log_message:213 — "GET /companies/profile/ HTTP/1.1" 200 16155
+[2026-03-09 10:27:58] INFO django.server basehttp.log_message:213 — "GET /media/avatars/photo-1761766137706-2512a163cf9c.avif HTTP/1.1" 304 0
+[2026-03-09 10:29:48] INFO django.server basehttp.log_message:213 — "POST /companies/profile/ HTTP/1.1" 302 0
+[2026-03-09 10:29:51] INFO django.server basehttp.log_message:213 — "GET /companies/profile/ HTTP/1.1" 200 16232
+[2026-03-09 10:29:51] INFO django.server basehttp.log_message:213 — "GET /media/avatars/photo-1761766137706-2512a163cf9c.avif HTTP/1.1" 304 0
+[2026-03-09 10:29:56] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:29:56] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:30:02] INFO django.server basehttp.log_message:213 — "GET /dashboard/ HTTP/1.1" 200 33653
+[2026-03-09 10:30:39] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:30:39] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:30:39] INFO django.server basehttp.log_message:213 — "GET /dashboard/ HTTP/1.1" 200 33653
+[2026-03-09 10:30:42] INFO django.server basehttp.log_message:213 — "GET /companies/profile/ HTTP/1.1" 200 15869
+[2026-03-09 10:30:42] INFO django.server basehttp.log_message:213 — "GET /media/avatars/photo-1761766137706-2512a163cf9c.avif HTTP/1.1" 304 0
+[2026-03-09 10:31:57] INFO django.server basehttp.log_message:213 — "GET /companies/profile/ HTTP/1.1" 200 15943
+[2026-03-09 10:31:57] INFO django.server basehttp.log_message:213 — "GET /media/avatars/photo-1761766137706-2512a163cf9c.avif HTTP/1.1" 304 0
+[2026-03-09 10:32:06] INFO django.server basehttp.log_message:213 — "GET /companies/profile/ HTTP/1.1" 200 15943
+[2026-03-09 10:32:09] INFO django.server basehttp.log_message:213 — "GET /companies/profile/ HTTP/1.1" 200 15943
+[2026-03-09 10:32:10] INFO django.server basehttp.log_message:213 — "GET /companies/profile/ HTTP/1.1" 200 15943
+[2026-03-09 10:32:14] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:32:14] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:32:14] INFO django.server basehttp.log_message:213 — "GET /dashboard/ HTTP/1.1" 200 33727
+[2026-03-09 10:32:17] INFO django.server basehttp.log_message:213 — "GET /companies/profile/ HTTP/1.1" 200 15943
+[2026-03-09 10:33:51] INFO django.server basehttp.log_message:213 — "GET /companies/profile/ HTTP/1.1" 200 15937
+[2026-03-09 10:33:51] INFO django.server basehttp.log_message:213 — "GET /media/avatars/photo-1761766137706-2512a163cf9c.avif HTTP/1.1" 304 0
+[2026-03-09 10:33:52] INFO django.server basehttp.log_message:213 — "GET /companies/profile/ HTTP/1.1" 200 15937
+[2026-03-09 10:33:59] INFO django.server basehttp.log_message:213 — "GET /companies/profile/ HTTP/1.1" 200 15937
+[2026-03-09 10:34:15] INFO django.server basehttp.log_message:213 — "GET /companies/settings/ HTTP/1.1" 200 20483
+[2026-03-09 10:34:32] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:34:32] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:34:33] INFO django.server basehttp.log_message:213 — "GET /dashboard/ HTTP/1.1" 200 33727
+[2026-03-09 10:34:34] INFO django.server basehttp.log_message:213 — "GET /shipments/create/ HTTP/1.1" 302 0
+[2026-03-09 10:34:34] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:34:34] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:34:37] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:34:56] INFO django.server basehttp.log_message:213 — "GET /shipments/ HTTP/1.1" 200 52791
+[2026-03-09 10:34:56] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:34:56] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for customer1 → company: ABC Logistics Inc. (Customer)
+[2026-03-09 10:34:59] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 20733
+[2026-03-09 10:34:59] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 20733
+[2026-03-09 10:35:04] INFO apps.orders views.order_create:126 — New order creation page accessed by customer1 (Customer)
+[2026-03-09 10:35:32] INFO django.server basehttp.log_message:213 — "GET /orders/create/ HTTP/1.1" 200 31219

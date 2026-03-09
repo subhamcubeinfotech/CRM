@@ -7,6 +7,11 @@ from django.db.models import Sum, F, ExpressionWrapper, DecimalField
 from .models import Order, ManifestItem
 from apps.accounts.models import Company
 from apps.inventory.models import Warehouse, InventoryItem
+from apps.accounts.utils import filter_by_user_company, check_company_access
+import logging
+
+logger = logging.getLogger('apps.orders')
+
 
 class OrderListView(LoginRequiredMixin, ListView):
     model = Order
@@ -14,7 +19,8 @@ class OrderListView(LoginRequiredMixin, ListView):
     context_object_name = 'orders'
 
     def get_queryset(self):
-        return Order.objects.all().order_by('-created_at')
+        qs = Order.objects.all().order_by('-created_at')
+        return filter_by_user_company(qs, self.request.user, company_field='receiver')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -45,6 +51,11 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
     template_name = 'orders/order_detail.html'
     context_object_name = 'order'
 
+    def get_object(self, queryset=None):
+        obj = super().get_object(queryset)
+        check_company_access(obj.receiver, self.request.user)
+        return obj
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['manifest_items'] = self.object.manifest_items.all()
@@ -58,8 +69,10 @@ def order_update_status(request, pk):
     if request.method == 'POST':
         status = request.POST.get('status')
         if status in dict(Order.STATUS_CHOICES):
+            old_status = order.get_status_display()
             order.status = status
             order.save()
+            logger.info(f'Order {order.order_number} status: {old_status} → {order.get_status_display()} by {request.user}')
     return redirect('orders:order_detail', pk=pk)
 
 @login_required
@@ -109,6 +122,8 @@ def order_create(request):
                 )
         
         return redirect('orders:order_detail', pk=order.pk)
+    
+    logger.info(f'New order creation page accessed by {request.user}')
     
     context = {
         'suppliers': Company.objects.filter(company_type='vendor'),
