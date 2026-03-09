@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block title %}Warehouses - FreightPro{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2">Warehouses</h1>
+        <button class="btn btn-primary"><i class="fas fa-plus me-1"></i>Add Warehouse</button>
+    </div>
+
+    <div class="row">
+        {% for warehouse in warehouses %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h5 class="card-title fw-bold mb-0">{{ warehouse.name }}</h5>
+                        <span class="badge bg-primary">{{ warehouse.code }}</span>
+                    </div>
+                    <p class="text-muted small mb-3">
+                        <i class="fas fa-map-marker-alt me-2"></i>{{ warehouse.city }}, {{ warehouse.state }}
+                    </p>
+                    <div class="row text-center border-top pt-3">
+                        <div class="col-6 border-end">
+                            <div class="small text-muted">Items</div>
+                            <div class="fw-bold">{{ warehouse.total_items }}</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="small text-muted">Value</div>
+                            <div class="fw-bold">${{ warehouse.total_value|floatformat:0 }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-white border-0 text-center pb-3">
+                    <a href="{% url 'inventory:warehouse_detail' warehouse.pk %}" class="btn btn-outline-primary w-100">
+                        View Inventory
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center py-5">
+            <p class="text-muted">No warehouses found.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

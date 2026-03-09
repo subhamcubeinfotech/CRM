@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Shipping Confirmation - {{ shipment.shipment_number }}</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; font-size: 11px; color: #222; background: #fff; }
+    .page { max-width: 760px; margin: 0 auto; padding: 30px; }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+    .company-name { font-size: 20px; font-weight: bold; margin-bottom: 4px; }
+    .company-addr { font-size: 10px; color: #444; line-height: 1.5; }
+    .doc-title { font-size: 22px; font-weight: bold; text-align: right; color: #222; letter-spacing: 1px; }
+    .doc-meta { text-align: right; font-size: 10.5px; line-height: 1.6; margin-top: 6px; }
+    .doc-meta strong { font-weight: bold; }
+    .section-table { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
+    .section-table th { background: #2a4d8f; color: #fff; text-align: center; padding: 6px 10px; font-size: 11px; }
+    .section-table td { padding: 8px 10px; vertical-align: top; border: 1px solid #ddd; font-size: 10.5px; }
+    .section-table td.half { width: 50%; }
+    .party-name { font-weight: bold; font-size: 11px; margin-bottom: 3px; }
+    .field-label { font-weight: bold; }
+    .items-table { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
+    .items-table th { background: #2a4d8f; color: #fff; text-align: center; padding: 5px 8px; font-size: 10.5px; }
+    .items-table td { border: 1px solid #ccc; padding: 5px 8px; font-size: 10.5px; }
+    .items-table .total-row td { font-weight: bold; background: #f5f5f5; }
+    .footer-row { display: flex; gap: 12px; }
+    .footer-box { border: 1px solid #ccc; flex: 1; padding: 8px 10px; }
+    .footer-box .box-title { font-weight: bold; font-size: 10.5px; margin-bottom: 4px; }
+    .print-btn { display: block; text-align: center; margin: 20px auto; padding: 10px 28px; background: #2a4d8f; color: #fff; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; font-weight: 600; text-decoration: none; }
+    @media print { .no-print { display: none !important; } body { padding: 0; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+    <!-- Print Button -->
+    <div class="no-print" style="text-align:right; margin-bottom: 14px;">
+        <button class="print-btn" onclick="window.print()">🖨 Print / Save PDF</button>
+    </div>
+
+    <!-- Header -->
+    <div class="header">
+        <div>
+            <div class="company-name">FreightPro Inc.</div>
+            <div class="company-addr">
+                {% if shipment.order and shipment.order.supplier %}
+                {{ shipment.order.supplier.address_line1 }}<br>
+                {{ shipment.order.supplier.city }}, {{ shipment.order.supplier.state }} {{ shipment.order.supplier.postal_code }}, {{ shipment.order.supplier.country }}
+                {% endif %}
+            </div>
+        </div>
+        <div>
+            <div class="doc-title">SHIPPING CONFIRMATION</div>
+            <div class="doc-meta">
+                <strong>SHIPMENT ID</strong>: {{ shipment.shipment_number }}<br>
+                {% if shipment.order %}<strong>ORDER ID</strong>: {{ shipment.order.order_number }}<br>{% endif %}
+                <strong>DATE</strong>: {{ today }} (ET)
+            </div>
+        </div>
+    </div>
+
+    <!-- Shipper / Receiver -->
+    <table class="section-table">
+        <thead>
+            <tr>
+                <th class="half">Shipper</th>
+                <th class="half">Receiver</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="half">
+                    {% with s=shipment.order.supplier %}
+                    {% if s %}
+                    <div class="party-name">{{ s.name }}</div>
+                    {{ s.address_line1 }}<br>
+                    {{ s.city }}, {{ s.state }} {{ s.postal_code }}, {{ s.country }}<br>
+                    {% if s.phone %}{{ s.phone }}<br>{% endif %}
+                    {% endif %}
+                    {% endwith %}
+                    {% if shipment.pickup_date %}
+                    <br><span class="field-label">Pickup Date:</span> {{ shipment.pickup_date|date:"m/d/Y" }} (ET)<br>
+                    {% endif %}
+                    <span class="field-label">Pickup Appointment:</span> Required<br>
+                    {% if shipment.order and shipment.order.supplier %}<span class="field-label">Contact:</span> {{ shipment.order.supplier.name }}<br>{% endif %}
+                </td>
+                <td class="half">
+                    {% with r=shipment.order.receiver %}
+                    {% if r %}
+                    <div class="party-name">{{ r.name }}</div>
+                    {{ r.address_line1 }}<br>
+                    {{ r.city }}, {{ r.state }} {{ r.postal_code }}, {{ r.country }}<br>
+                    {% if r.phone %}{{ r.phone }}<br>{% endif %}
+                    {% endif %}
+                    {% endwith %}
+                    {% if shipment.estimated_delivery_date %}
+                    <br><span class="field-label">Delivery Date:</span> {{ shipment.estimated_delivery_date|date:"m/d/Y" }} (ET)<br>
+                    {% endif %}
+                    <span class="field-label">Delivery Appointment:</span> Required<br>
+                    {% if shipment.order and shipment.order.receiver %}<span class="field-label">Contact:</span> {{ shipment.order.receiver.name }}<br>{% endif %}
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Ordered By / Carrier -->
+    <table class="section-table">
+        <tbody>
+            <tr>
+                <td class="half">
+                    <span class="field-label">Ordered By:</span><br>
+                    {{ shipment.customer.name }}<br>
+                    {% if shipment.customer.email %}<a href="mailto:{{ shipment.customer.email }}" style="color:#2a4d8f;">{{ shipment.customer.email }}</a>{% endif %}
+                </td>
+                <td class="half">
+                    <span class="field-label">Carrier</span><br>
+                    {{ shipment.carrier.name|default:"TBD" }}<br>
+                    <br>
+                    <span class="field-label">Rate</span><br>
+                    {% if shipment.quoted_amount %}${{ shipment.quoted_amount }}{% else %}TBD{% endif %}
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Manifest Items -->
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th style="width:45%">Item Description</th>
+                <th style="width:30%">Packaging</th>
+                <th style="width:25%">Weight</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in manifest_items %}
+            <tr>
+                <td>{{ item.material }}</td>
+                <td>{{ item.packaging|default:"-" }}</td>
+                <td>{{ item.weight|floatformat:0 }} {{ item.weight_unit }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3" style="text-align:center; color:#999;">No manifest items</td></tr>
+            {% endfor %}
+            <!-- Empty rows -->
+            {% for i in "123456"|make_list %}{% if forloop.counter > manifest_items|length %}<tr><td>&nbsp;</td><td></td><td></td></tr>{% endif %}{% endfor %}
+            <tr class="total-row">
+                <td colspan="2" style="text-align:right; padding:6px 8px;">TOTALS</td>
+                <td>{{ shipment.total_weight|floatformat:0 }} kg</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Instructions & Scale Required -->
+    <div class="footer-row">
+        <div class="footer-box" style="flex:2;">
+            <div class="box-title">INSTRUCTIONS</div>
+            {{ shipment.special_instructions|default:"" }}
+        </div>
+        <div class="footer-box" style="flex:1; text-align:center;">
+            <div class="box-title">SCALE REQUIRED</div>
+            {{ shipment.is_hazmat|yesno:"YES,NO" }}
+        </div>
+    </div>
+
+    <div style="text-align:right; margin-top:20px; font-size:9px; color:#aaa;">Generated by FreightPro</div>
+</div>
+</body>
+</html>

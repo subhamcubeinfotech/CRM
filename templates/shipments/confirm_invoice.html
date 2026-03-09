@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}Create Invoice - {{ shipment.shipment_number }}{% endblock %}
+{% block content %}
+<div class="container" style="max-width:680px; padding-top: 2rem;">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'shipments:shipment_detail' shipment.pk %}">{{ shipment.shipment_number }}</a></li>
+            <li class="breadcrumb-item active">Create Invoice</li>
+        </ol>
+    </nav>
+
+    <div class="card border-0 shadow-sm" style="border-radius:14px;">
+        <div class="card-body p-4">
+            <h4 class="fw-bold mb-1">Create Invoice</h4>
+            <p class="text-muted mb-4">An invoice will be auto-generated from the shipment and linked order data.</p>
+
+            {% if existing_invoices %}
+            <div class="alert alert-warning">
+                <strong>Existing invoices for this shipment:</strong>
+                <ul class="mb-0 mt-1">
+                    {% for inv in existing_invoices %}
+                    <li><a href="{% url 'invoicing:invoice_detail' inv.pk %}">{{ inv.invoice_number }}</a> — {{ inv.get_status_display }} — ${{ inv.total|floatformat:2 }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <!-- Summary of what will be created -->
+            <table class="table table-sm mb-4">
+                <tr><td class="text-muted">Shipment</td><td class="fw-semibold">{{ shipment.shipment_number }}</td></tr>
+                {% if shipment.order %}<tr><td class="text-muted">Order</td><td class="fw-semibold">{{ shipment.order.order_number }}</td></tr>{% endif %}
+                <tr><td class="text-muted">Customer</td><td class="fw-semibold">{{ shipment.customer.name }}</td></tr>
+                <tr><td class="text-muted">Revenue (Subtotal)</td><td class="fw-semibold text-success">${{ shipment.revenue|floatformat:2 }}</td></tr>
+                <tr><td class="text-muted">Due Date</td><td class="fw-semibold">Net 30 days</td></tr>
+                <tr><td class="text-muted">Status</td><td><span class="badge bg-secondary">Draft</span></td></tr>
+            </table>
+
+            <form method="post">
+                {% csrf_token %}
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary px-4 fw-semibold">
+                        <i class="fas fa-file-invoice me-2"></i>Create Invoice
+                    </button>
+                    <a href="{% url 'shipments:shipment_detail' shipment.pk %}" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

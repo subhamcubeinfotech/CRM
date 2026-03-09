@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Packing List - {{ shipment.shipment_number }}</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; font-size: 11px; color: #222; background: #fff; }
+    .page { max-width: 760px; margin: 0 auto; padding: 32px; }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; border-bottom: 2px solid #2a4d8f; padding-bottom: 16px; }
+    .company-name { font-size: 20px; font-weight: bold; }
+    .company-addr { font-size: 10px; color: #555; line-height: 1.5; margin-top: 4px; }
+    .doc-title { font-size: 20px; font-weight: bold; color: #2a4d8f; text-align: right; }
+    .doc-meta { text-align: right; font-size: 10.5px; line-height: 1.7; margin-top: 6px; }
+    .section-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+    .section-table th { background: #2a4d8f; color: #fff; text-align: left; padding: 6px 10px; font-size: 10.5px; }
+    .section-table td { padding: 7px 10px; border: 1px solid #ddd; vertical-align: top; font-size: 10.5px; }
+    .items-table { width: 100%; border-collapse: collapse; margin-top: 18px; }
+    .items-table th { background: #2a4d8f; color: #fff; text-align: center; padding: 6px; font-size: 10.5px; }
+    .items-table td { border: 1px solid #ccc; padding: 6px 8px; font-size: 10.5px; }
+    .items-table .alt { background: #f5f7fa; }
+    .total-row td { font-weight: bold; background: #e8eff9; }
+    .print-btn { border: none; background: #2a4d8f; color: #fff; padding: 8px 24px; border-radius: 6px; font-size: 13px; cursor: pointer; margin-bottom: 14px; }
+    @media print { .no-print { display: none !important; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+    <div class="no-print" style="text-align:right;">
+        <button class="print-btn" onclick="window.print()">🖨 Print / Save PDF</button>
+    </div>
+
+    <div class="header">
+        <div>
+            <div class="company-name">FreightPro Inc.</div>
+            <div class="company-addr">freight.pro@example.com</div>
+        </div>
+        <div>
+            <div class="doc-title">PACKING LIST</div>
+            <div class="doc-meta">
+                <strong>Shipment:</strong> {{ shipment.shipment_number }}<br>
+                {% if shipment.order %}<strong>Order:</strong> {{ shipment.order.order_number }}<br>{% endif %}
+                <strong>Date:</strong> {{ today }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Shipper / Consignee -->
+    <table class="section-table">
+        <thead>
+            <tr><th style="width:50%">Shipper / Exporter</th><th style="width:50%">Consignee / Importer</th></tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>
+                    {% if shipment.shipper %}
+                    <strong>{{ shipment.shipper.name }}</strong><br>
+                    {{ shipment.shipper.address_line1 }}<br>
+                    {{ shipment.shipper.city }}, {{ shipment.shipper.state }} {{ shipment.shipper.postal_code }}
+                    {% elif shipment.order and shipment.order.supplier %}
+                    <strong>{{ shipment.order.supplier.name }}</strong><br>
+                    {{ shipment.order.supplier.address_line1 }}<br>
+                    {{ shipment.order.supplier.city }}, {{ shipment.order.supplier.state }}
+                    {% else %}-{% endif %}
+                </td>
+                <td>
+                    {% if shipment.consignee %}
+                    <strong>{{ shipment.consignee.name }}</strong><br>
+                    {{ shipment.consignee.address_line1 }}<br>
+                    {{ shipment.consignee.city }}, {{ shipment.consignee.state }} {{ shipment.consignee.postal_code }}
+                    {% elif shipment.order and shipment.order.receiver %}
+                    <strong>{{ shipment.order.receiver.name }}</strong><br>
+                    {{ shipment.order.receiver.address_line1 }}<br>
+                    {{ shipment.order.receiver.city }}, {{ shipment.order.receiver.state }}
+                    {% else %}-{% endif %}
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Shipment Details -->
+    <table class="section-table">
+        <thead><tr><th colspan="4">Shipment Details</th></tr></thead>
+        <tbody>
+            <tr>
+                <td><strong>Pickup Date</strong><br>{{ shipment.pickup_date|date:"M d, Y"|default:"-" }}</td>
+                <td><strong>Delivery Date</strong><br>{{ shipment.estimated_delivery_date|date:"M d, Y"|default:"-" }}</td>
+                <td><strong>Carrier</strong><br>{{ shipment.carrier.name|default:"TBD" }}</td>
+                <td><strong>Type</strong><br>{{ shipment.get_shipment_type_display }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Line Items -->
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Description / Material</th>
+                <th>Packaging</th>
+                <th>Net Weight</th>
+                <th>Unit</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in manifest_items %}
+            <tr {% if forloop.counter|divisibleby:2 %}class="alt"{% endif %}>
+                <td style="text-align:center;">{{ forloop.counter }}</td>
+                <td>{{ item.material }}</td>
+                <td>{{ item.packaging|default:"-" }}</td>
+                <td style="text-align:right;">{{ item.weight|floatformat:0 }}</td>
+                <td>{{ item.weight_unit }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" style="text-align:center; color:#999; padding:14px;">No items</td></tr>
+            {% endfor %}
+            <tr class="total-row">
+                <td colspan="3" style="text-align:right; padding:7px 8px;">TOTAL</td>
+                <td style="text-align:right;">{{ shipment.total_weight|floatformat:0 }}</td>
+                <td>kg</td>
+            </tr>
+        </tbody>
+    </table>
+
+    {% if shipment.special_instructions %}
+    <div style="margin-top:18px; font-size:10.5px;">
+        <strong>Special Instructions:</strong><br>
+        {{ shipment.special_instructions }}
+    </div>
+    {% endif %}
+
+    <div style="text-align:right; margin-top:24px; font-size:9px; color:#aaa;">Generated by FreightPro · {{ today }}</div>
+</div>
+</body>
+</html>

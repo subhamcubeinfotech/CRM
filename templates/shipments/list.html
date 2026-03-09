@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+
+{% block title %}Shipments - Freight Forwarding Platform{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2"><i class="fas fa-box me-2 text-primary"></i>Shipments</h1>
+        <span class="text-muted small">Shipments are created from within Orders.</span>
+    </div>
+    
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" name="search" class="form-control" placeholder="Search shipments..." value="{{ search|default:'' }}">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <select name="status" class="form-select">
+                        <option value="">All Statuses</option>
+                        {% for code, label in status_choices %}
+                        <option value="{{ code }}" {% if status_filter == code %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select name="type" class="form-select">
+                        <option value="">All Types</option>
+                        {% for code, label in type_choices %}
+                        <option value="{{ code }}" {% if type_filter == code %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <input type="date" name="date_from" class="form-control" placeholder="From Date" value="{{ date_from|default:'' }}">
+                </div>
+                <div class="col-md-2">
+                    <input type="date" name="date_to" class="form-control" placeholder="To Date" value="{{ date_to|default:'' }}">
+                </div>
+                <div class="col-md-1">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Shipments Table -->
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Shipment #</th>
+                            <th>Customer</th>
+                            <th>Route</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Pickup Date</th>
+                            <th>Delivery Date</th>
+                            <th>Revenue</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for shipment in shipments %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'shipments:shipment_detail' shipment.pk %}" class="fw-bold text-decoration-none">
+                                    {{ shipment.shipment_number }}
+                                </a>
+                                {% if shipment.tracking_number %}
+                                <br><small class="text-muted">Tracking: {{ shipment.tracking_number }}</small>
+                                {% endif %}
+                            </td>
+                            <td>{{ shipment.customer.name }}</td>
+                            <td>
+                                <small>
+                                    <i class="fas fa-map-marker-alt text-success me-1"></i>{{ shipment.origin_city }}<br>
+                                    <i class="fas fa-arrow-down text-muted mx-1"></i><br>
+                                    <i class="fas fa-map-marker-alt text-danger me-1"></i>{{ shipment.destination_city }}
+                                </small>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">{{ shipment.get_shipment_type_display }}</span>
+                            </td>
+                            <td>
+                                <span class="badge badge-{{ shipment.status }}">{{ shipment.get_status_display }}</span>
+                            </td>
+                            <td>
+                                {% if shipment.pickup_date %}
+                                    {{ shipment.pickup_date|date:"M d, Y" }}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if shipment.estimated_delivery_date %}
+                                    {{ shipment.estimated_delivery_date|date:"M d, Y" }}
+                                    {% if shipment.is_overdue %}
+                                        <br><span class="badge bg-danger">Overdue</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>${{ shipment.revenue|floatformat:2 }}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{% url 'shipments:shipment_detail' shipment.pk %}" class="btn btn-sm btn-outline-primary" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'shipments:shipment_edit' shipment.pk %}" class="btn btn-sm btn-outline-secondary" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'shipments:generate_bol' shipment.pk %}" class="btn btn-sm btn-outline-info" title="BOL" target="_blank">
+                                        <i class="fas fa-file-alt"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="9" class="text-center py-5 text-muted">
+                                <i class="fas fa-box-open fa-3x mb-3"></i>
+                                <h5>No shipments found</h5>
+                                <p>Shipments are created from within an Order.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Pagination -->
+        {% if shipments.has_other_pages %}
+        <div class="card-footer">
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center mb-0">
+                    {% if shipments.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ shipments.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if type_filter %}&type={{ type_filter }}{% endif %}">Previous</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">Previous</span>
+                    </li>
+                    {% endif %}
+                    
+                    {% for num in shipments.paginator.page_range %}
+                        {% if shipments.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                        {% else %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if type_filter %}&type={{ type_filter }}{% endif %}">{{ num }}</a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if shipments.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ shipments.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if type_filter %}&type={{ type_filter }}{% endif %}">Next</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">Next</span>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

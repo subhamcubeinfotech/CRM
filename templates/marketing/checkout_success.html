@@ -1,0 +1,18 @@
+{% extends 'marketing/base_marketing.html' %}
+
+{% block title %}Subscription Successful - FreightPro{% endblock %}
+
+{% block content %}
+<div class="container py-5 mt-5 text-center">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="display-1 text-success mb-4">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h1 class="fw-bold mb-4">Welcome to FreightPro!</h1>
+            <p class="text-secondary lead mb-5">Your subscription has been confirmed. You now have full access to our enterprise-grade logistics tools.</p>
+            <a href="{% url 'dashboard' %}" class="btn btn-primary btn-lg px-5">Go to Dashboard</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

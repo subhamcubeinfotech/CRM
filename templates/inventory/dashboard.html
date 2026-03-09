@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Inventory Dashboard - FreightPro{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2"><i class="fas fa-warehouse me-2 text-primary"></i>Inventory Management</h1>
+        <div>
+            <a href="{% url 'inventory:item_list' %}" class="btn btn-outline-primary me-2">
+                <i class="fas fa-list me-1"></i>All Items
+            </a>
+            <a href="{% url 'inventory:warehouse_list' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i>New Warehouse
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card h-100">
+                <div class="card-body">
+                    <div class="stat-label">Total Warehouses</div>
+                    <div class="stat-value">{{ total_warehouses }}</div>
+                    <small class="text-muted"><i class="fas fa-building me-1"></i>Active locations</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card h-100">
+                <div class="card-body">
+                    <div class="stat-label">Total SKUs</div>
+                    <div class="stat-value">{{ total_items }}</div>
+                    <small class="text-muted"><i class="fas fa-barcode me-1"></i>Unique products</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card warning h-100">
+                <div class="card-body">
+                    <div class="stat-label">Low Stock Alerts</div>
+                    <div class="stat-value text-warning">{{ low_stock_count }}</div>
+                    <small class="text-muted"><i class="fas fa-exclamation-triangle me-1"></i>Items to reorder</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card success h-100">
+                <div class="card-body">
+                    <div class="stat-label">Inventory Value</div>
+                    <div class="stat-value text-success">${{ total_value|floatformat:0|intcomma }}</div>
+                    <small class="text-muted"><i class="fas fa-dollar-sign me-1"></i>Total asset value</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Main Warehouses -->
+        <div class="col-lg-8 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Warehouse Overview</h5>
+                    <a href="{% url 'inventory:warehouse_list' %}" class="btn btn-sm btn-link">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Warehouse</th>
+                                    <th>Code</th>
+                                    <th>Items</th>
+                                    <th>Total Value</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for warehouse in warehouses %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'inventory:warehouse_detail' warehouse.pk %}" class="fw-bold text-decoration-none">
+                                            {{ warehouse.name }}
+                                        </a>
+                                    </td>
+                                    <td><code>{{ warehouse.code }}</code></td>
+                                    <td>{{ warehouse.total_items }}</td>
+                                    <td>${{ warehouse.total_value|floatformat:2|intcomma }}</td>
+                                    <td>
+                                        <span class="badge bg-success">Active</span>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'inventory:warehouse_detail' warehouse.pk %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stock Status Distribution (Placeholder for now) -->
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-3">
+                        <button class="btn btn-light text-start p-3 border rounded-3">
+                            <i class="fas fa-file-import text-primary me-3"></i>
+                            Import Inventory CSV
+                        </button>
+                        <button class="btn btn-light text-start p-3 border rounded-3">
+                            <i class="fas fa-file-export text-primary me-3"></i>
+                            Export Stock Report
+                        </button>
+                        <button class="btn btn-light text-start p-3 border rounded-3 text-warning">
+                            <i class="fas fa-sync text-warning me-3"></i>
+                            Run Stock Reconciliation
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

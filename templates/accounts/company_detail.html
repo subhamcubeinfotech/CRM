@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ company.name }} - FreightPro{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'accounts:company_list' %}">Directory</a></li>
+            <li class="breadcrumb-item active">{{ company.name }}</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div class="d-flex align-items-center">
+            <div class="avatar-lg bg-primary bg-opacity-10 text-primary rounded d-flex align-items-center justify-content-center me-4" style="width: 80px; height: 80px; font-size: 2rem;">
+                <i class="fas fa-building"></i>
+            </div>
+            <div>
+                <h1 class="h2 mb-1">{{ company.name }}</h1>
+                <div class="d-flex align-items-center">
+                    <span class="badge {% if company.company_type == 'customer' %}bg-info{% elif company.company_type == 'carrier' %}bg-warning text-dark{% else %}bg-secondary{% endif %} me-2">
+                        {{ company.get_company_type_display }}
+                    </span>
+                    <span class="text-muted"><i class="fas fa-id-badge me-1"></i>Tax ID: {{ company.tax_id|default:"N/A" }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="btn-group">
+            <button class="btn btn-outline-primary"><i class="fas fa-edit me-2"></i>Edit Profile</button>
+            <button class="btn btn-primary"><i class="fas fa-plus me-2"></i>New Action</button>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Contact & Address -->
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white py-3">
+                    <h5 class="card-title mb-0">Contact Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <label class="small text-muted text-uppercase fw-bold mb-2 d-block">Location</label>
+                        <p class="mb-0 fw-medium">{{ company.full_address }}</p>
+                    </div>
+                    <div class="mb-4">
+                        <label class="small text-muted text-uppercase fw-bold mb-2 d-block">Communication</label>
+                        <div class="mb-2"><i class="fas fa-envelope me-2 text-muted"></i>{{ company.email|default:"Not provided" }}</div>
+                        <div class="mb-2"><i class="fas fa-phone me-2 text-muted"></i>{{ company.phone|default:"Not provided" }}</div>
+                        <div><i class="fas fa-globe me-2 text-muted"></i><a href="{{ company.website }}" target="_blank" class="text-decoration-none">{{ company.website|default:"No website" }}</a></div>
+                    </div>
+                    <hr>
+                    <div>
+                        <label class="small text-muted text-uppercase fw-bold mb-2 d-block">Financial Settings</label>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Payment Terms:</span>
+                            <span class="fw-bold">{{ company.payment_terms }} Days</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Credit Limit:</span>
+                            <span class="fw-bold text-success">${{ company.credit_limit|default:"0" }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Activity/Tables -->
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                    <h5 class="card-title mb-0">Recent Activity</h5>
+                    <ul class="nav nav-pills card-header-pills" id="companyTabs" role="tablist">
+                        <li class="nav-item">
+                            <button class="nav-link active py-1 px-3" id="shipments-tab" data-bs-toggle="tab" data-bs-target="#shipments" type="button">Shipments</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link py-1 px-3" id="invoices-tab" data-bs-toggle="tab" data-bs-target="#invoices" type="button">Invoices</button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body p-0">
+                    <div class="tab-content" id="companyTabsContent">
+                        <!-- Shipments Tab -->
+                        <div class="tab-pane fade show active" id="shipments" role="tabpanel">
+                            {% if shipments %}
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="bg-light small">
+                                        <tr>
+                                            <th class="ps-4">No.</th>
+                                            <th>Route</th>
+                                            <th>Status</th>
+                                            <th class="text-end pe-4">Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for shipment in shipments %}
+                                        <tr>
+                                            <td class="ps-4 fw-bold text-primary">{{ shipment.shipment_number }}</td>
+                                            <td>{{ shipment.origin_city }} → {{ shipment.destination_city }}</td>
+                                            <td><span class="badge badge-{{ shipment.status }}">{{ shipment.get_status_display }}</span></td>
+                                            <td class="text-end pe-4 small text-muted">{{ shipment.created_at|date:"M d, Y" }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="text-center py-5 text-muted">
+                                <i class="fas fa-box-open fa-2x mb-3 opacity-25"></i>
+                                <p>No recent shipments found.</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <!-- Invoices Tab -->
+                        <div class="tab-pane fade" id="invoices" role="tabpanel">
+                            {% if invoices %}
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="bg-light small">
+                                        <tr>
+                                            <th class="ps-4">No.</th>
+                                            <th>Total</th>
+                                            <th>Status</th>
+                                            <th class="text-end pe-4">Due Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for invoice in invoices %}
+                                        <tr>
+                                            <td class="ps-4 fw-bold text-primary">{{ invoice.invoice_number }}</td>
+                                            <td class="fw-bold">${{ invoice.total }}</td>
+                                            <td><span class="badge bg-{% if invoice.status == 'paid' %}success{% elif invoice.status == 'overdue' %}danger{% else %}warning text-dark{% endif %}">{{ invoice.get_status_display }}</span></td>
+                                            <td class="text-end pe-4 small text-muted">{{ invoice.due_date|date:"M d, Y" }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="text-center py-5 text-muted">
+                                <i class="fas fa-file-invoice-dollar fa-2x mb-3 opacity-25"></i>
+                                <p>No recent invoices found.</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

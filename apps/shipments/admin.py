@@ -1,0 +1,130 @@
+"""
+Shipments Admin Configuration
+"""
+from django.contrib import admin
+from .models import Shipment, Container, ShipmentMilestone, Document
+
+
+class ContainerInline(admin.TabularInline):
+    model = Container
+    extra = 0
+
+
+class ShipmentMilestoneInline(admin.TabularInline):
+    model = ShipmentMilestone
+    extra = 0
+    readonly_fields = ['timestamp']
+
+
+class DocumentInline(admin.TabularInline):
+    model = Document
+    extra = 0
+    readonly_fields = ['uploaded_at']
+
+
+@admin.register(Shipment)
+class ShipmentAdmin(admin.ModelAdmin):
+    list_display = [
+        'shipment_number', 'customer', 'origin_city', 'destination_city', 
+        'status', 'shipment_type', 'created_at'
+    ]
+    list_filter = [
+        'status', 'shipment_type', 'is_hazmat', 'is_temperature_controlled',
+        'created_at', 'pickup_date'
+    ]
+    search_fields = [
+        'shipment_number', 'tracking_number', 'booking_number',
+        'customer__name', 'origin_city', 'destination_city'
+    ]
+    readonly_fields = [
+        'shipment_number', 'gross_profit', 'profit_margin', 
+        'created_at', 'updated_at'
+    ]
+    inlines = [ContainerInline, ShipmentMilestoneInline, DocumentInline]
+    
+    fieldsets = (
+        ('Identification', {
+            'fields': ('shipment_number', 'tracking_number', 'booking_number')
+        }),
+        ('Parties', {
+            'fields': ('customer', 'carrier', 'shipper', 'consignee')
+        }),
+        ('Shipment Details', {
+            'fields': ('shipment_type', 'status')
+        }),
+        ('Origin', {
+            'fields': (
+                'origin_address', 'origin_city', 'origin_state', 
+                'origin_country', 'origin_postal_code',
+                'origin_latitude', 'origin_longitude'
+            )
+        }),
+        ('Destination', {
+            'fields': (
+                'destination_address', 'destination_city', 'destination_state',
+                'destination_country', 'destination_postal_code',
+                'destination_latitude', 'destination_longitude'
+            )
+        }),
+        ('Current Location', {
+            'fields': ('current_latitude', 'current_longitude'),
+            'classes': ('collapse',)
+        }),
+        ('Schedule', {
+            'fields': ('pickup_date', 'estimated_delivery_date', 'actual_delivery_date')
+        }),
+        ('Cargo', {
+            'fields': (
+                'total_weight', 'total_volume', 'number_of_pieces', 
+                'commodity_description'
+            )
+        }),
+        ('Special Requirements', {
+            'fields': ('is_hazmat', 'is_temperature_controlled', 'requires_insurance')
+        }),
+        ('Financial', {
+            'fields': (
+                'quoted_amount', 'cost', 'revenue',
+                'gross_profit', 'profit_margin'
+            )
+        }),
+        ('Notes', {
+            'fields': ('special_instructions', 'internal_notes'),
+            'classes': ('collapse',)
+        }),
+        ('Metadata', {
+            'fields': ('created_by', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def gross_profit(self, obj):
+        return f"${obj.gross_profit:,.2f}"
+    gross_profit.short_description = 'Gross Profit'
+    
+    def profit_margin(self, obj):
+        return f"{obj.profit_margin:.1f}%"
+    profit_margin.short_description = 'Profit Margin'
+
+
+@admin.register(Container)
+class ContainerAdmin(admin.ModelAdmin):
+    list_display = ['container_number', 'shipment', 'size', 'weight']
+    list_filter = ['size']
+    search_fields = ['container_number', 'seal_number', 'shipment__shipment_number']
+
+
+@admin.register(ShipmentMilestone)
+class ShipmentMilestoneAdmin(admin.ModelAdmin):
+    list_display = ['shipment', 'status', 'location', 'timestamp']
+    list_filter = ['status', 'timestamp']
+    search_fields = ['shipment__shipment_number', 'location', 'status']
+    readonly_fields = ['timestamp']
+
+
+@admin.register(Document)
+class DocumentAdmin(admin.ModelAdmin):
+    list_display = ['title', 'shipment', 'document_type', 'uploaded_by', 'uploaded_at']
+    list_filter = ['document_type', 'uploaded_at']
+    search_fields = ['title', 'shipment__shipment_number']
+    readonly_fields = ['uploaded_at']

@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block title %}Add Payment - Invoice {{ invoice.invoice_number }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'invoicing:invoice_list' %}">Invoices</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'invoicing:invoice_detail' invoice.pk %}">{{ invoice.invoice_number }}</a></li>
+            <li class="breadcrumb-item active">Record Payment</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white py-3">
+                    <h5 class="card-title mb-0">Record Payment for {{ invoice.invoice_number }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info mb-4">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span>Balance Due:</span>
+                            <span class="h4 mb-0 fw-bold">${{ invoice.balance_due|floatformat:2 }}</span>
+                        </div>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Amount ($) <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" step="0.01" name="amount" class="form-control" value="{{ invoice.balance_due|floatformat:2 }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Payment Date <span class="text-danger">*</span></label>
+                                <input type="date" name="payment_date" class="form-control" value="{{ today|date:'Y-m-d' }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Payment Method <span class="text-danger">*</span></label>
+                                <select name="payment_method" class="form-select" required>
+                                    {% for code, name in payment_methods %}
+                                    <option value="{{ code }}">{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Transaction ID / Ref #</label>
+                                <input type="text" name="transaction_id" class="form-control" placeholder="Optional">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Notes</label>
+                                <textarea name="notes" class="form-control" rows="3" placeholder="Add any payment details here..."></textarea>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 pt-4 border-top d-flex justify-content-between">
+                            <a href="{% url 'invoicing:invoice_detail' invoice.pk %}" class="btn btn-outline-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-check-circle me-1"></i>Record Payment
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

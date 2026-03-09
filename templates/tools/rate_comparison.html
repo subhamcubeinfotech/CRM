@@ -1,0 +1,489 @@
+{% extends 'base.html' %}
+
+{% block title %}Rate Comparison - Freight Forwarding Platform{% endblock %}
+
+{% block extra_css %}
+<style>
+    .rate-card {
+        border: 2px solid #e9ecef;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 15px;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+    
+    .rate-card:hover {
+        border-color: #667eea;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+    }
+    
+    .rate-card.best-rate {
+        border-color: #28a745;
+        background-color: rgba(40, 167, 69, 0.05);
+    }
+    
+    .rate-card.best-rate:hover {
+        border-color: #28a745;
+        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.15);
+    }
+    
+    .rate-card.selected {
+        border-color: #667eea;
+        background-color: rgba(102, 126, 234, 0.05);
+    }
+    
+    .best-rate-badge {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+    
+    .carrier-logo {
+        width: 50px;
+        height: 50px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.25rem;
+        font-weight: bold;
+    }
+    
+    .profit-display {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #28a745;
+    }
+    
+    .quote-display {
+        font-size: 2rem;
+        font-weight: 600;
+        color: #667eea;
+    }
+    
+    .cost-display {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #333;
+    }
+    
+    .comparison-table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+    }
+    
+    .comparison-table .best-cell {
+        background-color: rgba(40, 167, 69, 0.1);
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="mb-4">
+        <h1 class="h2"><i class="fas fa-calculator me-2 text-primary"></i>Rate Comparison & Profit Calculator</h1>
+        <p class="text-muted">Compare freight rates from multiple carriers and calculate your profit margins</p>
+    </div>
+    
+    <div class="row">
+        <!-- Column 1: Input Form -->
+        <div class="col-lg-3">
+            <div class="card sticky-top" style="top: 20px; z-index: 100;">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0"><i class="fas fa-edit me-2 text-primary"></i>Quote Details</h5>
+                </div>
+                <div class="card-body">
+                    <form id="rateForm">
+                        <div class="mb-3">
+                            <label class="form-label">Origin</label>
+                            <input type="text" id="origin" class="form-control" placeholder="e.g., New York, NY" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Destination</label>
+                            <input type="text" id="destination" class="form-control" placeholder="e.g., Los Angeles, CA" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Weight (lbs)</label>
+                            <input type="number" id="weight" class="form-control" placeholder="e.g., 1000" value="1000" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Dimensions (optional)</label>
+                            <input type="text" id="dimensions" class="form-control" placeholder="L x W x H inches">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Shipment Type</label>
+                            <select id="shipmentType" class="form-select">
+                                {% for code, label in shipment_types %}
+                                <option value="{{ code }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Service Level</label>
+                            <select id="serviceLevel" class="form-select">
+                                {% for code, label in service_levels %}
+                                <option value="{{ code }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-search me-2"></i>Get Rates
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Column 2: Rate Results -->
+        <div class="col-lg-5">
+            <div class="card">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0"><i class="fas fa-truck me-2 text-primary"></i>Carrier Rates</h5>
+                    <span id="resultsCount" class="badge bg-secondary">0 results</span>
+                </div>
+                <div class="card-body" id="rateResults">
+                    <div class="text-center py-5 text-muted">
+                        <i class="fas fa-search-dollar fa-3x mb-3"></i>
+                        <h5>Enter shipment details</h5>
+                        <p>Fill out the form and click "Get Rates" to see carrier quotes</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Column 3: Profit Calculator -->
+        <div class="col-lg-4">
+            <div class="card sticky-top" style="top: 20px; z-index: 100;">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0"><i class="fas fa-chart-line me-2 text-primary"></i>Profit Calculator</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <label class="form-label">Carrier Cost ($)</label>
+                        <input type="number" id="carrierCost" class="form-control form-control-lg" value="0" step="0.01" readonly>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label">Additional Costs ($)</label>
+                        <input type="number" id="additionalCosts" class="form-control" value="0" step="0.01">
+                        <small class="text-muted">Fuel, insurance, fees, etc.</small>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label">Markup Percentage (%)</label>
+                        <div class="input-group">
+                            <input type="number" id="markupPercent" class="form-control" value="35" step="1">
+                            <span class="input-group-text">%</span>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <!-- Results -->
+                    <div class="text-center mb-3">
+                        <small class="text-muted text-uppercase">Total Cost</small>
+                        <div class="cost-display" id="totalCost">$0.00</div>
+                    </div>
+                    
+                    <div class="text-center mb-3">
+                        <small class="text-muted text-uppercase">Customer Quote</small>
+                        <div class="quote-display" id="customerQuote">$0.00</div>
+                    </div>
+                    
+                    <div class="text-center mb-4">
+                        <small class="text-muted text-uppercase">Your Profit</small>
+                        <div class="profit-display" id="profit">$0.00</div>
+                        <div class="text-success fw-bold" id="margin">0.0%</div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary" id="generateQuoteBtn" disabled>
+                            <i class="fas fa-file-pdf me-2"></i>Generate Customer Quote
+                        </button>
+                        <button class="btn btn-outline-primary" id="bookRateBtn" disabled>
+                            <i class="fas fa-check me-2"></i>Book This Rate
+                        </button>
+                        <button class="btn btn-outline-secondary" id="saveQuoteBtn" disabled>
+                            <i class="fas fa-save me-2"></i>Save Quote
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Comparison Table -->
+    <div class="row mt-4" id="comparisonSection" style="display: none;">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0"><i class="fas fa-table me-2 text-primary"></i>Carrier Comparison</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered comparison-table" id="comparisonTable">
+                            <thead>
+                                <tr>
+                                    <th>Carrier</th>
+                                    <th>Base Rate</th>
+                                    <th>Fuel Surcharge</th>
+                                    <th>Insurance</th>
+                                    <th>Additional Fees</th>
+                                    <th>Total Cost</th>
+                                    <th>Your Quote (35%)</th>
+                                    <th>Your Profit</th>
+                                </tr>
+                            </thead>
+                            <tbody id="comparisonTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentRates = [];
+    let selectedCarrier = null;
+    
+    // Rate form submission
+    document.getElementById('rateForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const origin = document.getElementById('origin').value;
+        const destination = document.getElementById('destination').value;
+        const weight = document.getElementById('weight').value;
+        const shipmentType = document.getElementById('shipmentType').value;
+        const serviceLevel = document.getElementById('serviceLevel').value;
+        
+        // Show loading
+        document.getElementById('rateResults').innerHTML = `
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="mt-2">Getting rates...</p>
+            </div>
+        `;
+        
+        try {
+            const response = await fetch('{% url "tools:calculate_rates" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    origin: origin,
+                    destination: destination,
+                    weight: weight,
+                    shipment_type: shipmentType,
+                    service_level: serviceLevel
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                currentRates = data.rates;
+                displayRates(data.rates);
+                displayComparisonTable(data.rates);
+                
+                // Auto-select best rate
+                if (data.rates.length > 0) {
+                    selectCarrier(data.rates[0]);
+                }
+            } else {
+                document.getElementById('rateResults').innerHTML = `
+                    <div class="alert alert-danger">Error getting rates. Please try again.</div>
+                `;
+            }
+        } catch (error) {
+            document.getElementById('rateResults').innerHTML = `
+                <div class="alert alert-danger">Error getting rates. Please try again.</div>
+            `;
+        }
+    });
+    
+    function displayRates(rates) {
+        document.getElementById('resultsCount').textContent = `${rates.length} results`;
+        
+        let html = '';
+        rates.forEach((rate, index) => {
+            const isBest = rate.is_best_rate;
+            html += `
+                <div class="rate-card ${isBest ? 'best-rate' : ''}" data-index="${index}" onclick="selectCarrier(currentRates[${index}])">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="d-flex align-items-center">
+                            <div class="carrier-logo me-3">${rate.carrier_name.charAt(0)}</div>
+                            <div>
+                                <h5 class="mb-1">${rate.carrier_name}</h5>
+                                <small class="text-muted">
+                                    <i class="fas fa-clock me-1"></i>${rate.transit_days_min}-${rate.transit_days_max} days transit
+                                </small>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            ${isBest ? '<span class="best-rate-badge mb-2 d-inline-block">BEST RATE</span>' : ''}
+                            <h4 class="mb-0 text-primary">$${rate.total_cost.toFixed(2)}</h4>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row text-center">
+                        <div class="col-3">
+                            <small class="text-muted d-block">Base Rate</small>
+                            <span class="fw-bold">$${rate.base_rate.toFixed(2)}</span>
+                        </div>
+                        <div class="col-3">
+                            <small class="text-muted d-block">Fuel</small>
+                            <span class="fw-bold">$${rate.fuel_surcharge.toFixed(2)}</span>
+                        </div>
+                        <div class="col-3">
+                            <small class="text-muted d-block">Insurance</small>
+                            <span class="fw-bold">$${rate.insurance.toFixed(2)}</span>
+                        </div>
+                        <div class="col-3">
+                            <small class="text-muted d-block">Fees</small>
+                            <span class="fw-bold">$${rate.additional_fees.toFixed(2)}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        document.getElementById('rateResults').innerHTML = html;
+    }
+    
+    function selectCarrier(rate) {
+        selectedCarrier = rate;
+        
+        // Update UI
+        document.querySelectorAll('.rate-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+        const selectedCard = document.querySelector(`[data-index="${currentRates.indexOf(rate)}"]`);
+        if (selectedCard) {
+            selectedCard.classList.add('selected');
+        }
+        
+        // Update calculator
+        document.getElementById('carrierCost').value = rate.total_cost.toFixed(2);
+        calculateProfit();
+        
+        // Enable buttons
+        document.getElementById('generateQuoteBtn').disabled = false;
+        document.getElementById('bookRateBtn').disabled = false;
+        document.getElementById('saveQuoteBtn').disabled = false;
+    }
+    
+    function calculateProfit() {
+        const carrierCost = parseFloat(document.getElementById('carrierCost').value) || 0;
+        const additionalCosts = parseFloat(document.getElementById('additionalCosts').value) || 0;
+        const markupPercent = parseFloat(document.getElementById('markupPercent').value) || 0;
+        
+        const totalCost = carrierCost + additionalCosts;
+        const customerQuote = totalCost * (1 + markupPercent / 100);
+        const profit = customerQuote - totalCost;
+        const margin = (profit / customerQuote * 100);
+        
+        document.getElementById('totalCost').textContent = '$' + totalCost.toFixed(2);
+        document.getElementById('customerQuote').textContent = '$' + customerQuote.toFixed(2);
+        document.getElementById('profit').textContent = '$' + profit.toFixed(2);
+        document.getElementById('margin').textContent = margin.toFixed(1) + '%';
+    }
+    
+    // Attach event listeners
+    document.getElementById('carrierCost').addEventListener('input', calculateProfit);
+    document.getElementById('additionalCosts').addEventListener('input', calculateProfit);
+    document.getElementById('markupPercent').addEventListener('input', calculateProfit);
+    
+    function displayComparisonTable(rates) {
+        document.getElementById('comparisonSection').style.display = 'block';
+        
+        const markupPercent = parseFloat(document.getElementById('markupPercent').value) || 35;
+        
+        let html = '';
+        rates.forEach((rate, index) => {
+            const customerQuote = rate.total_cost * (1 + markupPercent / 100);
+            const profit = customerQuote - rate.total_cost;
+            const isBest = rate.is_best_rate;
+            
+            html += `
+                <tr>
+                    <td class="${isBest ? 'best-cell' : ''}">${rate.carrier_name}</td>
+                    <td>$${rate.base_rate.toFixed(2)}</td>
+                    <td>$${rate.fuel_surcharge.toFixed(2)}</td>
+                    <td>$${rate.insurance.toFixed(2)}</td>
+                    <td>$${rate.additional_fees.toFixed(2)}</td>
+                    <td class="${isBest ? 'best-cell' : ''}">$${rate.total_cost.toFixed(2)}</td>
+                    <td>$${customerQuote.toFixed(2)}</td>
+                    <td class="text-success fw-bold">$${profit.toFixed(2)}</td>
+                </tr>
+            `;
+        });
+        
+        document.getElementById('comparisonTableBody').innerHTML = html;
+    }
+    
+    // Update comparison table when markup changes
+    document.getElementById('markupPercent').addEventListener('input', function() {
+        if (currentRates.length > 0) {
+            displayComparisonTable(currentRates);
+        }
+    });
+    
+    // Generate quote PDF
+    document.getElementById('generateQuoteBtn').addEventListener('click', async function() {
+        if (!selectedCarrier) return;
+        
+        const data = {
+            carrier_cost: parseFloat(document.getElementById('carrierCost').value),
+            additional_costs: parseFloat(document.getElementById('additionalCosts').value),
+            markup_percent: parseFloat(document.getElementById('markupPercent').value),
+            customer_quote: parseFloat(document.getElementById('customerQuote').textContent.replace('$', '')),
+            profit: parseFloat(document.getElementById('profit').textContent.replace('$', ''))
+        };
+        
+        try {
+            const response = await fetch('{% url "tools:generate_quote_pdf" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            if (result.success) {
+                alert('Quote generated successfully!');
+            } else {
+                alert('Error generating quote. Please try again.');
+            }
+        } catch (error) {
+            alert('Error generating quote. Please try again.');
+        }
+    });
+    
+    // Book rate button
+    document.getElementById('bookRateBtn').addEventListener('click', function() {
+        if (!selectedCarrier) return;
+        alert('Redirecting to booking page for ' + selectedCarrier.carrier_name);
+    });
+    
+    // Save quote button
+    document.getElementById('saveQuoteBtn').addEventListener('click', function() {
+        if (!selectedCarrier) return;
+        alert('Quote saved successfully!');
+    });
+</script>
+{% endblock %}

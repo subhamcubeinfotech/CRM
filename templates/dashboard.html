@@ -1,0 +1,234 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Dashboard - Freight Forwarding Platform{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2"><i class="fas fa-tachometer-alt me-2 text-primary"></i>Dashboard</h1>
+        <div>
+            <a href="{% url 'shipments:shipment_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>New Shipment
+            </a>
+        </div>
+    </div>
+    
+    <!-- Stat Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card h-100">
+                <div class="card-body">
+                    <div class="stat-label">Active Shipments</div>
+                    <div class="stat-value">{{ active_shipments }}</div>
+                    <small class="text-muted">
+                        <i class="fas fa-box me-1"></i>In progress
+                    </small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card success h-100">
+                <div class="card-body">
+                    <div class="stat-label">Monthly Revenue</div>
+                    <div class="stat-value">${{ monthly_revenue|floatformat:0|intcomma }}</div>
+                    <small class="text-success">
+                        <i class="fas fa-arrow-up me-1"></i>This month
+                    </small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card warning h-100">
+                <div class="card-body">
+                    <div class="stat-label">Pending Invoices</div>
+                    <div class="stat-value">{{ pending_invoices_count }}</div>
+                    <small class="text-muted">
+                        <i class="fas fa-dollar-sign me-1"></i>${{ pending_invoices_total|floatformat:0|intcomma }} outstanding
+                    </small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card success h-100">
+                <div class="card-body">
+                    <div class="stat-label">On-Time Delivery</div>
+                    <div class="stat-value">{{ on_time_rate }}%</div>
+                    <small class="text-success">
+                        <i class="fas fa-check-circle me-1"></i>Performance
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <div class="col-md-8 mb-3">
+            <div class="card h-100">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0"><i class="fas fa-chart-line me-2 text-primary"></i>Revenue Trend (Last 6 Months)</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="revenueChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0"><i class="fas fa-chart-pie me-2 text-primary"></i>Shipment Status</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="statusChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Shipments -->
+    <div class="card">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0"><i class="fas fa-box me-2 text-primary"></i>Recent Shipments</h5>
+            <a href="{% url 'shipments:shipment_list' %}" class="btn btn-sm btn-outline-primary">View All</a>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Shipment #</th>
+                            <th>Customer</th>
+                            <th>Route</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Delivery Date</th>
+                            <th>Revenue</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for shipment in recent_shipments %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'shipments:shipment_detail' shipment.pk %}" class="fw-bold text-decoration-none">
+                                    {{ shipment.shipment_number }}
+                                </a>
+                            </td>
+                            <td>{{ shipment.customer.name }}</td>
+                            <td>
+                                <small>{{ shipment.origin_city }} <i class="fas fa-arrow-right mx-1 text-muted"></i> {{ shipment.destination_city }}</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">{{ shipment.get_shipment_type_display }}</span>
+                            </td>
+                            <td>
+                                <span class="badge badge-{{ shipment.status }}">{{ shipment.get_status_display }}</span>
+                            </td>
+                            <td>
+                                {% if shipment.estimated_delivery_date %}
+                                    {{ shipment.estimated_delivery_date|date:"M d, Y" }}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>${{ shipment.revenue|floatformat:2 }}</td>
+                            <td>
+                                <a href="{% url 'shipments:shipment_detail' shipment.pk %}" class="btn btn-sm btn-outline-primary me-1">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'shipments:shipment_edit' shipment.pk %}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center py-4 text-muted">
+                                <i class="fas fa-box-open fa-2x mb-2"></i>
+                                <p>No shipments found</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Revenue Chart
+    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+    new Chart(revenueCtx, {
+        type: 'line',
+        data: {
+            labels: {{ revenue_labels|safe }},
+            datasets: [{
+                label: 'Revenue ($)',
+                data: {{ revenue_data|safe }},
+                borderColor: '#667eea',
+                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                borderWidth: 3,
+                tension: 0.4,
+                fill: true,
+                pointBackgroundColor: '#667eea',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 5,
+                pointHoverRadius: 7
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value.toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Status Chart
+    const statusCtx = document.getElementById('statusChart').getContext('2d');
+    new Chart(statusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ status_labels|safe }},
+            datasets: [{
+                data: {{ status_data|safe }},
+                backgroundColor: ['#667eea', '#28a745', '#ffc107', '#17a2b8'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 15,
+                        usePointStyle: true
+                    }
+                }
+            },
+            cutout: '65%'
+        }
+    });
+</script>
+{% endblock %}

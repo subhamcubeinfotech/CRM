@@ -1,0 +1,312 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if is_create %}Create{% else %}Edit{% endif %} Shipment - Freight Forwarding Platform{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'shipments:shipment_list' %}">Shipments</a></li>
+                <li class="breadcrumb-item active">{% if is_create %}Create{% else %}Edit{% endif %}</li>
+            </ol>
+        </nav>
+        <h1 class="h2">{% if is_create %}<i class="fas fa-plus me-2 text-primary"></i>Create New Shipment{% else %}<i class="fas fa-edit me-2 text-primary"></i>Edit Shipment{% endif %}</h1>
+    </div>
+    
+    <form method="post" class="needs-validation" novalidate>
+        {% csrf_token %}
+        
+        <div class="row">
+            <!-- Left Column -->
+            <div class="col-lg-8">
+                <!-- Basic Information -->
+                <div class="card mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0"><i class="fas fa-info-circle me-2 text-primary"></i>Basic Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Customer <span class="text-danger">*</span></label>
+                                <select name="customer" class="form-select" required>
+                                    <option value="">Select Customer</option>
+                                    {% for customer in customers %}
+                                    <option value="{{ customer.pk }}" {% if shipment and shipment.customer_id == customer.pk %}selected{% endif %}>{{ customer.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Carrier</label>
+                                <select name="carrier" class="form-select">
+                                    <option value="">Select Carrier</option>
+                                    {% for carrier in carriers %}
+                                    <option value="{{ carrier.pk }}" {% if shipment and shipment.carrier_id == carrier.pk %}selected{% endif %}>{{ carrier.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Shipper</label>
+                                <select name="shipper" class="form-select">
+                                    <option value="">Same as Customer</option>
+                                    {% for company in all_companies %}
+                                    <option value="{{ company.pk }}" {% if shipment and shipment.shipper_id == company.pk %}selected{% endif %}>{{ company.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Consignee</label>
+                                <select name="consignee" class="form-select">
+                                    <option value="">Not Specified</option>
+                                    {% for company in all_companies %}
+                                    <option value="{{ company.pk }}" {% if shipment and shipment.consignee_id == company.pk %}selected{% endif %}>{{ company.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Shipment Type</label>
+                                <select name="shipment_type" class="form-select">
+                                    {% for code, label in shipment_types %}
+                                    <option value="{{ code }}" {% if shipment and shipment.shipment_type == code %}selected{% elif not shipment and code == 'road' %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Tracking Number</label>
+                                <input type="text" name="tracking_number" class="form-control" value="{{ shipment.tracking_number|default:'' }}" placeholder="Auto-generated if empty">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Origin -->
+                <div class="card mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0"><i class="fas fa-map-marker-alt me-2 text-success"></i>Origin</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Address</label>
+                            <input type="text" name="origin_address" class="form-control" value="{{ shipment.origin_address|default:'' }}">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">City</label>
+                                <input type="text" name="origin_city" class="form-control" value="{{ shipment.origin_city|default:'' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">State</label>
+                                <input type="text" name="origin_state" class="form-control" value="{{ shipment.origin_state|default:'' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Postal Code</label>
+                                <input type="text" name="origin_postal_code" class="form-control" value="{{ shipment.origin_postal_code|default:'' }}">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Country</label>
+                            <input type="text" name="origin_country" class="form-control" value="{{ shipment.origin_country|default:'USA' }}">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Destination -->
+                <div class="card mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0"><i class="fas fa-map-marker-alt me-2 text-danger"></i>Destination</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Address</label>
+                            <input type="text" name="destination_address" class="form-control" value="{{ shipment.destination_address|default:'' }}">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">City</label>
+                                <input type="text" name="destination_city" class="form-control" value="{{ shipment.destination_city|default:'' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">State</label>
+                                <input type="text" name="destination_state" class="form-control" value="{{ shipment.destination_state|default:'' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Postal Code</label>
+                                <input type="text" name="destination_postal_code" class="form-control" value="{{ shipment.destination_postal_code|default:'' }}">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Country</label>
+                            <input type="text" name="destination_country" class="form-control" value="{{ shipment.destination_country|default:'USA' }}">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Cargo Details -->
+                <div class="card mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0"><i class="fas fa-boxes me-2 text-primary"></i>Cargo Details</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Weight (kg)</label>
+                                <input type="number" name="total_weight" class="form-control" value="{{ shipment.total_weight|default:'0' }}" step="0.01">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Volume (m³)</label>
+                                <input type="number" name="total_volume" class="form-control" value="{{ shipment.total_volume|default:'0' }}" step="0.0001">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Number of Pieces</label>
+                                <input type="number" name="number_of_pieces" class="form-control" value="{{ shipment.number_of_pieces|default:'1' }}">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Commodity Description</label>
+                            <textarea name="commodity_description" class="form-control" rows="3">{{ shipment.commodity_description|default:'' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Column -->
+            <div class="col-lg-4">
+                <!-- Schedule -->
+                <div class="card mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0"><i class="fas fa-calendar me-2 text-primary"></i>Schedule</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Pickup Date</label>
+                            <input type="date" name="pickup_date" class="form-control" value="{{ shipment.pickup_date|date:'Y-m-d'|default:'' }}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Estimated Delivery Date</label>
+                            <input type="date" name="estimated_delivery_date" class="form-control" value="{{ shipment.estimated_delivery_date|date:'Y-m-d'|default:'' }}">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Special Requirements -->
+                <div class="card mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0"><i class="fas fa-exclamation-triangle me-2 text-warning"></i>Special Requirements</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-check mb-2">
+                            <input type="checkbox" name="is_hazmat" class="form-check-input" id="is_hazmat" {% if shipment and shipment.is_hazmat %}checked{% endif %}>
+                            <label class="form-check-label" for="is_hazmat">Hazardous Materials</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input type="checkbox" name="is_temperature_controlled" class="form-check-input" id="is_temperature_controlled" {% if shipment and shipment.is_temperature_controlled %}checked{% endif %}>
+                            <label class="form-check-label" for="is_temperature_controlled">Temperature Controlled</label>
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" name="requires_insurance" class="form-check-input" id="requires_insurance" {% if shipment and shipment.requires_insurance %}checked{% endif %}>
+                            <label class="form-check-label" for="requires_insurance">Requires Insurance</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Financial -->
+                <div class="card mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0"><i class="fas fa-dollar-sign me-2 text-primary"></i>Financial</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Quoted Amount ($)</label>
+                            <input type="number" name="quoted_amount" class="form-control" value="{{ shipment.quoted_amount|default:'0' }}" step="0.01">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Cost ($)</label>
+                            <input type="number" name="cost" class="form-control" value="{{ shipment.cost|default:'0' }}" step="0.01" id="costInput">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Revenue ($)</label>
+                            <input type="number" name="revenue" class="form-control" value="{{ shipment.revenue|default:'0' }}" step="0.01" id="revenueInput">
+                        </div>
+                        <div class="alert alert-info mb-0">
+                            <small>
+                                <strong>Profit:</strong> $<span id="profitDisplay">0.00</span><br>
+                                <strong>Margin:</strong> <span id="marginDisplay">0.0</span>%
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Notes -->
+                <div class="card mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0"><i class="fas fa-sticky-note me-2 text-primary"></i>Notes</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Special Instructions</label>
+                            <textarea name="special_instructions" class="form-control" rows="3">{{ shipment.special_instructions|default:'' }}</textarea>
+                        </div>
+                        <div class="mb-0">
+                            <label class="form-label">Internal Notes</label>
+                            <textarea name="internal_notes" class="form-control" rows="3">{{ shipment.internal_notes|default:'' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Submit Buttons -->
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-save me-2"></i>{% if is_create %}Create Shipment{% else %}Save Changes{% endif %}
+                    </button>
+                    <a href="{% url 'shipments:shipment_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </a>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Real-time profit calculation
+    function calculateProfit() {
+        const cost = parseFloat(document.getElementById('costInput').value) || 0;
+        const revenue = parseFloat(document.getElementById('revenueInput').value) || 0;
+        
+        const profit = revenue - cost;
+        const margin = revenue > 0 ? (profit / revenue * 100) : 0;
+        
+        document.getElementById('profitDisplay').textContent = profit.toFixed(2);
+        document.getElementById('marginDisplay').textContent = margin.toFixed(1);
+    }
+    
+    document.getElementById('costInput').addEventListener('input', calculateProfit);
+    document.getElementById('revenueInput').addEventListener('input', calculateProfit);
+    
+    // Initial calculation
+    calculateProfit();
+    
+    // Form validation
+    (function() {
+        'use strict';
+        var forms = document.querySelectorAll('.needs-validation');
+        Array.prototype.slice.call(forms).forEach(function(form) {
+            form.addEventListener('submit', function(event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            }, false);
+        });
+    })();
+</script>
+{% endblock %}

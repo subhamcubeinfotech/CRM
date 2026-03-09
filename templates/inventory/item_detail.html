@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ item.sku }} - {{ item.product_name }} - FreightPro{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'inventory:dashboard' %}">Inventory</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'inventory:item_list' %}">Items</a></li>
+                <li class="breadcrumb-item active">{{ item.sku }}</li>
+            </ol>
+        </nav>
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="h2">{{ item.product_name }} <small class="text-muted fs-5">({{ item.sku }})</small></h1>
+            <div class="btn-group">
+                <button class="btn btn-outline-primary"><i class="fas fa-edit me-1"></i>Edit Item</button>
+                <button class="btn btn-outline-danger"><i class="fas fa-trash me-1"></i>Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Details Card -->
+            <div class="card mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0">Product Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        <div class="col-md-12">
+                            <label class="small text-muted mb-1">Description</label>
+                            <p>{{ item.description|default:"No description provided." }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="small text-muted mb-1">Warehouse</label>
+                            <p class="fw-bold"><i class="fas fa-warehouse me-2 text-muted"></i>{{ item.warehouse.name }} ({{ item.warehouse.code }})</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="small text-muted mb-1">Bin Location</label>
+                            <p class="fw-bold"><i class="fas fa-th me-2 text-muted"></i>{{ item.location|default:"Not specified" }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="small text-muted mb-1">Lot Number</label>
+                            <p class="fw-bold">{{ item.lot_number|default:"N/A" }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="small text-muted mb-1">Serial Number</label>
+                            <p class="fw-bold">{{ item.serial_number|default:"N/A" }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="small text-muted mb-1">Unit of Measure</label>
+                            <p class="fw-bold">{{ item.unit_of_measure }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Financials & Reorder -->
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header bg-white">
+                            <h5 class="card-title mb-0">Costs & Value</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Unit Cost:</span>
+                                <span class="fw-bold">${{ item.unit_cost|floatformat:2 }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Total Value:</span>
+                                <span class="fw-bold text-primary">${{ item.total_value|floatformat:2 }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header bg-white">
+                            <h5 class="card-title mb-0">Reorder Status</h5>
+                        </div>
+                        <div class="card-body text-center">
+                            <div class="small text-muted mb-2">Reorder Level</div>
+                            <div class="h3 fw-bold">{{ item.reorder_level }}</div>
+                            {% if item.is_low_stock %}
+                                <div class="alert alert-warning py-2 mt-2 mb-0">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>Stock below limit!
+                                </div>
+                            {% else %}
+                                <div class="alert alert-success py-2 mt-2 mb-0">
+                                    <i class="fas fa-check-circle me-2"></i>Stock level healthy
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Current Stock -->
+            <div class="card mb-4 bg-dark text-white shadow">
+                <div class="card-body text-center py-5">
+                    <div class="stat-label text-white-50 mb-2">Current Inventory</div>
+                    <div class="display-3 fw-bold">{{ item.quantity }}</div>
+                    <div class="text-white-50 mb-4">{{ item.unit_of_measure }} available</div>
+                    <button class="btn btn-outline-light px-4">Adjust Stock</button>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0">Inventory Log</h5>
+                </div>
+                <div class="card-body p-0 text-center py-5 text-muted">
+                    <i class="fas fa-history fa-2x mb-2"></i>
+                    <p>No recent transactions</p>
+                    <button class="btn btn-sm btn-link text-decoration-none">View full history</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

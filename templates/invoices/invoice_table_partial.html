@@ -1,0 +1,34 @@
+<div class="table-responsive">
+    <table class="table table-hover align-middle border">
+        <thead class="table-light small">
+            <tr>
+                <th>Invoice #</th>
+                <th>Status</th>
+                <th>Date</th>
+                <th>Due Date</th>
+                <th class="text-end">Total Amount</th>
+                <th class="text-end">Balance</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for invoice in invoices %}
+            <tr>
+                <td><a href="{% url 'invoicing:invoice_detail' invoice.pk %}" class="fw-bold">{{ invoice.invoice_number }}</a></td>
+                <td>
+                    <span class="badge bg-{{ invoice.urgency_class|default:'secondary' }} small">
+                        {{ invoice.get_status_display }}
+                    </span>
+                </td>
+                <td>{{ invoice.invoice_date|date:"M d, Y" }}</td>
+                <td>{{ invoice.due_date|date:"M d, Y" }}</td>
+                <td class="text-end fw-bold">${{ invoice.total|floatformat:2 }}</td>
+                <td class="text-end text-danger fw-bold">${{ invoice.balance_due|floatformat:2 }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" class="text-center py-4 text-muted">No invoices found for this order</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

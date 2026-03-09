@@ -1,0 +1,251 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if invoice %}Edit Invoice {{ invoice.invoice_number }}{% else %}Create New Invoice{% endif %} - FreightPro{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'invoicing:invoice_list' %}">Invoices</a></li>
+            <li class="breadcrumb-item active">{% if invoice %}Edit{% else %}Create{% endif %} Invoice</li>
+        </ol>
+    </nav>
+
+    <form method="post" id="invoice-form">
+        {% csrf_token %}
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h2">
+                <i class="fas fa-file-invoice-dollar me-2 text-primary"></i>
+                {% if invoice %}Edit Invoice {{ invoice.invoice_number }}{% else %}New Invoice{% endif %}
+            </h1>
+            <div>
+                <a href="{% if invoice %}{% url 'invoicing:invoice_detail' invoice.pk %}{% else %}{% url 'invoicing:invoice_list' %}{% endif %}" class="btn btn-outline-secondary me-2">Cancel</a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-1"></i>Save Invoice
+                </button>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Main Details -->
+            <div class="col-lg-8">
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white py-3">
+                        <h5 class="card-title mb-0">General Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Customer <span class="text-danger">*</span></label>
+                                <select name="customer" class="form-select" required>
+                                    <option value="">Select a customer</option>
+                                    {% for customer in customers %}
+                                    <option value="{{ customer.id }}" {% if invoice.customer.id == customer.id %}selected{% endif %}>{{ customer.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Related Shipment</label>
+                                <select name="shipment" class="form-select">
+                                    <option value="">None</option>
+                                    {% for shipment in shipments %}
+                                    <option value="{{ shipment.id }}" {% if invoice.shipment.id == shipment.id %}selected{% endif %}>{{ shipment.shipment_number }} - {{ shipment.origin }} to {{ shipment.destination }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Invoice Date</label>
+                                <input type="date" name="invoice_date" class="form-control" value="{% if invoice %}{{ invoice.invoice_date|date:'Y-m-d' }}{% else %}{{ today|date:'Y-m-d' }}{% endif %}" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Due Date</label>
+                                <input type="date" name="due_date" class="form-control" value="{{ invoice.due_date|date:'Y-m-d' }}" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Tax Rate (%)</label>
+                                <input type="number" step="0.01" name="tax_rate" class="form-control" value="{{ invoice.tax_rate|default:0 }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Line Items -->
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">Line Items</h5>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="add-item">
+                            <i class="fas fa-plus me-1"></i>Add Item
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0" id="items-table">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th class="ps-4">Description</th>
+                                        <th style="width: 120px;">Quantity</th>
+                                        <th style="width: 150px;">Unit Price ($)</th>
+                                        <th style="width: 150px;">Total ($)</th>
+                                        <th class="text-end pe-4"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% if line_items %}
+                                        {% for item in line_items %}
+                                        <tr>
+                                            <td class="ps-4">
+                                                <input type="text" name="description[]" class="form-control" value="{{ item.description }}" required>
+                                            </td>
+                                            <td>
+                                                <input type="number" name="quantity[]" class="form-control qty-input" value="{{ item.quantity }}" min="1" step="1" required>
+                                            </td>
+                                            <td>
+                                                <input type="number" name="unit_price[]" class="form-control price-input" value="{{ item.unit_price }}" step="0.01" required>
+                                            </td>
+                                            <td>
+                                                <span class="fw-bold line-total">${{ item.total }}</span>
+                                            </td>
+                                            <td class="text-end pe-4">
+                                                <button type="button" class="btn btn-sm btn-link text-danger remove-item"><i class="fas fa-trash"></i></button>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    {% else %}
+                                    <tr>
+                                        <td class="ps-4">
+                                            <input type="text" name="description[]" class="form-control" placeholder="Service description" required>
+                                        </td>
+                                        <td>
+                                            <input type="number" name="quantity[]" class="form-control qty-input" value="1" min="1" step="1" required>
+                                        </td>
+                                        <td>
+                                            <input type="number" name="unit_price[]" class="form-control price-input" value="0.00" step="0.01" required>
+                                        </td>
+                                        <td>
+                                            <span class="fw-bold line-total">$0.00</span>
+                                        </td>
+                                        <td class="text-end pe-4">
+                                            <button type="button" class="btn btn-sm btn-link text-danger remove-item"><i class="fas fa-trash"></i></button>
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notes & Totals -->
+            <div class="col-lg-4">
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white py-3">
+                        <h5 class="card-title mb-0">Notes & Terms</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Terms</label>
+                            <input type="text" name="terms" class="form-control" value="{{ invoice.terms|default:'Net 30 days' }}">
+                        </div>
+                        <div class="mb-0">
+                            <label class="form-label fw-bold">Notes</label>
+                            <textarea name="notes" class="form-control" rows="4" placeholder="Additional notes for the customer...">{{ invoice.notes }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm border-0">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Subtotal:</span>
+                            <span class="fw-bold" id="subtotal">$0.00</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Tax:</span>
+                            <span class="fw-bold text-danger" id="tax-amount">$0.00</span>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between">
+                            <span class="h5 mb-0">Total:</span>
+                            <span class="h5 mb-0 fw-bold text-primary" id="total">$0.00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const itemsTable = document.getElementById('items-table').getElementsByTagName('tbody')[0];
+        const addItemBtn = document.getElementById('add-item');
+        
+        function calculateTotals() {
+            let subtotal = 0;
+            const rows = itemsTable.getElementsByTagName('tr');
+            
+            for (let row of rows) {
+                const qty = parseFloat(row.querySelector('.qty-input').value) || 0;
+                const price = parseFloat(row.querySelector('.price-input').value) || 0;
+                const total = qty * price;
+                subtotal += total;
+                row.querySelector('.line-total').textContent = '$' + total.toFixed(2);
+            }
+            
+            const taxRate = parseFloat(document.querySelector('input[name="tax_rate"]').value) || 0;
+            const taxAmount = subtotal * (taxRate / 100);
+            const total = subtotal + taxAmount;
+            
+            document.getElementById('subtotal').textContent = '$' + subtotal.toFixed(2);
+            document.getElementById('tax-amount').textContent = '$' + taxAmount.toFixed(2);
+            document.getElementById('total').textContent = '$' + total.toFixed(2);
+        }
+        
+        addItemBtn.addEventListener('click', function() {
+            const newRow = itemsTable.insertRow();
+            newRow.innerHTML = `
+                <td class="ps-4">
+                    <input type="text" name="description[]" class="form-control" placeholder="Service description" required>
+                </td>
+                <td>
+                    <input type="number" name="quantity[]" class="form-control qty-input" value="1" min="1" step="1" required>
+                </td>
+                <td>
+                    <input type="number" name="unit_price[]" class="form-control price-input" value="0.00" step="0.01" required>
+                </td>
+                <td>
+                    <span class="fw-bold line-total">$0.00</span>
+                </td>
+                <td class="text-end pe-4">
+                    <button type="button" class="btn btn-sm btn-link text-danger remove-item"><i class="fas fa-trash"></i></button>
+                </td>
+            `;
+            calculateTotals();
+        });
+        
+        itemsTable.addEventListener('input', function(e) {
+            if (e.target.classList.contains('qty-input') || e.target.classList.contains('price-input')) {
+                calculateTotals();
+            }
+        });
+        
+        document.querySelector('input[name="tax_rate"]').addEventListener('input', calculateTotals);
+        
+        itemsTable.addEventListener('click', function(e) {
+            if (e.target.closest('.remove-item')) {
+                const row = e.target.closest('tr');
+                if (itemsTable.rows.length > 1) {
+                    row.remove();
+                    calculateTotals();
+                }
+            }
+        });
+        
+        calculateTotals();
+    });
+</script>
+{% endblock %}

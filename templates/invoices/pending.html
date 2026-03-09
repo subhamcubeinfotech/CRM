@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Pending Invoices - Freight Forwarding Platform{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2"><i class="fas fa-exclamation-circle me-2 text-warning"></i>Pending Invoices</h1>
+        <a href="{% url 'invoicing:invoice_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Create Invoice
+        </a>
+    </div>
+    
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card h-100">
+                <div class="card-body">
+                    <div class="stat-label">Total Pending</div>
+                    <div class="stat-value">{{ total_pending }}</div>
+                    <small class="text-muted">
+                        <i class="fas fa-file-invoice me-1"></i>Unpaid invoices
+                    </small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card danger h-100">
+                <div class="card-body">
+                    <div class="stat-label">Overdue Count</div>
+                    <div class="stat-value">{{ overdue_count }}</div>
+                    <small class="text-danger">
+                        <i class="fas fa-exclamation-triangle me-1"></i>Requires attention
+                    </small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card warning h-100">
+                <div class="card-body">
+                    <div class="stat-label">Total Outstanding</div>
+                    <div class="stat-value">${{ total_outstanding|floatformat:0|intcomma }}</div>
+                    <small class="text-muted">
+                        <i class="fas fa-dollar-sign me-1"></i>All pending
+                    </small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card danger h-100">
+                <div class="card-body">
+                    <div class="stat-label">Overdue Amount</div>
+                    <div class="stat-value">${{ overdue_amount|floatformat:0|intcomma }}</div>
+                    <small class="text-danger">
+                        <i class="fas fa-clock me-1"></i>Past due
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Pending Invoices -->
+    <div class="row">
+        {% for invoice in invoices %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 {% if invoice.is_overdue %}border-danger{% elif invoice.days_until_due <= 7 %}border-warning{% endif %}">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <span class="fw-bold">{{ invoice.invoice_number }}</span>
+                    <span class="badge bg-{% if invoice.status == 'overdue' %}danger{% elif invoice.status == 'sent' %}info{% else %}secondary{% endif %}">
+                        {{ invoice.get_status_display }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <h6 class="card-title">{{ invoice.customer.name }}</h6>
+                    <table class="table table-sm table-borderless mb-0">
+                        <tr>
+                            <td class="text-muted">Invoice Date:</td>
+                            <td class="text-end">{{ invoice.invoice_date|date:"M d, Y" }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Due Date:</td>
+                            <td class="text-end {% if invoice.is_overdue %}text-danger fw-bold{% elif invoice.days_until_due <= 7 %}text-warning fw-bold{% endif %}">
+                                {{ invoice.due_date|date:"M d, Y" }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Amount:</td>
+                            <td class="text-end fw-bold">${{ invoice.total|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Balance:</td>
+                            <td class="text-end">${{ invoice.balance_due|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">
+                                {% if invoice.is_overdue %}
+                                    Days Overdue:
+                                {% else %}
+                                    Days Until Due:
+                                {% endif %}
+                            </td>
+                            <td class="text-end {% if invoice.is_overdue %}text-danger{% elif invoice.days_until_due <= 7 %}text-warning{% endif %}">
+                                {% if invoice.is_overdue %}
+                                    {{ invoice.days_overdue }} days
+                                {% else %}
+                                    {{ invoice.days_until_due }} days
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="card-footer bg-white">
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'invoicing:invoice_detail' invoice.pk %}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-eye me-1"></i>View
+                        </a>
+                        <div class="btn-group">
+                            <a href="{% url 'invoicing:send_invoice' invoice.pk %}" class="btn btn-sm btn-outline-info" title="Send Reminder">
+                                <i class="fas fa-envelope"></i>
+                            </a>
+                            <a href="{% url 'invoicing:add_payment' invoice.pk %}" class="btn btn-sm btn-outline-success" title="Mark as Paid">
+                                <i class="fas fa-check"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5 text-muted">
+                    <i class="fas fa-check-circle fa-3x mb-3 text-success"></i>
+                    <h5>No pending invoices!</h5>
+                    <p>All invoices have been paid. Great job!</p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

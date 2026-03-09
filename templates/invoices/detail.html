@@ -1,0 +1,197 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ invoice.invoice_number }} - Freight Forwarding Platform{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-start mb-4 no-print">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'invoicing:invoice_list' %}">Invoices</a></li>
+                    <li class="breadcrumb-item active">{{ invoice.invoice_number }}</li>
+                </ol>
+            </nav>
+            <h1 class="h2">{{ invoice.invoice_number }}</h1>
+        </div>
+        <div class="btn-group">
+            <a href="{% url 'invoicing:invoice_print' invoice.pk %}" class="btn btn-outline-primary" target="_blank">
+                <i class="fas fa-print me-2"></i>Print
+            </a>
+            <a href="{% url 'invoicing:invoice_pdf' invoice.pk %}" class="btn btn-outline-secondary">
+                <i class="fas fa-download me-2"></i>PDF
+            </a>
+            <a href="{% url 'invoicing:send_invoice' invoice.pk %}" class="btn btn-outline-info">
+                <i class="fas fa-envelope me-2"></i>Email
+            </a>
+            {% if invoice.status != 'paid' %}
+            <a href="{% url 'invoicing:add_payment' invoice.pk %}" class="btn btn-success">
+                <i class="fas fa-dollar-sign me-2"></i>Mark Paid
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Invoice -->
+    <div class="card">
+        <div class="card-body p-5">
+            <!-- Invoice Header -->
+            <div class="row mb-5">
+                <div class="col-md-6">
+                    <h1 class="invoice-title">INVOICE</h1>
+                    <p class="mb-1"><strong>Invoice #:</strong> {{ invoice.invoice_number }}</p>
+                    <p class="mb-1"><strong>Date:</strong> {{ invoice.invoice_date|date:"F d, Y" }}</p>
+                    <p class="mb-1"><strong>Due Date:</strong> {{ invoice.due_date|date:"F d, Y" }}</p>
+                    <p class="mb-0"><strong>Terms:</strong> {{ invoice.terms }}</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <h3 class="mb-2">FreightPro Logistics</h3>
+                    <p class="mb-1">123 Logistics Way</p>
+                    <p class="mb-1">Chicago, IL 60601</p>
+                    <p class="mb-1">Phone: (555) 123-4567</p>
+                    <p class="mb-0">Email: billing@freightpro.com</p>
+                </div>
+            </div>
+            
+            <!-- Bill To -->
+            <div class="row mb-5">
+                <div class="col-md-6">
+                    <h5 class="text-muted text-uppercase mb-3">Bill To</h5>
+                    <h5>{{ invoice.customer.name }}</h5>
+                    <p class="mb-1">{{ invoice.customer.address_line1 }}</p>
+                    {% if invoice.customer.address_line2 %}
+                    <p class="mb-1">{{ invoice.customer.address_line2 }}</p>
+                    {% endif %}
+                    <p class="mb-1">{{ invoice.customer.city }}, {{ invoice.customer.state }} {{ invoice.customer.postal_code }}</p>
+                    <p class="mb-0">{{ invoice.customer.country }}</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    {% if invoice.shipment %}
+                    <h5 class="text-muted text-uppercase mb-3">Shipment Reference</h5>
+                    <p class="mb-1"><strong>Shipment #:</strong> {{ invoice.shipment.shipment_number }}</p>
+                    <p class="mb-1"><strong>Route:</strong> {{ invoice.shipment.origin_city }} to {{ invoice.shipment.destination_city }}</p>
+                    <p class="mb-0"><strong>Delivery Date:</strong> {{ invoice.shipment.actual_delivery_date|date:"F d, Y"|default:"Pending" }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Line Items -->
+            <div class="table-responsive mb-5">
+                <table class="table table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Description</th>
+                            <th class="text-center" style="width: 100px;">Quantity</th>
+                            <th class="text-end" style="width: 150px;">Unit Price</th>
+                            <th class="text-end" style="width: 150px;">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in line_items %}
+                        <tr>
+                            <td>{{ item.description }}</td>
+                            <td class="text-center">{{ item.quantity }}</td>
+                            <td class="text-end">${{ item.unit_price|floatformat:2 }}</td>
+                            <td class="text-end">${{ item.total|floatformat:2 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">No line items</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Totals -->
+            <div class="row">
+                <div class="col-md-6">
+                    {% if invoice.notes %}
+                    <h5 class="text-muted text-uppercase mb-3">Notes</h5>
+                    <p>{{ invoice.notes }}</p>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td class="text-end">Subtotal:</td>
+                            <td class="text-end" style="width: 150px;">${{ invoice.subtotal|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-end">Tax ({{ invoice.tax_rate }}%):</td>
+                            <td class="text-end">${{ invoice.tax_amount|floatformat:2 }}</td>
+                        </tr>
+                        <tr class="border-top">
+                            <td class="text-end fw-bold h5">Total:</td>
+                            <td class="text-end fw-bold h5">${{ invoice.total|floatformat:2 }}</td>
+                        </tr>
+                        {% if invoice.amount_paid > 0 %}
+                        <tr>
+                            <td class="text-end text-success">Amount Paid:</td>
+                            <td class="text-end text-success">${{ invoice.amount_paid|floatformat:2 }}</td>
+                        </tr>
+                        <tr class="table-warning">
+                            <td class="text-end fw-bold">Balance Due:</td>
+                            <td class="text-end fw-bold">${{ invoice.balance_due|floatformat:2 }}</td>
+                        </tr>
+                        {% endif %}
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Payment Instructions -->
+            <div class="border-top pt-4 mt-4">
+                <h5 class="text-muted text-uppercase mb-3">Payment Instructions</h5>
+                <p class="mb-1"><strong>Bank Transfer:</strong></p>
+                <p class="mb-1">Bank: First National Bank</p>
+                <p class="mb-1">Account: 1234567890</p>
+                <p class="mb-1">Routing: 987654321</p>
+                <p class="mb-0">Please include invoice number in payment reference.</p>
+            </div>
+            
+            <!-- Footer -->
+            <div class="text-center text-muted mt-5 pt-4 border-top">
+                <p class="mb-0">Thank you for your business!</p>
+                <p class="small">FreightPro Logistics | www.freightpro.com | support@freightpro.com</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Payments Section -->
+    {% if payments %}
+    <div class="card mt-4 no-print">
+        <div class="card-header bg-white">
+            <h5 class="card-title mb-0"><i class="fas fa-money-bill-wave me-2 text-primary"></i>Payment History</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Amount</th>
+                            <th>Method</th>
+                            <th>Transaction ID</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payment in payments %}
+                        <tr>
+                            <td>{{ payment.payment_date|date:"M d, Y" }}</td>
+                            <td>${{ payment.amount|floatformat:2 }}</td>
+                            <td>{{ payment.get_payment_method_display }}</td>
+                            <td>{{ payment.transaction_id|default:"-" }}</td>
+                            <td>{{ payment.notes|default:"-" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

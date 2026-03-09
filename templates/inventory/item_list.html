@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+
+{% block title %}Inventory Items - FreightPro{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2">Inventory Items</h1>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" name="search" class="form-control" placeholder="Search SKU or Name..." value="{{ search|default:'' }}">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select name="warehouse" class="form-select">
+                        <option value="">All Warehouses</option>
+                        {% for warehouse in warehouses %}
+                        <option value="{{ warehouse.id }}" {% if warehouse_filter == warehouse.id|stringformat:"i" %}selected{% endif %}>
+                            {{ warehouse.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-check form-switch mt-2">
+                        <input class="form-check-input" type="checkbox" name="low_stock" id="lowStockCheck" {% if low_stock_filter %}checked{% endif %}>
+                        <label class="form-check-label" for="lowStockCheck">Low Stock Only</label>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Filter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>SKU</th>
+                            <th>Product Name</th>
+                            <th>Warehouse</th>
+                            <th>Quantity</th>
+                            <th>Unit Cost</th>
+                            <th>Total Value</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                        <tr>
+                            <td><span class="fw-bold">{{ item.sku }}</span></td>
+                            <td>{{ item.product_name }}</td>
+                            <td>{{ item.warehouse.name }}</td>
+                            <td>{{ item.quantity }} {{ item.unit_of_measure }}</td>
+                            <td>${{ item.unit_cost|floatformat:2 }}</td>
+                            <td>${{ item.total_value|floatformat:2 }}</td>
+                            <td>
+                                {% if item.quantity <= 0 %}
+                                    <span class="badge bg-danger">Out of Stock</span>
+                                {% elif item.quantity <= item.reorder_level %}
+                                    <span class="badge bg-warning text-dark">Low Stock</span>
+                                {% else %}
+                                    <span class="badge bg-success">In Stock</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'inventory:item_detail' item.pk %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center py-5 text-muted">No items found matching your criteria.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% if items.has_other_pages %}
+        <div class="card-footer bg-white border-0">
+            <nav>
+                <ul class="pagination justify-content-center mb-0">
+                    {% if items.has_previous %}
+                    <li class="page-item"><a class="page-item" href="?page={{ items.previous_page_number }}">Previous</a></li>
+                    {% endif %}
+                    <li class="page-item active"><span class="page-link">{{ items.number }} of {{ items.paginator.num_pages }}</span></li>
+                    {% if items.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ items.next_page_number }}">Next</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

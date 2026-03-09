@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block title %}Send Invoice - {{ invoice.invoice_number }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'invoicing:invoice_list' %}">Invoices</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'invoicing:invoice_detail' invoice.pk %}">{{ invoice.invoice_number }}</a></li>
+            <li class="breadcrumb-item active">Send Confirmation</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 overflow-hidden">
+                <div class="card-body p-5 text-center">
+                    <div class="mb-4">
+                        <i class="fas fa-paper-plane fa-4x text-info opacity-50"></i>
+                    </div>
+                    <h2 class="mb-3">Ready to send?</h2>
+                    <p class="text-muted mb-4">
+                        Confirm that you want to mark <strong>Invoice {{ invoice.invoice_number }}</strong> as sent to <strong>{{ invoice.customer.name }}</strong>.
+                    </p>
+                    
+                    <div class="bg-light p-4 rounded mb-4 text-start">
+                        <div class="row small text-muted">
+                            <div class="col-4">Customer:</div>
+                            <div class="col-8 text-dark fw-bold">{{ invoice.customer.name }}</div>
+                            <div class="col-4">Email:</div>
+                            <div class="col-8 text-dark">{{ invoice.customer.email|default:"No email on file" }}</div>
+                            <div class="col-4">Amount:</div>
+                            <div class="col-8 text-primary fw-bold">${{ invoice.total|floatformat:2 }}</div>
+                        </div>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-envelope-open-text me-2"></i>Send & Mark as Sent
+                            </button>
+                            <a href="{% url 'invoicing:invoice_detail' invoice.pk %}" class="btn btn-link text-secondary">Go back to invoice</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

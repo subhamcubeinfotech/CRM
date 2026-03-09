@@ -1,0 +1,61 @@
+{% extends 'marketing/base_marketing.html' %}
+
+{% block title %}Pricing - FreightPro SaaS{% endblock %}
+
+{% block extra_css %}
+<style>
+    .pricing-card {
+        border: 1px solid #e2e8f0;
+        border-radius: 1rem;
+        padding: 2.5rem;
+        transition: all 0.3s ease;
+    }
+    .pricing-card.featured {
+        border: 2px solid #6366f1;
+        transform: scale(1.05);
+        box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+    }
+    .price {
+        font-size: 3rem;
+        font-weight: 800;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5 mt-5">
+    <div class="text-center mb-5">
+        <h1 class="fw-bold">Simple, Transparent Pricing</h1>
+        <p class="text-secondary">Choose the plan that fits your logistics operation.</p>
+    </div>
+
+    <div class="row justify-content-center g-4 mt-4">
+        <div class="col-md-4">
+            <div class="pricing-card h-100">
+                <h3>Starter</h3>
+                <div class="price my-4">$99<span class="fs-6 text-secondary font-weight-normal">/mo</span></div>
+                <ul class="list-unstyled mb-5">
+                    <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Up to 5 Users</li>
+                    <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Standard Tracking</li>
+                    <li class="mb-2"><i class="fas fa-check text-success me-2"></i> 100 Shipments/mo</li>
+                </ul>
+                <a href="{% url 'marketing:checkout' %}?plan=starter" class="btn btn-outline-primary w-100 py-3">Get Started</a>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="pricing-card featured h-100 bg-white">
+                <div class="badge bg-primary mb-3">MOST POPULAR</div>
+                <h3>Professional</h3>
+                <div class="price my-4">$299<span class="fs-6 text-secondary font-weight-normal">/mo</span></div>
+                <ul class="list-unstyled mb-5">
+                    <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Unlimited Users</li>
+                    <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Advanced Ocean Tracking</li>
+                    <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Unlimited Shipments</li>
+                    <li class="mb-2"><i class="fas fa-check text-success me-2"></i> API Access</li>
+                </ul>
+                <a href="{% url 'marketing:checkout' %}?plan=pro" class="btn btn-primary w-100 py-3">Start Free Trial</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

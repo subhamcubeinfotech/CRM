@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+
+{% block title %}Customers - FreightPro{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2"><i class="fas fa-users me-2 text-primary"></i>Customers</h1>
+        <a href="{% url 'accounts:company_create' %}?type=customer" class="btn btn-primary"><i class="fas fa-user-plus me-1"></i>Add Customer</a>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4 shadow-sm border-0">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-9">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
+                        <input type="text" name="search" class="form-control border-start-0" placeholder="Search customers..." value="{{ search|default:'' }}">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-outline-primary w-100">Search</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Customer List -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Customer Name</th>
+                            <th>Contact Person</th>
+                            <th>Location</th>
+                            <th>Credit Status</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for customer in customers %}
+                        <tr>
+                            <td class="ps-4">
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-sm me-3 bg-info bg-opacity-10 text-info rounded d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                        <i class="fas fa-user-tie"></i>
+                                    </div>
+                                    <div>
+                                        <a href="{% url 'accounts:company_detail' customer.pk %}" class="fw-bold text-decoration-none text-dark">
+                                            {{ customer.name }}
+                                        </a>
+                                        <div class="small text-muted">Tax ID: {{ customer.tax_id|default:"-" }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="small"><i class="fas fa-envelope me-2 text-muted"></i>{{ customer.email|default:"-" }}</div>
+                                <div class="small"><i class="fas fa-phone me-2 text-muted"></i>{{ customer.phone|default:"-" }}</div>
+                            </td>
+                            <td>
+                                <div class="small">{{ customer.city }}, {{ customer.state }}</div>
+                                <div class="small text-muted">{{ customer.country }}</div>
+                            </td>
+                            <td>
+                                <div class="small mb-1">Limit: <span class="fw-bold">${{ customer.credit_limit }}</span></div>
+                                <div class="progress" style="height: 4px;">
+                                    <div class="progress-bar bg-success" style="width: 0%"></div>
+                                </div>
+                            </td>
+                            <td class="text-end pe-4">
+                                <div class="btn-group">
+                                    <a href="{% url 'accounts:company_detail' customer.pk %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <button class="btn btn-sm btn-outline-secondary">
+                                        <i class="fas fa-file-invoice-dollar"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                <i class="fas fa-users-slash fa-3x mb-3 opacity-25"></i>
+                                <h5>No customers found</h5>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% if customers.has_other_pages %}
+        <div class="card-footer bg-white border-0 py-3">
+            <nav>
+                <ul class="pagination justify-content-center mb-0">
+                    {% if customers.has_previous %}
+                    <li class="page-item"><a class="page-link" href="?page={{ customers.previous_page_number }}{% if search %}&search={{ search }}{% endif %}">Previous</a></li>
+                    {% endif %}
+                    <li class="page-item active"><span class="page-link">{{ customers.number }}</span></li>
+                    {% if customers.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ customers.next_page_number }}{% if search %}&search={{ search }}{% endif %}">Next</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
