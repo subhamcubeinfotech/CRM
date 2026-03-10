@@ -4,7 +4,7 @@ from django.views.generic import ListView, DetailView, CreateView, UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
 from django.db.models import Sum, F, ExpressionWrapper, DecimalField
-from .models import Order, ManifestItem
+from .models import Order, ManifestItem, Tag, ShippingTerm
 from apps.accounts.models import Company
 from apps.inventory.models import Warehouse, InventoryItem
 from apps.accounts.utils import filter_by_user_company, check_company_access
@@ -125,10 +125,21 @@ def order_create(request):
     
     logger.info(f'New order creation page accessed by {request.user}')
     
+    user_company = request.user.company
+    suppliers = Company.objects.filter(company_type='vendor')
+    receivers = Company.objects.filter(company_type='customer')
+    
+    # Ensure current user's company is in both lists if it exists
+    if user_company:
+        suppliers = (suppliers | Company.objects.filter(pk=user_company.pk)).distinct()
+        receivers = (receivers | Company.objects.filter(pk=user_company.pk)).distinct()
+    
     context = {
-        'suppliers': Company.objects.filter(company_type='vendor'),
-        'receivers': Company.objects.filter(company_type='customer'),
+        'suppliers': suppliers,
+        'receivers': receivers,
         'warehouses': Warehouse.objects.all(),
         'inventory_items': InventoryItem.objects.filter(tenant=request.user.tenant) if request.user.tenant else InventoryItem.objects.all(),
+        'shipping_terms': ShippingTerm.objects.all(),
+        'tags': Tag.objects.all(),
     }
     return render(request, 'orders/order_form.html', context)

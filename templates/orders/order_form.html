@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+﻿{% extends 'base.html' %}
 
 {% block title %}New Order - FreightPro{% endblock %}
 
@@ -11,26 +11,31 @@
 
     <form method="post" id="orderForm">
         {% csrf_token %}
-        
+
         <!-- Logistics Section -->
         <div class="row g-4 mb-5">
             <div class="col-md-6">
                 <div class="mb-4">
-                    <label class="form-label fw-bold small text-uppercase">Supplier<span class="text-danger">*</span></label>
+                    <label class="form-label fw-bold small text-uppercase">Supplier<span
+                            class="text-danger">*</span></label>
                     <div class="input-group">
                         <select name="supplier" id="supplier-select" class="form-select border-primary-subtle" required>
                             <option value="">Select a supplier</option>
                             {% for supplier in suppliers %}
-                            <option value="{{ supplier.id }}" {% if user.company_id == supplier.id %}selected{% endif %}>{{ supplier.name }}</option>
+                            <option value="{{ supplier.id }}">
+                                {{ supplier.name }}</option>
                             {% endfor %}
                         </select>
-                        <button class="btn btn-outline-primary" type="button"><i class="fas fa-plus"></i> Add</button>
+                        <a href="{% url 'accounts:company_create' %}?type=vendor" class="btn btn-outline-primary"><i
+                                class="fas fa-plus"></i> Add</a>
                     </div>
-                    <a href="#" id="assign-supplier-mine" class="small text-decoration-none mt-1 d-inline-block" data-company-id="{{ user.company_id }}">Click to assign to your company.</a>
+                    <a href="#" id="assign-supplier-mine" class="small text-decoration-none mt-1 d-inline-block"
+                        data-company-id="{{ user.company_id }}">Click to assign to your company.</a>
                 </div>
 
                 <div class="mb-4">
-                    <label class="form-label fw-bold small text-uppercase">Source Location<span class="text-danger">*</span></label>
+                    <label class="form-label fw-bold small text-uppercase">Source Location<span
+                            class="text-danger">*</span></label>
                     <div class="input-group">
                         <select name="source_location" class="form-select border-primary-subtle" required>
                             <option value="">Select a location</option>
@@ -50,21 +55,26 @@
 
             <div class="col-md-6">
                 <div class="mb-4">
-                    <label class="form-label fw-bold small text-uppercase">Receiver<span class="text-danger">*</span></label>
+                    <label class="form-label fw-bold small text-uppercase">Receiver<span
+                            class="text-danger">*</span></label>
                     <div class="input-group">
                         <select name="receiver" id="receiver-select" class="form-select border-primary-subtle" required>
                             <option value="">Select a receiver</option>
                             {% for receiver in receivers %}
-                            <option value="{{ receiver.id }}" {% if user.company_id == receiver.id %}selected{% endif %}>{{ receiver.name }}</option>
+                            <option value="{{ receiver.id }}">
+                                {{ receiver.name }}</option>
                             {% endfor %}
                         </select>
-                        <button class="btn btn-outline-primary" type="button"><i class="fas fa-plus"></i> Add</button>
+                        <a href="{% url 'accounts:company_create' %}?type=customer" class="btn btn-outline-primary"><i
+                                class="fas fa-plus"></i> Add</a>
                     </div>
-                    <a href="#" id="assign-receiver-mine" class="small text-decoration-none mt-1 d-inline-block" data-company-id="{{ user.company_id }}">Click to assign to your company.</a>
+                    <a href="#" id="assign-receiver-mine" class="small text-decoration-none mt-1 d-inline-block"
+                        data-company-id="{{ user.company_id }}">Click to assign to your company.</a>
                 </div>
 
                 <div class="mb-4">
-                    <label class="form-label fw-bold small text-uppercase">Destination Location<span class="text-danger">*</span></label>
+                    <label class="form-label fw-bold small text-uppercase">Destination Location<span
+                            class="text-danger">*</span></label>
                     <div class="input-group">
                         <select name="destination_location" class="form-select border-primary-subtle" required>
                             <option value="">Select a location</option>
@@ -88,29 +98,35 @@
             <div class="col-md-4">
                 <label class="form-label fw-bold small text-uppercase">Tags</label>
                 <select class="form-select" name="tags" multiple>
-                    <option>Urgent</option>
-                    <option>Fragile</option>
-                    <option>High Value</option>
+                    {% for tag in tags %}
+                    <option value="{{ tag.id }}">{{ tag.name }}</option>
+                    {% empty %}
+                    <option disabled>No tags available — add via Admin</option>
+                    {% endfor %}
                 </select>
             </div>
             <div class="col-md-4">
                 <label class="form-label fw-bold small text-uppercase">Shipping Terms</label>
                 <select name="shipping_terms" class="form-select">
                     <option value="">Select a shipping term</option>
-                    <option>FOB Destination</option>
-                    <option>FOB Shipping Point</option>
-                    <option>EXW</option>
+                    {% for term in shipping_terms %}
+                    <option value="{{ term.id }}">{{ term.name }}</option>
+                    {% empty %}
+                    <option disabled>No terms available — add via Admin</option>
+                    {% endfor %}
                 </select>
             </div>
             <div class="col-md-4">
-                <label class="form-label fw-bold small text-uppercase">Representatives<span class="text-danger">*</span></label>
+                <label class="form-label fw-bold small text-uppercase">Representatives<span
+                        class="text-danger">*</span></label>
                 <div class="input-group">
                     <select name="representative" id="rep-select" class="form-select" required>
                         <option value="">Select individual</option>
                         <option value="{{ user.id }}" selected>{{ user.get_full_name|default:user.username }}</option>
                     </select>
                 </div>
-                <a href="#" id="assign-rep-me" class="small text-decoration-none mt-1 d-inline-block" data-user-id="{{ user.id }}">Click to assign to yourself.</a>
+                <a href="#" id="assign-rep-me" class="small text-decoration-none mt-1 d-inline-block"
+                    data-user-id="{{ user.id }}">Click to assign to yourself.</a>
             </div>
         </div>
 
@@ -126,27 +142,35 @@
                                 <select name="material[]" class="form-select material-select" required>
                                     <option value="" data-max="0">Select an inventory item</option>
                                     {% for item in inventory_items %}
-                                    <option value="{{ item.product_name }}" data-max="{{ item.quantity }}" data-unit="{{ item.unit_of_measure }}">{{ item.product_name }} ({{ item.quantity }} {{ item.unit_of_measure }} available)</option>
+                                    <option value="{{ item.product_name }}" data-max="{{ item.quantity }}"
+                                        data-unit="{{ item.unit_of_measure }}">{{ item.product_name }} ({{ item.quantity
+                                        }} {{ item.unit_of_measure }} available)</option>
                                     {% endfor %}
                                 </select>
-                                <button class="btn btn-outline-primary" type="button"><i class="fas fa-plus"></i> Add</button>
+                                <button class="btn btn-outline-primary" type="button"><i class="fas fa-plus"></i>
+                                    Add</button>
                             </div>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label fw-bold small">Weight / Qty<span class="text-danger">*</span></label>
+                            <label class="form-label fw-bold small">Weight / Qty<span
+                                    class="text-danger">*</span></label>
                             <div class="row g-0">
                                 <div class="col-8">
-                                    <input type="number" name="weight[]" class="form-control form-control-sm rounded-end-0 weight-input" placeholder="Qty" required min="0">
+                                    <input type="number" name="weight[]"
+                                        class="form-control form-control-sm rounded-end-0 weight-input"
+                                        placeholder="Qty" required min="0">
                                 </div>
                                 <div class="col-4">
-                                    <select name="weight_unit[]" class="form-select form-select-sm rounded-start-0 border-start-0 unit-display">
+                                    <select name="weight_unit[]"
+                                        class="form-select form-select-sm rounded-start-0 border-start-0 unit-display">
                                         <option>lbs</option>
                                         <option>kg</option>
                                         <option>pcs</option>
                                     </select>
                                 </div>
                             </div>
-                            <div class="small text-danger weight-warning mt-1" style="display: none;">Exceeds available stock!</div>
+                            <div class="small text-danger weight-warning mt-1" style="display: none;">Exceeds available
+                                stock!</div>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label fw-bold small">Buy Price<span class="text-danger">*</span></label>
@@ -154,11 +178,13 @@
                                 <div class="col-8">
                                     <div class="input-group input-group-sm">
                                         <span class="input-group-text">$</span>
-                                        <input type="number" step="0.001" name="buy_price[]" class="form-control rounded-end-0" placeholder="Price" required>
+                                        <input type="number" step="0.001" name="buy_price[]"
+                                            class="form-control rounded-end-0" placeholder="Price" required>
                                     </div>
                                 </div>
                                 <div class="col-4">
-                                    <select name="buy_price_unit[]" class="form-select form-select-sm rounded-start-0 border-start-0">
+                                    <select name="buy_price_unit[]"
+                                        class="form-select form-select-sm rounded-start-0 border-start-0">
                                         <option>per lbs</option>
                                         <option>per item</option>
                                     </select>
@@ -171,11 +197,13 @@
                                 <div class="col-8">
                                     <div class="input-group input-group-sm">
                                         <span class="input-group-text">$</span>
-                                        <input type="number" step="0.001" name="sell_price[]" class="form-control rounded-end-0" placeholder="Price" required>
+                                        <input type="number" step="0.001" name="sell_price[]"
+                                            class="form-control rounded-end-0" placeholder="Price" required>
                                     </div>
                                 </div>
                                 <div class="col-4">
-                                    <select name="sell_price_unit[]" class="form-select form-select-sm rounded-start-0 border-start-0">
+                                    <select name="sell_price_unit[]"
+                                        class="form-select form-select-sm rounded-start-0 border-start-0">
                                         <option>per lbs</option>
                                         <option>per item</option>
                                     </select>
@@ -200,7 +228,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <button type="button" class="btn btn-outline-primary btn-sm mt-2" id="add-item-btn">
                 <i class="fas fa-plus me-1"></i>Add Item
             </button>
@@ -209,7 +237,8 @@
         <!-- Total Weight Target (Global for Order) -->
         <div class="card bg-light border-0 mb-4">
             <div class="card-body">
-                <label class="form-label fw-bold small text-uppercase">Total Weight Target (lbs)<span class="text-danger">*</span></label>
+                <label class="form-label fw-bold small text-uppercase">Total Weight Target (lbs)<span
+                        class="text-danger">*</span></label>
                 <input type="number" name="total_weight_target" class="form-control" placeholder="e.g. 200000" required>
                 <div class="form-text">Used for calculating progress bar in dashboard.</div>
             </div>
@@ -226,29 +255,31 @@
 
 <script>
     // Quick Assignment Links
-    document.getElementById('assign-supplier-mine')?.addEventListener('click', function(e) {
-        e.preventDefault();
-        const select = document.getElementById('supplier-select');
-        const myId = this.dataset.companyId;
-        if (myId && [...select.options].some(o => o.value === myId)) {
-            select.value = myId;
-        } else {
-            alert('Your company is not registered as a supplier.');
+    function assignMyCompany(selectId, companyId, companyName) {
+        const select = document.getElementById(selectId);
+        if (!companyId) return;
+
+        // Check if option exists
+        let option = [...select.options].find(o => o.value == companyId);
+        if (!option) {
+            // Add option dynamically
+            option = new Option(companyName + " (Your Company)", companyId);
+            select.add(option);
         }
+        select.value = companyId;
+    }
+
+    document.getElementById('assign-supplier-mine')?.addEventListener('click', function (e) {
+        e.preventDefault();
+        assignMyCompany('supplier-select', this.dataset.companyId, "{{ user.company.name|default:'My Company' }}");
     });
 
-    document.getElementById('assign-receiver-mine')?.addEventListener('click', function(e) {
+    document.getElementById('assign-receiver-mine')?.addEventListener('click', function (e) {
         e.preventDefault();
-        const select = document.getElementById('receiver-select');
-        const myId = this.dataset.companyId;
-        if (myId && [...select.options].some(o => o.value === myId)) {
-            select.value = myId;
-        } else {
-            alert('Your company is not registered as a receiver.');
-        }
+        assignMyCompany('receiver-select', this.dataset.companyId, "{{ user.company.name|default:'My Company' }}");
     });
 
-    document.getElementById('assign-rep-me')?.addEventListener('click', function(e) {
+    document.getElementById('assign-rep-me')?.addEventListener('click', function (e) {
         e.preventDefault();
         document.getElementById('rep-select').value = this.dataset.userId;
     });
@@ -265,7 +296,7 @@
             const maxVal = parseFloat(option.dataset.max) || 0;
             const currentVal = parseFloat(input.value) || 0;
             const unit = option.dataset.unit || 'lbs';
-            
+
             unitDisplay.value = unit;
 
             if (currentVal > maxVal) {
@@ -286,18 +317,18 @@
     document.querySelectorAll('.manifest-item').forEach(item => setupInventoryValidation(item));
 
     // Update cloning logic to initialize new items
-    document.getElementById('add-item-btn').addEventListener('click', function() {
+    document.getElementById('add-item-btn').addEventListener('click', function () {
         const container = document.getElementById('manifest-items-container');
         const firstItem = container.querySelector('.manifest-item');
         const newItem = firstItem.cloneNode(true);
-        
+
         newItem.querySelectorAll('input').forEach(input => {
             if (input.type === 'checkbox') input.checked = false;
             else input.value = '';
             input.classList.remove('is-invalid');
         });
         newItem.querySelector('.weight-warning').style.display = 'none';
-        
+
         container.appendChild(newItem);
         setupInventoryValidation(newItem);
     });

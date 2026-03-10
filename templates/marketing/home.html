@@ -8,16 +8,19 @@
         padding: 100px 0;
         background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
     }
+
     .hero h1 {
         font-size: 3.5rem;
         font-weight: 800;
         letter-spacing: -0.025em;
         line-height: 1.1;
     }
+
     .hero p {
         font-size: 1.25rem;
         color: #64748b;
     }
+
     .feature-card {
         padding: 2rem;
         border-radius: 1rem;
@@ -25,10 +28,12 @@
         transition: all 0.3s ease;
         height: 100%;
     }
+
     .feature-card:hover {
         transform: translateY(-5px);
         box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
     }
+
     .icon-box {
         width: 48px;
         height: 48px;
@@ -49,11 +54,13 @@
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-lg-8">
-                <span class="badge bg-primary-subtle text-primary mb-3 px-3 py-2 rounded-pill fw-bold">NEW: Real-time Ocean Tracking</span>
+                <span class="badge bg-primary-subtle text-primary mb-3 px-3 py-2 rounded-pill fw-bold">NEW: Real-time
+                    Ocean Tracking</span>
                 <h1>The Operating System for Modern Freight Forwarders</h1>
-                <p class="mt-4 mb-5">Manage shipments, inventory, and accounts in one unified platform. Scale your logistics business with our enterprise-grade SaaS.</p>
+                <p class="mt-4 mb-5">Manage shipments, inventory, and accounts in one unified platform. Scale your
+                    logistics business with our enterprise-grade SaaS.</p>
                 <div class="d-flex justify-content-center gap-3">
-                    <a href="{% url 'marketing:pricing' %}" class="btn btn-primary btn-lg px-5">Get Started</a>
+                    <a href="{% url 'signup' %}" class="btn btn-primary btn-lg px-5">Sign Up</a>
                     <a href="{% url 'marketing:features' %}" class="btn btn-outline-dark btn-lg px-5">View Features</a>
                 </div>
             </div>
@@ -71,21 +78,24 @@
                 <div class="feature-card">
                     <div class="icon-box"><i class="fas fa-map-marked-alt"></i></div>
                     <h3>Global Tracking</h3>
-                    <p class="text-secondary">Unified tracking for ocean and land freight with real-time status updates and document management.</p>
+                    <p class="text-secondary">Unified tracking for ocean and land freight with real-time status updates
+                        and document management.</p>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="feature-card">
                     <div class="icon-box"><i class="fas fa-warehouse"></i></div>
                     <h3>Inventory Management</h3>
-                    <p class="text-secondary">Track warehouse levels and allow customers to create orders directly from available stock.</p>
+                    <p class="text-secondary">Track warehouse levels and allow customers to create orders directly from
+                        available stock.</p>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="feature-card">
                     <div class="icon-box"><i class="fas fa-file-invoice-dollar"></i></div>
                     <h3>SaaS Multi-tenancy</h3>
-                    <p class="text-secondary">Secure, isolated accounts for your agencies with full ledger and automated invoicing capabilities.</p>
+                    <p class="text-secondary">Secure, isolated accounts for your agencies with full ledger and automated
+                        invoicing capabilities.</p>
                 </div>
             </div>
         </div>
