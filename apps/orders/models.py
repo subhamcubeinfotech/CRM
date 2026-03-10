@@ -27,6 +27,18 @@ class ShippingTerm(models.Model):
         return self.name
 
 
+class PackagingType(models.Model):
+    """Packaging type model - managed via Admin"""
+    name = models.CharField(max_length=100, unique=True)
+    description = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+
 class Order(TenantAwareModel):
     STATUS_CHOICES = [
         ('draft', 'Draft'),

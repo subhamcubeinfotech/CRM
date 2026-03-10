@@ -3,8 +3,9 @@ from django.contrib.auth.decorators import login_required
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
-from django.db.models import Sum, F, ExpressionWrapper, DecimalField
-from .models import Order, ManifestItem, Tag, ShippingTerm
+from django.db.models import Sum, F, ExpressionWrapper, DecimalField, Q
+from django.utils import timezone
+from .models import Order, ManifestItem, Tag, ShippingTerm, PackagingType
 from apps.accounts.models import Company
 from apps.inventory.models import Warehouse, InventoryItem
 from apps.accounts.utils import filter_by_user_company, check_company_access
@@ -141,5 +142,6 @@ def order_create(request):
         'inventory_items': InventoryItem.objects.filter(tenant=request.user.tenant) if request.user.tenant else InventoryItem.objects.all(),
         'shipping_terms': ShippingTerm.objects.all(),
         'tags': Tag.objects.all(),
+        'packaging_types': PackagingType.objects.all(),
     }
     return render(request, 'orders/order_form.html', context)

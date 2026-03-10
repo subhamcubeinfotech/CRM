@@ -2703,3 +2703,158 @@ django.template.exceptions.TemplateSyntaxError: Invalid block tag on line 115: '
 [2026-03-10 11:38:39] INFO django.server basehttp.log_message:213 — "GET /static/admin/img/icon-calendar.svg HTTP/1.1" 304 0
 [2026-03-10 11:39:07] INFO django.utils.autoreload autoreload.trigger_reload:265 — /app/apps/accounts/views_auth.py changed, reloading.
 [2026-03-10 11:39:10] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-10 13:13:50] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-10 13:14:10] INFO apps.orders views.order_create:126 — New order creation page accessed by sahil (Customer)
+[2026-03-10 13:14:10] INFO django.server basehttp.log_message:213 — "GET /orders/create/ HTTP/1.1" 200 28267
+[2026-03-10 13:14:11] INFO apps.orders views.order_create:126 — New order creation page accessed by sahil (Customer)
+[2026-03-10 13:14:11] INFO django.server basehttp.log_message:213 — "GET /orders/create/ HTTP/1.1" 200 28267
+[2026-03-10 13:14:16] INFO apps.orders views.order_create:126 — New order creation page accessed by sahil (Customer)
+[2026-03-10 13:14:16] INFO django.server basehttp.log_message:213 — "GET /orders/create/ HTTP/1.1" 200 28267
+[2026-03-10 13:14:16] INFO apps.orders views.order_create:126 — New order creation page accessed by sahil (Customer)
+[2026-03-10 13:14:17] INFO django.server basehttp.log_message:213 — "GET /orders/create/ HTTP/1.1" 200 28267
+[2026-03-10 13:14:17] INFO apps.orders views.order_create:126 — New order creation page accessed by sahil (Customer)
+[2026-03-10 13:14:17] INFO django.server basehttp.log_message:213 — "GET /orders/create/ HTTP/1.1" 200 28267
+[2026-03-10 13:14:17] INFO apps.orders views.order_create:126 — New order creation page accessed by sahil (Customer)
+[2026-03-10 13:14:17] INFO django.server basehttp.log_message:213 — "GET /orders/create/ HTTP/1.1" 200 28267
+[2026-03-10 13:14:35] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-10 13:14:39] INFO apps.orders views.order_create:126 — New order creation page accessed by sahil (Customer)
+[2026-03-10 13:14:40] INFO django.server basehttp.log_message:213 — "GET /orders/create/ HTTP/1.1" 200 28267
+[2026-03-10 13:16:17] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/ HTTP/1.1" 302 0
+[2026-03-10 13:16:17] INFO django.server basehttp.log_message:213 — "GET /admin/login/?next=/admin/orders/shippingterm/ HTTP/1.1" 200 3727
+[2026-03-10 13:16:26] INFO django.server basehttp.log_message:213 — "POST /admin/login/?next=/admin/orders/shippingterm/ HTTP/1.1" 302 0
+[2026-03-10 13:16:26] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/ HTTP/1.1" 200 20734
+[2026-03-10 13:16:26] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:16:34] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/add/ HTTP/1.1" 200 17933
+[2026-03-10 13:16:34] INFO django.server basehttp.log_message:213 — "GET /static/admin/css/forms.css HTTP/1.1" 304 0
+[2026-03-10 13:16:34] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/prepopulate_init.js HTTP/1.1" 304 0
+[2026-03-10 13:16:34] INFO django.server basehttp.log_message:213 — "GET /static/admin/css/widgets.css HTTP/1.1" 304 0
+[2026-03-10 13:16:34] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:16:34] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/change_form.js HTTP/1.1" 304 0
+[2026-03-10 13:16:37] INFO django.server basehttp.log_message:213 — "POST /admin/orders/shippingterm/add/ HTTP/1.1" 302 0
+[2026-03-10 13:16:37] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/ HTTP/1.1" 200 21311
+[2026-03-10 13:16:37] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:16:38] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/add/ HTTP/1.1" 200 17933
+[2026-03-10 13:16:39] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:16:43] INFO django.server basehttp.log_message:213 — "POST /admin/orders/shippingterm/add/ HTTP/1.1" 302 0
+[2026-03-10 13:16:43] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/ HTTP/1.1" 200 21586
+[2026-03-10 13:16:43] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:16:46] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/add/ HTTP/1.1" 200 17933
+[2026-03-10 13:16:46] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:16:50] INFO django.server basehttp.log_message:213 — "POST /admin/orders/shippingterm/add/ HTTP/1.1" 302 0
+[2026-03-10 13:16:50] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/ HTTP/1.1" 200 21921
+[2026-03-10 13:16:50] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:16:55] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/add/ HTTP/1.1" 200 17933
+[2026-03-10 13:16:55] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:16:57] INFO django.server basehttp.log_message:213 — "POST /admin/orders/shippingterm/add/ HTTP/1.1" 302 0
+[2026-03-10 13:16:57] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/ HTTP/1.1" 200 22204
+[2026-03-10 13:16:57] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:17:02] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/add/ HTTP/1.1" 200 17933
+[2026-03-10 13:17:02] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:17:05] INFO django.server basehttp.log_message:213 — "POST /admin/orders/shippingterm/add/ HTTP/1.1" 302 0
+[2026-03-10 13:17:05] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/ HTTP/1.1" 200 22530
+[2026-03-10 13:17:05] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:17:09] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/add/ HTTP/1.1" 200 17933
+[2026-03-10 13:17:09] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:17:12] INFO django.server basehttp.log_message:213 — "POST /admin/orders/shippingterm/add/ HTTP/1.1" 302 0
+[2026-03-10 13:17:12] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/ HTTP/1.1" 200 22816
+[2026-03-10 13:17:12] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:17:16] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/add/ HTTP/1.1" 200 17933
+[2026-03-10 13:17:16] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:17:19] INFO django.server basehttp.log_message:213 — "POST /admin/orders/shippingterm/add/ HTTP/1.1" 302 0
+[2026-03-10 13:17:19] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/ HTTP/1.1" 200 23160
+[2026-03-10 13:17:19] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:17:23] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/add/ HTTP/1.1" 200 17933
+[2026-03-10 13:17:23] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:17:27] INFO django.server basehttp.log_message:213 — "POST /admin/orders/shippingterm/add/ HTTP/1.1" 302 0
+[2026-03-10 13:17:27] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/ HTTP/1.1" 200 23440
+[2026-03-10 13:17:27] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:17:31] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/add/ HTTP/1.1" 200 17933
+[2026-03-10 13:17:31] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:17:34] INFO django.server basehttp.log_message:213 — "POST /admin/orders/shippingterm/add/ HTTP/1.1" 302 0
+[2026-03-10 13:17:34] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/ HTTP/1.1" 200 23784
+[2026-03-10 13:17:34] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:17:38] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/add/ HTTP/1.1" 200 17933
+[2026-03-10 13:17:38] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:17:41] INFO django.server basehttp.log_message:213 — "POST /admin/orders/shippingterm/add/ HTTP/1.1" 302 0
+[2026-03-10 13:17:41] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/ HTTP/1.1" 200 24064
+[2026-03-10 13:17:41] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:17:50] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/add/ HTTP/1.1" 200 17933
+[2026-03-10 13:17:50] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:17:52] INFO django.server basehttp.log_message:213 — "POST /admin/orders/shippingterm/add/ HTTP/1.1" 302 0
+[2026-03-10 13:17:52] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/ HTTP/1.1" 200 24432
+[2026-03-10 13:17:52] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:17:55] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/add/ HTTP/1.1" 200 17933
+[2026-03-10 13:17:55] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:17:59] INFO django.server basehttp.log_message:213 — "POST /admin/orders/shippingterm/add/ HTTP/1.1" 302 0
+[2026-03-10 13:17:59] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/ HTTP/1.1" 200 24704
+[2026-03-10 13:17:59] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:18:50] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/add/ HTTP/1.1" 200 17933
+[2026-03-10 13:18:50] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:18:53] INFO django.server basehttp.log_message:213 — "POST /admin/orders/shippingterm/add/ HTTP/1.1" 302 0
+[2026-03-10 13:18:53] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/ HTTP/1.1" 200 25045
+[2026-03-10 13:18:53] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:18:55] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/add/ HTTP/1.1" 200 17933
+[2026-03-10 13:18:55] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:18:57] INFO django.server basehttp.log_message:213 — "POST /admin/orders/shippingterm/add/ HTTP/1.1" 302 0
+[2026-03-10 13:18:57] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/ HTTP/1.1" 200 25326
+[2026-03-10 13:18:57] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:19:01] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/add/ HTTP/1.1" 200 17933
+[2026-03-10 13:19:01] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:19:04] INFO django.server basehttp.log_message:213 — "POST /admin/orders/shippingterm/add/ HTTP/1.1" 302 0
+[2026-03-10 13:19:04] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/ HTTP/1.1" 200 25703
+[2026-03-10 13:19:04] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:19:08] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/add/ HTTP/1.1" 200 17933
+[2026-03-10 13:19:08] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:19:12] INFO django.server basehttp.log_message:213 — "POST /admin/orders/shippingterm/add/ HTTP/1.1" 302 0
+[2026-03-10 13:19:12] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/ HTTP/1.1" 200 25972
+[2026-03-10 13:19:12] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:19:16] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/add/ HTTP/1.1" 200 17933
+[2026-03-10 13:19:16] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:19:18] INFO django.server basehttp.log_message:213 — "POST /admin/orders/shippingterm/add/ HTTP/1.1" 302 0
+[2026-03-10 13:19:18] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/ HTTP/1.1" 200 26307
+[2026-03-10 13:19:18] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:19:21] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/add/ HTTP/1.1" 200 17933
+[2026-03-10 13:19:21] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:19:24] INFO django.server basehttp.log_message:213 — "POST /admin/orders/shippingterm/add/ HTTP/1.1" 302 0
+[2026-03-10 13:19:24] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/ HTTP/1.1" 200 26590
+[2026-03-10 13:19:24] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:19:27] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/add/ HTTP/1.1" 200 17933
+[2026-03-10 13:19:27] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:19:29] INFO django.server basehttp.log_message:213 — "POST /admin/orders/shippingterm/add/ HTTP/1.1" 302 0
+[2026-03-10 13:19:29] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/ HTTP/1.1" 200 26913
+[2026-03-10 13:19:29] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:19:31] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/add/ HTTP/1.1" 200 17933
+[2026-03-10 13:19:32] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:19:34] INFO django.server basehttp.log_message:213 — "POST /admin/orders/shippingterm/add/ HTTP/1.1" 302 0
+[2026-03-10 13:19:34] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/ HTTP/1.1" 200 27200
+[2026-03-10 13:19:34] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:19:43] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/add/ HTTP/1.1" 200 17933
+[2026-03-10 13:19:43] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:19:45] INFO django.server basehttp.log_message:213 — "POST /admin/orders/shippingterm/add/ HTTP/1.1" 200 18193
+[2026-03-10 13:19:45] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:20:11] INFO django.server basehttp.log_message:213 — "POST /admin/orders/shippingterm/add/ HTTP/1.1" 302 0
+[2026-03-10 13:20:11] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/ HTTP/1.1" 200 27496
+[2026-03-10 13:20:11] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:20:16] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/add/ HTTP/1.1" 200 17933
+[2026-03-10 13:20:16] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:20:19] INFO django.server basehttp.log_message:213 — "POST /admin/orders/shippingterm/add/ HTTP/1.1" 200 18194
+[2026-03-10 13:20:19] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:20:27] INFO django.server basehttp.log_message:213 — "POST /admin/orders/shippingterm/add/ HTTP/1.1" 200 18200
+[2026-03-10 13:20:27] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:20:34] INFO django.server basehttp.log_message:213 — "POST /admin/orders/shippingterm/add/ HTTP/1.1" 302 0
+[2026-03-10 13:20:34] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/ HTTP/1.1" 200 27810
+[2026-03-10 13:20:34] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:20:39] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/add/ HTTP/1.1" 200 17933
+[2026-03-10 13:20:39] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:20:41] INFO django.server basehttp.log_message:213 — "POST /admin/orders/shippingterm/add/ HTTP/1.1" 200 18195
+[2026-03-10 13:20:41] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-10 13:20:56] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 173298
+[2026-03-10 13:20:58] INFO apps.orders views.order_create:126 — New order creation page accessed by admin (Administrator)
+[2026-03-10 13:20:58] INFO django.server basehttp.log_message:213 — "GET /orders/create/ HTTP/1.1" 200 37087
+[2026-03-10 13:24:57] INFO django.utils.autoreload autoreload.trigger_reload:265 — /app/apps/orders/models.py changed, reloading.
+[2026-03-10 13:24:59] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-10 13:28:52] INFO django.utils.autoreload autoreload.trigger_reload:265 — /app/apps/orders/admin.py changed, reloading.
+[2026-03-10 13:28:53] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-10 13:29:25] INFO django.utils.autoreload autoreload.trigger_reload:265 — /app/apps/orders/views.py changed, reloading.
+[2026-03-10 13:29:26] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-10 13:30:22] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader

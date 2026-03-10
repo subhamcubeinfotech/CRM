@@ -1,9 +1,15 @@
 from django.contrib import admin
-from .models import Order, ManifestItem, Tag, ShippingTerm
+from .models import Order, ManifestItem, Tag, ShippingTerm, PackagingType
 
 
 @admin.register(ShippingTerm)
 class ShippingTermAdmin(admin.ModelAdmin):
+    list_display = ['name', 'description']
+    search_fields = ['name']
+
+
+@admin.register(PackagingType)
+class PackagingTypeAdmin(admin.ModelAdmin):
     list_display = ['name', 'description']
     search_fields = ['name']
 

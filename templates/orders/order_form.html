@@ -214,9 +214,9 @@
                             <label class="form-label fw-bold small">Packaging</label>
                             <select name="packaging[]" class="form-select form-select-sm">
                                 <option value="">Select packaging type</option>
-                                <option>Bales</option>
-                                <option>Boxes</option>
-                                <option>Pallets</option>
+                                {% for ptype in packaging_types %}
+                                <option value="{{ ptype.name }}">{{ ptype.name }}</option>
+                                {% endfor %}
                             </select>
                         </div>
                         <div class="col-md-4 d-flex align-items-end mb-1">
