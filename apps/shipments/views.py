@@ -508,7 +508,7 @@ def generate_packing_list(request, pk):
 @login_required
 def create_invoice(request, pk):
     """Create or view invoice linked to this shipment"""
-    from apps.invoicing.models import Invoice, InvoiceItem
+    from apps.invoicing.models import Invoice, InvoiceLineItem
     from datetime import date, timedelta
 
     shipment = get_object_or_404(Shipment.objects.select_related('order', 'customer'), pk=pk)

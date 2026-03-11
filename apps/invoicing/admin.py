@@ -40,7 +40,7 @@ class InvoiceAdmin(admin.ModelAdmin):
         ('Financial', {
             'fields': (
                 'subtotal', 'tax_rate', 'tax_amount', 'total',
-                'amount_paid', 'balance_due'
+                'amount_paid'
             )
         }),
         ('Status & Notes', {
