@@ -178,7 +178,12 @@ def shipment_list(request):
 @login_required
 def shipment_detail(request, pk):
     """Shipment detail view with tracking map"""
-    shipment = get_object_or_404(Shipment.objects.select_related('customer', 'carrier', 'shipper', 'consignee'), pk=pk)
+    # Filter by tenant first to avoid 404s for shipments in other tenants
+    shipment_queryset = Shipment.objects.select_related('customer', 'carrier', 'shipper', 'consignee')
+    if request.user.tenant:
+        shipment_queryset = shipment_queryset.filter(tenant=request.user.tenant)
+    
+    shipment = get_object_or_404(shipment_queryset, pk=pk)
     check_company_access(shipment.customer, request.user)
     
     # Get milestones
@@ -237,9 +242,9 @@ def shipment_create(request):
 
     if request.method == 'POST':
         # Get form data
-        customer_id = request.POST.get('customer')
+        customer_id = request.POST.get('customer') or order.receiver_id  # Default to order receiver
         carrier_id = request.POST.get('carrier')
-        shipper_id = request.POST.get('shipper')
+        shipper_id = request.POST.get('shipper') or order.supplier_id  # Default to order supplier
         consignee_id = request.POST.get('consignee')
         
         # Create shipment
@@ -290,7 +295,9 @@ def shipment_create(request):
             special_instructions=request.POST.get('special_instructions', ''),
             internal_notes=request.POST.get('internal_notes', ''),
             
+            # Metadata
             created_by=request.user,
+            tenant=request.user.tenant,  # Add tenant assignment
         )
         shipment.save()
         

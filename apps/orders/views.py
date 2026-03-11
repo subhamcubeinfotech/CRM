@@ -106,6 +106,13 @@ def order_update_status(request, pk):
     order = get_object_or_404(Order, pk=pk)
     if request.method == 'POST':
         status = request.POST.get('status')
+        
+        # Handle simplified workflow: map "open" and "complete" to existing statuses
+        if status == 'open':
+            status = 'confirmed'  # Map "open" to "confirmed" for backend
+        elif status == 'complete':
+            status = 'delivered'  # Map "complete" to "delivered" for backend
+        
         if status in dict(Order.STATUS_CHOICES):
             old_status = order.get_status_display()
             order.status = status

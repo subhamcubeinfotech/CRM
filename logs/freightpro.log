@@ -3894,3 +3894,482 @@ django.template.exceptions.TemplateSyntaxError: Invalid block tag on line 458: '
 [2026-03-11 08:20:00] INFO django.server basehttp.log_message:213 — "GET /orders/69/ HTTP/1.1" 200 32209
 [2026-03-11 08:20:18] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
 [2026-03-11 08:24:54] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-11 11:54:46] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-11 11:55:48] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-11 11:56:06] INFO django.server basehttp.log_message:213 — "GET /orders/69/ HTTP/1.1" 200 32043
+[2026-03-11 11:56:33] INFO django.server basehttp.log_message:213 — "GET /shipments/create/?order_id=69 HTTP/1.1" 200 27842
+[2026-03-11 11:56:35] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 11:56:35] INFO django.server basehttp.log_message:213 — "GET /shipments/ HTTP/1.1" 200 15927
+[2026-03-11 11:56:36] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 11:56:36] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 11:56:36] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 34481
+[2026-03-11 11:56:38] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 11:56:38] INFO django.server basehttp.log_message:213 — "GET /shipments/ HTTP/1.1" 200 15927
+[2026-03-11 11:56:39] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 11:56:39] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 11:56:39] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 34481
+[2026-03-11 11:56:40] INFO django.server basehttp.log_message:213 — "GET /orders/69/ HTTP/1.1" 200 32043
+[2026-03-11 12:01:01] INFO django.utils.autoreload autoreload.trigger_reload:265 — /app/apps/orders/views.py changed, reloading.
+[2026-03-11 12:01:04] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-11 12:02:20] INFO django.server basehttp.log_message:213 — "GET /orders/69/ HTTP/1.1" 200 30136
+[2026-03-11 12:02:23] INFO apps.orders views.order_update_status:120 — Order STH-O-14-1773212594 status: open → Confirmed by sahil (Customer)
+[2026-03-11 12:02:23] INFO django.server basehttp.log_message:213 — "POST /orders/69/update-status/ HTTP/1.1" 302 0
+[2026-03-11 12:02:23] INFO django.server basehttp.log_message:213 — "GET /orders/69/ HTTP/1.1" 200 30128
+[2026-03-11 12:02:24] INFO apps.orders views.order_update_status:120 — Order STH-O-14-1773212594 status: Confirmed → Delivered by sahil (Customer)
+[2026-03-11 12:02:24] INFO django.server basehttp.log_message:213 — "POST /orders/69/update-status/ HTTP/1.1" 302 0
+[2026-03-11 12:02:24] INFO django.server basehttp.log_message:213 — "GET /orders/69/ HTTP/1.1" 200 30136
+[2026-03-11 12:10:07] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 12:10:07] INFO django.server basehttp.log_message:213 — "GET /shipments/ HTTP/1.1" 200 15927
+[2026-03-11 12:13:17] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 12:13:17] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 12:13:17] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 34491
+[2026-03-11 12:13:23] INFO django.server basehttp.log_message:213 — "GET /orders/69/ HTTP/1.1" 200 30136
+[2026-03-11 12:13:28] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 12:13:28] INFO django.server basehttp.log_message:213 — "GET /shipments/ HTTP/1.1" 200 15927
+[2026-03-11 12:13:30] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 12:13:30] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 12:13:30] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 34491
+[2026-03-11 12:13:55] INFO django.server basehttp.log_message:213 — "GET /orders/69/ HTTP/1.1" 200 30136
+[2026-03-11 12:14:12] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 12:14:12] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 12:14:12] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 34491
+[2026-03-11 12:14:16] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 12:14:16] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 12:14:16] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 34491
+[2026-03-11 12:14:17] INFO apps.orders views.order_create:209 — New order creation page accessed by sahil (Customer)
+[2026-03-11 12:14:17] INFO django.server basehttp.log_message:213 — "GET /orders/create/ HTTP/1.1" 200 36128
+[2026-03-11 12:14:19] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 12:14:19] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 12:14:19] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 34491
+[2026-03-11 12:14:20] INFO django.server basehttp.log_message:213 — "GET /orders/69/ HTTP/1.1" 200 30136
+[2026-03-11 12:14:25] INFO apps.orders views.order_update_status:120 — Order STH-O-14-1773212594 status: Delivered → Confirmed by sahil (Customer)
+[2026-03-11 12:14:25] INFO django.server basehttp.log_message:213 — "POST /orders/69/update-status/ HTTP/1.1" 302 0
+[2026-03-11 12:14:25] INFO django.server basehttp.log_message:213 — "GET /orders/69/ HTTP/1.1" 200 30128
+[2026-03-11 12:14:26] INFO apps.orders views.order_update_status:120 — Order STH-O-14-1773212594 status: Confirmed → Delivered by sahil (Customer)
+[2026-03-11 12:14:26] INFO django.server basehttp.log_message:213 — "POST /orders/69/update-status/ HTTP/1.1" 302 0
+[2026-03-11 12:14:26] INFO django.server basehttp.log_message:213 — "GET /orders/69/ HTTP/1.1" 200 30136
+[2026-03-11 12:14:29] INFO apps.orders views.order_update_status:120 — Order STH-O-14-1773212594 status: Delivered → Confirmed by sahil (Customer)
+[2026-03-11 12:14:29] INFO django.server basehttp.log_message:213 — "POST /orders/69/update-status/ HTTP/1.1" 302 0
+[2026-03-11 12:14:29] INFO django.server basehttp.log_message:213 — "GET /orders/69/ HTTP/1.1" 200 30128
+[2026-03-11 12:14:39] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 12:14:39] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 12:14:39] INFO django.server basehttp.log_message:213 — "GET /dashboard/ HTTP/1.1" 200 18415
+[2026-03-11 12:14:40] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 12:14:40] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 12:14:40] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 34491
+[2026-03-11 12:14:43] INFO django.server basehttp.log_message:213 — "GET /orders/69/ HTTP/1.1" 200 30128
+[2026-03-11 12:14:45] INFO django.server basehttp.log_message:213 — "GET /shipments/create/?order_id=69 HTTP/1.1" 200 27842
+[2026-03-11 12:15:15] ERROR django.request log.log_response:253 — Internal Server Error: /shipments/create/
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/sqlite3/base.py", line 360, in execute
+    return super().execute(query, params)
+sqlite3.IntegrityError: UNIQUE constraint failed: shipments_shipment.shipment_number
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/usr/local/lib/python3.10/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/usr/local/lib/python3.10/site-packages/django/contrib/auth/decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/app/apps/shipments/views.py", line 295, in shipment_create
+    shipment.save()
+  File "/app/apps/shipments/models.py", line 160, in save
+    super().save(*args, **kwargs)
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/base.py", line 902, in save
+    self.save_base(
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/base.py", line 1008, in save_base
+    updated = self._save_table(
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/base.py", line 1169, in _save_table
+    results = self._do_insert(
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/base.py", line 1210, in _do_insert
+    return manager._insert(
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/query.py", line 1873, in _insert
+    return query.get_compiler(using=using).execute_sql(returning_fields)
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/sql/compiler.py", line 1882, in execute_sql
+    cursor.execute(sql, params)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 122, in execute
+    return super().execute(sql, params)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "/usr/local/lib/python3.10/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/sqlite3/base.py", line 360, in execute
+    return super().execute(query, params)
+django.db.utils.IntegrityError: UNIQUE constraint failed: shipments_shipment.shipment_number
+[2026-03-11 12:15:15] ERROR django.server basehttp.log_message:213 — "POST /shipments/create/?order_id=69 HTTP/1.1" 500 192982
+[2026-03-11 12:15:27] ERROR django.request log.log_response:253 — Internal Server Error: /shipments/create/
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/sqlite3/base.py", line 360, in execute
+    return super().execute(query, params)
+sqlite3.IntegrityError: UNIQUE constraint failed: shipments_shipment.shipment_number
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/usr/local/lib/python3.10/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/usr/local/lib/python3.10/site-packages/django/contrib/auth/decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/app/apps/shipments/views.py", line 295, in shipment_create
+    shipment.save()
+  File "/app/apps/shipments/models.py", line 160, in save
+    super().save(*args, **kwargs)
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/base.py", line 902, in save
+    self.save_base(
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/base.py", line 1008, in save_base
+    updated = self._save_table(
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/base.py", line 1169, in _save_table
+    results = self._do_insert(
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/base.py", line 1210, in _do_insert
+    return manager._insert(
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/query.py", line 1873, in _insert
+    return query.get_compiler(using=using).execute_sql(returning_fields)
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/sql/compiler.py", line 1882, in execute_sql
+    cursor.execute(sql, params)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 122, in execute
+    return super().execute(sql, params)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "/usr/local/lib/python3.10/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/sqlite3/base.py", line 360, in execute
+    return super().execute(query, params)
+django.db.utils.IntegrityError: UNIQUE constraint failed: shipments_shipment.shipment_number
+[2026-03-11 12:15:27] ERROR django.server basehttp.log_message:213 — "POST /shipments/create/?order_id=69 HTTP/1.1" 500 193194
+[2026-03-11 12:16:12] INFO django.utils.autoreload autoreload.trigger_reload:265 — /app/apps/shipments/models.py changed, reloading.
+[2026-03-11 12:16:15] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-11 12:16:48] ERROR django.request log.log_response:253 — Internal Server Error: /shipments/create/
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/sqlite3/base.py", line 360, in execute
+    return super().execute(query, params)
+sqlite3.IntegrityError: UNIQUE constraint failed: shipments_shipment.shipment_number
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/usr/local/lib/python3.10/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/usr/local/lib/python3.10/site-packages/django/contrib/auth/decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/app/apps/shipments/views.py", line 295, in shipment_create
+    shipment.save()
+  File "/app/apps/shipments/models.py", line 160, in save
+    super().save(*args, **kwargs)
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/base.py", line 902, in save
+    self.save_base(
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/base.py", line 1008, in save_base
+    updated = self._save_table(
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/base.py", line 1169, in _save_table
+    results = self._do_insert(
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/base.py", line 1210, in _do_insert
+    return manager._insert(
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/query.py", line 1873, in _insert
+    return query.get_compiler(using=using).execute_sql(returning_fields)
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/sql/compiler.py", line 1882, in execute_sql
+    cursor.execute(sql, params)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 122, in execute
+    return super().execute(sql, params)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "/usr/local/lib/python3.10/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/sqlite3/base.py", line 360, in execute
+    return super().execute(query, params)
+django.db.utils.IntegrityError: UNIQUE constraint failed: shipments_shipment.shipment_number
+[2026-03-11 12:16:48] ERROR django.server basehttp.log_message:213 — "POST /shipments/create/?order_id=69 HTTP/1.1" 500 193118
+[2026-03-11 12:16:51] INFO django.server basehttp.log_message:213 — "GET /shipments/create/?order_id=69 HTTP/1.1" 200 27842
+[2026-03-11 12:17:15] ERROR django.request log.log_response:253 — Internal Server Error: /shipments/create/
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/sqlite3/base.py", line 360, in execute
+    return super().execute(query, params)
+sqlite3.IntegrityError: UNIQUE constraint failed: shipments_shipment.shipment_number
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/usr/local/lib/python3.10/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/usr/local/lib/python3.10/site-packages/django/contrib/auth/decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/app/apps/shipments/views.py", line 295, in shipment_create
+    shipment.save()
+  File "/app/apps/shipments/models.py", line 160, in save
+    super().save(*args, **kwargs)
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/base.py", line 902, in save
+    self.save_base(
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/base.py", line 1008, in save_base
+    updated = self._save_table(
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/base.py", line 1169, in _save_table
+    results = self._do_insert(
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/base.py", line 1210, in _do_insert
+    return manager._insert(
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/query.py", line 1873, in _insert
+    return query.get_compiler(using=using).execute_sql(returning_fields)
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/sql/compiler.py", line 1882, in execute_sql
+    cursor.execute(sql, params)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 122, in execute
+    return super().execute(sql, params)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "/usr/local/lib/python3.10/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/sqlite3/base.py", line 360, in execute
+    return super().execute(query, params)
+django.db.utils.IntegrityError: UNIQUE constraint failed: shipments_shipment.shipment_number
+[2026-03-11 12:17:15] ERROR django.server basehttp.log_message:213 — "POST /shipments/create/?order_id=69 HTTP/1.1" 500 193113
+[2026-03-11 12:17:20] ERROR django.request log.log_response:253 — Internal Server Error: /shipments/create/
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/sqlite3/base.py", line 360, in execute
+    return super().execute(query, params)
+sqlite3.IntegrityError: UNIQUE constraint failed: shipments_shipment.shipment_number
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/usr/local/lib/python3.10/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/usr/local/lib/python3.10/site-packages/django/contrib/auth/decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/app/apps/shipments/views.py", line 295, in shipment_create
+    shipment.save()
+  File "/app/apps/shipments/models.py", line 160, in save
+    super().save(*args, **kwargs)
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/base.py", line 902, in save
+    self.save_base(
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/base.py", line 1008, in save_base
+    updated = self._save_table(
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/base.py", line 1169, in _save_table
+    results = self._do_insert(
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/base.py", line 1210, in _do_insert
+    return manager._insert(
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/query.py", line 1873, in _insert
+    return query.get_compiler(using=using).execute_sql(returning_fields)
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/sql/compiler.py", line 1882, in execute_sql
+    cursor.execute(sql, params)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 122, in execute
+    return super().execute(sql, params)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "/usr/local/lib/python3.10/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/sqlite3/base.py", line 360, in execute
+    return super().execute(query, params)
+django.db.utils.IntegrityError: UNIQUE constraint failed: shipments_shipment.shipment_number
+[2026-03-11 12:17:20] ERROR django.server basehttp.log_message:213 — "POST /shipments/create/?order_id=69 HTTP/1.1" 500 193241
+[2026-03-11 12:17:20] WARNING django.request log.log_response:253 — Not Found: /favicon.ico
+[2026-03-11 12:17:20] WARNING django.server basehttp.log_message:213 — "GET /favicon.ico HTTP/1.1" 404 7025
+[2026-03-11 12:17:23] ERROR django.request log.log_response:253 — Internal Server Error: /shipments/create/
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/sqlite3/base.py", line 360, in execute
+    return super().execute(query, params)
+sqlite3.IntegrityError: UNIQUE constraint failed: shipments_shipment.shipment_number
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/usr/local/lib/python3.10/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/usr/local/lib/python3.10/site-packages/django/contrib/auth/decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/app/apps/shipments/views.py", line 295, in shipment_create
+    shipment.save()
+  File "/app/apps/shipments/models.py", line 160, in save
+    super().save(*args, **kwargs)
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/base.py", line 902, in save
+    self.save_base(
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/base.py", line 1008, in save_base
+    updated = self._save_table(
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/base.py", line 1169, in _save_table
+    results = self._do_insert(
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/base.py", line 1210, in _do_insert
+    return manager._insert(
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/query.py", line 1873, in _insert
+    return query.get_compiler(using=using).execute_sql(returning_fields)
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/sql/compiler.py", line 1882, in execute_sql
+    cursor.execute(sql, params)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 122, in execute
+    return super().execute(sql, params)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "/usr/local/lib/python3.10/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/sqlite3/base.py", line 360, in execute
+    return super().execute(query, params)
+django.db.utils.IntegrityError: UNIQUE constraint failed: shipments_shipment.shipment_number
+[2026-03-11 12:17:23] ERROR django.server basehttp.log_message:213 — "POST /shipments/create/?order_id=69 HTTP/1.1" 500 193241
+[2026-03-11 12:17:23] WARNING django.request log.log_response:253 — Not Found: /favicon.ico
+[2026-03-11 12:17:23] WARNING django.server basehttp.log_message:213 — "GET /favicon.ico HTTP/1.1" 404 7025
+[2026-03-11 12:17:32] INFO django.server basehttp.log_message:213 — "GET / HTTP/1.1" 200 7780
+[2026-03-11 12:17:35] INFO django.server basehttp.log_message:213 — "GET /login/ HTTP/1.1" 200 4772
+[2026-03-11 12:17:39] INFO django.server basehttp.log_message:213 — "POST /login/ HTTP/1.1" 302 0
+[2026-03-11 12:17:39] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 12:17:39] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 12:17:39] INFO django.server basehttp.log_message:213 — "GET /dashboard/ HTTP/1.1" 200 18415
+[2026-03-11 12:17:41] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 12:17:41] INFO django.server basehttp.log_message:213 — "GET /shipments/ HTTP/1.1" 200 15927
+[2026-03-11 12:17:44] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 12:17:44] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 12:17:44] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 34491
+[2026-03-11 12:17:46] INFO django.server basehttp.log_message:213 — "GET /orders/69/ HTTP/1.1" 200 30128
+[2026-03-11 12:17:48] INFO django.server basehttp.log_message:213 — "GET /shipments/create/?order_id=69 HTTP/1.1" 200 27842
+[2026-03-11 12:18:26] ERROR django.request log.log_response:253 — Internal Server Error: /shipments/create/
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/sqlite3/base.py", line 360, in execute
+    return super().execute(query, params)
+sqlite3.IntegrityError: UNIQUE constraint failed: shipments_shipment.shipment_number
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/usr/local/lib/python3.10/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/usr/local/lib/python3.10/site-packages/django/contrib/auth/decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/app/apps/shipments/views.py", line 295, in shipment_create
+    shipment.save()
+  File "/app/apps/shipments/models.py", line 160, in save
+    super().save(*args, **kwargs)
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/base.py", line 902, in save
+    self.save_base(
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/base.py", line 1008, in save_base
+    updated = self._save_table(
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/base.py", line 1169, in _save_table
+    results = self._do_insert(
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/base.py", line 1210, in _do_insert
+    return manager._insert(
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/query.py", line 1873, in _insert
+    return query.get_compiler(using=using).execute_sql(returning_fields)
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/sql/compiler.py", line 1882, in execute_sql
+    cursor.execute(sql, params)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 122, in execute
+    return super().execute(sql, params)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "/usr/local/lib/python3.10/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/sqlite3/base.py", line 360, in execute
+    return super().execute(query, params)
+django.db.utils.IntegrityError: UNIQUE constraint failed: shipments_shipment.shipment_number
+[2026-03-11 12:18:26] ERROR django.server basehttp.log_message:213 — "POST /shipments/create/?order_id=69 HTTP/1.1" 500 193243
+[2026-03-11 12:18:48] INFO django.utils.autoreload autoreload.trigger_reload:265 — /app/apps/shipments/models.py changed, reloading.
+[2026-03-11 12:18:50] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-11 12:19:08] INFO apps.shipments views.shipment_create:306 — Shipment created: SHP-2026-49280 for abc (Customer) by sahil (Customer)
+[2026-03-11 12:19:08] INFO django.server basehttp.log_message:213 — "POST /shipments/create/?order_id=69 HTTP/1.1" 302 0
+[2026-03-11 12:19:08] WARNING django.request log.log_response:253 — Not Found: /shipments/114/
+[2026-03-11 12:19:08] WARNING django.server basehttp.log_message:213 — "GET /shipments/114/ HTTP/1.1" 404 6497
+[2026-03-11 12:19:14] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 12:19:14] INFO django.server basehttp.log_message:213 — "GET /shipments/ HTTP/1.1" 200 16252
+[2026-03-11 12:19:17] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 12:19:17] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 12:19:17] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 34491
+[2026-03-11 12:19:20] INFO django.server basehttp.log_message:213 — "GET /orders/69/ HTTP/1.1" 200 30128
+[2026-03-11 12:19:23] INFO django.server basehttp.log_message:213 — "GET /shipments/create/?order_id=69 HTTP/1.1" 200 27842
+[2026-03-11 12:19:47] INFO apps.shipments views.shipment_create:306 — Shipment created: SHP-2026-49319 for abc (Customer) by sahil (Customer)
+[2026-03-11 12:19:47] INFO django.server basehttp.log_message:213 — "POST /shipments/create/?order_id=69 HTTP/1.1" 302 0
+[2026-03-11 12:19:47] WARNING django.request log.log_response:253 — Not Found: /shipments/115/
+[2026-03-11 12:19:47] WARNING django.server basehttp.log_message:213 — "GET /shipments/115/ HTTP/1.1" 404 6497
+[2026-03-11 12:20:31] INFO django.utils.autoreload autoreload.trigger_reload:265 — /app/apps/shipments/views.py changed, reloading.
+[2026-03-11 12:20:34] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-11 12:20:43] WARNING django.request log.log_response:253 — Not Found: /shipments/115/
+[2026-03-11 12:20:43] WARNING django.server basehttp.log_message:213 — "GET /shipments/115/ HTTP/1.1" 404 6497
+[2026-03-11 12:20:47] INFO django.server basehttp.log_message:213 — "GET /shipments HTTP/1.1" 301 0
+[2026-03-11 12:20:47] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 12:20:48] INFO django.server basehttp.log_message:213 — "GET /shipments/ HTTP/1.1" 200 16252
+[2026-03-11 12:20:51] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 12:20:51] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 12:20:51] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 34491
+[2026-03-11 12:20:54] INFO django.server basehttp.log_message:213 — "GET /orders/69/ HTTP/1.1" 200 30128
+[2026-03-11 12:20:55] INFO django.server basehttp.log_message:213 — "GET /shipments/create/?order_id=69 HTTP/1.1" 200 27842
+[2026-03-11 12:21:15] INFO apps.shipments views.shipment_create:306 — Shipment created: SHP-2026-49407 for abc (Customer) by sahil (Customer)
+[2026-03-11 12:21:15] INFO django.server basehttp.log_message:213 — "POST /shipments/create/?order_id=69 HTTP/1.1" 302 0
+[2026-03-11 12:21:15] WARNING django.request log.log_response:253 — Not Found: /shipments/116/
+[2026-03-11 12:21:15] WARNING django.server basehttp.log_message:213 — "GET /shipments/116/ HTTP/1.1" 404 6497
+[2026-03-11 12:21:49] INFO django.utils.autoreload autoreload.trigger_reload:265 — /app/apps/shipments/views.py changed, reloading.
+[2026-03-11 12:21:52] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-11 12:22:01] INFO django.utils.autoreload autoreload.trigger_reload:265 — /app/apps/shipments/views.py changed, reloading.
+[2026-03-11 12:22:02] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
