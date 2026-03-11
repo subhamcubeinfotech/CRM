@@ -4777,3 +4777,15 @@ django.core.exceptions.FieldError: Unknown field(s) (balance_due) specified for 
 [2026-03-11 13:44:41] INFO django.utils.autoreload autoreload.trigger_reload:265 — /app/apps/invoicing/admin.py changed, reloading.
 [2026-03-11 19:14:45] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
 [2026-03-11 13:44:48] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-11 13:44:57] INFO django.server basehttp.log_message:213 — "GET /admin/invoicing/invoice/add/ HTTP/1.1" 200 53785
+[2026-03-11 13:44:57] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-11 13:45:11] INFO django.server basehttp.log_message:213 — "GET /admin/invoicing/invoice/add/ HTTP/1.1" 200 53785
+[2026-03-11 13:45:12] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-11 13:45:13] INFO django.server basehttp.log_message:213 — "GET /admin/invoicing/invoice/ HTTP/1.1" 200 40034
+[2026-03-11 13:45:13] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-11 13:45:15] INFO django.server basehttp.log_message:213 — "GET /admin/invoicing/invoice/add/ HTTP/1.1" 200 53785
+[2026-03-11 13:45:15] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-11 13:45:20] INFO django.server basehttp.log_message:213 — "GET /admin/invoicing/invoice/ HTTP/1.1" 200 40034
+[2026-03-11 13:45:20] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-11 13:45:22] INFO django.server basehttp.log_message:213 — "GET /admin/invoicing/invoice/21/change/ HTTP/1.1" 200 61099
+[2026-03-11 13:45:22] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
