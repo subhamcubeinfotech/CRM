@@ -148,6 +148,14 @@
                             <label class="form-label fw-bold">Terms</label>
                             <input type="text" name="terms" class="form-control" value="{{ invoice.terms|default:'Net 30 days' }}">
                         </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Payment Instructions</label>
+                            <textarea name="payment_instructions" class="form-control" rows="3" placeholder="Payment instructions for the customer...">{{ invoice.payment_instructions }}</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Tax Details</label>
+                            <textarea name="tax_details" class="form-control" rows="3" placeholder="Tax details and information...">{{ invoice.tax_details }}</textarea>
+                        </div>
                         <div class="mb-0">
                             <label class="form-label fw-bold">Notes</label>
                             <textarea name="notes" class="form-control" rows="4" placeholder="Additional notes for the customer...">{{ invoice.notes }}</textarea>

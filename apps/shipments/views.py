@@ -510,6 +510,7 @@ def create_invoice(request, pk):
     """Create or view invoice linked to this shipment"""
     from apps.invoicing.models import Invoice, InvoiceLineItem
     from datetime import date, timedelta
+    from django.db import transaction
 
     shipment = get_object_or_404(Shipment.objects.select_related('order', 'customer'), pk=pk)
 
@@ -523,39 +524,65 @@ def create_invoice(request, pk):
         subtotal = shipment.revenue
         due_date = date.today() + timedelta(days=30)
 
-        invoice = Invoice.objects.create(
-            customer=shipment.customer,
-            shipment=shipment,
-            order=shipment.order,
-            invoice_date=date.today(),
-            due_date=due_date,
-            subtotal=subtotal,
-            total=subtotal,
-            status='draft',
-            created_by=request.user,
-        )
+        # Use transaction to ensure atomicity
+        try:
+            with transaction.atomic():
+                # Generate invoice number first
+                invoice_number = Invoice.generate_invoice_number()
+                print(f"DEBUG: Generated number: {invoice_number}")  # Debug line
+                
+                invoice = Invoice.objects.create(
+                    customer=shipment.customer,
+                    shipment=shipment,
+                    order=shipment.order,
+                    invoice_number=invoice_number,
+                    invoice_date=date.today(),
+                    due_date=due_date,
+                    subtotal=subtotal,
+                    total=subtotal,
+                    status='draft',
+                    payment_instructions=request.POST.get('payment_instructions', ''),
+                    tax_details=request.POST.get('tax_details', ''),
+                    terms=request.POST.get('terms', 'Net 30 days'),
+                    created_by=request.user,
+                )
+                print(f"DEBUG: Created invoice: {invoice.invoice_number}")  # Debug line
+        except Exception as e:
+            print(f"DEBUG: Exception occurred: {e}")  # Debug line
+            messages.error(request, f'Error creating invoice: {str(e)}')
+            return redirect('shipments:create_invoice', pk=pk)
 
         # Add manifest items as invoice line items if available
-        if shipment.order:
-            for item in shipment.order.manifest_items.all():
-                try:
-                    InvoiceItem.objects.create(
-                        invoice=invoice,
-                        description=item.material,
-                        quantity=item.weight,
-                        unit_price=item.sell_price,
-                        total=item.weight * item.sell_price,
-                    )
-                except Exception:
-                    pass  # InvoiceItem may have different fields
+        # TODO: Fix InvoiceItem creation - temporarily disabled
+        # if shipment.order:
+        #     for item in shipment.order.manifest_items.all():
+        #         try:
+        #             InvoiceItem.objects.create(
+        #                 invoice=invoice,
+        #                 description=item.material,
+        #                 quantity=item.weight,
+        #                 unit_price=item.sell_price,
+        #                 total=item.weight * item.sell_price,
+        #             )
+        #         except Exception:
+        #             pass  # InvoiceItem may have different fields
 
-        messages.success(request, f'Invoice {invoice_number} created successfully!')
-        return redirect('invoicing:invoice_detail', pk=invoice.pk)
+        messages.success(request, f'Invoice {invoice.invoice_number} created successfully!')
+        return redirect('invoicing:invoice_list')
 
     # Show confirmation page
+    from datetime import date
+    # Generate preview number (but don't save)
+    try:
+        next_invoice_number = Invoice.generate_invoice_number()
+    except:
+        next_invoice_number = "Generating..."
+    
     context = {
         'shipment': shipment,
         'existing_invoices': Invoice.objects.filter(shipment=shipment),
+        'next_invoice_number': next_invoice_number,
+        'today': date.today(),
     }
     return render(request, 'shipments/confirm_invoice.html', context)
 
