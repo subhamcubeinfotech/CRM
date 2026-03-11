@@ -62,6 +62,32 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
         context['manifest_items'] = self.object.manifest_items.all()
         context['shipments'] = self.object.shipments.all()
         context['invoices'] = self.object.invoices.all()
+        
+        # Context for Edit Offcanvas
+        user_company = self.request.user.company
+        context['suppliers'] = Company.objects.filter(company_type='vendor')
+        context['receivers'] = Company.objects.filter(company_type='customer')
+        
+        # Locations (Prioritize user's company)
+        from django.db import models
+        from django.db.models import Case, When, IntegerField
+        warehouses = Warehouse.plain_objects.all()
+        if user_company:
+            warehouses = warehouses.annotate(
+                is_my_company=Case(
+                    When(company=user_company, then=1),
+                    default=0,
+                    output_field=IntegerField()
+                )
+            ).order_by('-is_my_company', 'name')
+        context['warehouses'] = warehouses
+        
+        context['shipping_terms'] = ShippingTerm.objects.all()
+        context['tags'] = Tag.objects.all()
+        
+        from django.contrib.auth import get_user_model
+        context['team_members'] = get_user_model().objects.all()
+        
         return context
 
 @login_required
@@ -79,6 +105,44 @@ def order_update_status(request, pk):
 @login_required
 def order_create(request):
     if request.method == 'POST':
+        # Handle dynamic location creation for "my company address"
+        source_loc_val = request.POST.get('source_location')
+        dest_loc_val = request.POST.get('destination_location')
+        
+        print(f"\n--- ORDER CREATE DEBUG ---")
+        print(f"Original Source: {source_loc_val}")
+        print(f"Original Dest: {dest_loc_val}")
+        
+        def resolve_location(val, user):
+            if not val: return None
+            if str(val).startswith('temp_addr_') or str(val).startswith('http') or len(str(val)) > 10:
+                print(f"Resolving dynamic address: {val}")
+                company = user.company
+                if not company: 
+                    print("User has no company!")
+                    return None
+                
+                raw_address = str(val).replace('temp_addr_', '')[:200]
+                
+                # Check if Main Office location already exists to avoid duplicates
+                hq, created = Warehouse.objects.get_or_create(
+                    company=company,
+                    tenant=company.tenant,
+                    name=raw_address,
+                    defaults={
+                        'code': f"MAIN-{company.id}"[:20],
+                        'address': company.address_line1,
+                        'city': company.city[:100],
+                        'state': company.state[:100],
+                        'country': company.country[:100],
+                        'postal_code': company.postal_code[:20],
+                        'phone': company.phone[:20]
+                    }
+                )
+                print(f"Resolved to Warehouse ID: {hq.id} (Created: {created})")
+                return hq.id
+            return val
+
         # Create the order
         order = Order.objects.create(
             order_number=request.POST.get('order_number'),
@@ -86,10 +150,10 @@ def order_create(request):
             so_number=request.POST.get('so_number'),
             supplier_id=request.POST.get('supplier'),
             receiver_id=request.POST.get('receiver'),
-            source_location_id=request.POST.get('source_location'),
-            destination_location_id=request.POST.get('destination_location'),
+            source_location_id=resolve_location(source_loc_val, request.user),
+            destination_location_id=resolve_location(dest_loc_val, request.user),
             total_weight_target=request.POST.get('total_weight_target') or 0,
-            shipping_terms=request.POST.get('shipping_terms'),
+            shipping_terms_id=request.POST.get('shipping_terms'),
             representative_id=request.POST.get('representative'),
             status='confirmed', # Default to confirmed for manual entries
             payment_status='pending',
@@ -135,13 +199,57 @@ def order_create(request):
         suppliers = (suppliers | Company.objects.filter(pk=user_company.pk)).distinct()
         receivers = (receivers | Company.objects.filter(pk=user_company.pk)).distinct()
     
+    inventory_items = InventoryItem.objects.filter(tenant=request.user.tenant) if request.user.tenant else InventoryItem.objects.all()
+    if not inventory_items.exists():
+        inventory_items = InventoryItem.plain_objects.all()
+
+    # Show ONLY user's company warehouses
+    if user_company:
+        warehouses = Warehouse.plain_objects.filter(company=user_company).order_by('name')
+    else:
+        warehouses = Warehouse.plain_objects.all().order_by('name')
+
     context = {
         'suppliers': suppliers,
         'receivers': receivers,
-        'warehouses': Warehouse.objects.all(),
-        'inventory_items': InventoryItem.objects.filter(tenant=request.user.tenant) if request.user.tenant else InventoryItem.objects.all(),
+        'warehouses': warehouses,
+        'inventory_items': inventory_items,
         'shipping_terms': ShippingTerm.objects.all(),
         'tags': Tag.objects.all(),
         'packaging_types': PackagingType.objects.all(),
     }
     return render(request, 'orders/order_form.html', context)
+
+
+@login_required
+def order_edit(request, pk):
+    order = get_object_or_404(Order, pk=pk)
+    # Check if we can change supplier/receiver (lock if shipments exist)
+    can_change_parties = not order.shipments.exists()
+
+    if request.method == 'POST':
+        if can_change_parties:
+            order.supplier_id = request.POST.get('supplier')
+            order.receiver_id = request.POST.get('receiver')
+        
+        order.source_location_id = request.POST.get('source_location')
+        order.destination_location_id = request.POST.get('destination_location')
+        order.po_number = request.POST.get('po_number')
+        order.so_number = request.POST.get('so_number')
+        order.shipping_terms_id = request.POST.get('shipping_terms')
+        order.representative_id = request.POST.get('representative')
+        
+        # Handle Tags
+        tag_ids = request.POST.getlist('tags')
+        if tag_ids:
+            order.tags.set(tag_ids)
+        else:
+            order.tags.clear()
+            
+        order.save()
+        logger.info(f'Order {order.order_number} parameters updated by {request.user}')
+        return redirect('orders:order_detail', pk=order.pk)
+
+    # For AJAX/Offcanvas pre-fill if needed, but here we just redirect back 
+    # since the offcanvas is embedded in the detail page.
+    return redirect('orders:order_detail', pk=order.pk)

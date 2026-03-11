@@ -12,9 +12,9 @@ class InventoryItemInline(admin.TabularInline):
 
 @admin.register(Warehouse)
 class WarehouseAdmin(admin.ModelAdmin):
-    list_display = ['name', 'code', 'city', 'state', 'manager', 'is_active']
-    list_filter = ['is_active', 'state', 'country']
-    search_fields = ['name', 'code', 'city']
+    list_display = ['name', 'code', 'company', 'city', 'state', 'manager', 'is_active']
+    list_filter = ['is_active', 'company', 'state', 'country']
+    search_fields = ['name', 'code', 'company__name', 'city']
     inlines = [InventoryItemInline]
 
 

@@ -10,11 +10,13 @@
         --accent-blue: #4e73df;
         --soft-gray: #f8f9fc;
     }
+
     .order-header {
         background: white;
         border-bottom: 1px solid #e3e6f0;
         padding-bottom: 0;
     }
+
     .status-dropdown .btn {
         background: #fef9c3;
         color: #854d0e;
@@ -23,11 +25,13 @@
         border-radius: 8px;
         padding: 0.25rem 0.75rem;
     }
+
     .status-dropdown .dropdown-menu {
         border-radius: 12px;
         box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         border: none;
     }
+
     .detail-label {
         font-size: 0.75rem;
         text-transform: uppercase;
@@ -35,13 +39,23 @@
         color: #b7b9cc;
         margin-bottom: 0.25rem;
     }
-    .party-card { border: none; background: transparent; }
-    .party-title { color: var(--accent-blue); font-weight: 700; font-size: 1.1rem; }
-    
+
+    .party-card {
+        border: none;
+        background: transparent;
+    }
+
+    .party-title {
+        color: var(--accent-blue);
+        font-weight: 700;
+        font-size: 1.1rem;
+    }
+
     .nav-tabs-premium {
         border-bottom: none;
         gap: 2rem;
     }
+
     .nav-tabs-premium .nav-link {
         border: none;
         padding: 1rem 0;
@@ -49,10 +63,12 @@
         font-weight: 600;
         position: relative;
     }
+
     .nav-tabs-premium .nav-link.active {
         color: var(--accent-blue);
         background: transparent;
     }
+
     .nav-tabs-premium .nav-link.active::after {
         content: '';
         position: absolute;
@@ -71,13 +87,15 @@
         display: flex;
         flex-direction: column;
     }
+
     .chat-bubble {
         background: white;
         border-radius: 12px;
         padding: 1rem;
         margin-bottom: 1rem;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
     }
+
     .table-details thead th {
         background: #f8f9fc;
         color: #4e73df;
@@ -96,9 +114,12 @@
                 <h1 class="h2 fw-bold text-dark mb-0 me-2">{{ order.order_number }}</h1>
                 <span class="badge bg-light text-muted fw-normal rounded-pill px-2">AS</span>
                 <div class="ms-4 mt-1" style="width: 300px;">
-                    <div class="progress rounded-pill bg-light" style="height: 24px; position: relative; border: 1px solid #e3e6f0;">
-                        <div class="progress-bar bg-info opacity-50" style="width: {{ order.weight_progress_percentage }}%"></div>
-                        <div class="position-absolute w-100 text-center fw-bold" style="font-size: 0.75rem; line-height: 22px; color: #2d3748;">
+                    <div class="progress rounded-pill bg-light"
+                        style="height: 24px; position: relative; border: 1px solid #e3e6f0;">
+                        <div class="progress-bar bg-info opacity-50"
+                            style="width: {{ order.weight_progress_percentage }}%"></div>
+                        <div class="position-absolute w-100 text-center fw-bold"
+                            style="font-size: 0.75rem; line-height: 22px; color: #2d3748;">
                             {{ order.shipped_weight|intcomma }} / {{ order.total_weight_target|intcomma }} lbs
                         </div>
                     </div>
@@ -119,13 +140,19 @@
                 </div>
             </div>
             <div class="dropdown">
-                <button class="btn btn-primary d-flex align-items-center px-4" type="button" id="mainActions" data-bs-toggle="dropdown">
+                <button class="btn btn-primary d-flex align-items-center px-4" type="button" id="mainActions"
+                    data-bs-toggle="dropdown">
                     <i class="fas fa-chevron-down me-2 small"></i> Actions
                 </button>
                 <div class="dropdown-menu dropdown-menu-end shadow border-0">
-                    <a class="dropdown-item py-2" href="#"><i class="fas fa-edit me-2 text-muted"></i>Edit Parameters</a>
-                    <a class="dropdown-item py-2" href="{% url 'shipments:shipment_create' %}?order={{ order.pk }}"><i class="fas fa-truck-moving me-2 text-muted"></i>Schedule Shipment</a>
-                    <a class="dropdown-item py-2" href="#"><i class="fas fa-file-invoice-dollar me-2 text-muted"></i>Issue Invoice</a>
+                    <a class="dropdown-item py-2" href="#" data-bs-toggle="offcanvas"
+                        data-bs-target="#offcanvasEditOrder">
+                        <i class="fas fa-edit me-2 text-muted"></i>Edit Parameters
+                    </a>
+                    <a class="dropdown-item py-2" href="{% url 'shipments:shipment_create' %}?order={{ order.pk }}"><i
+                            class="fas fa-truck-moving me-2 text-muted"></i>Schedule Shipment</a>
+                    <a class="dropdown-item py-2" href="#"><i
+                            class="fas fa-file-invoice-dollar me-2 text-muted"></i>Issue Invoice</a>
                 </div>
             </div>
         </div>
@@ -137,7 +164,8 @@
                 <div class="small text-primary mb-2">
                     <i class="fas fa-map-marker-alt me-1"></i> {{ order.supplier.full_address }}
                 </div>
-                <div class="small text-muted mb-1"><i class="fas fa-file-alt me-2"></i>SO#: {{ order.so_number|default:"-" }}</div>
+                <div class="small text-muted mb-1"><i class="fas fa-file-alt me-2"></i>SO#: {{
+                    order.so_number|default:"-" }}</div>
                 <div class="small text-muted mb-1"><i class="fas fa-handshake me-2"></i>FOB Origin</div>
                 <div class="small text-muted"><i class="fas fa-calendar me-2"></i>-</div>
             </div>
@@ -147,7 +175,8 @@
                 <div class="small text-primary mb-2">
                     <i class="fas fa-map-marker-alt me-1"></i> {{ order.receiver.full_address }}
                 </div>
-                <div class="small text-muted mb-1"><i class="fas fa-file-invoice me-2"></i>PO#: {{ order.po_number|default:"-" }}</div>
+                <div class="small text-muted mb-1"><i class="fas fa-file-invoice me-2"></i>PO#: {{
+                    order.po_number|default:"-" }}</div>
                 <div class="small text-muted mb-1"><i class="fas fa-handshake me-2"></i>FOB Origin</div>
                 <div class="small text-muted"><i class="fas fa-calendar me-2"></i>-</div>
             </div>
@@ -175,7 +204,8 @@
                     <!-- Manifest Section -->
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h4 class="fw-bold mb-0">Manifest</h4>
-                        <button class="btn btn-outline-primary btn-sm px-3 rounded-3" style="border-width: 2px;">Add Items</button>
+                        <button class="btn btn-outline-primary btn-sm px-3 rounded-3" style="border-width: 2px;">Add
+                            Items</button>
                     </div>
                     <div class="card border-0 bg-white mb-5" style="border-radius: 12px; overflow: hidden;">
                         <div class="table-responsive">
@@ -186,8 +216,6 @@
                                         <th>Weight <i class="fas fa-arrows-alt-v ms-1 op-30"></i></th>
                                         <th>Buy Price <i class="fas fa-arrows-alt-v ms-1 op-30"></i></th>
                                         <th>Sell Price <i class="fas fa-arrows-alt-v ms-1 op-30"></i></th>
-                                        <th>Have</th>
-                                        <th>Need</th>
                                         <th class="pe-3">Packaging</th>
                                     </tr>
                                 </thead>
@@ -195,11 +223,10 @@
                                     {% for item in manifest_items %}
                                     <tr>
                                         <td class="ps-3"><a href="#" class="text-primary fw-600 text-decoration-none">{{ item.material }}</a></td>
-                                        <td>{{ item.weight|intcomma }} lbs / {{ order.total_weight_target|intcomma }} lbs</td>
+                                        <td>{{ item.weight|intcomma }} lbs / {{ order.total_weight_target|intcomma }}
+                                            lbs</td>
                                         <td>${{ item.buy_price|floatformat:2 }} / lb</td>
                                         <td>${{ item.sell_price|floatformat:2 }} / lb</td>
-                                        <td><span class="text-primary fw-bold">STH-H-2</span></td>
-                                        <td>-</td>
                                         <td class="pe-3">{{ item.packaging }}</td>
                                     </tr>
                                     {% endfor %}
@@ -211,7 +238,9 @@
                     <!-- Shipments Section -->
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h4 class="fw-bold mb-0">Shipments</h4>
-                        <a href="{% url 'shipments:shipment_create' %}?order_id={{ order.pk }}" class="btn btn-outline-primary btn-sm px-3 rounded-3" style="border-width: 2px;">Add Shipment</a>
+                        <a href="{% url 'shipments:shipment_create' %}?order_id={{ order.pk }}"
+                            class="btn btn-outline-primary btn-sm px-3 rounded-3" style="border-width: 2px;">Add
+                            Shipment</a>
                     </div>
                     <div class="card border-0 bg-white mb-4" style="border-radius: 12px; overflow: hidden;">
                         <div class="table-responsive">
@@ -231,28 +260,38 @@
                                 <tbody>
                                     {% for ship in shipments %}
                                     <tr>
-                                        <td class="ps-3"><a href="{% url 'shipments:shipment_detail' ship.pk %}" class="text-primary text-decoration-none fw-600">{{ ship.shipment_number }}</a></td>
+                                        <td class="ps-3"><a href="{% url 'shipments:shipment_detail' ship.pk %}"
+                                                class="text-primary text-decoration-none fw-600">{{ ship.shipment_number
+                                                }}</a></td>
                                         <td>
-                                            <span class="badge rounded-3 py-2 px-3 {% if ship.status == 'delivered' %}bg-success-soft text-success{% else %}bg-danger-soft text-danger{% endif %}" 
-                                                  style="background: {% if ship.status == 'delivered' %}rgba(22,163,74,0.1){% else %}rgba(239,68,68,0.1){% endif %};">
+                                            <span
+                                                class="badge rounded-3 py-2 px-3 {% if ship.status  ==  'delivered' %}bg-success-soft text-success{% else %}bg-danger-soft text-danger{% endif %}"
+                                                style="background: {% if ship.status  ==  'delivered' %}rgba(22,163,74,0.1){% else %}rgba(239,68,68,0.1){% endif %};">
                                                 {{ ship.get_status_display }}
                                             </span>
                                         </td>
                                         <td class="small">{{ ship.pickup_date|date:"l, M jS" }}</td>
                                         <td class="small">{{ ship.estimated_delivery_date|date:"l, M jS" }}</td>
                                         <td>
-                                            <div class="small fw-bold text-primary">{{ ship.order.supplier.address|truncatechars:15 }}</div>
-                                            <div class="text-muted" style="font-size: 0.65rem;">{{ ship.order.supplier.city }}, {{ ship.order.supplier.state }}</div>
+                                            <div class="small fw-bold text-primary">{{
+                                                ship.order.supplier.address|truncatechars:15 }}</div>
+                                            <div class="text-muted" style="font-size: 0.65rem;">{{
+                                                ship.order.supplier.city }}, {{ ship.order.supplier.state }}</div>
                                         </td>
                                         <td>
-                                            <div class="small fw-bold text-primary">{{ ship.order.receiver.address|truncatechars:15 }}</div>
-                                            <div class="text-muted" style="font-size: 0.65rem;">{{ ship.order.receiver.city }}, {{ ship.order.receiver.state }}</div>
+                                            <div class="small fw-bold text-primary">{{
+                                                ship.order.receiver.address|truncatechars:15 }}</div>
+                                            <div class="text-muted" style="font-size: 0.65rem;">{{
+                                                ship.order.receiver.city }}, {{ ship.order.receiver.state }}</div>
                                         </td>
                                         <td class="fw-bold">{{ ship.total_weight|intcomma }} lbs</td>
                                         <td class="pe-3 small text-muted">{{ ship.tracking_number|default:"-" }}</td>
                                     </tr>
                                     {% empty %}
-                                    <tr><td colspan="8" class="text-center py-4 text-muted">No shipmets recorded for this order</td></tr>
+                                    <tr>
+                                        <td colspan="8" class="text-center py-4 text-muted">No shipmets recorded for
+                                            this order</td>
+                                    </tr>
                                     {% endfor %}
                                 </tbody>
                             </table>
@@ -271,7 +310,8 @@
                         <span class="fw-bold small">System Log</span>
                         <span class="text-muted smaller">Just now</span>
                     </div>
-                    <div class="small text-muted">Order status initialized as {{ order.get_status_display }}. All manifest items verified.</div>
+                    <div class="small text-muted">Order status initialized as {{ order.get_status_display }}. All
+                        manifest items verified.</div>
                 </div>
                 <div class="text-center py-4">
                     <div class="bg-white border rounded-3 p-3 text-muted small">
@@ -279,7 +319,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="bg-white border rounded-4 p-3 mt-4 shadow-sm">
                 <div class="d-flex gap-3 mb-3 text-muted">
                     <i class="fas fa-at"></i>
@@ -291,13 +331,140 @@
                     <i class="fas fa-strikethrough"></i>
                     <i class="fas fa-link"></i>
                 </div>
-                <textarea class="form-control border-0 p-0 mb-3" rows="3" placeholder="Join the conversation..." style="box-shadow: none; font-size: 0.850rem;"></textarea>
+                <textarea class="form-control border-0 p-0 mb-3" rows="3" placeholder="Join the conversation..."
+                    style="box-shadow: none; font-size: 0.850rem;"></textarea>
                 <div class="d-flex justify-content-between align-items-center">
                     <span class="text-muted smaller">Tip: Notify someone with @</span>
                     <button class="btn btn-outline-primary btn-sm px-4">Submit</button>
                 </div>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Edit Order Offcanvas -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasEditOrder"
+    style="width: 500px; border-left: none; box-shadow: -10px 0 30px rgba(0,0,0,0.1);">
+    <div class="offcanvas-header border-bottom p-4">
+        <h5 class="offcanvas-title fw-bold">Edit Order</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body p-4">
+        <form action="{% url 'orders:order_edit' order.pk %}" method="POST">
+            {% csrf_token %}
+
+            {% with shipments_exist=order.shipments.exists %}
+            <!-- Supplier -->
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase mb-1">Supplier<span
+                        class="text-danger">*</span></label>
+                <select name="supplier" class="form-select bg-light" {% if shipments_exist %}disabled{% endif %}>
+                    {% for comp in suppliers %}
+                    <option value="{{ comp.id }}" {% if order.supplier_id == comp.id %}selected{% endif %}>{{ comp.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+                {% if shipments_exist %}
+                <div class="smaller text-muted mt-1">Company cannot be changed for an Order with shipments</div>
+                {% endif %}
+            </div>
+
+            <!-- Source Location -->
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase mb-1">Source Location<span
+                        class="text-danger">*</span></label>
+                <select name="source_location" class="form-select border-primary-subtle">
+                    {% for wh in warehouses %}
+                    <option value="{{ wh.id }}" {% if order.source_location_id == wh.id %}selected{% endif %}>{{
+                        wh.display_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- SO Number -->
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase mb-1">SO Number</label>
+                <input type="text" name="so_number" class="form-control" value="{{ order.so_number|default:'' }}">
+            </div>
+
+            <hr class="my-4 opacity-5">
+
+            <!-- Receiver -->
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase mb-1">Receiver<span
+                        class="text-danger">*</span></label>
+                <select name="receiver" class="form-select bg-light" {% if shipments_exist %}disabled{% endif %}>
+                    {% for comp in receivers %}
+                    <option value="{{ comp.id }}" {% if order.receiver_id == comp.id %}selected{% endif %}>{{ comp.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+                {% if shipments_exist %}
+                <div class="smaller text-muted mt-1">Company cannot be changed for an Order with shipments</div>
+                {% endif %}
+            </div>
+
+            <!-- Destination Location -->
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase mb-1">Destination Location<span
+                        class="text-danger">*</span></label>
+                <select name="destination_location" class="form-select border-primary-subtle">
+                    {% for wh in warehouses %}
+                    <option value="{{ wh.id }}" {% if order.destination_location_id == wh.id %}selected{% endif %}>{{
+                        wh.display_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Customer PO Number -->
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase mb-1">Customer PO Number</label>
+                <input type="text" name="po_number" class="form-control" value="{{ order.po_number|default:'' }}">
+            </div>
+
+            <!-- Tags -->
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase mb-1">Tags</label>
+                <select name="tags" class="form-select" multiple style="height: 100px;">
+                    {% for tag in tags %}
+                    <option value="{{ tag.id }}" {% if tag in order.tags.all %}selected{% endif %}>{{ tag.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <div class="smaller text-muted mt-1">Hold Ctrl/Cmd to select multiple</div>
+            </div>
+
+            <!-- Shipping Terms -->
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase mb-1">Shipping Terms</label>
+                <select name="shipping_terms" class="form-select">
+                    <option value="">Select terms</option>
+                    {% for term in shipping_terms %}
+                    <option value="{{ term.id }}" {% if order.shipping_terms_id == term.id %}selected{% endif %}>{{
+                        term.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Representatives -->
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase mb-1">Representatives</label>
+                <select name="representative" class="form-select">
+                    <option value="">Select representative</option>
+                    {% for user_item in team_members %}
+                    <option value="{{ user_item.id }}" {% if order.representative_id == user_item.id %}selected{% endif %}>
+                        {{ user_item.get_full_name|default:user_item.username }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endwith %}
+
+            <div class="mt-5 d-grid">
+                <button type="submit" class="btn btn-primary btn-lg py-3 fw-bold rounded-4 shadow-sm">Submit
+                    Updates</button>
+            </div>
+        </form>
     </div>
 </div>
 
