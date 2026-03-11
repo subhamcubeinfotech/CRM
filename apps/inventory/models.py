@@ -23,6 +23,9 @@ class Warehouse(TenantAwareModel):
     phone = models.CharField(max_length=20, blank=True)
     email = models.EmailField(blank=True)
     
+    # Ownership
+    company = models.ForeignKey('accounts.Company', on_delete=models.CASCADE, related_name='warehouses', null=True, blank=True, help_text="Company this location belongs to")
+    
     # Management
     manager = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='managed_warehouses')
     is_active = models.BooleanField(default=True)
@@ -53,6 +56,31 @@ class Warehouse(TenantAwareModel):
     def total_value(self):
         """Calculate total inventory value"""
         return sum(item.total_value for item in self.inventory_items.all())
+
+    @property
+    def display_name(self):
+        """Pre-formatted name for dropdowns: Company - Warehouse (City)"""
+        # If the warehouse name is actually a raw address string (from "my company location"), 
+        # just return the raw address string without any Company or City formatting.
+        if len(self.name) > 20 and "," in self.name:
+            return self.name
+
+        parts = []
+        if self.company:
+            parts.append(self.company.name)
+        
+        name_part = self.name
+        # Clean up redundancies if naming already included company name
+        if self.company and self.company.name in name_part:
+            name_part = name_part.replace(self.company.name, "").strip(" -")
+            if not name_part:
+                name_part = "Main Office"
+
+        if self.city:
+            name_part += f" ({self.city})"
+        parts.append(name_part)
+        
+        return " - ".join(parts)
 
 
 class InventoryItem(TenantAwareModel):
@@ -107,3 +135,8 @@ class InventoryItem(TenantAwareModel):
         elif self.is_low_stock:
             return 'low_stock'
         return 'in_stock'
+
+    @property
+    def display_stock(self):
+        """Pre-formatted stock string for templates"""
+        return f"{self.quantity} {self.unit_of_measure} available"

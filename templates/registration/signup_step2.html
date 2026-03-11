@@ -1,0 +1,115 @@
+{% extends 'base_auth.html' %}
+
+{% block title %}Sign Up - Step 2{% endblock %}
+
+{% block content %}
+<h3 class="text-center mb-4">Company Details</h3>
+<p class="text-muted text-center mb-4">Step 2 of 2: Tell us about your organization</p>
+
+<form method="post">
+    {% csrf_token %}
+
+    <div class="form-floating mb-3">
+        {{ form.name }}
+        <label for="{{ form.name.id_for_label }}"><i class="fas fa-building me-2"></i>Company Name</label>
+    </div>
+    {% if form.name.errors %}
+    <div class="text-danger small mb-3">{{ form.name.errors }}</div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <div class="form-floating">
+                {{ form.address_line1 }}
+                <label for="{{ form.address_line1.id_for_label }}">Address Line 1</label>
+            </div>
+            {% if form.address_line1.errors %}
+            <div class="text-danger small mt-1">{{ form.address_line1.errors }}</div>
+            {% endif %}
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="form-floating">
+                {{ form.address_line2 }}
+                <label for="{{ form.address_line2.id_for_label }}">Address Line 2</label>
+            </div>
+            {% if form.address_line2.errors %}
+            <div class="text-danger small mt-1">{{ form.address_line2.errors }}</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <div class="form-floating">
+                {{ form.city }}
+                <label for="{{ form.city.id_for_label }}">City</label>
+            </div>
+            {% if form.city.errors %}
+            <div class="text-danger small mt-1">{{ form.city.errors }}</div>
+            {% endif %}
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="form-floating">
+                {{ form.state }}
+                <label for="{{ form.state.id_for_label }}">State</label>
+            </div>
+            {% if form.state.errors %}
+            <div class="text-danger small mt-1">{{ form.state.errors }}</div>
+            {% endif %}
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="form-floating">
+                {{ form.postal_code }}
+                <label for="{{ form.postal_code.id_for_label }}">Zip Code</label>
+            </div>
+            {% if form.postal_code.errors %}
+            <div class="text-danger small mt-1">{{ form.postal_code.errors }}</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="form-floating mb-3">
+        {{ form.country }}
+        <label for="{{ form.country.id_for_label }}"><i class="fas fa-globe me-2"></i>Country</label>
+    </div>
+    {% if form.country.errors %}
+    <div class="text-danger small mb-3">{{ form.country.errors }}</div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <div class="form-floating">
+                {{ form.tax_id }}
+                <label for="{{ form.tax_id.id_for_label }}"><i class="fas fa-id-card me-2"></i>Tax ID (Optional)</label>
+            </div>
+            {% if form.tax_id.errors %}
+            <div class="text-danger small mt-1">{{ form.tax_id.errors }}</div>
+            {% endif %}
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="form-floating">
+                {{ form.phone }}
+                <label for="{{ form.phone.id_for_label }}"><i class="fas fa-phone me-2"></i>Phone Number</label>
+            </div>
+            {% if form.phone.errors %}
+            <div class="text-danger small mt-1">{{ form.phone.errors }}</div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if form.non_field_errors %}
+    <div class="text-danger small mb-3">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    <div class="d-flex justify-content-between">
+        <a href="?back=1" class="btn btn-outline-secondary mt-2 px-4"
+            style="border-radius: 10px; height: 50px; display: flex; align-items: center;">Back</a>
+        <button type="submit" class="btn btn-primary" style="flex: 1; margin-left: 10px;">Complete Registration <i
+                class="fas fa-check-circle ms-2"></i></button>
+    </div>
+</form>
+
+<div class="login-footer">
+    <p>Having trouble? <a href="#">Contact Support</a>.</p>
+</div>
+{% endblock %}
