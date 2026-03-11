@@ -3,7 +3,8 @@ from django.contrib.auth.decorators import login_required
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
-from django.db.models import Sum, F, ExpressionWrapper, DecimalField, Q
+from django.db.models import Sum, F, ExpressionWrapper, DecimalField, Q, Case, When, Value, IntegerField
+from django.contrib.auth import get_user_model
 from django.utils import timezone
 from .models import Order, ManifestItem, Tag, ShippingTerm, PackagingType
 from apps.accounts.models import Company
@@ -72,42 +73,31 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
         context['receivers'] = Company.objects.filter(tenant=user_tenant, company_type='customer')
         
         # Locations (Prioritize user's company and filter by tenant)
-        from django.db.models import Case, When, IntegerField
         warehouses = Warehouse.plain_objects.filter(tenant=user_tenant)
         if user_company:
             warehouses = warehouses.annotate(
                 is_my_company=Case(
-                    When(company=user_company, then=1),
-                    default=0,
+                    When(company=user_company, then=Value(1)),
+                    default=Value(0),
                     output_field=IntegerField()
                 )
             ).order_by('-is_my_company', 'name')
         context['warehouses'] = warehouses
         
-        from django.db.models import Q
-        # Strict Tenant Filtering (Include current selection if it's global)
-        st_filter = Q(tenant=user_tenant)
+        # Show ONLY the currently selected shipping term
         if self.object.shipping_terms_id:
-            st_filter |= Q(pk=self.object.shipping_terms_id)
-        context['shipping_terms'] = ShippingTerm.plain_objects.filter(st_filter).distinct()
+            context['shipping_terms'] = ShippingTerm.plain_objects.filter(pk=self.object.shipping_terms_id)
+        else:
+            context['shipping_terms'] = ShippingTerm.plain_objects.none()
         
-        tag_filter = Q(tenant=user_tenant)
-        if self.object.tags.exists():
-            tag_filter |= Q(pk__in=self.object.tags.values_list('pk', flat=True))
-        context['tags'] = Tag.plain_objects.filter(tag_filter).distinct()
+        # Show ONLY the currently selected tags
+        context['tags'] = self.object.tags.all()
         
-        # Representatives (Show all users in the tenant, prioritize current user)
-        from django.contrib.auth import get_user_model
-        from django.db.models import Case, When, Value, IntegerField
-        context['team_members'] = get_user_model().objects.filter(
-            tenant=user_tenant
-        ).annotate(
-            is_me=Case(
-                When(id=self.request.user.id, then=Value(1)),
-                default=Value(0),
-                output_field=IntegerField()
-            )
-        ).order_by('-is_me', 'first_name', 'last_name')
+        # Show ONLY the currently selected representative
+        if self.object.representative:
+            context['team_members'] = get_user_model().objects.filter(pk=self.object.representative.pk)
+        else:
+            context['team_members'] = get_user_model().objects.none()
         
         return context
 
@@ -235,9 +225,9 @@ def order_create(request):
         'receivers': receivers,
         'warehouses': warehouses,
         'inventory_items': inventory_items,
-        # Strict Filtering for new orders (only show tenant's own data)
-        'shipping_terms': ShippingTerm.objects.filter(tenant=request.user.tenant) if request.user.tenant else ShippingTerm.objects.none(),
-        'tags': Tag.objects.filter(tenant=request.user.tenant) if request.user.tenant else Tag.objects.none(),
+        # Show both tenant-specific and global terms/tags
+        'shipping_terms': ShippingTerm.plain_objects.filter(Q(tenant=request.user.tenant) | Q(tenant__isnull=True)),
+        'tags': Tag.plain_objects.filter(Q(tenant=request.user.tenant) | Q(tenant__isnull=True)),
         'packaging_types': PackagingType.objects.all(),
     }
     return render(request, 'orders/order_form.html', context)
