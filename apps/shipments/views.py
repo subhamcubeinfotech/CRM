@@ -520,24 +520,10 @@ def create_invoice(request, pk):
         return redirect('invoicing:invoice_detail', pk=existing.pk)
 
     if request.method == 'POST':
-        # Auto-generate invoice number
-        year = datetime.now().year
-        last_inv = Invoice.objects.filter(invoice_number__startswith=f'INV-{year}').order_by('-invoice_number').first()
-        if last_inv:
-            try:
-                last_num = int(last_inv.invoice_number.split('-')[-1])
-                new_num = last_num + 1
-            except (ValueError, IndexError):
-                new_num = 1
-        else:
-            new_num = 1
-        invoice_number = f'INV-{year}-{new_num:05d}'
-
         subtotal = shipment.revenue
         due_date = date.today() + timedelta(days=30)
 
         invoice = Invoice.objects.create(
-            invoice_number=invoice_number,
             customer=shipment.customer,
             shipment=shipment,
             order=shipment.order,

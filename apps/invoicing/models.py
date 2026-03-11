@@ -43,6 +43,7 @@ class Invoice(TenantAwareModel):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
     notes = models.TextField(blank=True)
     terms = models.TextField(blank=True, default='Net 30 days')
+    file_name = models.CharField(max_length=255)
     
     # Metadata
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='created_invoices')
@@ -97,6 +98,10 @@ class Invoice(TenantAwareModel):
         if not self.invoice_number:
             self.invoice_number = self.generate_invoice_number()
         
+        # Auto-generate file_name if not set (after invoice_number is available)
+        if not self.file_name:
+            self.file_name = f'invoice_{self.invoice_number}.pdf'
+        
         # Auto-set due date based on customer payment terms if not set
         if not self.due_date:
             payment_terms = self.customer.payment_terms if self.customer else 30
@@ -107,7 +112,8 @@ class Invoice(TenantAwareModel):
             self.subtotal = sum(item.total for item in self.line_items.all())
         
         # Calculate tax and total
-        self.tax_amount = self.subtotal * (self.tax_rate / 100)
+        from decimal import Decimal
+        self.tax_amount = self.subtotal * (self.tax_rate / Decimal('100'))
         self.total = self.subtotal + self.tax_amount
         
         # Update status based on payment
