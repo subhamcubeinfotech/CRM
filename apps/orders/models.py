@@ -3,6 +3,44 @@ from django.conf import settings
 from django.utils import timezone
 from apps.accounts.models import TenantAwareModel
 
+class Tag(TenantAwareModel):
+    """Tag model for categorizing orders"""
+    name = models.CharField(max_length=100)
+    color = models.CharField(max_length=20, default='secondary', help_text='Bootstrap color class (primary, success, danger, warning, info, secondary)')
+
+    class Meta:
+        ordering = ['name']
+        unique_together = ('tenant', 'name')
+
+    def __str__(self):
+        return self.name
+
+
+class ShippingTerm(TenantAwareModel):
+    """Shipping term model - managed via Admin"""
+    name = models.CharField(max_length=100)
+    description = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        ordering = ['name']
+        unique_together = ('tenant', 'name')
+
+    def __str__(self):
+        return self.name
+
+
+class PackagingType(models.Model):
+    """Packaging type model - managed via Admin"""
+    name = models.CharField(max_length=100, unique=True)
+    description = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+
 class Order(TenantAwareModel):
     STATUS_CHOICES = [
         ('draft', 'Draft'),
@@ -12,13 +50,14 @@ class Order(TenantAwareModel):
         ('closed', 'Closed'),
         ('cancelled', 'Cancelled'),
     ]
-    
+
     PAYMENT_STATUS_CHOICES = [
         ('pending', 'Payment Pending'),
         ('partial', 'Partially Paid'),
         ('paid', 'Paid'),
         ('overdue', 'Overdue'),
     ]
+
     
     order_number = models.CharField(max_length=50, unique=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
@@ -35,8 +74,8 @@ class Order(TenantAwareModel):
     destination_location = models.ForeignKey('inventory.Warehouse', on_delete=models.SET_NULL, null=True, blank=True, related_name='orders_as_destination')
     
     # Logistics details
-    shipping_terms = models.CharField(max_length=100, blank=True)
-    tags = models.CharField(max_length=255, blank=True, help_text="Comma-separated tags")
+    shipping_terms = models.ForeignKey(ShippingTerm, on_delete=models.SET_NULL, null=True, blank=True, related_name='orders')
+    tags = models.ManyToManyField(Tag, blank=True, related_name='orders')
     representative = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='represented_orders')
     
     # Weight tracking
