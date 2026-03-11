@@ -3142,3 +3142,755 @@ Traceback (most recent call last):
 django.template.exceptions.TemplateSyntaxError: Could not parse the remainder: '==comp.id' from 'order.supplier_id==comp.id'
 [2026-03-11 06:36:44] ERROR django.server basehttp.log_message:213 — "GET /orders/68/ HTTP/1.1" 500 329463
 [2026-03-11 07:01:59] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-11 07:02:56] INFO django.server basehttp.log_message:213 — "GET /orders/68/ HTTP/1.1" 200 38213
+[2026-03-11 07:03:06] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 07:03:06] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 07:03:06] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 32099
+[2026-03-11 07:03:08] INFO django.server basehttp.log_message:213 — "GET /orders/68/ HTTP/1.1" 200 38213
+[2026-03-11 07:03:12] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 07:03:12] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 07:03:12] INFO django.server basehttp.log_message:213 — "GET /dashboard/ HTTP/1.1" 200 18415
+[2026-03-11 07:03:13] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 07:03:13] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 07:03:13] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 32099
+[2026-03-11 07:03:14] INFO apps.orders views.order_create:191 — New order creation page accessed by sahil (Customer)
+[2026-03-11 07:03:14] INFO django.server basehttp.log_message:213 — "GET /orders/create/ HTTP/1.1" 200 36128
+[2026-03-11 07:04:48] INFO django.server basehttp.log_message:213 — "POST /orders/create/ HTTP/1.1" 302 0
+[2026-03-11 07:04:48] INFO django.server basehttp.log_message:213 — "GET /orders/69/ HTTP/1.1" 200 38212
+[2026-03-11 07:10:11] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-11 07:10:56] INFO django.server basehttp.log_message:213 — "GET /companies/ HTTP/1.1" 200 16773
+[2026-03-11 07:15:42] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 07:15:42] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 07:15:42] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 34541
+[2026-03-11 07:15:43] INFO apps.orders views.order_create:191 — New order creation page accessed by sahil (Customer)
+[2026-03-11 07:15:43] INFO django.server basehttp.log_message:213 — "GET /orders/create/ HTTP/1.1" 200 36128
+[2026-03-11 07:15:47] INFO django.server basehttp.log_message:213 — "GET /orders/69/ HTTP/1.1" 200 38212
+[2026-03-11 07:20:14] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-11 07:22:00] INFO django.server basehttp.log_message:213 — "GET /orders/69/ HTTP/1.1" 200 37996
+[2026-03-11 07:24:16] INFO django.server basehttp.log_message:213 — "GET /shipments/create/?order_id=69 HTTP/1.1" 200 27842
+[2026-03-11 07:25:32] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 07:25:32] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 07:25:33] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 34541
+[2026-03-11 07:25:56] INFO apps.orders views.order_create:191 — New order creation page accessed by sahil (Customer)
+[2026-03-11 07:25:56] INFO django.server basehttp.log_message:213 — "GET /orders/create/ HTTP/1.1" 200 36128
+[2026-03-11 07:27:12] INFO django.utils.autoreload autoreload.trigger_reload:265 — /app/apps/orders/views.py changed, reloading.
+[2026-03-11 07:27:14] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-11 07:28:21] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-11 07:28:50] INFO apps.orders views.order_create:196 — New order creation page accessed by sahil (Customer)
+[2026-03-11 07:28:50] INFO django.server basehttp.log_message:213 — "GET /orders/create/ HTTP/1.1" 200 36128
+[2026-03-11 07:28:54] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 07:28:54] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 07:28:54] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 34541
+[2026-03-11 07:28:57] INFO django.server basehttp.log_message:213 — "GET /orders/69/ HTTP/1.1" 200 35232
+[2026-03-11 07:30:19] INFO django.utils.autoreload autoreload.trigger_reload:265 — /app/apps/orders/views.py changed, reloading.
+[2026-03-11 07:30:20] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-11 07:30:29] INFO django.utils.autoreload autoreload.trigger_reload:265 — /app/apps/orders/views.py changed, reloading.
+[2026-03-11 07:30:30] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-11 07:31:38] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-11 07:31:46] INFO django.server basehttp.log_message:213 — "GET /orders/69/ HTTP/1.1" 200 34522
+[2026-03-11 07:35:09] INFO django.utils.autoreload autoreload.trigger_reload:265 — /app/apps/orders/views.py changed, reloading.
+[2026-03-11 07:35:13] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-11 07:36:30] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-11 07:37:13] INFO django.server basehttp.log_message:213 — "GET /orders/69/ HTTP/1.1" 200 34522
+[2026-03-11 07:41:23] INFO django.utils.autoreload autoreload.trigger_reload:265 — /app/apps/orders/models.py changed, reloading.
+[2026-03-11 07:41:26] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-11 07:41:30] INFO django.utils.autoreload autoreload.trigger_reload:265 — /app/apps/orders/views.py changed, reloading.
+[2026-03-11 07:41:32] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-11 07:45:17] INFO django.server basehttp.log_message:213 — "GET /orders/69/ HTTP/1.1" 200 32068
+[2026-03-11 07:46:27] INFO django.server basehttp.log_message:213 — "GET / HTTP/1.1" 200 7780
+[2026-03-11 07:46:31] INFO django.server basehttp.log_message:213 — "GET /admin/ HTTP/1.1" 302 0
+[2026-03-11 07:46:31] INFO django.server basehttp.log_message:213 — "GET /admin/login/?next=/admin/ HTTP/1.1" 200 3687
+[2026-03-11 07:46:31] INFO django.server basehttp.log_message:213 — "GET /static/admin/css/base.css HTTP/1.1" 200 22120
+[2026-03-11 07:46:31] INFO django.server basehttp.log_message:213 — "GET /static/admin/css/dark_mode.css HTTP/1.1" 200 2808
+[2026-03-11 07:46:31] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/theme.js HTTP/1.1" 200 1653
+[2026-03-11 07:46:31] INFO django.server basehttp.log_message:213 — "GET /static/admin/css/login.css HTTP/1.1" 200 951
+[2026-03-11 07:46:31] INFO django.server basehttp.log_message:213 — "GET /static/admin/css/nav_sidebar.css HTTP/1.1" 200 2810
+[2026-03-11 07:46:31] INFO django.server basehttp.log_message:213 — "GET /static/admin/css/responsive.css HTTP/1.1" 200 16565
+[2026-03-11 07:46:31] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/nav_sidebar.js HTTP/1.1" 200 3063
+[2026-03-11 07:46:39] INFO django.server basehttp.log_message:213 — "POST /admin/login/?next=/admin/ HTTP/1.1" 302 0
+[2026-03-11 07:46:40] INFO django.server basehttp.log_message:213 — "GET /admin/ HTTP/1.1" 200 22028
+[2026-03-11 07:46:40] INFO django.server basehttp.log_message:213 — "GET /static/admin/css/dashboard.css HTTP/1.1" 200 441
+[2026-03-11 07:46:40] INFO django.server basehttp.log_message:213 — "GET /static/admin/img/icon-addlink.svg HTTP/1.1" 200 331
+[2026-03-11 07:46:40] INFO django.server basehttp.log_message:213 — "GET /static/admin/img/icon-changelink.svg HTTP/1.1" 200 380
+[2026-03-11 07:46:43] INFO django.server basehttp.log_message:213 — "GET /admin/accounts/customuser/ HTTP/1.1" 200 28921
+[2026-03-11 07:46:43] INFO django.server basehttp.log_message:213 — "GET /static/admin/css/changelists.css HTTP/1.1" 200 6878
+[2026-03-11 07:46:43] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/jquery.init.js HTTP/1.1" 200 347
+[2026-03-11 07:46:43] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/actions.js HTTP/1.1" 200 8076
+[2026-03-11 07:46:43] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/admin/RelatedObjectLookups.js HTTP/1.1" 200 9777
+[2026-03-11 07:46:43] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/core.js HTTP/1.1" 200 6208
+[2026-03-11 07:46:43] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/prepopulate.js HTTP/1.1" 200 1531
+[2026-03-11 07:46:43] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/urlify.js HTTP/1.1" 200 7887
+[2026-03-11 07:46:43] INFO django.server basehttp.log_message:213 — "GET /static/admin/img/icon-no.svg HTTP/1.1" 200 560
+[2026-03-11 07:46:43] INFO django.server basehttp.log_message:213 — "GET /static/admin/img/search.svg HTTP/1.1" 200 458
+[2026-03-11 07:46:43] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/vendor/xregexp/xregexp.js HTTP/1.1" 200 325171
+[2026-03-11 07:46:43] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/vendor/jquery/jquery.js HTTP/1.1" 200 285314
+[2026-03-11 07:46:43] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-11 07:46:43] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/filters.js HTTP/1.1" 200 978
+[2026-03-11 07:46:43] INFO django.server basehttp.log_message:213 — "GET /static/admin/img/icon-yes.svg HTTP/1.1" 200 436
+[2026-03-11 07:46:43] INFO django.server basehttp.log_message:213 — "GET /static/admin/img/tooltag-add.svg HTTP/1.1" 200 331
+[2026-03-11 07:46:43] INFO django.server basehttp.log_message:213 — "GET /static/admin/img/sorting-icons.svg HTTP/1.1" 200 1097
+[2026-03-11 07:46:43] INFO django.server basehttp.log_message:213 — "GET /static/admin/img/icon-viewlink.svg HTTP/1.1" 200 581
+[2026-03-11 07:46:46] INFO django.server basehttp.log_message:213 — "GET /admin/accounts/customuser/14/change/ HTTP/1.1" 200 43666
+[2026-03-11 07:46:46] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/SelectFilter2.js HTTP/1.1" 200 15845
+[2026-03-11 07:46:46] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/SelectBox.js HTTP/1.1" 200 4530
+[2026-03-11 07:46:46] INFO django.server basehttp.log_message:213 — "GET /static/admin/css/forms.css HTTP/1.1" 200 8525
+[2026-03-11 07:46:46] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/admin/DateTimeShortcuts.js HTTP/1.1" 200 19319
+[2026-03-11 07:46:46] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/calendar.js HTTP/1.1" 200 9141
+[2026-03-11 07:46:46] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/prepopulate_init.js HTTP/1.1" 200 586
+[2026-03-11 07:46:46] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-11 07:46:46] INFO django.server basehttp.log_message:213 — "GET /static/admin/css/widgets.css HTTP/1.1" 200 11973
+[2026-03-11 07:46:46] INFO django.server basehttp.log_message:213 — "GET /static/admin/img/icon-deletelink.svg HTTP/1.1" 200 392
+[2026-03-11 07:46:46] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/change_form.js HTTP/1.1" 200 606
+[2026-03-11 07:46:47] INFO django.server basehttp.log_message:213 — "GET /static/admin/img/selector-icons.svg HTTP/1.1" 200 3291
+[2026-03-11 07:46:47] INFO django.server basehttp.log_message:213 — "GET /static/admin/img/icon-calendar.svg HTTP/1.1" 200 1086
+[2026-03-11 07:46:47] INFO django.server basehttp.log_message:213 — "GET /static/admin/img/icon-clock.svg HTTP/1.1" 200 677
+[2026-03-11 07:46:54] INFO django.server basehttp.log_message:213 — "GET /admin/accounts/customuser/ HTTP/1.1" 200 28921
+[2026-03-11 07:46:58] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/ HTTP/1.1" 200 28056
+[2026-03-11 07:46:58] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-11 07:47:06] INFO django.server basehttp.log_message:213 — "GET /admin/accounts/customuser/ HTTP/1.1" 200 28921
+[2026-03-11 07:47:06] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-11 07:47:12] INFO django.server basehttp.log_message:213 — "GET /admin/invoicing/invoice/ HTTP/1.1" 200 40034
+[2026-03-11 07:47:12] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-11 07:47:38] INFO django.server basehttp.log_message:213 — "GET /admin/shipments/shipmentmilestone/ HTTP/1.1" 200 73291
+[2026-03-11 07:47:38] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-11 07:47:46] INFO django.server basehttp.log_message:213 — "GET /admin/invoicing/payment/ HTTP/1.1" 200 18932
+[2026-03-11 07:47:46] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-11 07:47:48] INFO django.server basehttp.log_message:213 — "GET /admin/invoicing/invoice/ HTTP/1.1" 200 40034
+[2026-03-11 07:47:48] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-11 07:47:49] INFO django.server basehttp.log_message:213 — "GET /admin/invoicing/invoicelineitem/ HTTP/1.1" 200 52312
+[2026-03-11 07:47:49] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-11 07:47:56] INFO django.server basehttp.log_message:213 — "GET /admin/invoicing/invoicelineitem/1/change/ HTTP/1.1" 200 23747
+[2026-03-11 07:47:56] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-11 07:47:59] INFO django.server basehttp.log_message:213 — "GET /admin/invoicing/invoicelineitem/ HTTP/1.1" 200 52312
+[2026-03-11 07:48:00] INFO django.server basehttp.log_message:213 — "GET /admin/inventory/warehouse/ HTTP/1.1" 200 27388
+[2026-03-11 07:48:00] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-11 07:48:02] INFO django.server basehttp.log_message:213 — "GET /admin/inventory/inventoryitem/ HTTP/1.1" 200 28265
+[2026-03-11 07:48:02] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-11 07:48:09] INFO django.server basehttp.log_message:213 — "GET /admin/accounts/customuser/ HTTP/1.1" 200 28921
+[2026-03-11 07:48:09] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-11 07:48:10] INFO django.server basehttp.log_message:213 — "GET /admin/accounts/company/ HTTP/1.1" 200 33052
+[2026-03-11 07:48:10] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-11 07:48:18] INFO django.server basehttp.log_message:213 — "GET /admin/accounts/customuser/ HTTP/1.1" 200 28921
+[2026-03-11 07:48:19] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-11 07:49:45] INFO django.utils.autoreload autoreload.trigger_reload:265 — /app/apps/orders/views.py changed, reloading.
+[2026-03-11 07:49:47] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-11 07:50:07] INFO django.server basehttp.log_message:213 — "GET /admin/accounts/customuser/ HTTP/1.1" 200 28921
+[2026-03-11 07:50:07] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-11 07:50:31] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-11 07:51:32] INFO django.server basehttp.log_message:213 — "GET /orders/69/ HTTP/1.1" 200 36968
+[2026-03-11 07:53:46] INFO django.utils.autoreload autoreload.trigger_reload:265 — /app/apps/orders/views.py changed, reloading.
+[2026-03-11 07:53:48] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-11 07:54:43] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-11 07:56:27] INFO django.server basehttp.log_message:213 — "GET /orders/69/ HTTP/1.1" 200 36968
+[2026-03-11 07:56:57] INFO django.server basehttp.log_message:213 — "GET /orders/69/ HTTP/1.1" 200 36968
+[2026-03-11 07:56:58] INFO django.server basehttp.log_message:213 — "GET /orders/69/ HTTP/1.1" 200 36968
+[2026-03-11 07:57:01] INFO django.server basehttp.log_message:213 — "POST /logout/ HTTP/1.1" 302 0
+[2026-03-11 07:57:01] INFO django.server basehttp.log_message:213 — "GET /login/ HTTP/1.1" 200 4772
+[2026-03-11 07:57:13] INFO django.server basehttp.log_message:213 — "POST /login/ HTTP/1.1" 302 0
+[2026-03-11 07:57:13] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 07:57:13] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 07:57:13] INFO django.server basehttp.log_message:213 — "GET /dashboard/ HTTP/1.1" 200 18415
+[2026-03-11 07:57:16] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 07:57:16] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 07:57:16] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 34541
+[2026-03-11 07:57:19] INFO apps.orders views.order_create:212 — New order creation page accessed by sahil (Customer)
+[2026-03-11 07:57:19] INFO django.server basehttp.log_message:213 — "GET /orders/create/ HTTP/1.1" 200 33816
+[2026-03-11 07:57:24] INFO django.server basehttp.log_message:213 — "GET /orders/69/ HTTP/1.1" 200 32166
+[2026-03-11 07:58:50] INFO django.server basehttp.log_message:213 — "GET /admin/orders/order/ HTTP/1.1" 302 0
+[2026-03-11 07:58:50] INFO django.server basehttp.log_message:213 — "GET /admin/login/?next=/admin/orders/order/ HTTP/1.1" 200 3713
+[2026-03-11 07:58:57] INFO django.server basehttp.log_message:213 — "POST /admin/login/?next=/admin/orders/order/ HTTP/1.1" 302 0
+[2026-03-11 07:58:58] INFO django.server basehttp.log_message:213 — "GET /admin/orders/order/ HTTP/1.1" 200 56804
+[2026-03-11 07:58:58] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-11 07:59:51] INFO django.utils.autoreload autoreload.trigger_reload:265 — /app/apps/orders/admin.py changed, reloading.
+[2026-03-11 07:59:54] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-11 08:00:22] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-11 08:00:34] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/ HTTP/1.1" 200 30370
+[2026-03-11 08:00:34] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-11 08:00:38] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/12/change/ HTTP/1.1" 200 19598
+[2026-03-11 08:00:38] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-11 08:00:40] INFO django.server basehttp.log_message:213 — "GET /admin/orders/shippingterm/ HTTP/1.1" 200 30370
+[2026-03-11 08:01:35] INFO django.server basehttp.log_message:213 — "GET /admin/accounts/customuser/ HTTP/1.1" 200 28921
+[2026-03-11 08:01:35] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-11 08:01:39] INFO django.server basehttp.log_message:213 — "GET /admin/accounts/customuser/14/change/ HTTP/1.1" 200 43666
+[2026-03-11 08:01:39] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-11 08:01:47] INFO django.server basehttp.log_message:213 — "GET /admin/invoicing/invoicelineitem/ HTTP/1.1" 200 52312
+[2026-03-11 08:01:47] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-11 08:01:52] INFO django.server basehttp.log_message:213 — "GET /admin/inventory/inventoryitem/ HTTP/1.1" 200 28265
+[2026-03-11 08:01:52] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-11 08:02:34] INFO django.server basehttp.log_message:213 — "GET /admin/orders/order/ HTTP/1.1" 200 61001
+[2026-03-11 08:02:34] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-11 08:02:36] INFO django.server basehttp.log_message:213 — "GET /admin/orders/order/66/change/ HTTP/1.1" 200 51467
+[2026-03-11 08:02:36] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/inlines.js HTTP/1.1" 200 15628
+[2026-03-11 08:02:36] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-11 08:02:44] INFO django.server basehttp.log_message:213 — "GET /admin/orders/order/ HTTP/1.1" 200 61001
+[2026-03-11 08:02:59] INFO django.server basehttp.log_message:213 — "GET /admin/orders/order/69/change/ HTTP/1.1" 200 51498
+[2026-03-11 08:03:00] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-11 08:03:03] INFO django.server basehttp.log_message:213 — "GET /admin/orders/order/ HTTP/1.1" 200 61001
+[2026-03-11 08:03:10] INFO django.server basehttp.log_message:213 — "GET /admin/orders/order/69/change/ HTTP/1.1" 200 51498
+[2026-03-11 08:03:11] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-11 08:05:45] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-11 08:05:59] ERROR django.request log.log_response:253 — Internal Server Error: /orders/69/
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/django/template/smartif.py", line 180, in translate_token
+    op = OPERATORS[token]
+KeyError: 'order.supplier_id==comp.id'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/usr/local/lib/python3.10/site-packages/django/core/handlers/base.py", line 220, in _get_response
+    response = response.render()
+  File "/usr/local/lib/python3.10/site-packages/django/template/response.py", line 114, in render
+    self.content = self.rendered_content
+  File "/usr/local/lib/python3.10/site-packages/django/template/response.py", line 90, in rendered_content
+    template = self.resolve_template(self.template_name)
+  File "/usr/local/lib/python3.10/site-packages/django/template/response.py", line 72, in resolve_template
+    return select_template(template, using=self.using)
+  File "/usr/local/lib/python3.10/site-packages/django/template/loader.py", line 42, in select_template
+    return engine.get_template(template_name)
+  File "/usr/local/lib/python3.10/site-packages/django/template/backends/django.py", line 79, in get_template
+    return Template(self.engine.get_template(template_name), self)
+  File "/usr/local/lib/python3.10/site-packages/django/template/engine.py", line 177, in get_template
+    template, origin = self.find_template(template_name)
+  File "/usr/local/lib/python3.10/site-packages/django/template/engine.py", line 159, in find_template
+    template = loader.get_template(name, skip=skip)
+  File "/usr/local/lib/python3.10/site-packages/django/template/loaders/cached.py", line 57, in get_template
+    template = super().get_template(template_name, skip)
+  File "/usr/local/lib/python3.10/site-packages/django/template/loaders/base.py", line 28, in get_template
+    return Template(
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 155, in __init__
+    self.nodelist = self.compile_nodelist()
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 197, in compile_nodelist
+    nodelist = parser.parse()
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 519, in parse
+    raise self.error(token, e)
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 517, in parse
+    compiled_result = compile_func(self, token)
+  File "/usr/local/lib/python3.10/site-packages/django/template/loader_tags.py", line 299, in do_extends
+    nodelist = parser.parse()
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 519, in parse
+    raise self.error(token, e)
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 517, in parse
+    compiled_result = compile_func(self, token)
+  File "/usr/local/lib/python3.10/site-packages/django/template/loader_tags.py", line 234, in do_block
+    nodelist = parser.parse(("endblock",))
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 519, in parse
+    raise self.error(token, e)
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 517, in parse
+    compiled_result = compile_func(self, token)
+  File "/usr/local/lib/python3.10/site-packages/django/template/defaulttags.py", line 1540, in do_with
+    nodelist = parser.parse(("endwith",))
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 519, in parse
+    raise self.error(token, e)
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 517, in parse
+    compiled_result = compile_func(self, token)
+  File "/usr/local/lib/python3.10/site-packages/django/template/defaulttags.py", line 862, in do_for
+    nodelist_loop = parser.parse(
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 519, in parse
+    raise self.error(token, e)
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 517, in parse
+    compiled_result = compile_func(self, token)
+  File "/usr/local/lib/python3.10/site-packages/django/template/defaulttags.py", line 961, in do_if
+    condition = TemplateIfParser(parser, bits).parse()
+  File "/usr/local/lib/python3.10/site-packages/django/template/defaulttags.py", line 894, in __init__
+    super().__init__(*args, **kwargs)
+  File "/usr/local/lib/python3.10/site-packages/django/template/smartif.py", line 171, in __init__
+    mapped_tokens.append(self.translate_token(token))
+  File "/usr/local/lib/python3.10/site-packages/django/template/smartif.py", line 182, in translate_token
+    return self.create_var(token)
+  File "/usr/local/lib/python3.10/site-packages/django/template/defaulttags.py", line 897, in create_var
+    return TemplateLiteral(self.template_parser.compile_filter(value), value)
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 610, in compile_filter
+    return FilterExpression(token, self)
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 711, in __init__
+    raise TemplateSyntaxError(
+django.template.exceptions.TemplateSyntaxError: Could not parse the remainder: '==comp.id' from 'order.supplier_id==comp.id'
+[2026-03-11 08:05:59] ERROR django.server basehttp.log_message:213 — "GET /orders/69/ HTTP/1.1" 500 329733
+[2026-03-11 08:06:06] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 187962
+[2026-03-11 08:06:09] ERROR django.request log.log_response:253 — Internal Server Error: /orders/69/
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/django/template/smartif.py", line 180, in translate_token
+    op = OPERATORS[token]
+KeyError: 'order.supplier_id==comp.id'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/usr/local/lib/python3.10/site-packages/django/core/handlers/base.py", line 220, in _get_response
+    response = response.render()
+  File "/usr/local/lib/python3.10/site-packages/django/template/response.py", line 114, in render
+    self.content = self.rendered_content
+  File "/usr/local/lib/python3.10/site-packages/django/template/response.py", line 90, in rendered_content
+    template = self.resolve_template(self.template_name)
+  File "/usr/local/lib/python3.10/site-packages/django/template/response.py", line 72, in resolve_template
+    return select_template(template, using=self.using)
+  File "/usr/local/lib/python3.10/site-packages/django/template/loader.py", line 42, in select_template
+    return engine.get_template(template_name)
+  File "/usr/local/lib/python3.10/site-packages/django/template/backends/django.py", line 79, in get_template
+    return Template(self.engine.get_template(template_name), self)
+  File "/usr/local/lib/python3.10/site-packages/django/template/engine.py", line 177, in get_template
+    template, origin = self.find_template(template_name)
+  File "/usr/local/lib/python3.10/site-packages/django/template/engine.py", line 159, in find_template
+    template = loader.get_template(name, skip=skip)
+  File "/usr/local/lib/python3.10/site-packages/django/template/loaders/cached.py", line 57, in get_template
+    template = super().get_template(template_name, skip)
+  File "/usr/local/lib/python3.10/site-packages/django/template/loaders/base.py", line 28, in get_template
+    return Template(
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 155, in __init__
+    self.nodelist = self.compile_nodelist()
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 197, in compile_nodelist
+    nodelist = parser.parse()
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 519, in parse
+    raise self.error(token, e)
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 517, in parse
+    compiled_result = compile_func(self, token)
+  File "/usr/local/lib/python3.10/site-packages/django/template/loader_tags.py", line 299, in do_extends
+    nodelist = parser.parse()
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 519, in parse
+    raise self.error(token, e)
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 517, in parse
+    compiled_result = compile_func(self, token)
+  File "/usr/local/lib/python3.10/site-packages/django/template/loader_tags.py", line 234, in do_block
+    nodelist = parser.parse(("endblock",))
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 519, in parse
+    raise self.error(token, e)
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 517, in parse
+    compiled_result = compile_func(self, token)
+  File "/usr/local/lib/python3.10/site-packages/django/template/defaulttags.py", line 1540, in do_with
+    nodelist = parser.parse(("endwith",))
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 519, in parse
+    raise self.error(token, e)
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 517, in parse
+    compiled_result = compile_func(self, token)
+  File "/usr/local/lib/python3.10/site-packages/django/template/defaulttags.py", line 862, in do_for
+    nodelist_loop = parser.parse(
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 519, in parse
+    raise self.error(token, e)
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 517, in parse
+    compiled_result = compile_func(self, token)
+  File "/usr/local/lib/python3.10/site-packages/django/template/defaulttags.py", line 961, in do_if
+    condition = TemplateIfParser(parser, bits).parse()
+  File "/usr/local/lib/python3.10/site-packages/django/template/defaulttags.py", line 894, in __init__
+    super().__init__(*args, **kwargs)
+  File "/usr/local/lib/python3.10/site-packages/django/template/smartif.py", line 171, in __init__
+    mapped_tokens.append(self.translate_token(token))
+  File "/usr/local/lib/python3.10/site-packages/django/template/smartif.py", line 182, in translate_token
+    return self.create_var(token)
+  File "/usr/local/lib/python3.10/site-packages/django/template/defaulttags.py", line 897, in create_var
+    return TemplateLiteral(self.template_parser.compile_filter(value), value)
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 610, in compile_filter
+    return FilterExpression(token, self)
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 711, in __init__
+    raise TemplateSyntaxError(
+django.template.exceptions.TemplateSyntaxError: Could not parse the remainder: '==comp.id' from 'order.supplier_id==comp.id'
+[2026-03-11 08:06:09] ERROR django.server basehttp.log_message:213 — "GET /orders/69/ HTTP/1.1" 500 329468
+[2026-03-11 08:07:58] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-11 08:11:12] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-11 08:11:20] INFO django.server basehttp.log_message:213 — "GET /orders/69/ HTTP/1.1" 200 37787
+[2026-03-11 08:11:47] INFO django.server basehttp.log_message:213 — "POST /logout/ HTTP/1.1" 302 0
+[2026-03-11 08:11:47] INFO django.server basehttp.log_message:213 — "GET /login/ HTTP/1.1" 200 4772
+[2026-03-11 08:11:52] INFO django.server basehttp.log_message:213 — "POST /login/ HTTP/1.1" 302 0
+[2026-03-11 08:11:52] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 08:11:52] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 08:11:52] INFO django.server basehttp.log_message:213 — "GET /dashboard/ HTTP/1.1" 200 18415
+[2026-03-11 08:11:55] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 08:11:55] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 08:11:55] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 34541
+[2026-03-11 08:11:57] INFO django.server basehttp.log_message:213 — "GET /orders/69/ HTTP/1.1" 200 32082
+[2026-03-11 08:12:10] INFO apps.orders views.order_create:212 — New order creation page accessed by sahil (Customer)
+[2026-03-11 08:12:10] INFO django.server basehttp.log_message:213 — "GET /orders/create/ HTTP/1.1" 200 33816
+[2026-03-11 08:14:29] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-11 08:14:34] INFO apps.orders views.order_create:212 — New order creation page accessed by sahil (Customer)
+[2026-03-11 08:14:34] INFO django.server basehttp.log_message:213 — "GET /orders/create/ HTTP/1.1" 200 33816
+[2026-03-11 08:14:39] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 08:14:39] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 08:14:39] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 34541
+[2026-03-11 08:14:40] ERROR django.request log.log_response:253 — Internal Server Error: /orders/69/
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/django/template/smartif.py", line 180, in translate_token
+    op = OPERATORS[token]
+KeyError: 'order.supplier_id==comp.id'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/usr/local/lib/python3.10/site-packages/django/core/handlers/base.py", line 220, in _get_response
+    response = response.render()
+  File "/usr/local/lib/python3.10/site-packages/django/template/response.py", line 114, in render
+    self.content = self.rendered_content
+  File "/usr/local/lib/python3.10/site-packages/django/template/response.py", line 90, in rendered_content
+    template = self.resolve_template(self.template_name)
+  File "/usr/local/lib/python3.10/site-packages/django/template/response.py", line 72, in resolve_template
+    return select_template(template, using=self.using)
+  File "/usr/local/lib/python3.10/site-packages/django/template/loader.py", line 42, in select_template
+    return engine.get_template(template_name)
+  File "/usr/local/lib/python3.10/site-packages/django/template/backends/django.py", line 79, in get_template
+    return Template(self.engine.get_template(template_name), self)
+  File "/usr/local/lib/python3.10/site-packages/django/template/engine.py", line 177, in get_template
+    template, origin = self.find_template(template_name)
+  File "/usr/local/lib/python3.10/site-packages/django/template/engine.py", line 159, in find_template
+    template = loader.get_template(name, skip=skip)
+  File "/usr/local/lib/python3.10/site-packages/django/template/loaders/cached.py", line 57, in get_template
+    template = super().get_template(template_name, skip)
+  File "/usr/local/lib/python3.10/site-packages/django/template/loaders/base.py", line 28, in get_template
+    return Template(
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 155, in __init__
+    self.nodelist = self.compile_nodelist()
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 197, in compile_nodelist
+    nodelist = parser.parse()
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 519, in parse
+    raise self.error(token, e)
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 517, in parse
+    compiled_result = compile_func(self, token)
+  File "/usr/local/lib/python3.10/site-packages/django/template/loader_tags.py", line 299, in do_extends
+    nodelist = parser.parse()
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 519, in parse
+    raise self.error(token, e)
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 517, in parse
+    compiled_result = compile_func(self, token)
+  File "/usr/local/lib/python3.10/site-packages/django/template/loader_tags.py", line 234, in do_block
+    nodelist = parser.parse(("endblock",))
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 519, in parse
+    raise self.error(token, e)
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 517, in parse
+    compiled_result = compile_func(self, token)
+  File "/usr/local/lib/python3.10/site-packages/django/template/defaulttags.py", line 1540, in do_with
+    nodelist = parser.parse(("endwith",))
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 519, in parse
+    raise self.error(token, e)
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 517, in parse
+    compiled_result = compile_func(self, token)
+  File "/usr/local/lib/python3.10/site-packages/django/template/defaulttags.py", line 862, in do_for
+    nodelist_loop = parser.parse(
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 519, in parse
+    raise self.error(token, e)
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 517, in parse
+    compiled_result = compile_func(self, token)
+  File "/usr/local/lib/python3.10/site-packages/django/template/defaulttags.py", line 961, in do_if
+    condition = TemplateIfParser(parser, bits).parse()
+  File "/usr/local/lib/python3.10/site-packages/django/template/defaulttags.py", line 894, in __init__
+    super().__init__(*args, **kwargs)
+  File "/usr/local/lib/python3.10/site-packages/django/template/smartif.py", line 171, in __init__
+    mapped_tokens.append(self.translate_token(token))
+  File "/usr/local/lib/python3.10/site-packages/django/template/smartif.py", line 182, in translate_token
+    return self.create_var(token)
+  File "/usr/local/lib/python3.10/site-packages/django/template/defaulttags.py", line 897, in create_var
+    return TemplateLiteral(self.template_parser.compile_filter(value), value)
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 610, in compile_filter
+    return FilterExpression(token, self)
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 711, in __init__
+    raise TemplateSyntaxError(
+django.template.exceptions.TemplateSyntaxError: Could not parse the remainder: '==comp.id' from 'order.supplier_id==comp.id'
+[2026-03-11 08:14:40] ERROR django.server basehttp.log_message:213 — "GET /orders/69/ HTTP/1.1" 500 329552
+[2026-03-11 08:14:44] ERROR django.request log.log_response:253 — Internal Server Error: /orders/69/
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/django/template/smartif.py", line 180, in translate_token
+    op = OPERATORS[token]
+KeyError: 'order.supplier_id==comp.id'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/usr/local/lib/python3.10/site-packages/django/core/handlers/base.py", line 220, in _get_response
+    response = response.render()
+  File "/usr/local/lib/python3.10/site-packages/django/template/response.py", line 114, in render
+    self.content = self.rendered_content
+  File "/usr/local/lib/python3.10/site-packages/django/template/response.py", line 90, in rendered_content
+    template = self.resolve_template(self.template_name)
+  File "/usr/local/lib/python3.10/site-packages/django/template/response.py", line 72, in resolve_template
+    return select_template(template, using=self.using)
+  File "/usr/local/lib/python3.10/site-packages/django/template/loader.py", line 42, in select_template
+    return engine.get_template(template_name)
+  File "/usr/local/lib/python3.10/site-packages/django/template/backends/django.py", line 79, in get_template
+    return Template(self.engine.get_template(template_name), self)
+  File "/usr/local/lib/python3.10/site-packages/django/template/engine.py", line 177, in get_template
+    template, origin = self.find_template(template_name)
+  File "/usr/local/lib/python3.10/site-packages/django/template/engine.py", line 159, in find_template
+    template = loader.get_template(name, skip=skip)
+  File "/usr/local/lib/python3.10/site-packages/django/template/loaders/cached.py", line 57, in get_template
+    template = super().get_template(template_name, skip)
+  File "/usr/local/lib/python3.10/site-packages/django/template/loaders/base.py", line 28, in get_template
+    return Template(
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 155, in __init__
+    self.nodelist = self.compile_nodelist()
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 197, in compile_nodelist
+    nodelist = parser.parse()
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 519, in parse
+    raise self.error(token, e)
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 517, in parse
+    compiled_result = compile_func(self, token)
+  File "/usr/local/lib/python3.10/site-packages/django/template/loader_tags.py", line 299, in do_extends
+    nodelist = parser.parse()
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 519, in parse
+    raise self.error(token, e)
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 517, in parse
+    compiled_result = compile_func(self, token)
+  File "/usr/local/lib/python3.10/site-packages/django/template/loader_tags.py", line 234, in do_block
+    nodelist = parser.parse(("endblock",))
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 519, in parse
+    raise self.error(token, e)
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 517, in parse
+    compiled_result = compile_func(self, token)
+  File "/usr/local/lib/python3.10/site-packages/django/template/defaulttags.py", line 1540, in do_with
+    nodelist = parser.parse(("endwith",))
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 519, in parse
+    raise self.error(token, e)
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 517, in parse
+    compiled_result = compile_func(self, token)
+  File "/usr/local/lib/python3.10/site-packages/django/template/defaulttags.py", line 862, in do_for
+    nodelist_loop = parser.parse(
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 519, in parse
+    raise self.error(token, e)
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 517, in parse
+    compiled_result = compile_func(self, token)
+  File "/usr/local/lib/python3.10/site-packages/django/template/defaulttags.py", line 961, in do_if
+    condition = TemplateIfParser(parser, bits).parse()
+  File "/usr/local/lib/python3.10/site-packages/django/template/defaulttags.py", line 894, in __init__
+    super().__init__(*args, **kwargs)
+  File "/usr/local/lib/python3.10/site-packages/django/template/smartif.py", line 171, in __init__
+    mapped_tokens.append(self.translate_token(token))
+  File "/usr/local/lib/python3.10/site-packages/django/template/smartif.py", line 182, in translate_token
+    return self.create_var(token)
+  File "/usr/local/lib/python3.10/site-packages/django/template/defaulttags.py", line 897, in create_var
+    return TemplateLiteral(self.template_parser.compile_filter(value), value)
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 610, in compile_filter
+    return FilterExpression(token, self)
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 711, in __init__
+    raise TemplateSyntaxError(
+django.template.exceptions.TemplateSyntaxError: Could not parse the remainder: '==comp.id' from 'order.supplier_id==comp.id'
+[2026-03-11 08:14:44] ERROR django.server basehttp.log_message:213 — "GET /orders/69/ HTTP/1.1" 500 329552
+[2026-03-11 08:16:36] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-11 08:17:05] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-11 08:17:27] ERROR django.request log.log_response:253 — Internal Server Error: /orders/69/
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 511, in parse
+    compile_func = self.tags[command]
+KeyError: 'endfor'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/usr/local/lib/python3.10/site-packages/django/core/handlers/base.py", line 220, in _get_response
+    response = response.render()
+  File "/usr/local/lib/python3.10/site-packages/django/template/response.py", line 114, in render
+    self.content = self.rendered_content
+  File "/usr/local/lib/python3.10/site-packages/django/template/response.py", line 90, in rendered_content
+    template = self.resolve_template(self.template_name)
+  File "/usr/local/lib/python3.10/site-packages/django/template/response.py", line 72, in resolve_template
+    return select_template(template, using=self.using)
+  File "/usr/local/lib/python3.10/site-packages/django/template/loader.py", line 42, in select_template
+    return engine.get_template(template_name)
+  File "/usr/local/lib/python3.10/site-packages/django/template/backends/django.py", line 79, in get_template
+    return Template(self.engine.get_template(template_name), self)
+  File "/usr/local/lib/python3.10/site-packages/django/template/engine.py", line 177, in get_template
+    template, origin = self.find_template(template_name)
+  File "/usr/local/lib/python3.10/site-packages/django/template/engine.py", line 159, in find_template
+    template = loader.get_template(name, skip=skip)
+  File "/usr/local/lib/python3.10/site-packages/django/template/loaders/cached.py", line 57, in get_template
+    template = super().get_template(template_name, skip)
+  File "/usr/local/lib/python3.10/site-packages/django/template/loaders/base.py", line 28, in get_template
+    return Template(
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 155, in __init__
+    self.nodelist = self.compile_nodelist()
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 197, in compile_nodelist
+    nodelist = parser.parse()
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 519, in parse
+    raise self.error(token, e)
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 517, in parse
+    compiled_result = compile_func(self, token)
+  File "/usr/local/lib/python3.10/site-packages/django/template/loader_tags.py", line 299, in do_extends
+    nodelist = parser.parse()
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 519, in parse
+    raise self.error(token, e)
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 517, in parse
+    compiled_result = compile_func(self, token)
+  File "/usr/local/lib/python3.10/site-packages/django/template/loader_tags.py", line 234, in do_block
+    nodelist = parser.parse(("endblock",))
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 519, in parse
+    raise self.error(token, e)
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 517, in parse
+    compiled_result = compile_func(self, token)
+  File "/usr/local/lib/python3.10/site-packages/django/template/defaulttags.py", line 1540, in do_with
+    nodelist = parser.parse(("endwith",))
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 519, in parse
+    raise self.error(token, e)
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 517, in parse
+    compiled_result = compile_func(self, token)
+  File "/usr/local/lib/python3.10/site-packages/django/template/defaulttags.py", line 862, in do_for
+    nodelist_loop = parser.parse(
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 519, in parse
+    raise self.error(token, e)
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 517, in parse
+    compiled_result = compile_func(self, token)
+  File "/usr/local/lib/python3.10/site-packages/django/template/defaulttags.py", line 962, in do_if
+    nodelist = parser.parse(("elif", "else", "endif"))
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 513, in parse
+    self.invalid_block_tag(token, command, parse_until)
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 568, in invalid_block_tag
+    raise self.error(
+django.template.exceptions.TemplateSyntaxError: Invalid block tag on line 458: 'endfor', expected 'elif', 'else' or 'endif'. Did you forget to register or load this tag?
+[2026-03-11 08:17:27] ERROR django.server basehttp.log_message:213 — "GET /orders/69/ HTTP/1.1" 500 235492
+[2026-03-11 08:17:28] ERROR django.request log.log_response:253 — Internal Server Error: /orders/69/
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 511, in parse
+    compile_func = self.tags[command]
+KeyError: 'endfor'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/usr/local/lib/python3.10/site-packages/django/core/handlers/base.py", line 220, in _get_response
+    response = response.render()
+  File "/usr/local/lib/python3.10/site-packages/django/template/response.py", line 114, in render
+    self.content = self.rendered_content
+  File "/usr/local/lib/python3.10/site-packages/django/template/response.py", line 90, in rendered_content
+    template = self.resolve_template(self.template_name)
+  File "/usr/local/lib/python3.10/site-packages/django/template/response.py", line 72, in resolve_template
+    return select_template(template, using=self.using)
+  File "/usr/local/lib/python3.10/site-packages/django/template/loader.py", line 42, in select_template
+    return engine.get_template(template_name)
+  File "/usr/local/lib/python3.10/site-packages/django/template/backends/django.py", line 79, in get_template
+    return Template(self.engine.get_template(template_name), self)
+  File "/usr/local/lib/python3.10/site-packages/django/template/engine.py", line 177, in get_template
+    template, origin = self.find_template(template_name)
+  File "/usr/local/lib/python3.10/site-packages/django/template/engine.py", line 159, in find_template
+    template = loader.get_template(name, skip=skip)
+  File "/usr/local/lib/python3.10/site-packages/django/template/loaders/cached.py", line 57, in get_template
+    template = super().get_template(template_name, skip)
+  File "/usr/local/lib/python3.10/site-packages/django/template/loaders/base.py", line 28, in get_template
+    return Template(
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 155, in __init__
+    self.nodelist = self.compile_nodelist()
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 197, in compile_nodelist
+    nodelist = parser.parse()
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 519, in parse
+    raise self.error(token, e)
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 517, in parse
+    compiled_result = compile_func(self, token)
+  File "/usr/local/lib/python3.10/site-packages/django/template/loader_tags.py", line 299, in do_extends
+    nodelist = parser.parse()
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 519, in parse
+    raise self.error(token, e)
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 517, in parse
+    compiled_result = compile_func(self, token)
+  File "/usr/local/lib/python3.10/site-packages/django/template/loader_tags.py", line 234, in do_block
+    nodelist = parser.parse(("endblock",))
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 519, in parse
+    raise self.error(token, e)
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 517, in parse
+    compiled_result = compile_func(self, token)
+  File "/usr/local/lib/python3.10/site-packages/django/template/defaulttags.py", line 1540, in do_with
+    nodelist = parser.parse(("endwith",))
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 519, in parse
+    raise self.error(token, e)
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 517, in parse
+    compiled_result = compile_func(self, token)
+  File "/usr/local/lib/python3.10/site-packages/django/template/defaulttags.py", line 862, in do_for
+    nodelist_loop = parser.parse(
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 519, in parse
+    raise self.error(token, e)
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 517, in parse
+    compiled_result = compile_func(self, token)
+  File "/usr/local/lib/python3.10/site-packages/django/template/defaulttags.py", line 962, in do_if
+    nodelist = parser.parse(("elif", "else", "endif"))
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 513, in parse
+    self.invalid_block_tag(token, command, parse_until)
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 568, in invalid_block_tag
+    raise self.error(
+django.template.exceptions.TemplateSyntaxError: Invalid block tag on line 458: 'endfor', expected 'elif', 'else' or 'endif'. Did you forget to register or load this tag?
+[2026-03-11 08:17:28] ERROR django.server basehttp.log_message:213 — "GET /orders/69/ HTTP/1.1" 500 235492
+[2026-03-11 08:17:28] ERROR django.request log.log_response:253 — Internal Server Error: /orders/69/
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 511, in parse
+    compile_func = self.tags[command]
+KeyError: 'endfor'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/usr/local/lib/python3.10/site-packages/django/core/handlers/base.py", line 220, in _get_response
+    response = response.render()
+  File "/usr/local/lib/python3.10/site-packages/django/template/response.py", line 114, in render
+    self.content = self.rendered_content
+  File "/usr/local/lib/python3.10/site-packages/django/template/response.py", line 90, in rendered_content
+    template = self.resolve_template(self.template_name)
+  File "/usr/local/lib/python3.10/site-packages/django/template/response.py", line 72, in resolve_template
+    return select_template(template, using=self.using)
+  File "/usr/local/lib/python3.10/site-packages/django/template/loader.py", line 42, in select_template
+    return engine.get_template(template_name)
+  File "/usr/local/lib/python3.10/site-packages/django/template/backends/django.py", line 79, in get_template
+    return Template(self.engine.get_template(template_name), self)
+  File "/usr/local/lib/python3.10/site-packages/django/template/engine.py", line 177, in get_template
+    template, origin = self.find_template(template_name)
+  File "/usr/local/lib/python3.10/site-packages/django/template/engine.py", line 159, in find_template
+    template = loader.get_template(name, skip=skip)
+  File "/usr/local/lib/python3.10/site-packages/django/template/loaders/cached.py", line 57, in get_template
+    template = super().get_template(template_name, skip)
+  File "/usr/local/lib/python3.10/site-packages/django/template/loaders/base.py", line 28, in get_template
+    return Template(
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 155, in __init__
+    self.nodelist = self.compile_nodelist()
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 197, in compile_nodelist
+    nodelist = parser.parse()
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 519, in parse
+    raise self.error(token, e)
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 517, in parse
+    compiled_result = compile_func(self, token)
+  File "/usr/local/lib/python3.10/site-packages/django/template/loader_tags.py", line 299, in do_extends
+    nodelist = parser.parse()
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 519, in parse
+    raise self.error(token, e)
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 517, in parse
+    compiled_result = compile_func(self, token)
+  File "/usr/local/lib/python3.10/site-packages/django/template/loader_tags.py", line 234, in do_block
+    nodelist = parser.parse(("endblock",))
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 519, in parse
+    raise self.error(token, e)
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 517, in parse
+    compiled_result = compile_func(self, token)
+  File "/usr/local/lib/python3.10/site-packages/django/template/defaulttags.py", line 1540, in do_with
+    nodelist = parser.parse(("endwith",))
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 519, in parse
+    raise self.error(token, e)
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 517, in parse
+    compiled_result = compile_func(self, token)
+  File "/usr/local/lib/python3.10/site-packages/django/template/defaulttags.py", line 862, in do_for
+    nodelist_loop = parser.parse(
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 519, in parse
+    raise self.error(token, e)
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 517, in parse
+    compiled_result = compile_func(self, token)
+  File "/usr/local/lib/python3.10/site-packages/django/template/defaulttags.py", line 962, in do_if
+    nodelist = parser.parse(("elif", "else", "endif"))
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 513, in parse
+    self.invalid_block_tag(token, command, parse_until)
+  File "/usr/local/lib/python3.10/site-packages/django/template/base.py", line 568, in invalid_block_tag
+    raise self.error(
+django.template.exceptions.TemplateSyntaxError: Invalid block tag on line 458: 'endfor', expected 'elif', 'else' or 'endif'. Did you forget to register or load this tag?
+[2026-03-11 08:17:28] ERROR django.server basehttp.log_message:213 — "GET /orders/69/ HTTP/1.1" 500 235492
+[2026-03-11 08:18:16] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-11 08:18:40] INFO django.server basehttp.log_message:213 — "GET /orders/69/ HTTP/1.1" 200 32209
+[2026-03-11 08:18:42] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 08:18:42] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 08:18:42] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 34541
+[2026-03-11 08:18:44] INFO django.server basehttp.log_message:213 — "GET /orders/69/ HTTP/1.1" 200 32209
+[2026-03-11 08:19:59] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 08:19:59] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: abc (Customer)
+[2026-03-11 08:19:59] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 34541
+[2026-03-11 08:20:00] INFO django.server basehttp.log_message:213 — "GET /orders/69/ HTTP/1.1" 200 32209
+[2026-03-11 08:20:18] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-11 08:24:54] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader

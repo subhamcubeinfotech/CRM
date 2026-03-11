@@ -4,7 +4,8 @@ from .models import Order, ManifestItem, Tag, ShippingTerm, PackagingType
 
 @admin.register(ShippingTerm)
 class ShippingTermAdmin(admin.ModelAdmin):
-    list_display = ['name', 'description']
+    list_display = ['name', 'tenant', 'description']
+    list_filter = ['tenant']
     search_fields = ['name']
 
 
@@ -16,7 +17,8 @@ class PackagingTypeAdmin(admin.ModelAdmin):
 
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
-    list_display = ['name', 'color']
+    list_display = ['name', 'tenant', 'color']
+    list_filter = ['tenant']
     search_fields = ['name']
 
 
@@ -27,7 +29,7 @@ class ManifestItemInline(admin.TabularInline):
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ['order_number', 'supplier', 'receiver', 'status', 'created_at']
-    list_filter = ['status', 'payment_status']
+    list_display = ['order_number', 'tenant', 'supplier', 'receiver', 'status', 'created_at']
+    list_filter = ['tenant', 'status', 'payment_status']
     search_fields = ['order_number', 'po_number']
     inlines = [ManifestItemInline]

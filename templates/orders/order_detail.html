@@ -164,8 +164,7 @@
                 <div class="small text-primary mb-2">
                     <i class="fas fa-map-marker-alt me-1"></i> {{ order.supplier.full_address }}
                 </div>
-                <div class="small text-muted mb-1"><i class="fas fa-file-alt me-2"></i>SO#: {{
-                    order.so_number|default:"-" }}</div>
+                <div class="small text-muted mb-1"><i class="fas fa-file-alt me-2"></i>SO#: {{ order.so_number|default:"-" }}</div>
                 <div class="small text-muted mb-1"><i class="fas fa-handshake me-2"></i>FOB Origin</div>
                 <div class="small text-muted"><i class="fas fa-calendar me-2"></i>-</div>
             </div>
@@ -175,8 +174,7 @@
                 <div class="small text-primary mb-2">
                     <i class="fas fa-map-marker-alt me-1"></i> {{ order.receiver.full_address }}
                 </div>
-                <div class="small text-muted mb-1"><i class="fas fa-file-invoice me-2"></i>PO#: {{
-                    order.po_number|default:"-" }}</div>
+                <div class="small text-muted mb-1"><i class="fas fa-file-invoice me-2"></i>PO#: {{ order.po_number|default:"-" }}</div>
                 <div class="small text-muted mb-1"><i class="fas fa-handshake me-2"></i>FOB Origin</div>
                 <div class="small text-muted"><i class="fas fa-calendar me-2"></i>-</div>
             </div>
@@ -261,8 +259,7 @@
                                     {% for ship in shipments %}
                                     <tr>
                                         <td class="ps-3"><a href="{% url 'shipments:shipment_detail' ship.pk %}"
-                                                class="text-primary text-decoration-none fw-600">{{ ship.shipment_number
-                                                }}</a></td>
+                                                class="text-primary text-decoration-none fw-600">{{ ship.shipment_number }}</a></td>
                                         <td>
                                             <span
                                                 class="badge rounded-3 py-2 px-3 {% if ship.status  ==  'delivered' %}bg-success-soft text-success{% else %}bg-danger-soft text-danger{% endif %}"
@@ -273,16 +270,12 @@
                                         <td class="small">{{ ship.pickup_date|date:"l, M jS" }}</td>
                                         <td class="small">{{ ship.estimated_delivery_date|date:"l, M jS" }}</td>
                                         <td>
-                                            <div class="small fw-bold text-primary">{{
-                                                ship.order.supplier.address|truncatechars:15 }}</div>
-                                            <div class="text-muted" style="font-size: 0.65rem;">{{
-                                                ship.order.supplier.city }}, {{ ship.order.supplier.state }}</div>
+                                            <div class="small fw-bold text-primary">{{ ship.order.supplier.address|truncatechars:15 }}</div>
+                                            <div class="text-muted" style="font-size: 0.65rem;">{{ ship.order.supplier.city }}, {{ ship.order.supplier.state }}</div>
                                         </td>
                                         <td>
-                                            <div class="small fw-bold text-primary">{{
-                                                ship.order.receiver.address|truncatechars:15 }}</div>
-                                            <div class="text-muted" style="font-size: 0.65rem;">{{
-                                                ship.order.receiver.city }}, {{ ship.order.receiver.state }}</div>
+                                            <div class="small fw-bold text-primary">{{ ship.order.receiver.address|truncatechars:15 }}</div>
+                                            <div class="text-muted" style="font-size: 0.65rem;">{{ ship.order.receiver.city }}, {{ ship.order.receiver.state }}</div>
                                         </td>
                                         <td class="fw-bold">{{ ship.total_weight|intcomma }} lbs</td>
                                         <td class="pe-3 small text-muted">{{ ship.tracking_number|default:"-" }}</td>
@@ -351,9 +344,7 @@
     </div>
     <div class="offcanvas-body p-4">
         <form action="{% url 'orders:order_edit' order.pk %}" method="POST">
-            {% csrf_token %}
-
-            {% with shipments_exist=order.shipments.exists %}
+            {% csrf_token %} {% with shipments_exist=order.shipments.exists %}
             <!-- Supplier -->
             <div class="mb-4">
                 <label class="form-label fw-bold small text-uppercase mb-1">Supplier<span
@@ -375,8 +366,7 @@
                         class="text-danger">*</span></label>
                 <select name="source_location" class="form-select border-primary-subtle">
                     {% for wh in warehouses %}
-                    <option value="{{ wh.id }}" {% if order.source_location_id == wh.id %}selected{% endif %}>{{
-                        wh.display_name }}</option>
+                    <option value="{{ wh.id }}" {% if order.source_location_id == wh.id %}selected{% endif %}>{{ wh.display_name }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -410,8 +400,7 @@
                         class="text-danger">*</span></label>
                 <select name="destination_location" class="form-select border-primary-subtle">
                     {% for wh in warehouses %}
-                    <option value="{{ wh.id }}" {% if order.destination_location_id == wh.id %}selected{% endif %}>{{
-                        wh.display_name }}</option>
+                    <option value="{{ wh.id }}" {% if order.destination_location_id == wh.id %}selected{% endif %}>{{ wh.display_name }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -440,8 +429,7 @@
                 <select name="shipping_terms" class="form-select">
                     <option value="">Select terms</option>
                     {% for term in shipping_terms %}
-                    <option value="{{ term.id }}" {% if order.shipping_terms_id == term.id %}selected{% endif %}>{{
-                        term.name }}</option>
+                    <option value="{{ term.id }}" {% if order.shipping_terms_id == term.id %}selected{% endif %}>{{ term.name }}</option>
                     {% endfor %}
                 </select>
             </div>

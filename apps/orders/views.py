@@ -64,14 +64,16 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
         context['invoices'] = self.object.invoices.all()
         
         # Context for Edit Offcanvas
+        user_tenant = self.request.user.tenant
         user_company = self.request.user.company
-        context['suppliers'] = Company.objects.filter(company_type='vendor')
-        context['receivers'] = Company.objects.filter(company_type='customer')
         
-        # Locations (Prioritize user's company)
-        from django.db import models
+        # Filter companies by tenant
+        context['suppliers'] = Company.objects.filter(tenant=user_tenant, company_type='vendor')
+        context['receivers'] = Company.objects.filter(tenant=user_tenant, company_type='customer')
+        
+        # Locations (Prioritize user's company and filter by tenant)
         from django.db.models import Case, When, IntegerField
-        warehouses = Warehouse.plain_objects.all()
+        warehouses = Warehouse.plain_objects.filter(tenant=user_tenant)
         if user_company:
             warehouses = warehouses.annotate(
                 is_my_company=Case(
@@ -82,11 +84,30 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
             ).order_by('-is_my_company', 'name')
         context['warehouses'] = warehouses
         
-        context['shipping_terms'] = ShippingTerm.objects.all()
-        context['tags'] = Tag.objects.all()
+        from django.db.models import Q
+        # Strict Tenant Filtering (Include current selection if it's global)
+        st_filter = Q(tenant=user_tenant)
+        if self.object.shipping_terms_id:
+            st_filter |= Q(pk=self.object.shipping_terms_id)
+        context['shipping_terms'] = ShippingTerm.plain_objects.filter(st_filter).distinct()
         
+        tag_filter = Q(tenant=user_tenant)
+        if self.object.tags.exists():
+            tag_filter |= Q(pk__in=self.object.tags.values_list('pk', flat=True))
+        context['tags'] = Tag.plain_objects.filter(tag_filter).distinct()
+        
+        # Representatives (Show all users in the tenant, prioritize current user)
         from django.contrib.auth import get_user_model
-        context['team_members'] = get_user_model().objects.all()
+        from django.db.models import Case, When, Value, IntegerField
+        context['team_members'] = get_user_model().objects.filter(
+            tenant=user_tenant
+        ).annotate(
+            is_me=Case(
+                When(id=self.request.user.id, then=Value(1)),
+                default=Value(0),
+                output_field=IntegerField()
+            )
+        ).order_by('-is_me', 'first_name', 'last_name')
         
         return context
 
@@ -214,8 +235,9 @@ def order_create(request):
         'receivers': receivers,
         'warehouses': warehouses,
         'inventory_items': inventory_items,
-        'shipping_terms': ShippingTerm.objects.all(),
-        'tags': Tag.objects.all(),
+        # Strict Filtering for new orders (only show tenant's own data)
+        'shipping_terms': ShippingTerm.objects.filter(tenant=request.user.tenant) if request.user.tenant else ShippingTerm.objects.none(),
+        'tags': Tag.objects.filter(tenant=request.user.tenant) if request.user.tenant else Tag.objects.none(),
         'packaging_types': PackagingType.objects.all(),
     }
     return render(request, 'orders/order_form.html', context)

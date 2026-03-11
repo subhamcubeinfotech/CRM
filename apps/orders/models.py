@@ -3,25 +3,27 @@ from django.conf import settings
 from django.utils import timezone
 from apps.accounts.models import TenantAwareModel
 
-class Tag(models.Model):
+class Tag(TenantAwareModel):
     """Tag model for categorizing orders"""
-    name = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=100)
     color = models.CharField(max_length=20, default='secondary', help_text='Bootstrap color class (primary, success, danger, warning, info, secondary)')
 
     class Meta:
         ordering = ['name']
+        unique_together = ('tenant', 'name')
 
     def __str__(self):
         return self.name
 
 
-class ShippingTerm(models.Model):
+class ShippingTerm(TenantAwareModel):
     """Shipping term model - managed via Admin"""
-    name = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=100)
     description = models.CharField(max_length=255, blank=True)
 
     class Meta:
         ordering = ['name']
+        unique_together = ('tenant', 'name')
 
     def __str__(self):
         return self.name
