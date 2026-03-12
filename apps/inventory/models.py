@@ -59,24 +59,31 @@ class Warehouse(TenantAwareModel):
 
     @property
     def display_name(self):
-        """Pre-formatted name for dropdowns: Company - Warehouse (City)"""
-        # If the warehouse name is actually a raw address string (from "my company location"), 
-        # just return the raw address string without any Company or City formatting.
-        if len(self.name) > 20 and "," in self.name:
-            return self.name
+        """Pre-formatted name for dropdowns: Priority given to full address if it looks more descriptive"""
+        # If we have a full address and the warehouse name is generic (like "Main Office"), 
+        # return the full address as it's more useful in a logistics context.
+        generic_names = ['Main Office', 'Main Warehouse', 'Warehouse', 'Office', 'Hub']
+        
+        # Clean the name of company references for checking
+        name_clean = self.name
+        if self.company:
+            name_clean = name_clean.replace(self.company.name, "").strip(" -")
+            
+        if (not name_clean or name_clean in generic_names) and self.address:
+            return self.full_address
 
+        # Otherwise, stick to Company - Name (City) format but include more info
         parts = []
         if self.company:
             parts.append(self.company.name)
         
         name_part = self.name
-        # Clean up redundancies if naming already included company name
         if self.company and self.company.name in name_part:
             name_part = name_part.replace(self.company.name, "").strip(" -")
             if not name_part:
                 name_part = "Main Office"
 
-        if self.city:
+        if self.city and "(" not in name_part:
             name_part += f" ({self.city})"
         parts.append(name_part)
         

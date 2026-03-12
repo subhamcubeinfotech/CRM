@@ -22,15 +22,19 @@
                         <select name="supplier" id="supplier-select" class="form-select border-primary-subtle" required>
                             <option value="">Select a supplier</option>
                             {% for supplier in suppliers %}
-                            <option value="{{ supplier.id }}">
+                            <option value="{{ supplier.id }}" data-address="{{ supplier.full_address }}">
                                 {{ supplier.name }}</option>
                             {% endfor %}
-                        </select>
+                         </select>
                         <a href="{% url 'accounts:company_create' %}?type=vendor" class="btn btn-outline-primary"><i
                                 class="fas fa-plus"></i> Add</a>
                     </div>
-                    <a href="#" id="assign-supplier-mine" class="small text-decoration-none mt-1 d-inline-block"
-                        data-company-id="{{ user.company_id }}">Click to assign to your company.</a>
+                    <div style="min-height: 21px;">
+                        {% if user.company and user.company.company_type != 'customer' %}
+                        <a href="#" id="assign-supplier-mine" class="small text-decoration-none mt-1 d-inline-block"
+                            data-company-id="{{ user.company_id }}">Click to assign to your company.</a>
+                        {% endif %}
+                    </div>
                 </div>
 
                 <div class="mb-4">
@@ -41,22 +45,26 @@
                             class="form-select border-primary-subtle" required>
                             <option value="">Select location</option>
                             {% if user.company %}
-                            <option value="temp_addr_{{ user.company.full_address }}">{{ user.company.full_address }}
+                            <option value="temp_addr_{{ user.company.full_address }}" data-company-id="{{ user.company.id }}">
+                                {{ user.company.full_address }} (Your Address)
                             </option>
                             {% endif %}
                             {% for warehouse in warehouses %}
-                            <option value="{{ warehouse.id }}">{{ warehouse.display_name }}</option>
+                            <option value="{{ warehouse.id }}" data-company-id="{{ warehouse.company_id }}">
+                                {{ warehouse.display_name }}</option>
                             {% endfor %}
                         </select>
                         <button class="btn btn-outline-primary" type="button"><i class="fas fa-plus"></i> Add</button>
                     </div>
-                    {% if user.company %}
-                    <a href="#" id="assign-source-my-location" class="small text-decoration-none mt-1 d-inline-block"
-                        data-address="{{ user.company.full_address }}"
-                        data-city="{% if user.company.city %}{{ user.company.city }}{% else %}City{% endif %}"
-                        data-name="{{ user.company.name }}">Click to use
-                        your signup address.</a>
-                    {% endif %}
+                    <div style="min-height: 21px;">
+                        {% if user.company %}
+                        <a href="#" id="assign-source-my-location" class="small text-decoration-none mt-1 d-inline-block"
+                            data-address="{{ user.company.full_address }}"
+                            data-city="{% if user.company.city %}{{ user.company.city }}{% else %}City{% endif %}"
+                            data-name="{{ user.company.name }}">Click to use
+                            your signup address.</a>
+                        {% endif %}
+                    </div>
                 </div>
 
                 <div class="mb-4">
@@ -78,15 +86,19 @@
                         <select name="receiver" id="receiver-select" class="form-select border-primary-subtle" required>
                             <option value="">Select a receiver</option>
                             {% for receiver in receivers %}
-                            <option value="{{ receiver.id }}">
+                            <option value="{{ receiver.id }}" data-address="{{ receiver.full_address }}">
                                 {{ receiver.name }}</option>
                             {% endfor %}
                         </select>
                         <a href="{% url 'accounts:company_create' %}?type=customer" class="btn btn-outline-primary"><i
                                 class="fas fa-plus"></i> Add</a>
                     </div>
-                    <a href="#" id="assign-receiver-mine" class="small text-decoration-none mt-1 d-inline-block"
-                        data-company-id="{{ user.company_id }}">Click to assign to your company.</a>
+                    <div style="min-height: 21px;">
+                        {% if user.company and user.company.company_type == 'customer' %}
+                        <a href="#" id="assign-receiver-mine" class="small text-decoration-none mt-1 d-inline-block"
+                            data-company-id="{{ user.company_id }}">Click to assign to your company.</a>
+                        {% endif %}
+                    </div>
                 </div>
 
                 <div class="mb-4">
@@ -97,22 +109,26 @@
                             class="form-select border-primary-subtle" required>
                             <option value="">Select location</option>
                             {% if user.company %}
-                            <option value="temp_addr_{{ user.company.full_address }}">{{ user.company.full_address }}
+                            <option value="temp_addr_{{ user.company.full_address }}" data-company-id="{{ user.company.id }}">
+                                {{ user.company.full_address }} (Your Address)
                             </option>
                             {% endif %}
                             {% for warehouse in warehouses %}
-                            <option value="{{ warehouse.id }}">{{ warehouse.display_name }}</option>
+                            <option value="{{ warehouse.id }}" data-company-id="{{ warehouse.company_id }}">
+                                {{ warehouse.display_name }}</option>
                             {% endfor %}
                         </select>
                         <button class="btn btn-outline-primary" type="button"><i class="fas fa-plus"></i> Add</button>
                     </div>
-                    {% if user.company %}
-                    <a href="#" id="assign-dest-my-location" class="small text-decoration-none mt-1 d-inline-block"
-                        data-address="{{ user.company.full_address }}"
-                        data-city="{% if user.company.city %}{{ user.company.city }}{% else %}City{% endif %}"
-                        data-name="{{ user.company.name }}">Click to use
-                        your signup address.</a>
-                    {% endif %}
+                    <div style="min-height: 21px;">
+                        {% if user.company %}
+                        <a href="#" id="assign-dest-my-location" class="small text-decoration-none mt-1 d-inline-block"
+                            data-address="{{ user.company.full_address }}"
+                            data-city="{% if user.company.city %}{{ user.company.city }}{% else %}City{% endif %}"
+                            data-name="{{ user.company.name }}">Click to use
+                            your signup address.</a>
+                        {% endif %}
+                    </div>
                 </div>
 
                 <div class="mb-4">
@@ -369,7 +385,68 @@
     // Initialize for existing items
     document.querySelectorAll('.manifest-item').forEach(item => setupInventoryValidation(item));
 
-    // Update cloning logic to initialize new items
+    function filterLocations(partySelectId, locationSelectId) {
+        const partySelect = document.getElementById(partySelectId);
+        const locationSelect = document.getElementById(locationSelectId);
+        
+        function updateFilter() {
+            const companyId = partySelect.value;
+            const companyAddress = partySelect.selectedOptions[0]?.dataset.address;
+            
+            // Clear existing company-specific virtual options
+            [...locationSelect.options].forEach(opt => {
+                if (opt.value.startsWith('temp_addr_')) {
+                    opt.remove();
+                }
+            });
+
+            let found = false;
+            let firstVisible = null;
+
+            [...locationSelect.options].forEach(opt => {
+                if (!opt.value) return; // Skip placeholder
+                
+                const optCompanyId = opt.dataset.companyId;
+                
+                // BUG FIX: If no company is selected, hide everything
+                if (!companyId) {
+                    opt.style.display = 'none';
+                    return;
+                }
+
+                if (optCompanyId === companyId || (!optCompanyId && companyId === "{{ user.company_id }}")) {
+                    opt.style.display = '';
+                    found = true;
+                    if (!firstVisible) firstVisible = opt.value;
+                } else {
+                    opt.style.display = 'none';
+                }
+            });
+
+            // If no warehouse found for selected company, add their main address as an option
+            if (!found && companyId && companyAddress) {
+                const newOpt = new Option(companyAddress + " (Company Address)", "temp_addr_" + companyAddress);
+                newOpt.dataset.companyId = companyId;
+                locationSelect.add(newOpt);
+                locationSelect.value = newOpt.value;
+            } else {
+                // If we found something or reset, clear the value if it's no longer valid
+                const currentOpt = locationSelect.selectedOptions[0];
+                if (currentOpt && currentOpt.style.display === 'none') {
+                    locationSelect.value = "";
+                }
+            }
+        }
+
+        partySelect.addEventListener('change', updateFilter);
+        // Trigger initial filter
+        updateFilter();
+    }
+
+    filterLocations('supplier-select', 'source-location-select');
+    filterLocations('receiver-select', 'dest-location-select');
+
+    // Initialize cloning logic to initialize new items
     document.getElementById('add-item-btn').addEventListener('click', function () {
         const container = document.getElementById('manifest-items-container');
         const firstItem = container.querySelector('.manifest-item');
