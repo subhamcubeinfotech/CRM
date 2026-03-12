@@ -12,56 +12,71 @@
         margin-bottom: 0;
     }
 
-    .status-pill {
-        display: inline-flex;
+    .status-pill.pending { background: #fff5f5; color: #fa5252; }
+    .status-pill.dispatched { background: #fff4e6; color: #fd7e14; }
+    .status-pill.in_transit { background: #fff9db; color: #f08c00; }
+    .status-pill.arrived { background: #e3fafc; color: #0b7285; }
+    .status-pill.delivered { background: #ebfbee; color: #40c057; }
+    .status-pill.approved { background: #f3f0ff; color: #7950f2; }
+    .status-pill.invoiced { background: #e7f5ff; color: #1c7ed6; }
+    .status-pill.paid { background: #f1f3f5; color: #868e96; }
+    .status-pill.rejected { background: #343a40; color: #fff; }
+
+    /* Milestone Progress Bar */
+    .milestone-container {
+        display: flex;
         align-items: center;
-        gap: 0.4rem;
-        padding: 0.35rem 1rem;
-        border-radius: 999px;
-        font-weight: 600;
-        font-size: 0.85rem;
-        cursor: pointer;
-        user-select: none;
+        gap: 0;
+        margin-bottom: 1.5rem;
     }
 
-    .status-pill.draft {
-        background: #f1f3f5;
-        color: #495057;
+    .milestone-node {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        border: 2px solid #dee2e6;
+        background: #fff;
+        position: relative;
+        z-index: 2;
+        transition: all 0.3s;
     }
 
-    .status-pill.booked {
-        background: #e8f4fd;
-        color: #1971c2;
+    .milestone-node.completed {
+        background: #0b7285;
+        border-color: #0b7285;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
-    .status-pill.picked_up {
-        background: #fff3bf;
-        color: #e67700;
+    .milestone-node.completed::after {
+        content: '\f00c';
+        font-family: 'Font Awesome 5 Free';
+        font-weight: 900;
+        font-size: 8px;
+        color: #fff;
     }
 
-    .status-pill.in_transit {
-        background: #d3f9d8;
-        color: #2f9e44;
+    .milestone-node.active {
+        border-color: #0b7285;
+        background: #0b7285;
     }
 
-    .status-pill.customs {
-        background: #ffe8cc;
-        color: #d9480f;
+    .milestone-line {
+        height: 2px;
+        background: #dee2e6;
+        flex-grow: 1;
+        margin: 0 -2px;
+        z-index: 1;
     }
 
-    .status-pill.out_for_delivery {
-        background: #e5dbff;
-        color: #6741d9;
+    .milestone-line.completed {
+        background: #0b7285;
     }
 
-    .status-pill.delivered {
-        background: #d3f9d8;
-        color: #2f9e44;
-    }
-
-    .status-pill.cancelled {
-        background: #ffe3e3;
-        color: #c92a2a;
+    .milestone-node.rejected, .milestone-line.rejected {
+        background: #343a40;
+        border-color: #343a40;
     }
 
     .party-label {
@@ -191,28 +206,42 @@
                 {% endif %}
             </div>
             <div class="d-flex align-items-center gap-2">
-                <!-- Status Dropdown -->
-                <div class="dropdown">
-                    <div class="status-pill {{ shipment.status }} dropdown-toggle" data-bs-toggle="dropdown"
-                        aria-expanded="false">
-                        {{ shipment.get_status_display }} <i class="fas fa-chevron-down fa-xs"></i>
-                    </div>
-                    <ul class="dropdown-menu dropdown-menu-end shadow border-0"
-                        style="border-radius:12px; min-width: 180px;">
-                        {% for code, label in shipment.STATUS_CHOICES %}
-                        <li>
-                            <form method="post" action="{% url 'shipments:update_status' shipment.pk %}">
-                                {% csrf_token %}
-                                <input type="hidden" name="status" value="{{ code }}">
-                                <button type="submit"
-                                    class="dropdown-item {% if shipment.status == code %}fw-bold text-primary{% endif %}"
-                                    style="padding: 0.5rem 1.25rem;">
-                                    {{ label }}
-                                </button>
-                            </form>
-                        </li>
+                <!-- Status Milestone & Dropdown -->
+                <div class="d-flex align-items-center gap-4">
+                    <!-- Progress Dots -->
+                    <div class="milestone-container mb-0" style="min-width: 250px;">
+                        {% for s_code in shipment.ordered_statuses %}
+                            <div class="milestone-node {% if shipment.status == 'rejected' %}rejected{% elif shipment.status == s_code %}active{% elif forloop.counter0 < shipment.status_index %}completed{% endif %}" title="{{ s_code|title }}"></div>
+                            {% if not forloop.last %}
+                            <div class="milestone-line {% if shipment.status == 'rejected' %}rejected{% elif forloop.counter0 < shipment.status_index %}completed{% endif %}"></div>
+                            {% endif %}
                         {% endfor %}
-                    </ul>
+                    </div>
+
+                    <!-- Status Display/Toggle -->
+                    <div class="dropdown">
+                        <div class="status-pill {{ shipment.status }} dropdown-toggle fw-bold" data-bs-toggle="dropdown"
+                            style="cursor: pointer; padding: 0.4rem 1rem;">
+                            {{ shipment.get_status_display }} <i class="fas fa-chevron-down ms-1 fa-xs"></i>
+                        </div>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0"
+                            style="border-radius:12px; min-width: 180px;">
+                            {% for code, label in shipment.STATUS_CHOICES %}
+                            <li>
+                                <form method="post" action="{% url 'shipments:update_status' shipment.pk %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="status" value="{{ code }}">
+                                    <button type="submit"
+                                        class="dropdown-item d-flex align-items-center justify-content-between {% if shipment.status == code %}fw-bold text-primary{% endif %}"
+                                        style="padding: 0.5rem 1.25rem;">
+                                        <span class="status-pill {{ code }} py-1 px-2 fw-bold" style="font-size: 0.75rem;">{{ label }}</span>
+                                        {% if shipment.status == code %}<i class="fas fa-check fa-xs"></i>{% endif %}
+                                    </button>
+                                </form>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
                 </div>
                 <!-- Actions -->
                 <div class="dropdown">
@@ -240,10 +269,6 @@
             </div>
         </div>
 
-        <!-- Progress Bar -->
-        <div class="progress-track mb-1">
-            <div class="progress-fill" style="width: {{ shipment.progress_percentage }}%;"></div>
-        </div>
         <div class="text-muted small mb-3">{{ shipment.progress_percentage }}% complete</div>
 
         <!-- Supplier & Receiver -->

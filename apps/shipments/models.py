@@ -18,14 +18,14 @@ class Shipment(TenantAwareModel):
     ]
     
     STATUS_CHOICES = [
-        ('draft', 'Draft'),
-        ('booked', 'Booked'),
-        ('picked_up', 'Picked Up'),
+        ('pending', 'Pending'),
+        ('dispatched', 'Dispatched'),
         ('in_transit', 'In Transit'),
-        ('customs', 'In Customs'),
-        ('out_for_delivery', 'Out for Delivery'),
         ('delivered', 'Delivered'),
-        ('cancelled', 'Cancelled'),
+        ('approved', 'Approved'),
+        ('invoiced', 'Invoiced'),
+        ('paid', 'Paid'),
+        ('rejected', 'Rejected'),
     ]
     
     # Identification
@@ -121,11 +121,26 @@ class Shipment(TenantAwareModel):
         return False
     
     @property
+    def ordered_statuses(self):
+        """Return the list of statuses in progress order for the UI"""
+        return ['pending', 'dispatched', 'in_transit', 'arrived', 'delivered', 'approved', 'invoiced', 'paid']
+
+    @property
+    def status_index(self):
+        """Return the index of the current status in the progress order"""
+        status_order = self.ordered_statuses
+        if self.status in status_order:
+            return status_order.index(self.status)
+        return -1
+
+    @property
     def progress_percentage(self):
         """Calculate shipment progress percentage"""
-        status_order = ['draft', 'booked', 'picked_up', 'in_transit', 'customs', 'out_for_delivery', 'delivered']
-        if self.status in status_order:
-            return int((status_order.index(self.status) / (len(status_order) - 1)) * 100)
+        if self.status == 'rejected':
+            return 100
+        idx = self.status_index
+        if idx >= 0:
+            return int((idx / (len(self.ordered_statuses) - 1)) * 100)
         return 0
     
     @property
