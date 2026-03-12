@@ -5,8 +5,6 @@ from django.db import models
 from django.conf import settings
 from django.utils import timezone
 from datetime import datetime
-
-
 from apps.accounts.models import TenantAwareModel
 
 class Shipment(TenantAwareModel):
@@ -20,14 +18,14 @@ class Shipment(TenantAwareModel):
     ]
     
     STATUS_CHOICES = [
-        ('draft', 'Draft'),
-        ('booked', 'Booked'),
-        ('picked_up', 'Picked Up'),
+        ('pending', 'Pending'),
+        ('dispatched', 'Dispatched'),
         ('in_transit', 'In Transit'),
-        ('customs', 'In Customs'),
-        ('out_for_delivery', 'Out for Delivery'),
         ('delivered', 'Delivered'),
-        ('cancelled', 'Cancelled'),
+        ('approved', 'Approved'),
+        ('invoiced', 'Invoiced'),
+        ('paid', 'Paid'),
+        ('rejected', 'Rejected'),
     ]
     
     # Identification
@@ -123,11 +121,26 @@ class Shipment(TenantAwareModel):
         return False
     
     @property
+    def ordered_statuses(self):
+        """Return the list of statuses in progress order for the UI"""
+        return ['pending', 'dispatched', 'in_transit', 'arrived', 'delivered', 'approved', 'invoiced', 'paid']
+
+    @property
+    def status_index(self):
+        """Return the index of the current status in the progress order"""
+        status_order = self.ordered_statuses
+        if self.status in status_order:
+            return status_order.index(self.status)
+        return -1
+
+    @property
     def progress_percentage(self):
         """Calculate shipment progress percentage"""
-        status_order = ['draft', 'booked', 'picked_up', 'in_transit', 'customs', 'out_for_delivery', 'delivered']
-        if self.status in status_order:
-            return int((status_order.index(self.status) / (len(status_order) - 1)) * 100)
+        if self.status == 'rejected':
+            return 100
+        idx = self.status_index
+        if idx >= 0:
+            return int((idx / (len(self.ordered_statuses) - 1)) * 100)
         return 0
     
     @property
@@ -154,16 +167,42 @@ class Shipment(TenantAwareModel):
         return f"{self.origin_full} → {self.destination_full}"
     
     def save(self, *args, **kwargs):
-        # Auto-generate shipment number if not set
+        # Auto-generate shipment number if not set with proper transaction handling
         if not self.shipment_number:
-            self.shipment_number = self.generate_shipment_number()
-        super().save(*args, **kwargs)
+            from django.db import transaction
+            import time
+            
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    with transaction.atomic():
+                        # Generate the number inside the transaction
+                        self.shipment_number = self._generate_shipment_number_internal()
+                        # Call the parent save within the same transaction
+                        super().save(*args, **kwargs)
+                        return  # Success, exit the function
+                        
+                except Exception as e:
+                    if attempt == max_retries - 1:
+                        # If all retries fail, use timestamp as fallback and try once more
+                        timestamp = int(time.time())
+                        year = datetime.now().year
+                        self.shipment_number = f"SHP-{year}-{timestamp % 99999:05d}"
+                        super().save(*args, **kwargs)
+                        return
+                    time.sleep(0.1)  # Small delay before retry
+        else:
+            # If shipment number is already set, just save normally
+            super().save(*args, **kwargs)
     
-    @staticmethod
-    def generate_shipment_number():
-        """Generate unique shipment number"""
+    def _generate_shipment_number_internal(self):
+        """Internal method to generate shipment number - called within transaction"""
         year = datetime.now().year
-        last_shipment = Shipment.objects.filter(shipment_number__startswith=f'SHP-{year}').order_by('-shipment_number').first()
+        # Use select_for_update to prevent race conditions
+        last_shipment = Shipment.objects.filter(
+            shipment_number__startswith=f'SHP-{year}'
+        ).select_for_update().order_by('-shipment_number').first()
+        
         if last_shipment:
             try:
                 last_num = int(last_shipment.shipment_number.split('-')[-1])
@@ -172,7 +211,16 @@ class Shipment(TenantAwareModel):
                 new_num = 1
         else:
             new_num = 1
-        return f"SHP-{year}-{new_num:05d}"
+        
+        new_shipment_number = f"SHP-{year}-{new_num:05d}"
+        
+        # Double-check that this number doesn't exist
+        if Shipment.objects.filter(shipment_number=new_shipment_number).exists():
+            # If it exists, try again with a higher number
+            new_num += 1
+            new_shipment_number = f"SHP-{year}-{new_num:05d}"
+        
+        return new_shipment_number
 
 
 class Container(models.Model):

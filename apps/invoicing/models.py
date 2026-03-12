@@ -43,6 +43,9 @@ class Invoice(TenantAwareModel):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
     notes = models.TextField(blank=True)
     terms = models.TextField(blank=True, default='Net 30 days')
+    payment_instructions = models.TextField(blank=True, help_text='Payment instructions for customer')
+    tax_details = models.TextField(blank=True, help_text='Tax details and information')
+    file_name = models.CharField(max_length=255, blank=True, default='')
     
     # Metadata
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='created_invoices')
@@ -97,6 +100,10 @@ class Invoice(TenantAwareModel):
         if not self.invoice_number:
             self.invoice_number = self.generate_invoice_number()
         
+        # Auto-generate file_name if not set (after invoice_number is available)
+        if not self.file_name:
+            self.file_name = f'invoice_{self.invoice_number}.pdf'
+        
         # Auto-set due date based on customer payment terms if not set
         if not self.due_date:
             payment_terms = self.customer.payment_terms if self.customer else 30
@@ -107,7 +114,8 @@ class Invoice(TenantAwareModel):
             self.subtotal = sum(item.total for item in self.line_items.all())
         
         # Calculate tax and total
-        self.tax_amount = self.subtotal * (self.tax_rate / 100)
+        from decimal import Decimal
+        self.tax_amount = self.subtotal * (self.tax_rate / Decimal('100'))
         self.total = self.subtotal + self.tax_amount
         
         # Update status based on payment
@@ -120,20 +128,31 @@ class Invoice(TenantAwareModel):
         
         super().save(*args, **kwargs)
     
-    @staticmethod
-    def generate_invoice_number():
+    @classmethod
+    def generate_invoice_number(cls):
         """Generate unique invoice number"""
-        year = datetime.now().year
-        last_invoice = Invoice.objects.filter(invoice_number__startswith=f'INV-{year}').order_by('-invoice_number').first()
-        if last_invoice:
-            try:
-                last_num = int(last_invoice.invoice_number.split('-')[-1])
-                new_num = last_num + 1
-            except (ValueError, IndexError):
+        from django.db import transaction
+        from datetime import date
+        import uuid
+        
+        with transaction.atomic():
+            # Lock table to prevent race conditions
+            last_invoice = cls.objects.select_for_update().filter(
+                invoice_number__startswith=f'INV-{date.today().year}-'
+            ).order_by('-invoice_number').first()
+            
+            if last_invoice:
+                try:
+                    last_num = int(last_invoice.invoice_number.split('-')[-1].split('_')[0])  # Handle UUID suffix
+                    new_num = last_num + 1
+                except (ValueError, IndexError):
+                    new_num = 1
+            else:
                 new_num = 1
-        else:
-            new_num = 1
-        return f"INV-{year}-{new_num:05d}"
+                
+            # Add UUID suffix to guarantee uniqueness
+            unique_suffix = str(uuid.uuid4())[:8]
+            return f"INV-{date.today().year}-{new_num:05d}_{unique_suffix}"
 
 
 class InvoiceLineItem(models.Model):

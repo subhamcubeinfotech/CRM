@@ -102,4 +102,4 @@ class CustomUser(AbstractUser):
         return self.role == 'warehouse'
     
 
-from .models_subscription import Subscription
+# from .models_subscription import Subscription

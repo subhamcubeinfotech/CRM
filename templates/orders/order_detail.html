@@ -126,16 +126,19 @@
                 </div>
                 <div class="ms-3 status-dropdown dropdown">
                     <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                        {{ order.get_status_display }}
+                        {% if order.status == 'draft' or order.status == 'confirmed' or order.status == 'in_transit' %}Open{% else %}Complete{% endif %}
                     </button>
                     <div class="dropdown-menu">
-                        {% for status_val, status_lab in order.STATUS_CHOICES %}
                         <form action="{% url 'orders:order_update_status' order.pk %}" method="POST">
                             {% csrf_token %}
-                            <input type="hidden" name="status" value="{{ status_val }}">
-                            <button type="submit" class="dropdown-item">{{ status_lab }}</button>
+                            <input type="hidden" name="status" value="open">
+                            <button type="submit" class="dropdown-item">Open</button>
                         </form>
-                        {% endfor %}
+                        <form action="{% url 'orders:order_update_status' order.pk %}" method="POST">
+                            {% csrf_token %}
+                            <input type="hidden" name="status" value="complete">
+                            <button type="submit" class="dropdown-item">Complete</button>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -166,7 +169,7 @@
                 </div>
                 <div class="small text-muted mb-1"><i class="fas fa-file-alt me-2"></i>SO#: {{ order.so_number|default:"-" }}</div>
                 <div class="small text-muted mb-1"><i class="fas fa-handshake me-2"></i>FOB Origin</div>
-                <div class="small text-muted"><i class="fas fa-calendar me-2"></i>-</div>
+                <div class="small text-muted"><i class="fas fa-calendar me-2"></i>{{ order.expected_pickup_date|date:"M d, Y"|default:"-" }}</div>
             </div>
             <div class="col-md-4 px-3">
                 <div class="detail-label">Receiver</div>
@@ -176,7 +179,7 @@
                 </div>
                 <div class="small text-muted mb-1"><i class="fas fa-file-invoice me-2"></i>PO#: {{ order.po_number|default:"-" }}</div>
                 <div class="small text-muted mb-1"><i class="fas fa-handshake me-2"></i>FOB Origin</div>
-                <div class="small text-muted"><i class="fas fa-calendar me-2"></i>-</div>
+                <div class="small text-muted"><i class="fas fa-calendar me-2"></i>{{ order.expected_delivery_date|date:"M d, Y"|default:"-" }}</div>
             </div>
         </div>
 
@@ -303,7 +306,7 @@
                         <span class="fw-bold small">System Log</span>
                         <span class="text-muted smaller">Just now</span>
                     </div>
-                    <div class="small text-muted">Order status initialized as {{ order.get_status_display }}. All
+                    <div class="small text-muted">Order status initialized as {% if order.status == 'draft' or order.status == 'confirmed' or order.status == 'in_transit' %}Open{% else %}Complete{% endif %}. All
                         manifest items verified.</div>
                 </div>
                 <div class="text-center py-4">
