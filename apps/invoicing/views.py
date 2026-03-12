@@ -4,8 +4,8 @@ Invoicing Views
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.http import HttpResponse, Http404
 from django.core.paginator import Paginator
-from django.http import HttpResponse
 from django.db.models import Sum, Q
 from django.utils import timezone
 from datetime import datetime
@@ -19,6 +19,18 @@ import logging
 
 logger = logging.getLogger('apps.invoicing')
 
+
+def _get_invoice(pk):
+    """Helper to find invoice by ID or invoice_number"""
+    try:
+        # Try finding by invoice_number first
+        return Invoice.objects.select_related('customer', 'shipment').get(invoice_number=pk)
+    except Invoice.DoesNotExist:
+        try:
+            # Then by primary key
+            return get_object_or_404(Invoice.objects.select_related('customer', 'shipment'), pk=pk)
+        except (ValueError, Http404):
+            raise Http404("Invoice not found")
 
 
 @login_required
@@ -87,8 +99,15 @@ def pending_invoices(request):
 @login_required
 def invoice_detail(request, pk):
     """Invoice detail view"""
-    invoice = get_object_or_404(Invoice.objects.select_related('customer', 'shipment'), pk=pk)
-    check_company_access(invoice.customer, request.user)
+    invoice = _get_invoice(pk)
+    
+    try:
+        check_company_access(invoice.customer, request.user)
+        print(f"DEBUG: Access check passed for user: {request.user}")  # Debug line
+    except Exception as e:
+        print(f"DEBUG: Access check failed: {e}")  # Debug line
+        messages.error(request, f'Access denied: {str(e)}')
+        return redirect('invoicing:invoice_list')
     
     context = {
         'invoice': invoice,
@@ -110,11 +129,23 @@ def invoice_create(request):
             shipment_id=shipment_id,
             invoice_date=request.POST.get('invoice_date') or timezone.now().date(),
             due_date=request.POST.get('due_date'),
-            tax_rate=request.POST.get('tax_rate', 0) or 0,
+            tax_rate=Decimal(request.POST.get('tax_rate', 0) or 0),
             notes=request.POST.get('notes', ''),
             terms=request.POST.get('terms', 'Net 30 days'),
+            payment_instructions=request.POST.get('payment_instructions', ''),
+            tax_details=request.POST.get('tax_details', ''),
+            file_name=request.POST.get('file_name', ''),
             created_by=request.user,
+            tenant=request.user.tenant,
         )
+        # Handle empty date string
+        if request.POST.get('invoice_date'):
+            try:
+                invoice.invoice_date = datetime.strptime(request.POST.get('invoice_date'), '%Y-%m-%d').date()
+            except ValueError:
+                invoice.invoice_date = timezone.now().date()
+        
+        # Save invoice first
         invoice.save()
         
         # Add line items
@@ -124,11 +155,19 @@ def invoice_create(request):
         
         for i in range(len(descriptions)):
             if descriptions[i]:
+                try:
+                    quantity = Decimal(quantities[i] if i < len(quantities) else 1)
+                    unit_price = Decimal(unit_prices[i] if i < len(unit_prices) else 0)
+                except (ValueError, TypeError):
+                    quantity = Decimal('1')
+                    unit_price = Decimal('0')
+                
                 InvoiceLineItem.objects.create(
                     invoice=invoice,
                     description=descriptions[i],
-                    quantity=quantities[i] if i < len(quantities) else 1,
-                    unit_price=unit_prices[i] if i < len(unit_prices) else 0,
+                    quantity=quantity,
+                    unit_price=unit_price,
+                    total=quantity * unit_price,
                 )
         
         # Recalculate totals
@@ -152,7 +191,7 @@ def invoice_create(request):
 @login_required
 def invoice_edit(request, pk):
     """Edit invoice"""
-    invoice = get_object_or_404(Invoice, pk=pk)
+    invoice = _get_invoice(pk)
     
     if request.method == 'POST':
         invoice.customer_id = request.POST.get('customer')
@@ -162,6 +201,9 @@ def invoice_edit(request, pk):
         invoice.tax_rate = request.POST.get('tax_rate', 0) or 0
         invoice.notes = request.POST.get('notes', '')
         invoice.terms = request.POST.get('terms', '')
+        invoice.payment_instructions = request.POST.get('payment_instructions', '')
+        invoice.tax_details = request.POST.get('tax_details', '')
+        invoice.file_name = request.POST.get('file_name', '')
         invoice.save()
         
         # Update line items
@@ -201,7 +243,7 @@ def invoice_edit(request, pk):
 @login_required
 def invoice_print(request, pk):
     """Print invoice view"""
-    invoice = get_object_or_404(Invoice.objects.select_related('customer', 'shipment'), pk=pk)
+    invoice = _get_invoice(pk)
     
     context = {
         'invoice': invoice,
@@ -222,7 +264,7 @@ def invoice_pdf(request, pk):
     from reportlab.lib.enums import TA_RIGHT, TA_CENTER, TA_LEFT
     from io import BytesIO
 
-    invoice = get_object_or_404(Invoice.objects.select_related('customer', 'shipment'), pk=pk)
+    invoice = _get_invoice(pk)
     line_items = list(invoice.line_items.all())
 
     buffer = BytesIO()
@@ -399,7 +441,7 @@ def invoice_pdf(request, pk):
 @login_required
 def add_payment(request, pk):
     """Add payment to invoice"""
-    invoice = get_object_or_404(Invoice, pk=pk)
+    invoice = _get_invoice(pk)
     
     if request.method == 'POST':
         payment = Payment(
@@ -427,7 +469,7 @@ def add_payment(request, pk):
 @login_required
 def send_invoice(request, pk):
     """Send invoice to customer"""
-    invoice = get_object_or_404(Invoice, pk=pk)
+    invoice = _get_invoice(pk)
     
     if request.method == 'POST':
         invoice.status = 'sent'

@@ -4,30 +4,185 @@
 
 {% block extra_css %}
 <style>
-    .shipment-header-card { background: #fff; border-radius: 16px; box-shadow: 0 2px 16px rgba(0,0,0,0.08); padding: 1.5rem 2rem; margin-bottom: 0; }
-    .status-pill { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.35rem 1rem; border-radius: 999px; font-weight: 600; font-size: 0.85rem; cursor: pointer; user-select: none; }
-    .status-pill.draft { background: #f1f3f5; color: #495057; }
-    .status-pill.booked { background: #e8f4fd; color: #1971c2; }
-    .status-pill.picked_up { background: #fff3bf; color: #e67700; }
-    .status-pill.in_transit { background: #d3f9d8; color: #2f9e44; }
-    .status-pill.customs { background: #ffe8cc; color: #d9480f; }
-    .status-pill.out_for_delivery { background: #e5dbff; color: #6741d9; }
-    .status-pill.delivered { background: #d3f9d8; color: #2f9e44; }
-    .status-pill.cancelled { background: #ffe3e3; color: #c92a2a; }
-    .party-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: #adb5bd; font-weight: 600; }
-    .party-name { font-size: 1rem; font-weight: 700; color: #1c7ed6; }
-    .party-detail { font-size: 0.8rem; color: #495057; }
-    .nav-tabs-shipment .nav-link { color: #868e96; font-weight: 500; border: none; padding: 0.75rem 1.25rem; }
-    .nav-tabs-shipment .nav-link.active { color: #1c7ed6; border-bottom: 2px solid #1c7ed6; background: none; }
-    .gen-doc-btn { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; padding: 1rem; border-radius: 12px; border: 1.5px solid #e9ecef; background: #f8f9fa; font-size: 0.78rem; font-weight: 600; color: #495057; cursor: pointer; min-width: 80px; transition: all 0.2s; text-decoration: none; }
-    .gen-doc-btn:hover { border-color: #1c7ed6; color: #1c7ed6; background: #e8f4fd; }
-    .gen-doc-btn i { font-size: 1.6rem; }
-    .progress-track { height: 6px; background: #e9ecef; border-radius: 999px; }
-    .progress-fill { height: 6px; background: linear-gradient(90deg, #1c7ed6, #40c057); border-radius: 999px; transition: width 0.4s; }
-    .milestone-item { display: flex; gap: 1rem; padding: 0.75rem 0; border-bottom: 1px solid #f1f3f5; }
-    .milestone-dot { width: 10px; height: 10px; border-radius: 50%; background: #1c7ed6; margin-top: 5px; flex-shrink: 0; }
-    .chat-bubble { background: #f1f3f5; border-radius: 12px; padding: 0.75rem 1rem; margin-bottom: 0.75rem; font-size: 0.85rem; }
-    .actions-btn { background: #1c7ed6; color: #fff; border-radius: 10px; font-weight: 600; padding: 0.5rem 1.25rem; }
+    .shipment-header-card {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
+        padding: 1.5rem 2rem;
+        margin-bottom: 0;
+    }
+
+    .status-pill.pending { background: #fff5f5; color: #fa5252; }
+    .status-pill.dispatched { background: #fff4e6; color: #fd7e14; }
+    .status-pill.in_transit { background: #fff9db; color: #f08c00; }
+    .status-pill.arrived { background: #e3fafc; color: #0b7285; }
+    .status-pill.delivered { background: #ebfbee; color: #40c057; }
+    .status-pill.approved { background: #f3f0ff; color: #7950f2; }
+    .status-pill.invoiced { background: #e7f5ff; color: #1c7ed6; }
+    .status-pill.paid { background: #f1f3f5; color: #868e96; }
+    .status-pill.rejected { background: #343a40; color: #fff; }
+
+    /* Milestone Progress Bar */
+    .milestone-container {
+        display: flex;
+        align-items: center;
+        gap: 0;
+        margin-bottom: 1.5rem;
+    }
+
+    .milestone-node {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        border: 2px solid #dee2e6;
+        background: #fff;
+        position: relative;
+        z-index: 2;
+        transition: all 0.3s;
+    }
+
+    .milestone-node.completed {
+        background: #0b7285;
+        border-color: #0b7285;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .milestone-node.completed::after {
+        content: '\f00c';
+        font-family: 'Font Awesome 5 Free';
+        font-weight: 900;
+        font-size: 8px;
+        color: #fff;
+    }
+
+    .milestone-node.active {
+        border-color: #0b7285;
+        background: #0b7285;
+    }
+
+    .milestone-line {
+        height: 2px;
+        background: #dee2e6;
+        flex-grow: 1;
+        margin: 0 -2px;
+        z-index: 1;
+    }
+
+    .milestone-line.completed {
+        background: #0b7285;
+    }
+
+    .milestone-node.rejected, .milestone-line.rejected {
+        background: #343a40;
+        border-color: #343a40;
+    }
+
+    .party-label {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #adb5bd;
+        font-weight: 600;
+    }
+
+    .party-name {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #1c7ed6;
+    }
+
+    .party-detail {
+        font-size: 0.8rem;
+        color: #495057;
+    }
+
+    .nav-tabs-shipment .nav-link {
+        color: #868e96;
+        font-weight: 500;
+        border: none;
+        padding: 0.75rem 1.25rem;
+    }
+
+    .nav-tabs-shipment .nav-link.active {
+        color: #1c7ed6;
+        border-bottom: 2px solid #1c7ed6;
+        background: none;
+    }
+
+    .gen-doc-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 1rem;
+        border-radius: 12px;
+        border: 1.5px solid #e9ecef;
+        background: #f8f9fa;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #495057;
+        cursor: pointer;
+        min-width: 80px;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+
+    .gen-doc-btn:hover {
+        border-color: #1c7ed6;
+        color: #1c7ed6;
+        background: #e8f4fd;
+    }
+
+    .gen-doc-btn i {
+        font-size: 1.6rem;
+    }
+
+    .progress-track {
+        height: 6px;
+        background: #e9ecef;
+        border-radius: 999px;
+    }
+
+    .progress-fill {
+        height: 6px;
+        background: linear-gradient(90deg, #1c7ed6, #40c057);
+        border-radius: 999px;
+        transition: width 0.4s;
+    }
+
+    .milestone-item {
+        display: flex;
+        gap: 1rem;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #f1f3f5;
+    }
+
+    .milestone-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #1c7ed6;
+        margin-top: 5px;
+        flex-shrink: 0;
+    }
+
+    .chat-bubble {
+        background: #f1f3f5;
+        border-radius: 12px;
+        padding: 0.75rem 1rem;
+        margin-bottom: 0.75rem;
+        font-size: 0.85rem;
+    }
+
+    .actions-btn {
+        background: #1c7ed6;
+        color: #fff;
+        border-radius: 10px;
+        font-weight: 600;
+        padding: 0.5rem 1.25rem;
+    }
 </style>
 {% endblock %}
 
@@ -41,9 +196,7 @@
         <div class="d-flex justify-content-between align-items-start mb-3">
             <div>
                 <h2 class="fw-bold mb-0">{{ shipment.shipment_number }}
-                    {% if shipment.customer %}
-                    <span class="badge bg-light text-secondary ms-2" style="font-size:0.75rem;">{{ shipment.customer.name|slice:":2"|upper }}</span>
-                    {% endif %}
+                    {% if shipment.customer %}<span class="badge bg-light text-secondary ms-2" style="font-size:0.75rem;">{{ shipment.customer.name|slice:":2"|upper }}</span>{% endif %}
                 </h2>
                 {% if shipment.order %}
                 <div class="text-muted small mt-1">
@@ -53,24 +206,42 @@
                 {% endif %}
             </div>
             <div class="d-flex align-items-center gap-2">
-                <!-- Status Dropdown -->
-                <div class="dropdown">
-                    <div class="status-pill {{ shipment.status }} dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                        {{ shipment.get_status_display }} <i class="fas fa-chevron-down fa-xs"></i>
-                    </div>
-                    <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="border-radius:12px; min-width: 180px;">
-                        {% for code, label in shipment.STATUS_CHOICES %}
-                        <li>
-                            <form method="post" action="{% url 'shipments:update_status' shipment.pk %}">
-                                {% csrf_token %}
-                                <input type="hidden" name="status" value="{{ code }}">
-                                <button type="submit" class="dropdown-item {% if shipment.status == code %}fw-bold text-primary{% endif %}" style="padding: 0.5rem 1.25rem;">
-                                    {{ label }}
-                                </button>
-                            </form>
-                        </li>
+                <!-- Status Milestone & Dropdown -->
+                <div class="d-flex align-items-center gap-4">
+                    <!-- Progress Dots -->
+                    <div class="milestone-container mb-0" style="min-width: 250px;">
+                        {% for s_code in shipment.ordered_statuses %}
+                            <div class="milestone-node {% if shipment.status == 'rejected' %}rejected{% elif shipment.status == s_code %}active{% elif forloop.counter0 < shipment.status_index %}completed{% endif %}" title="{{ s_code|title }}"></div>
+                            {% if not forloop.last %}
+                            <div class="milestone-line {% if shipment.status == 'rejected' %}rejected{% elif forloop.counter0 < shipment.status_index %}completed{% endif %}"></div>
+                            {% endif %}
                         {% endfor %}
-                    </ul>
+                    </div>
+
+                    <!-- Status Display/Toggle -->
+                    <div class="dropdown">
+                        <div class="status-pill {{ shipment.status }} dropdown-toggle fw-bold" data-bs-toggle="dropdown"
+                            style="cursor: pointer; padding: 0.4rem 1rem;">
+                            {{ shipment.get_status_display }} <i class="fas fa-chevron-down ms-1 fa-xs"></i>
+                        </div>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0"
+                            style="border-radius:12px; min-width: 180px;">
+                            {% for code, label in shipment.STATUS_CHOICES %}
+                            <li>
+                                <form method="post" action="{% url 'shipments:update_status' shipment.pk %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="status" value="{{ code }}">
+                                    <button type="submit"
+                                        class="dropdown-item d-flex align-items-center justify-content-between {% if shipment.status == code %}fw-bold text-primary{% endif %}"
+                                        style="padding: 0.5rem 1.25rem;">
+                                        <span class="status-pill {{ code }} py-1 px-2 fw-bold" style="font-size: 0.75rem;">{{ label }}</span>
+                                        {% if shipment.status == code %}<i class="fas fa-check fa-xs"></i>{% endif %}
+                                    </button>
+                                </form>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
                 </div>
                 <!-- Actions -->
                 <div class="dropdown">
@@ -78,13 +249,19 @@
                         <i class="fas fa-chevron-down me-1"></i> Actions
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="border-radius:12px;">
-                        <li><a class="dropdown-item" href="{% url 'shipments:shipment_edit' shipment.pk %}"><i class="fas fa-edit me-2 text-muted"></i>Edit Shipment</a></li>
-                        <li><a class="dropdown-item" href="{% url 'shipments:generate_bol' shipment.pk %}" target="_blank"><i class="fas fa-file-alt me-2 text-muted"></i>View BOL</a></li>
-                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{% url 'shipments:shipment_edit' shipment.pk %}"><i
+                                    class="fas fa-edit me-2 text-muted"></i>Edit Shipment</a></li>
+                        <li><a class="dropdown-item" href="{% url 'shipments:generate_bol' shipment.pk %}"
+                                target="_blank"><i class="fas fa-file-alt me-2 text-muted"></i>View BOL</a></li>
                         <li>
-                            <form method="post" action="{% url 'shipments:shipment_delete' shipment.pk %}" onsubmit="return confirm('Delete this shipment?')">
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li>
+                            <form method="post" action="{% url 'shipments:shipment_delete' shipment.pk %}"
+                                onsubmit="return confirm('Delete this shipment?')">
                                 {% csrf_token %}
-                                <button type="submit" class="dropdown-item text-danger"><i class="fas fa-trash me-2"></i>Delete</button>
+                                <button type="submit" class="dropdown-item text-danger"><i
+                                        class="fas fa-trash me-2"></i>Delete</button>
                             </form>
                         </li>
                     </ul>
@@ -92,10 +269,6 @@
             </div>
         </div>
 
-        <!-- Progress Bar -->
-        <div class="progress-track mb-1">
-            <div class="progress-fill" style="width: {{ shipment.progress_percentage }}%;"></div>
-        </div>
         <div class="text-muted small mb-3">{{ shipment.progress_percentage }}% complete</div>
 
         <!-- Supplier & Receiver -->
@@ -142,7 +315,8 @@
                             <h5 class="fw-bold mb-3">Manifest</h5>
                             <div class="table-responsive">
                                 <table class="table align-middle mb-0" style="font-size:0.875rem;">
-                                    <thead class="text-muted" style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em;">
+                                    <thead class="text-muted"
+                                        style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em;">
                                         <tr>
                                             <th>Material</th>
                                             <th>Buy Price</th>
@@ -154,20 +328,24 @@
                                     </thead>
                                     <tbody>
                                         {% if shipment.order %}
-                                            {% for item in shipment.order.manifest_items.all %}
-                                            <tr>
-                                                <td class="fw-semibold text-primary">{{ item.material }}</td>
-                                                <td>${{ item.buy_price|floatformat:3 }} / {{ item.buy_price_unit }}</td>
-                                                <td>${{ item.sell_price|floatformat:2 }} / {{ item.sell_price_unit }}</td>
-                                                <td>{{ item.weight|floatformat:0 }} {{ item.weight_unit }}</td>
-                                                <td>-</td>
-                                                <td>{{ item.packaging|default:"-" }}</td>
-                                            </tr>
-                                            {% empty %}
-                                            <tr><td colspan="6" class="text-muted text-center py-3">No manifest items</td></tr>
-                                            {% endfor %}
+                                        {% for item in shipment.order.manifest_items.all %}
+                                        <tr>
+                                            <td class="fw-semibold text-primary">{{ item.material }}</td>
+                                            <td>${{ item.buy_price|floatformat:3 }} / {{ item.buy_price_unit }}</td>
+                                            <td>${{ item.sell_price|floatformat:2 }} / {{ item.sell_price_unit }}</td>
+                                            <td>{{ item.weight|floatformat:0 }} {{ item.weight_unit }}</td>
+                                            <td>-</td>
+                                            <td>{{ item.packaging|default:"-" }}</td>
+                                        </tr>
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="6" class="text-muted text-center py-3">No manifest items</td>
+                                        </tr>
+                                        {% endfor %}
                                         {% else %}
-                                        <tr><td colspan="6" class="text-muted text-center py-3">{{ shipment.commodity_description|default:"No manifest items" }}</td></tr>
+                                        <tr>
+                                            <td colspan="6" class="text-muted text-center py-3">{{ shipment.commodity_description|default:"No manifest items" }}</td>
+                                        </tr>
                                         {% endif %}
                                     </tbody>
                                 </table>
@@ -188,18 +366,14 @@
                                     </button>
                                     <ul class="dropdown-menu shadow border-0" style="border-radius:12px;">
                                         {% if invoices %}
-                                        {% for inv in invoices %}
-                                        <li><a class="dropdown-item" href="{% url 'invoicing:invoice_detail' inv.pk %}"><i class="fas fa-eye me-2 text-muted"></i>View {{ inv.invoice_number }}</a></li>
-                                        {% endfor %}
+                                        <li><a class="dropdown-item" href="#" onclick="openDocumentModal('invoice')"><i class="fas fa-external-link-alt me-2 text-muted"></i>View</a></li>
                                         {% else %}
-                                        <li><a class="dropdown-item" href="{% url 'shipments:create_invoice' shipment.pk %}"><i class="fas fa-plus me-2 text-success"></i>Create Invoice</a></li>
+                                        <li><a class="dropdown-item" href="#" data-bs-toggle="offcanvas" data-bs-target="#invoiceDrawer"><i class="fas fa-plus me-2 text-primary"></i>Generate</a></li>
                                         {% endif %}
-                                        <li><hr class="dropdown-divider"></li>
                                         <li>
-                                            <a class="dropdown-item" href="#" onclick="triggerUpload('invoice')">
-                                                <i class="fas fa-upload me-2 text-muted"></i>Upload Invoice
-                                            </a>
+                                            <hr class="dropdown-divider">
                                         </li>
+                                        <li><a class="dropdown-item" href="#" onclick="triggerUpload('invoice')"><i class="fas fa-upload me-2 text-muted"></i>Upload</a></li>
                                     </ul>
                                 </div>
 
@@ -209,7 +383,12 @@
                                         <i class="fas fa-ship text-info"></i>Shipping Confirmation
                                     </button>
                                     <ul class="dropdown-menu shadow border-0" style="border-radius:12px;">
-                                        <li><a class="dropdown-item" href="{% url 'shipments:generate_shipping_confirmation' shipment.pk %}" target="_blank"><i class="fas fa-file-alt me-2 text-success"></i>Generate</a></li>
+                                        {% if documents %}
+                                        {% for doc in documents %}{% if doc.document_type == 'commercial_invoice' %}
+                                        {% if forloop.first %}<li><a class="dropdown-item" href="#" onclick="openDocumentModal('commercial_invoice')"><i class="fas fa-external-link-alt me-2 text-muted"></i>View</a></li>{% endif %}
+                                        {% endif %}{% endfor %}
+                                        {% endif %}
+                                        <li><a class="dropdown-item" href="#" data-bs-toggle="offcanvas" data-bs-target="#shipConfirmDrawer"><i class="fas fa-plus me-2 text-primary"></i>Generate</a></li>
                                         <li><a class="dropdown-item" href="#" onclick="triggerUpload('commercial_invoice')"><i class="fas fa-upload me-2 text-muted"></i>Upload</a></li>
                                     </ul>
                                 </div>
@@ -220,7 +399,12 @@
                                         <i class="fas fa-file-alt text-warning"></i>Bill Of Lading
                                     </button>
                                     <ul class="dropdown-menu shadow border-0" style="border-radius:12px;">
-                                        <li><a class="dropdown-item" href="{% url 'shipments:generate_bol' shipment.pk %}" target="_blank"><i class="fas fa-file-alt me-2 text-success"></i>Generate</a></li>
+                                        {% if documents %}
+                                        {% for doc in documents %}{% if doc.document_type == 'bol' %}
+                                        {% if forloop.first %}<li><a class="dropdown-item" href="#" onclick="openDocumentModal('bol')"><i class="fas fa-external-link-alt me-2 text-muted"></i>View</a></li>{% endif %}
+                                        {% endif %}{% endfor %}
+                                        {% endif %}
+                                        <li><a class="dropdown-item" href="#" data-bs-toggle="offcanvas" data-bs-target="#bolDrawer"><i class="fas fa-plus me-2 text-primary"></i>Generate</a></li>
                                         <li><a class="dropdown-item" href="#" onclick="triggerUpload('bol')"><i class="fas fa-upload me-2 text-muted"></i>Upload</a></li>
                                     </ul>
                                 </div>
@@ -231,7 +415,12 @@
                                         <i class="fas fa-boxes text-success"></i>Packing List
                                     </button>
                                     <ul class="dropdown-menu shadow border-0" style="border-radius:12px;">
-                                        <li><a class="dropdown-item" href="{% url 'shipments:generate_packing_list' shipment.pk %}" target="_blank"><i class="fas fa-file-alt me-2 text-success"></i>Generate</a></li>
+                                        {% if documents %}
+                                        {% for doc in documents %}{% if doc.document_type == 'packing_list' %}
+                                        {% if forloop.first %}<li><a class="dropdown-item" href="#" onclick="openDocumentModal('packing_list')"><i class="fas fa-external-link-alt me-2 text-muted"></i>View</a></li>{% endif %}
+                                        {% endif %}{% endfor %}
+                                        {% endif %}
+                                        <li><a class="dropdown-item" href="#" data-bs-toggle="offcanvas" data-bs-target="#packingListDrawer"><i class="fas fa-plus me-2 text-primary"></i>Generate</a></li>
                                         <li><a class="dropdown-item" href="#" onclick="triggerUpload('packing_list')"><i class="fas fa-upload me-2 text-muted"></i>Upload</a></li>
                                     </ul>
                                 </div>
@@ -247,7 +436,9 @@
                             </div>
 
                             <!-- Hidden typed upload form -->
-                            <form id="typed-upload-form" method="post" action="{% url 'shipments:document_upload' shipment.pk %}" enctype="multipart/form-data" style="display:none;">
+                            <form id="typed-upload-form" method="post"
+                                action="{% url 'shipments:document_upload' shipment.pk %}" enctype="multipart/form-data"
+                                style="display:none;">
                                 {% csrf_token %}
                                 <input type="hidden" name="document_type" id="upload-doc-type">
                                 <input type="hidden" name="title" id="upload-doc-title">
@@ -296,12 +487,22 @@
                         <div class="card-body">
                             <h5 class="fw-bold mb-3">Financial Details</h5>
                             <table class="table table-sm">
-                                <tr><td class="text-muted">Quoted Amount</td><td class="text-end fw-semibold">${{ shipment.quoted_amount|floatformat:2 }}</td></tr>
-                                <tr><td class="text-muted">Cost</td><td class="text-end fw-semibold">${{ shipment.cost|floatformat:2 }}</td></tr>
-                                <tr><td class="text-muted">Revenue</td><td class="text-end fw-semibold">${{ shipment.revenue|floatformat:2 }}</td></tr>
+                                <tr>
+                                    <td class="text-muted">Quoted Amount</td>
+                                    <td class="text-end fw-semibold">${{ shipment.quoted_amount|floatformat:2 }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Cost</td>
+                                    <td class="text-end fw-semibold">${{ shipment.cost|floatformat:2 }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Revenue</td>
+                                    <td class="text-end fw-semibold">${{ shipment.revenue|floatformat:2 }}</td>
+                                </tr>
                                 <tr class="table-success">
                                     <td class="fw-bold">Gross Profit</td>
-                                    <td class="text-end fw-bold text-success">${{ shipment.gross_profit|floatformat:2 }}</td>
+                                    <td class="text-end fw-bold text-success">${{ shipment.gross_profit|floatformat:2 }}
+                                    </td>
                                 </tr>
                                 <tr>
                                     <td class="text-muted">Profit Margin</td>
@@ -327,21 +528,24 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h5 class="fw-bold mb-0">Documents</h5>
-                                <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                                <button class="btn btn-primary btn-sm" data-bs-toggle="modal"
+                                    data-bs-target="#uploadModal">
                                     <i class="fas fa-upload me-1"></i>Upload
                                 </button>
                             </div>
                             {% if documents %}
                             <div class="list-group">
                                 {% for doc in documents %}
-                                <div class="list-group-item d-flex justify-content-between align-items-center border-0 px-0 py-2 border-bottom">
+                                <div
+                                    class="list-group-item d-flex justify-content-between align-items-center border-0 px-0 py-2 border-bottom">
                                     <div>
                                         <i class="fas fa-file-pdf text-danger me-2"></i>
                                         <span class="fw-semibold">{{ doc.title }}</span>
                                         <span class="badge bg-secondary ms-2">{{ doc.get_document_type_display }}</span>
                                         <br><small class="text-muted">{{ doc.uploaded_at|date:"M d, Y" }}</small>
                                     </div>
-                                    <a href="{% url 'shipments:document_download' doc.pk %}" class="btn btn-sm btn-outline-primary">
+                                    <a href="{% url 'shipments:document_download' doc.pk %}"
+                                        class="btn btn-sm btn-outline-primary">
                                         <i class="fas fa-download"></i>
                                     </a>
                                 </div>
@@ -397,7 +601,8 @@
                         <p class="mb-0 mt-1">{{ shipment.internal_notes }}</p>
                     </div>
                     {% else %}
-                    <p class="text-muted small text-center py-2"><i class="fas fa-info-circle me-1"></i>No comments yet</p>
+                    <p class="text-muted small text-center py-2"><i class="fas fa-info-circle me-1"></i>No comments yet
+                    </p>
                     {% endif %}
                     {% if shipment.special_instructions %}
                     <div class="chat-bubble bg-light">
@@ -408,30 +613,162 @@
                 </div>
             </div>
 
+            {% if containers %}
             <!-- Shipment Info -->
             <div class="card border-0 shadow-sm" style="border-radius:14px;">
                 <div class="card-body">
-                    <h6 class="fw-bold mb-3 text-muted text-uppercase" style="font-size:0.75rem; letter-spacing:0.05em;">Schedule</h6>
-                    <div class="d-flex justify-content-between py-1 border-bottom"><span class="text-muted small">Pickup</span><span class="small fw-semibold">{{ shipment.pickup_date|date:"M d, Y"|default:"-" }}</span></div>
-                    <div class="d-flex justify-content-between py-1 border-bottom"><span class="text-muted small">Est. Delivery</span><span class="small fw-semibold">{{ shipment.estimated_delivery_date|date:"M d, Y"|default:"-" }}</span></div>
-                    <div class="d-flex justify-content-between py-1"><span class="text-muted small">Actual Delivery</span><span class="small fw-semibold">{{ shipment.actual_delivery_date|date:"M d, Y"|default:"Pending" }}</span></div>
-
-                    <h6 class="fw-bold mt-3 mb-2 text-muted text-uppercase" style="font-size:0.75rem; letter-spacing:0.05em;">Identifiers</h6>
-                    <div class="d-flex justify-content-between py-1 border-bottom"><span class="text-muted small">Tracking #</span><span class="small fw-semibold">{{ shipment.tracking_number|default:"-" }}</span></div>
-                    <div class="d-flex justify-content-between py-1"><span class="text-muted small">Booking #</span><span class="small fw-semibold">{{ shipment.booking_number|default:"-" }}</span></div>
-
-                    {% if containers %}
-                    <h6 class="fw-bold mt-3 mb-2 text-muted text-uppercase" style="font-size:0.75rem; letter-spacing:0.05em;">Containers</h6>
+                    <h6 class="fw-bold mb-3 text-muted text-uppercase"
+                        style="font-size:0.75rem; letter-spacing:0.05em;">Containers</h6>
                     {% for c in containers %}
                     <div class="d-flex justify-content-between py-1 border-bottom">
                         <span class="small fw-semibold">{{ c.container_number }}</span>
                         <span class="badge bg-secondary">{{ c.get_size_display }}</span>
                     </div>
                     {% endfor %}
-                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Invoice Drawer (Offcanvas) -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="invoiceDrawer" aria-labelledby="invoiceDrawerLabel"
+    style="width: 500px; border-left: none; box-shadow: -5px 0 25px rgba(0,0,0,0.1);">
+    <div class="offcanvas-header border-bottom px-4">
+        <h5 class="offcanvas-title fw-bold" id="invoiceDrawerLabel">Create Invoice</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body px-4 py-4">
+        <p class="text-muted small mb-4">An invoice will be auto-generated from the shipment and linked order data.</p>
+        
+        <div class="bg-light rounded p-3 mb-4">
+            <div class="row g-2">
+                <div class="col-6">
+                    <div class="small text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">Invoice Number</div>
+                    <div class="fw-bold text-primary">{{ next_invoice_number }}</div>
+                </div>
+                <div class="col-6">
+                    <div class="small text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">Invoice Date</div>
+                    <div class="fw-bold">{{ today|date:"F d, Y" }}</div>
                 </div>
             </div>
         </div>
+
+        <form method="post" action="{% url 'shipments:create_invoice' shipment.pk %}">
+            {% csrf_token %}
+            
+            <div class="mb-4">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-1">File Name</label>
+                <div class="input-group input-group-sm">
+                    <input type="text" name="file_name" class="form-control" value="invoice_{{ next_invoice_number }}">
+                    <span class="input-group-text bg-light text-muted">.pdf</span>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-1">Payment Terms</label>
+                <input type="text" name="terms" class="form-control form-control-sm" value="Net 30 days">
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-1">Payment Instructions</label>
+                <textarea name="payment_instructions" class="form-control form-control-sm" rows="3" placeholder="Payment instructions..."></textarea>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-1">Notes</label>
+                <textarea name="notes" class="form-control form-control-sm" rows="3" placeholder="Additional notes..."></textarea>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-1">Tax Details</label>
+                <input type="text" name="tax_details" class="form-control form-control-sm" placeholder="Tax information...">
+            </div>
+
+            <hr class="my-4">
+
+            <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" id="toggleInvoiceDescriptions" name="include_descriptions">
+                <label class="form-check-label small fw-bold text-muted text-uppercase" for="toggleInvoiceDescriptions">Include Material Descriptions</label>
+            </div>
+
+            <div id="invoiceMaterialDescriptions" style="display: none;" class="mb-4">
+                <h6 class="small fw-bold text-muted text-uppercase mb-3">Material Descriptions</h6>
+                {% if shipment.order %}
+                    {% for item in shipment.order.manifest_items.all %}
+                    <div class="mb-3 border-start ps-3 py-1">
+                        <label class="form-label small text-muted mb-1">{{ item.material }}</label>
+                        <input type="text" name="desc_{{ item.id }}" class="form-control form-control-sm" placeholder="Insert Material Description">
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted small">No manifest items found.</p>
+                {% endif %}
+            </div>
+
+            <div class="d-flex gap-2 justify-content-end mt-4">
+                <button type="button" class="btn btn-light btn-sm px-3 fw-semibold" data-bs-dismiss="offcanvas">Cancel</button>
+                <button type="submit" class="btn btn-primary btn-sm px-4 fw-bold">Create Invoice</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Shipping Confirmation Drawer (Offcanvas) -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="shipConfirmDrawer" aria-labelledby="shipConfirmDrawerLabel"
+    style="width: 450px; border-left: none; box-shadow: -5px 0 25px rgba(0,0,0,0.1);">
+    <div class="offcanvas-header border-bottom px-4">
+        <h5 class="offcanvas-title fw-bold" id="shipConfirmDrawerLabel">Shipping Confirmation</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body px-4 py-4">
+        <form method="post" action="{% url 'shipments:generate_shipping_confirmation_pdf' shipment.pk %}"
+            id="shipConfirmForm">
+            {% csrf_token %}
+
+            <div class="mb-4">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-1">File Name <span
+                        class="text-danger">*</span></label>
+                <div class="input-group input-group-sm">
+                    <input type="text" name="file_name" class="form-control"
+                        value="{{ shipment.shipment_number }}_SHIP">
+                    <span class="input-group-text bg-light text-muted">.pdf</span>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-1">User Contact <span
+                        class="text-danger">*</span></label>
+                <select name="user_contact" class="form-select form-select-sm" required>
+                    <option value="">Select a contact</option>
+                    {% for u in users %}
+                    <option value="{{ u.id }}" {% if u == request.user %}selected{% endif %}>{{ u.get_full_name|default:u.username }}</option>
+                    {% endfor %}
+                </select>
+                <div class="form-text small">Who is responsible for this document?</div>
+            </div>
+
+            <div class="mb-4">
+                <div class="form-check form-switch d-flex align-items-center gap-2">
+                    <input class="form-check-input" type="checkbox" role="switch" name="scale_required" id="scaleSwitch"
+                        {% if shipment.is_hazmat %}checked{% endif %}>
+                    <label class="form-check-label small fw-bold text-muted text-uppercase mb-0" for="scaleSwitch">Scale
+                        Required?</label>
+                </div>
+            </div>
+
+            <div class="mb-5">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-1">Instructions</label>
+                <textarea name="instructions" class="form-control form-control-sm" rows="4"
+                    placeholder="Add special handling or instructions...">{{ shipment.special_instructions }}</textarea>
+            </div>
+
+            <div class="d-flex gap-2 justify-content-end mt-4">
+                <button type="button" class="btn btn-light btn-sm px-3 fw-semibold" onclick="previewShipConfirm()">Preview</button>
+                <button type="submit" class="btn btn-primary btn-sm px-4 fw-bold">Submit</button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -439,7 +776,8 @@
 <div class="modal fade" id="uploadModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content" style="border-radius:16px; border:none;">
-            <form method="post" action="{% url 'shipments:document_upload' shipment.pk %}" enctype="multipart/form-data">
+            <form method="post" action="{% url 'shipments:document_upload' shipment.pk %}"
+                enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="modal-header border-0">
                     <h5 class="modal-title fw-bold">Upload Document</h5>
@@ -476,6 +814,266 @@
         </div>
     </div>
 </div>
+
+<!-- Bill of Lading Drawer (Offcanvas) -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="bolDrawer" aria-labelledby="bolDrawerLabel"
+    style="width: 450px; border-left: none; box-shadow: -5px 0 25px rgba(0,0,0,0.1);">
+    <div class="offcanvas-header border-bottom px-4">
+        <h5 class="offcanvas-title fw-bold" id="bolDrawerLabel">Bill of Lading</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body px-4 py-4">
+        <form method="post" action="{% url 'shipments:generate_bol_pdf' shipment.pk %}" id="bolForm">
+            {% csrf_token %}
+
+            <div class="mb-4">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-1">File Name <span class="text-danger">*</span></label>
+                <div class="input-group input-group-sm">
+                    <input type="text" name="file_name" class="form-control" value="{{ shipment.shipment_number }}_BoL">
+                    <span class="input-group-text bg-light text-muted">.pdf</span>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <div class="form-check form-switch d-flex align-items-center gap-2">
+                    <input class="form-check-input" type="checkbox" role="switch" name="blind_shipment" id="blindSwitch">
+                    <label class="form-check-label small fw-bold text-muted text-uppercase mb-0" for="blindSwitch">Blind Shipment?</label>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-1">Carrier Name</label>
+                <input type="text" name="carrier_name" class="form-control form-control-sm" placeholder="Insert carrier name" value="{{ shipment.carrier.name|default:'' }}">
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-1">Trailer Number</label>
+                <input type="text" name="trailer_number" class="form-control form-control-sm" placeholder="Insert trailer number">
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-1">Seal Number</label>
+                <input type="text" name="seal_number" class="form-control form-control-sm" placeholder="Insert seal number">
+            </div>
+
+            <div class="mb-5">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-1">Instructions</label>
+                <textarea name="instructions" class="form-control form-control-sm" rows="4" placeholder="Add special handling or instructions...">{{ shipment.special_instructions|default:'' }}</textarea>
+            </div>
+
+            <div class="d-flex gap-2 justify-content-end mt-4">
+                <button type="button" class="btn btn-light btn-sm px-3 fw-semibold" onclick="previewBol()">Preview</button>
+                <button type="submit" class="btn btn-primary btn-sm px-4 fw-bold">Submit</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+</div>
+
+<!-- Packing List Drawer (Offcanvas) -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="packingListDrawer" aria-labelledby="packingListDrawerLabel"
+    style="width: 800px; border-left: none; box-shadow: -5px 0 25px rgba(0,0,0,0.1);">
+    <div class="offcanvas-header border-bottom px-4">
+        <h5 class="offcanvas-title fw-bold" id="packingListDrawerLabel">Packing List</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body px-4 py-4">
+        <form method="post" action="{% url 'shipments:generate_packing_list_pdf' shipment.pk %}" id="packingListForm">
+            {% csrf_token %}
+
+            <div class="row g-3 mb-4">
+                <div class="col-md-12">
+                    <label class="form-label small fw-bold text-muted text-uppercase mb-1">File Name <span class="text-danger">*</span></label>
+                    <div class="input-group input-group-sm">
+                        <input type="text" name="file_name" class="form-control" value="{{ shipment.shipment_number }}_PACKING_LIST">
+                        <span class="input-group-text bg-light text-muted">.pdf</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <label class="form-label small fw-bold text-muted text-uppercase mb-1">Delivery Number</label>
+                    <input type="text" name="delivery_number" class="form-control form-control-sm" placeholder="Insert delivery number">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small fw-bold text-muted text-uppercase mb-1">Date (Defaults to today) <span class="text-danger">*</span></label>
+                    <input type="date" name="date" class="form-control form-control-sm" value="{% now 'Y-m-d' %}">
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end mb-2">
+                <div class="d-flex align-items-center gap-2">
+                    <label class="small fw-bold text-muted text-uppercase mb-0">Unit <span class="text-danger">*</span></label>
+                    <select name="unit" id="plWeightUnit" class="form-select form-select-sm" style="width: 80px;" onchange="updatePlUnitLabels()">
+                        <option value="lbs" selected>lbs</option>
+                        <option value="kg">kg</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="table-responsive mb-4">
+                <table class="table table-sm border" id="plItemsTable">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="small fw-bold text-muted px-2" style="width: 40px;">#</th>
+                            <th class="small fw-bold text-muted px-2">Item</th>
+                            <th class="small fw-bold text-muted px-2" style="width: 120px;">Gross Weight</th>
+                            <th class="small fw-bold text-muted px-2" style="width: 120px;">Tare Weight</th>
+                            <th class="small fw-bold text-muted px-2" style="width: 120px;">Net Weight</th>
+                            <th class="small fw-bold text-muted px-2" style="width: 120px;">Packaging</th>
+                            <th class="small fw-bold text-muted px-2" style="width: 40px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="pl-item-row">
+                            <td class="text-center align-middle">1</td>
+                            <td>
+                                <select name="item[]" class="form-select form-select-sm border-0 bg-transparent ps-0">
+                                    <option value="">Select Item</option>
+                                    {% if shipment.order %}
+                                    {% for item in shipment.order.manifest_items.all %}
+                                    <option value="{{ item.material }}" selected>{{ item.material }}</option>
+                                    {% endfor %}
+                                    {% endif %}
+                                </select>
+                            </td>
+                            <td>
+                                <div class="input-group input-group-sm">
+                                    <input type="number" step="0.1" name="gross[]" class="form-control border-0 bg-transparent pl-gross" placeholder="0" oninput="calculatePlNet(this)">
+                                    <span class="input-group-text border-0 bg-transparent small text-muted px-1 pl-unit-label">lbs</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="input-group input-group-sm">
+                                    <input type="number" step="0.1" name="tare[]" class="form-control border-0 bg-transparent pl-tare" placeholder="0" oninput="calculatePlNet(this)">
+                                    <span class="input-group-text border-0 bg-transparent small text-muted px-1 pl-unit-label">lbs</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="input-group input-group-sm">
+                                    <input type="number" step="0.1" name="net[]" class="form-control border-0 bg-light pl-net" placeholder="0" readonly>
+                                    <span class="input-group-text border-0 bg-light small text-muted px-1 pl-unit-label">lbs</span>
+                                </div>
+                            </td>
+                            <td>
+                                <select name="packaging[]" class="form-select form-select-sm border-0 bg-transparent ps-0">
+                                    <option value="Select" selected>Select</option>
+                                    <option value="Rolls">Rolls</option>
+                                    <option value="Pallets">Pallets</option>
+                                    <option value="Boxes">Boxes</option>
+                                    <option value="Drums">Drums</option>
+                                </select>
+                            </td>
+                            <td class="text-center align-middle">
+                                <button type="button" class="btn btn-link text-danger p-0 border-0" onclick="removePlRow(this)"><i class="fas fa-trash-alt"></i></button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <button type="button" class="btn btn-primary w-100 mb-4 fw-bold" onclick="addPlRow()">
+                <i class="fas fa-plus me-2"></i>Add Item
+            </button>
+
+            <div class="bg-light rounded p-3 mb-4">
+                <div class="row g-3">
+                    <div class="col-4 text-center">
+                        <div class="small fw-bold text-muted text-uppercase mb-1">TOTAL GROSS</div>
+                        <div class="h5 mb-0 fw-bold"><span id="plTotalGross">0</span> <span class="pl-unit-label">lbs</span></div>
+                    </div>
+                    <div class="col-4 text-center">
+                        <div class="small fw-bold text-muted text-uppercase mb-1">TOTAL TARE</div>
+                        <div class="h5 mb-0 fw-bold text-muted"><span id="plTotalTare">0</span> <span class="pl-unit-label">lbs</span></div>
+                    </div>
+                    <div class="col-4 text-center">
+                        <div class="small fw-bold text-muted text-uppercase mb-1">TOTAL NET</div>
+                        <div class="h5 mb-0 fw-bold text-primary"><span id="plTotalNet">0</span> <span class="pl-unit-label">lbs</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-text small mb-4">Tip: Hit "Enter" to auto-fill next row</div>
+
+            <div class="d-flex gap-2 justify-content-end mt-4">
+                <button type="button" class="btn btn-light btn-sm px-3 fw-semibold" onclick="previewPackingList()">Preview</button>
+                <button type="submit" class="btn btn-primary btn-sm px-4 fw-bold">Submit</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Document List Modal -->
+<div class="modal fade" id="documentListModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow" style="border-radius:20px;">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold" id="docModalTitle">Documents</h5>
+                <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="docListContainer" class="d-flex flex-column gap-3">
+                    <!-- Dynamic Content -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.doc-item {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    border-radius: 12px;
+    background: #f8fafc;
+    transition: all 0.2s;
+}
+.doc-item:hover {
+    background: #f1f5f9;
+}
+.doc-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    border-radius: 10px;
+    margin-right: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.doc-info {
+    flex-grow: 1;
+}
+.doc-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 2px;
+    text-decoration: none;
+}
+.doc-meta {
+    font-size: 12px;
+    color: #64748b;
+}
+.doc-delete {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ef4444;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.doc-delete:hover {
+    background: #fee2e2;
+}
+</style>
 {% endblock %}
 
 {% block extra_js %}
@@ -505,6 +1103,179 @@
         if (input.files.length > 0) {
             document.getElementById('typed-upload-form').submit();
         }
+    }
+
+    function openDocumentModal(docType) {
+        const title = DOC_LABELS[docType] || 'Documents';
+        document.getElementById('docModalTitle').innerText = title;
+        const container = document.getElementById('docListContainer');
+        container.innerHTML = '';
+
+        // Note: documents and invoices are passed from context
+        let items = [];
+        if (docType === 'invoice') {
+            {% for inv in invoices %}
+            items.push({
+                pk: "{{ inv.pk }}",
+                title: "Invoice #{{ inv.invoice_number }}",
+                url: "{% url 'invoicing:invoice_detail' inv.pk %}",
+                meta: "{{ inv.created_at|timesince }} ago",
+                user: "System",
+                is_invoice: true
+            });
+            {% endfor %}
+        } else {
+            {% for doc in documents %}
+            if ("{{ doc.document_type }}" === docType) {
+                items.push({
+                    pk: "{{ doc.pk }}",
+                    title: "{{ doc.title }}",
+                    url: "{% url 'shipments:document_download' doc.pk %}",
+                    meta: "{{ doc.uploaded_at|timesince }} ago",
+                    user: "{{ doc.uploaded_by.get_full_name|default:doc.uploaded_by.email }}",
+                    is_invoice: false
+                });
+            }
+            {% endfor %}
+        }
+
+        if (items.length === 0) {
+            container.innerHTML = '<div class="text-center text-muted py-4">No documents found</div>';
+        } else {
+            items.forEach(item => {
+                const html = `
+                    <div class="doc-item" id="doc-item-${item.pk}">
+                        <div class="doc-icon">
+                            <i class="fas ${item.is_invoice ? 'fa-file-invoice text-primary' : 'fa-file-pdf text-danger'}"></i>
+                        </div>
+                        <div class="doc-info">
+                            <a href="${item.url}" target="_blank" class="doc-name">${item.title}</a>
+                            <div class="doc-meta">${item.user} • ${item.meta}</div>
+                        </div>
+                        ${!item.is_invoice ? `
+                            <div class="doc-delete" onclick="deleteDocument('${item.pk}')">
+                                <i class="fas fa-trash"></i>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+                container.innerHTML += html;
+            });
+        }
+
+        new bootstrap.Modal(document.getElementById('documentListModal')).show();
+    }
+
+    function deleteDocument(docPk) {
+        if (!confirm('Are you sure you want to delete this document?')) return;
+        
+        fetch(`/shipments/document/${docPk}/delete/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const el = document.getElementById(`doc-item-${docPk}`);
+                el.style.opacity = '0';
+                el.style.transform = 'translateX(20px)';
+                setTimeout(() => el.remove(), 300);
+            }
+        });
+    }
+
+    // Toggle Invoice Material Descriptions
+    const toggleInvoiceDesc = document.getElementById('toggleInvoiceDescriptions');
+    if (toggleInvoiceDesc) {
+        toggleInvoiceDesc.addEventListener('change', function() {
+            const section = document.getElementById('invoiceMaterialDescriptions');
+            section.style.display = this.checked ? 'block' : 'none';
+        });
+    }
+
+    function previewPackingList() {
+        const form = document.getElementById('packingListForm');
+        const originalTarget = form.target;
+        form.target = '_blank';
+        form.submit();
+        form.target = originalTarget;
+    }
+
+    function addPlRow() {
+        const tbody = document.querySelector('#plItemsTable tbody');
+        const rowCount = tbody.querySelectorAll('tr').length;
+        const newRow = tbody.querySelector('.pl-item-row').cloneNode(true);
+        
+        // Update row number
+        newRow.querySelector('td:first-child').innerText = rowCount + 1;
+        
+        // Clear inputs
+        newRow.querySelectorAll('input').forEach(input => input.value = '');
+        newRow.querySelector('.pl-net').value = '0';
+        
+        tbody.appendChild(newRow);
+        updatePlUnitLabels();
+    }
+
+    function removePlRow(btn) {
+        const tbody = document.querySelector('#plItemsTable tbody');
+        if (tbody.querySelectorAll('tr').length > 1) {
+            btn.closest('tr').remove();
+            // Re-index
+            tbody.querySelectorAll('tr').forEach((row, idx) => {
+                row.querySelector('td:first-child').innerText = idx + 1;
+            });
+            calculatePlTotals();
+        }
+    }
+
+    function calculatePlNet(input) {
+        const row = input.closest('tr');
+        const gross = parseFloat(row.querySelector('.pl-gross').value) || 0;
+        const tare = parseFloat(row.querySelector('.pl-tare').value) || 0;
+        const net = gross - tare;
+        row.querySelector('.pl-net').value = net.toFixed(1);
+        calculatePlTotals();
+    }
+
+    function calculatePlTotals() {
+        let totalGross = 0;
+        let totalTare = 0;
+        let totalNet = 0;
+
+        document.querySelectorAll('.pl-gross').forEach(input => totalGross += (parseFloat(input.value) || 0));
+        document.querySelectorAll('.pl-tare').forEach(input => totalTare += (parseFloat(input.value) || 0));
+        document.querySelectorAll('.pl-net').forEach(input => totalNet += (parseFloat(input.value) || 0));
+
+        document.getElementById('plTotalGross').innerText = totalGross.toFixed(1);
+        document.getElementById('plTotalTare').innerText = totalTare.toFixed(1);
+        document.getElementById('plTotalNet').innerText = totalNet.toFixed(1);
+    }
+
+    function updatePlUnitLabels() {
+        const unit = document.getElementById('plWeightUnit').value;
+        document.querySelectorAll('.pl-unit-label').forEach(span => {
+            span.innerText = unit;
+        });
+    }
+
+    function previewBol() {
+        const form = document.getElementById('bolForm');
+        const originalTarget = form.target;
+        form.target = '_blank';
+        form.submit();
+        form.target = originalTarget;
+    }
+
+    function previewShipConfirm() {
+        const form = document.getElementById('shipConfirmForm');
+        const originalTarget = form.target;
+        form.target = '_blank';
+        form.submit();
+        form.target = originalTarget;
     }
 </script>
 {% endblock %}
