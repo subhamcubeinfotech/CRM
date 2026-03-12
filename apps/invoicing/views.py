@@ -20,6 +20,18 @@ import logging
 logger = logging.getLogger('apps.invoicing')
 
 
+def _get_invoice(pk):
+    """Helper to find invoice by ID or invoice_number"""
+    try:
+        # Try finding by invoice_number first
+        return Invoice.objects.select_related('customer', 'shipment').get(invoice_number=pk)
+    except Invoice.DoesNotExist:
+        try:
+            # Then by primary key
+            return get_object_or_404(Invoice.objects.select_related('customer', 'shipment'), pk=pk)
+        except (ValueError, Http404):
+            raise Http404("Invoice not found")
+
 
 @login_required
 def invoice_list(request):
@@ -87,20 +99,7 @@ def pending_invoices(request):
 @login_required
 def invoice_detail(request, pk):
     """Invoice detail view"""
-    print(f"DEBUG: Looking for invoice with pk: {pk}")  # Debug line
-    
-    # Try to find by invoice_number first, then by ID
-    try:
-        invoice = Invoice.objects.select_related('customer', 'shipment').get(invoice_number=pk)
-        print(f"DEBUG: Found invoice by number: {invoice.invoice_number}")  # Debug line
-    except Invoice.DoesNotExist:
-        print(f"DEBUG: Invoice not found by number, trying ID lookup")  # Debug line
-        try:
-            invoice = get_object_or_404(Invoice.objects.select_related('customer', 'shipment'), pk=pk)
-            print(f"DEBUG: Found invoice by ID: {invoice.invoice_number}")  # Debug line
-        except (ValueError, Http404):
-            print(f"DEBUG: Invoice not found by ID either")  # Debug line
-            raise Http404("Invoice not found")
+    invoice = _get_invoice(pk)
     
     try:
         check_company_access(invoice.customer, request.user)
@@ -192,7 +191,7 @@ def invoice_create(request):
 @login_required
 def invoice_edit(request, pk):
     """Edit invoice"""
-    invoice = get_object_or_404(Invoice, pk=pk)
+    invoice = _get_invoice(pk)
     
     if request.method == 'POST':
         invoice.customer_id = request.POST.get('customer')
@@ -244,7 +243,7 @@ def invoice_edit(request, pk):
 @login_required
 def invoice_print(request, pk):
     """Print invoice view"""
-    invoice = get_object_or_404(Invoice.objects.select_related('customer', 'shipment'), pk=pk)
+    invoice = _get_invoice(pk)
     
     context = {
         'invoice': invoice,
@@ -265,7 +264,7 @@ def invoice_pdf(request, pk):
     from reportlab.lib.enums import TA_RIGHT, TA_CENTER, TA_LEFT
     from io import BytesIO
 
-    invoice = get_object_or_404(Invoice.objects.select_related('customer', 'shipment'), pk=pk)
+    invoice = _get_invoice(pk)
     line_items = list(invoice.line_items.all())
 
     buffer = BytesIO()
@@ -442,7 +441,7 @@ def invoice_pdf(request, pk):
 @login_required
 def add_payment(request, pk):
     """Add payment to invoice"""
-    invoice = get_object_or_404(Invoice, pk=pk)
+    invoice = _get_invoice(pk)
     
     if request.method == 'POST':
         payment = Payment(
@@ -470,7 +469,7 @@ def add_payment(request, pk):
 @login_required
 def send_invoice(request, pk):
     """Send invoice to customer"""
-    invoice = get_object_or_404(Invoice, pk=pk)
+    invoice = _get_invoice(pk)
     
     if request.method == 'POST':
         invoice.status = 'sent'
