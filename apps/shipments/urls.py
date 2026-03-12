@@ -17,6 +17,7 @@ urlpatterns = [
     # Documents
     path('<int:pk>/document/upload/', views.document_upload, name='document_upload'),
     path('document/<int:doc_pk>/download/', views.document_download, name='document_download'),
+    path('document/<int:doc_pk>/delete/', views.document_delete, name='document_delete'),
 
     # Document Generation
     path('<int:pk>/shipping-confirmation/', views.generate_shipping_confirmation, name='generate_shipping_confirmation'),

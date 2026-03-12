@@ -341,22 +341,14 @@
                                     </button>
                                     <ul class="dropdown-menu shadow border-0" style="border-radius:12px;">
                                         {% if invoices %}
-                                        {% for inv in invoices %}
-                                        <li><a class="dropdown-item" href="{% url 'invoicing:invoice_detail' inv.pk %}"><i class="fas fa-eye me-2 text-muted"></i>View</a></li>
-                                        {% endfor %}
+                                        <li><a class="dropdown-item" href="#" onclick="openDocumentModal('invoice')"><i class="fas fa-external-link-alt me-2 text-muted"></i>View</a></li>
                                         {% else %}
-                                        <li><a class="dropdown-item"
-                                                href="{% url 'shipments:create_invoice' shipment.pk %}"><i
-                                                    class="fas fa-plus me-2 text-success"></i>Create Invoice</a></li>
+                                        <li><a class="dropdown-item" href="{% url 'shipments:create_invoice' shipment.pk %}"><i class="fas fa-plus me-2 text-primary"></i>Generate</a></li>
                                         {% endif %}
                                         <li>
                                             <hr class="dropdown-divider">
                                         </li>
-                                        <li>
-                                            <a class="dropdown-item" href="#" onclick="triggerUpload('invoice')">
-                                                <i class="fas fa-upload me-2 text-muted"></i>Upload Invoice
-                                            </a>
-                                        </li>
+                                        <li><a class="dropdown-item" href="#" onclick="triggerUpload('invoice')"><i class="fas fa-upload me-2 text-muted"></i>Upload</a></li>
                                     </ul>
                                 </div>
 
@@ -366,10 +358,12 @@
                                         <i class="fas fa-ship text-info"></i>Shipping Confirmation
                                     </button>
                                     <ul class="dropdown-menu shadow border-0" style="border-radius:12px;">
-                                        <li><a class="dropdown-item" href="#" data-bs-toggle="offcanvas" data-bs-target="#shipConfirmDrawer"><i class="fas fa-file-alt me-2 text-success"></i>Generate</a></li>
+                                        {% if documents %}
                                         {% for doc in documents %}{% if doc.document_type == 'commercial_invoice' %}
-                                        <li><a class="dropdown-item" href="{% url 'shipments:document_download' doc.pk %}" target="_blank"><i class="fas fa-eye me-2 text-muted"></i>View</a></li>
+                                        {% if forloop.first %}<li><a class="dropdown-item" href="#" onclick="openDocumentModal('commercial_invoice')"><i class="fas fa-external-link-alt me-2 text-muted"></i>View</a></li>{% endif %}
                                         {% endif %}{% endfor %}
+                                        {% endif %}
+                                        <li><a class="dropdown-item" href="#" data-bs-toggle="offcanvas" data-bs-target="#shipConfirmDrawer"><i class="fas fa-plus me-2 text-primary"></i>Generate</a></li>
                                         <li><a class="dropdown-item" href="#" onclick="triggerUpload('commercial_invoice')"><i class="fas fa-upload me-2 text-muted"></i>Upload</a></li>
                                     </ul>
                                 </div>
@@ -380,10 +374,12 @@
                                         <i class="fas fa-file-alt text-warning"></i>Bill Of Lading
                                     </button>
                                     <ul class="dropdown-menu shadow border-0" style="border-radius:12px;">
-                                        <li><a class="dropdown-item" href="{% url 'shipments:generate_bol' shipment.pk %}" target="_blank"><i class="fas fa-file-alt me-2 text-success"></i>Generate</a></li>
+                                        {% if documents %}
                                         {% for doc in documents %}{% if doc.document_type == 'bol' %}
-                                        <li><a class="dropdown-item" href="{% url 'shipments:document_download' doc.pk %}" target="_blank"><i class="fas fa-eye me-2 text-muted"></i>View</a></li>
+                                        {% if forloop.first %}<li><a class="dropdown-item" href="#" onclick="openDocumentModal('bol')"><i class="fas fa-external-link-alt me-2 text-muted"></i>View</a></li>{% endif %}
                                         {% endif %}{% endfor %}
+                                        {% endif %}
+                                        <li><a class="dropdown-item" href="{% url 'shipments:generate_bol' shipment.pk %}" target="_blank"><i class="fas fa-plus me-2 text-primary"></i>Generate</a></li>
                                         <li><a class="dropdown-item" href="#" onclick="triggerUpload('bol')"><i class="fas fa-upload me-2 text-muted"></i>Upload</a></li>
                                     </ul>
                                 </div>
@@ -394,10 +390,12 @@
                                         <i class="fas fa-boxes text-success"></i>Packing List
                                     </button>
                                     <ul class="dropdown-menu shadow border-0" style="border-radius:12px;">
-                                        <li><a class="dropdown-item" href="{% url 'shipments:generate_packing_list' shipment.pk %}" target="_blank"><i class="fas fa-file-alt me-2 text-success"></i>Generate</a></li>
+                                        {% if documents %}
                                         {% for doc in documents %}{% if doc.document_type == 'packing_list' %}
-                                        <li><a class="dropdown-item" href="{% url 'shipments:document_download' doc.pk %}" target="_blank"><i class="fas fa-eye me-2 text-muted"></i>View</a></li>
+                                        {% if forloop.first %}<li><a class="dropdown-item" href="#" onclick="openDocumentModal('packing_list')"><i class="fas fa-external-link-alt me-2 text-muted"></i>View</a></li>{% endif %}
                                         {% endif %}{% endfor %}
+                                        {% endif %}
+                                        <li><a class="dropdown-item" href="{% url 'shipments:generate_packing_list' shipment.pk %}" target="_blank"><i class="fas fa-plus me-2 text-primary"></i>Generate</a></li>
                                         <li><a class="dropdown-item" href="#" onclick="triggerUpload('packing_list')"><i class="fas fa-upload me-2 text-muted"></i>Upload</a></li>
                                     </ul>
                                 </div>
@@ -708,6 +706,76 @@
         </div>
     </div>
 </div>
+
+<!-- Document List Modal -->
+<div class="modal fade" id="documentListModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow" style="border-radius:20px;">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold" id="docModalTitle">Documents</h5>
+                <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="docListContainer" class="d-flex flex-column gap-3">
+                    <!-- Dynamic Content -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.doc-item {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    border-radius: 12px;
+    background: #f8fafc;
+    transition: all 0.2s;
+}
+.doc-item:hover {
+    background: #f1f5f9;
+}
+.doc-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    border-radius: 10px;
+    margin-right: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.doc-info {
+    flex-grow: 1;
+}
+.doc-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 2px;
+    text-decoration: none;
+}
+.doc-meta {
+    font-size: 12px;
+    color: #64748b;
+}
+.doc-delete {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ef4444;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.doc-delete:hover {
+    background: #fee2e2;
+}
+</style>
 {% endblock %}
 
 {% block extra_js %}
@@ -737,6 +805,88 @@
         if (input.files.length > 0) {
             document.getElementById('typed-upload-form').submit();
         }
+    }
+
+    function openDocumentModal(docType) {
+        const title = DOC_LABELS[docType] || 'Documents';
+        document.getElementById('docModalTitle').innerText = title;
+        const container = document.getElementById('docListContainer');
+        container.innerHTML = '';
+
+        // Note: documents and invoices are passed from context
+        let items = [];
+        if (docType === 'invoice') {
+            {% for inv in invoices %}
+            items.push({
+                pk: "{{ inv.pk }}",
+                title: "Invoice #{{ inv.invoice_number }}",
+                url: "{% url 'invoicing:invoice_detail' inv.pk %}",
+                meta: "{{ inv.created_at|timesince }} ago",
+                user: "System",
+                is_invoice: true
+            });
+            {% endfor %}
+        } else {
+            {% for doc in documents %}
+            if ("{{ doc.document_type }}" === docType) {
+                items.push({
+                    pk: "{{ doc.pk }}",
+                    title: "{{ doc.title }}",
+                    url: "{% url 'shipments:document_download' doc.pk %}",
+                    meta: "{{ doc.uploaded_at|timesince }} ago",
+                    user: "{{ doc.uploaded_by.get_full_name|default:doc.uploaded_by.email }}",
+                    is_invoice: false
+                });
+            }
+            {% endfor %}
+        }
+
+        if (items.length === 0) {
+            container.innerHTML = '<div class="text-center text-muted py-4">No documents found</div>';
+        } else {
+            items.forEach(item => {
+                const html = `
+                    <div class="doc-item" id="doc-item-${item.pk}">
+                        <div class="doc-icon">
+                            <i class="fas ${item.is_invoice ? 'fa-file-invoice text-primary' : 'fa-file-pdf text-danger'}"></i>
+                        </div>
+                        <div class="doc-info">
+                            <a href="${item.url}" target="_blank" class="doc-name">${item.title}</a>
+                            <div class="doc-meta">${item.user} • ${item.meta}</div>
+                        </div>
+                        ${!item.is_invoice ? `
+                            <div class="doc-delete" onclick="deleteDocument('${item.pk}')">
+                                <i class="fas fa-trash"></i>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+                container.innerHTML += html;
+            });
+        }
+
+        new bootstrap.Modal(document.getElementById('documentListModal')).show();
+    }
+
+    function deleteDocument(docPk) {
+        if (!confirm('Are you sure you want to delete this document?')) return;
+        
+        fetch(`/shipments/document/${docPk}/delete/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const el = document.getElementById(`doc-item-${docPk}`);
+                el.style.opacity = '0';
+                el.style.transform = 'translateX(20px)';
+                setTimeout(() => el.remove(), 300);
+            }
+        });
     }
 
     function previewShipConfirm() {

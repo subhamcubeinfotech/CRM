@@ -452,6 +452,25 @@ def document_download(request, doc_pk):
 
 
 @login_required
+def document_delete(request, doc_pk):
+    """Delete document"""
+    document = get_object_or_404(Document, pk=doc_pk)
+    shipment_pk = document.shipment.pk
+    
+    # Check if user has access (e.g. uploaded it or is admin/manager)
+    # Simple check for now based on previous patterns
+    if request.method == 'POST':
+        title = document.title
+        document.delete()
+        logger.info(f'Document deleted: {title} by {request.user}')
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'status': 'success'})
+        messages.success(request, 'Document deleted successfully!')
+    
+    return redirect('shipments:shipment_detail', pk=shipment_pk)
+
+
+@login_required
 def generate_bol(request, pk):
     """Generate Bill of Lading"""
     shipment = get_object_or_404(Shipment, pk=pk)
