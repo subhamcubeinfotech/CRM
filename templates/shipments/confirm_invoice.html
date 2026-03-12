@@ -55,12 +55,40 @@
                             <label class="form-label fw-bold">Notes</label>
                             <textarea name="notes" class="form-control" rows="3" placeholder="Additional notes..."></textarea>
                         </div>
-                        <div class="mb-0">
+                        <div class="mb-4">
                             <label class="form-label fw-bold">Tax Details</label>
                             <input type="text" name="tax_details" class="form-control" placeholder="Tax information...">
                         </div>
+
+                        <hr class="my-4">
+
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="toggleDescriptions" name="include_descriptions">
+                            <label class="form-check-label fw-bold" for="toggleDescriptions">Include Material Descriptions</label>
+                        </div>
+
+                        <div id="materialDescriptionsSection" style="display: none;">
+                            <h6 class="fw-bold mb-3">Material Descriptions</h6>
+                            {% if shipment.order %}
+                                {% for item in shipment.order.manifest_items.all %}
+                                <div class="mb-3 border-start ps-3 py-1">
+                                    <label class="form-label small text-muted mb-1">{{ item.material }}</label>
+                                    <input type="text" name="desc_{{ item.id }}" class="form-control form-control-sm" placeholder="Insert Material Description">
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <p class="text-muted small">No manifest items found for this shipment.</p>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
+
+                <script>
+                    document.getElementById('toggleDescriptions').addEventListener('change', function() {
+                        const section = document.getElementById('materialDescriptionsSection');
+                        section.style.display = this.checked ? 'block' : 'none';
+                    });
+                </script>
 
                 <div class="d-flex gap-2">
                     <button type="submit" class="btn btn-primary px-4 fw-semibold">

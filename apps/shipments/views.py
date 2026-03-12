@@ -536,7 +536,6 @@ def create_invoice(request, pk):
             with transaction.atomic():
                 # Generate invoice number first
                 invoice_number = Invoice.generate_invoice_number()
-                print(f"DEBUG: Generated number: {invoice_number}")  # Debug line
                 
                 invoice = Invoice.objects.create(
                     customer=shipment.customer,
@@ -556,24 +555,28 @@ def create_invoice(request, pk):
                     created_by=request.user,
                     tenant=request.user.tenant,
                 )
-                print(f"DEBUG: Created invoice: {invoice.invoice_number}")  # Debug line
                 
                 # Add manifest items as invoice line items if available
                 if shipment.order:
+                    include_descriptions = request.POST.get('include_descriptions') == 'on'
                     for item in shipment.order.manifest_items.all():
+                        description = item.material
+                        if include_descriptions:
+                            extra_desc = request.POST.get(f'desc_{item.id}', '').strip()
+                            if extra_desc:
+                                description = f"{description} - {extra_desc}"
+                                
                         try:
                             InvoiceLineItem.objects.create(
                                 invoice=invoice,
-                                description=item.material,
+                                description=description,
                                 quantity=item.weight,
                                 unit_price=item.sell_price,
                                 total=item.weight * item.sell_price,
                             )
                         except Exception as e:
-                            print(f"DEBUG: Error creating line item: {e}")
                             pass
         except Exception as e:
-            print(f"DEBUG: Exception occurred: {e}")  # Debug line
             messages.error(request, f'Error creating invoice: {str(e)}')
             return redirect('shipments:create_invoice', pk=pk)
 

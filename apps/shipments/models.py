@@ -5,8 +5,6 @@ from django.db import models
 from django.conf import settings
 from django.utils import timezone
 from datetime import datetime
-
-
 from apps.accounts.models import TenantAwareModel
 
 class Shipment(TenantAwareModel):
