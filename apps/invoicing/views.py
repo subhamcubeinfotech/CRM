@@ -136,6 +136,7 @@ def invoice_create(request):
             payment_instructions=request.POST.get('payment_instructions', ''),
             tax_details=request.POST.get('tax_details', ''),
             created_by=request.user,
+            tenant=request.user.tenant,
         )
         # Handle empty date string
         if request.POST.get('invoice_date'):

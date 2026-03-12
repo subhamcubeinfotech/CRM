@@ -545,6 +545,7 @@ def create_invoice(request, pk):
                     tax_details=request.POST.get('tax_details', ''),
                     terms=request.POST.get('terms', 'Net 30 days'),
                     created_by=request.user,
+                    tenant=request.user.tenant,
                 )
                 print(f"DEBUG: Created invoice: {invoice.invoice_number}")  # Debug line
         except Exception as e:
