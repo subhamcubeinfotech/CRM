@@ -23,6 +23,7 @@ urlpatterns = [
     path('<int:pk>/shipping-confirmation/', views.generate_shipping_confirmation, name='generate_shipping_confirmation'),
     path('<int:pk>/shipping-confirmation/pdf/', views.generate_shipping_confirmation_pdf, name='generate_shipping_confirmation_pdf'),
     path('<int:pk>/packing-list/', views.generate_packing_list, name='generate_packing_list'),
+    path('<int:pk>/packing-list/pdf/', views.generate_packing_list_pdf, name='generate_packing_list_pdf'),
     path('<int:pk>/bol/', views.generate_bol, name='generate_bol'),
     path('<int:pk>/bol/pdf/', views.generate_bol_pdf, name='generate_bol_pdf'),
     path('<int:pk>/invoice/create/', views.create_invoice, name='create_invoice'),

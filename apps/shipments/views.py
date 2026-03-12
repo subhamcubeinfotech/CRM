@@ -906,7 +906,7 @@ def generate_shipping_confirmation_pdf(request, pk):
 
 @login_required
 def generate_packing_list(request, pk):
-    """Generate Packing List document"""
+    """Generate Packing List document (HTML version)"""
     shipment = get_object_or_404(Shipment.objects.select_related(
         'order', 'order__supplier', 'order__receiver', 'customer'
     ), pk=pk)
@@ -921,6 +921,193 @@ def generate_packing_list(request, pk):
         'today': datetime.now().strftime('%B %d, %Y'),
     }
     return render(request, 'documents/packing_list.html', context)
+
+
+@login_required
+def generate_packing_list_pdf(request, pk):
+    """Generate professional Packing List PDF using ReportLab with dynamic items"""
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib import colors
+    from reportlab.lib.units import mm
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, HRFlowable
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.enums import TA_RIGHT, TA_CENTER, TA_LEFT
+    from io import BytesIO
+
+    shipment = get_object_or_404(Shipment.objects.select_related(
+        'customer', 'order', 'order__supplier', 'order__receiver'
+    ), pk=pk)
+    
+    # Get form data
+    file_name = request.POST.get('file_name', f"{shipment.shipment_number}_PACKING_LIST.pdf")
+    if not file_name.endswith('.pdf'):
+        file_name += '.pdf'
+    
+    delivery_number = request.POST.get('delivery_number', '')
+    doc_date = request.POST.get('date', datetime.now().strftime('%Y-%m-%d'))
+    unit = request.POST.get('unit', 'lbs')
+    
+    # Process dynamic items
+    items = request.POST.getlist('item[]')
+    gross_weights = request.POST.getlist('gross[]')
+    tare_weights = request.POST.getlist('tare[]')
+    packagings = request.POST.getlist('packaging[]')
+    
+    manifest_data = []
+    total_gross = 0
+    total_tare = 0
+    total_net = 0
+    
+    for i in range(len(items)):
+        if not items[i]: continue
+        
+        gross = float(gross_weights[i] or 0)
+        tare = float(tare_weights[i] or 0)
+        net = gross - tare
+        
+        manifest_data.append({
+            'item': items[i],
+            'gross': gross,
+            'tare': tare,
+            'net': net,
+            'packaging': packagings[i]
+        })
+        
+        total_gross += gross
+        total_tare += tare
+        total_net += net
+    
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        rightMargin=15*mm, leftMargin=15*mm,
+        topMargin=15*mm, bottomMargin=15*mm,
+    )
+
+    styles = getSampleStyleSheet()
+    primary_color = colors.HexColor('#2a4d8f')
+    dark_gray = colors.HexColor('#1e293b')
+    
+    # Custom Styles
+    title_style = ParagraphStyle('Title', parent=styles['Heading1'], fontSize=20, textColor=dark_gray, fontName='Helvetica-Bold', alignment=TA_CENTER, leading=24)
+    label_style = ParagraphStyle('Label', parent=styles['Normal'], fontSize=8, textColor=colors.HexColor('#64748b'), fontName='Helvetica-Bold', leading=10, textTransform='uppercase')
+    normal_style = ParagraphStyle('Normal2', parent=styles['Normal'], fontSize=10, textColor=dark_gray, fontName='Helvetica', leading=13)
+    bold_style = ParagraphStyle('Bold', parent=styles['Normal'], fontSize=10, textColor=dark_gray, fontName='Helvetica-Bold', leading=13)
+    th_style = ParagraphStyle('TH', parent=styles['Normal'], fontSize=9, textColor=colors.white, fontName='Helvetica-Bold', alignment=TA_LEFT)
+    td_style = ParagraphStyle('TD', parent=styles['Normal'], fontSize=9, textColor=dark_gray, fontName='Helvetica')
+    td_center = ParagraphStyle('TDC', parent=styles['Normal'], fontSize=9, textColor=dark_gray, fontName='Helvetica', alignment=TA_CENTER)
+    
+    elements = []
+
+    # ─── HEADER ───
+    shipment_info = [
+        Paragraph("<b>PACKING LIST</b>", title_style),
+        Spacer(1, 4*mm),
+        Paragraph(f"<b>Delivery #:</b> {delivery_number or 'N/A'}", normal_style),
+        Paragraph(f"<b>Date:</b> {doc_date}", normal_style),
+        Paragraph(f"<b>Shipment #:</b> {shipment.shipment_number}", normal_style),
+    ]
+
+    company_lines = [
+        Paragraph("FreightPro", ParagraphStyle('CompName', parent=bold_style, fontSize=18, textColor=primary_color)),
+        Paragraph("Logistics & Freight Services", normal_style),
+        Paragraph("123 Logistics Way, Chicago, IL 60601", normal_style),
+    ]
+
+    header_table = Table([[company_lines, shipment_info]], colWidths=[100*mm, 80*mm])
+    header_table.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'TOP')]))
+    elements.append(header_table)
+    elements.append(Spacer(1, 8*mm))
+    elements.append(HRFlowable(width="100%", thickness=1, color=colors.grey, spaceBefore=0, spaceAfter=8*mm))
+
+    # ─── PARTIES ───
+    shipper_box = [Paragraph("SHIPPER", label_style), Spacer(1, 1*mm)]
+    s = shipment.shipper or (shipment.order.supplier if shipment.order else None)
+    if s:
+        shipper_box.append(Paragraph(s.name, bold_style))
+        shipper_box.append(Paragraph(shipment.origin_address or "", normal_style))
+        shipper_box.append(Paragraph(f"{shipment.origin_city}, {shipment.origin_state} {shipment.origin_postal_code}", normal_style))
+
+    consignee_box = [Paragraph("CONSIGNEE", label_style), Spacer(1, 1*mm)]
+    c = shipment.consignee or (shipment.order.receiver if shipment.order else None)
+    if c:
+        consignee_box.append(Paragraph(c.name, bold_style))
+        consignee_box.append(Paragraph(shipment.destination_address or "", normal_style))
+        consignee_box.append(Paragraph(f"{shipment.destination_city}, {shipment.destination_state} {shipment.destination_postal_code}", normal_style))
+
+    parties_table = Table([[shipper_box, consignee_box]], colWidths=[90*mm, 90*mm])
+    parties_table.setStyle(TableStyle([
+        ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('LEFTPADDING', (0,0), (-1,-1), 8),
+        ('RIGHTPADDING', (0,0), (-1,-1), 8),
+        ('TOPPADDING', (0,0), (-1,-1), 8),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 8),
+    ]))
+    elements.append(parties_table)
+    elements.append(Spacer(1, 10*mm))
+
+    # ─── ITEM TABLE ───
+    cargo_data = [[
+        Paragraph("#", th_style), 
+        Paragraph("ITEM", th_style), 
+        Paragraph(f"GROSS ({unit})", th_style), 
+        Paragraph(f"TARE ({unit})", th_style), 
+        Paragraph(f"NET ({unit})", th_style),
+        Paragraph("PACKAGING", th_style)
+    ]]
+    
+    for idx, item in enumerate(manifest_data, 1):
+        cargo_data.append([
+            Paragraph(str(idx), td_style),
+            Paragraph(item['item'], td_style),
+            Paragraph(f"{item['gross']:,.1f}", td_style),
+            Paragraph(f"{item['tare']:,.1f}", td_style),
+            Paragraph(f"{item['net']:,.1f}", td_style),
+            Paragraph(item['packaging'], td_style)
+        ])
+        
+    # Totals row
+    cargo_data.append([
+        "",
+        Paragraph("<b>TOTALS</b>", ParagraphStyle('tot', parent=td_style, alignment=TA_RIGHT)),
+        Paragraph(f"<b>{total_gross:,.1f}</b>", td_style),
+        Paragraph(f"<b>{total_tare:,.1f}</b>", td_style),
+        Paragraph(f"<b>{total_net:,.1f}</b>", td_style),
+        ""
+    ])
+
+    cargo_table = Table(cargo_data, colWidths=[10*mm, 60*mm, 25*mm, 25*mm, 25*mm, 35*mm])
+    cargo_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), primary_color),
+        ('GRID', (0,0), (-1,-2), 0.5, colors.grey),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('LEFTPADDING', (0,0), (-1,-1), 5),
+        ('TOPPADDING', (0,0), (-1,-1), 5),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 5),
+    ]))
+    elements.append(cargo_table)
+    
+    # Signature
+    elements.append(Spacer(1, 20*mm))
+    sig_line = [
+        Paragraph("_________________________", normal_style),
+        Paragraph("Authorized Signature", label_style)
+    ]
+    sig_table = Table([[sig_line]], colWidths=[70*mm])
+    sig_table.setStyle(TableStyle([('ALIGN', (0,0), (-1,-1), 'LEFT')]))
+    elements.append(sig_table)
+
+    doc.build(elements)
+    
+    pdf = buffer.getvalue()
+    buffer.close()
+    
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{file_name}"'
+    response.write(pdf)
+    return response
 
 
 @login_required

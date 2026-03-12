@@ -395,7 +395,7 @@
                                         {% if forloop.first %}<li><a class="dropdown-item" href="#" onclick="openDocumentModal('packing_list')"><i class="fas fa-external-link-alt me-2 text-muted"></i>View</a></li>{% endif %}
                                         {% endif %}{% endfor %}
                                         {% endif %}
-                                        <li><a class="dropdown-item" href="{% url 'shipments:generate_packing_list' shipment.pk %}" target="_blank"><i class="fas fa-plus me-2 text-primary"></i>Generate</a></li>
+                                        <li><a class="dropdown-item" href="#" data-bs-toggle="offcanvas" data-bs-target="#packingListDrawer"><i class="fas fa-plus me-2 text-primary"></i>Generate</a></li>
                                         <li><a class="dropdown-item" href="#" onclick="triggerUpload('packing_list')"><i class="fas fa-upload me-2 text-muted"></i>Upload</a></li>
                                     </ul>
                                 </div>
@@ -761,6 +761,142 @@
     </div>
 </div>
 
+</div>
+
+<!-- Packing List Drawer (Offcanvas) -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="packingListDrawer" aria-labelledby="packingListDrawerLabel"
+    style="width: 800px; border-left: none; box-shadow: -5px 0 25px rgba(0,0,0,0.1);">
+    <div class="offcanvas-header border-bottom px-4">
+        <h5 class="offcanvas-title fw-bold" id="packingListDrawerLabel">Packing List</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body px-4 py-4">
+        <form method="post" action="{% url 'shipments:generate_packing_list_pdf' shipment.pk %}" id="packingListForm">
+            {% csrf_token %}
+
+            <div class="row g-3 mb-4">
+                <div class="col-md-12">
+                    <label class="form-label small fw-bold text-muted text-uppercase mb-1">File Name <span class="text-danger">*</span></label>
+                    <div class="input-group input-group-sm">
+                        <input type="text" name="file_name" class="form-control" value="{{ shipment.shipment_number }}_PACKING_LIST">
+                        <span class="input-group-text bg-light text-muted">.pdf</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <label class="form-label small fw-bold text-muted text-uppercase mb-1">Delivery Number</label>
+                    <input type="text" name="delivery_number" class="form-control form-control-sm" placeholder="Insert delivery number">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small fw-bold text-muted text-uppercase mb-1">Date (Defaults to today) <span class="text-danger">*</span></label>
+                    <input type="date" name="date" class="form-control form-control-sm" value="{% now 'Y-m-d' %}">
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end mb-2">
+                <div class="d-flex align-items-center gap-2">
+                    <label class="small fw-bold text-muted text-uppercase mb-0">Unit <span class="text-danger">*</span></label>
+                    <select name="unit" id="plWeightUnit" class="form-select form-select-sm" style="width: 80px;" onchange="updatePlUnitLabels()">
+                        <option value="lbs" selected>lbs</option>
+                        <option value="kg">kg</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="table-responsive mb-4">
+                <table class="table table-sm border" id="plItemsTable">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="small fw-bold text-muted px-2" style="width: 40px;">#</th>
+                            <th class="small fw-bold text-muted px-2">Item</th>
+                            <th class="small fw-bold text-muted px-2" style="width: 120px;">Gross Weight</th>
+                            <th class="small fw-bold text-muted px-2" style="width: 120px;">Tare Weight</th>
+                            <th class="small fw-bold text-muted px-2" style="width: 120px;">Net Weight</th>
+                            <th class="small fw-bold text-muted px-2" style="width: 120px;">Packaging</th>
+                            <th class="small fw-bold text-muted px-2" style="width: 40px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="pl-item-row">
+                            <td class="text-center align-middle">1</td>
+                            <td>
+                                <select name="item[]" class="form-select form-select-sm border-0 bg-transparent ps-0">
+                                    <option value="">Select Item</option>
+                                    {% if shipment.order %}
+                                    {% for item in shipment.order.manifest_items.all %}
+                                    <option value="{{ item.material }}" selected>{{ item.material }}</option>
+                                    {% endfor %}
+                                    {% endif %}
+                                </select>
+                            </td>
+                            <td>
+                                <div class="input-group input-group-sm">
+                                    <input type="number" step="0.1" name="gross[]" class="form-control border-0 bg-transparent pl-gross" placeholder="0" oninput="calculatePlNet(this)">
+                                    <span class="input-group-text border-0 bg-transparent small text-muted px-1 pl-unit-label">lbs</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="input-group input-group-sm">
+                                    <input type="number" step="0.1" name="tare[]" class="form-control border-0 bg-transparent pl-tare" placeholder="0" oninput="calculatePlNet(this)">
+                                    <span class="input-group-text border-0 bg-transparent small text-muted px-1 pl-unit-label">lbs</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="input-group input-group-sm">
+                                    <input type="number" step="0.1" name="net[]" class="form-control border-0 bg-light pl-net" placeholder="0" readonly>
+                                    <span class="input-group-text border-0 bg-light small text-muted px-1 pl-unit-label">lbs</span>
+                                </div>
+                            </td>
+                            <td>
+                                <select name="packaging[]" class="form-select form-select-sm border-0 bg-transparent ps-0">
+                                    <option value="Select" selected>Select</option>
+                                    <option value="Rolls">Rolls</option>
+                                    <option value="Pallets">Pallets</option>
+                                    <option value="Boxes">Boxes</option>
+                                    <option value="Drums">Drums</option>
+                                </select>
+                            </td>
+                            <td class="text-center align-middle">
+                                <button type="button" class="btn btn-link text-danger p-0 border-0" onclick="removePlRow(this)"><i class="fas fa-trash-alt"></i></button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <button type="button" class="btn btn-primary w-100 mb-4 fw-bold" onclick="addPlRow()">
+                <i class="fas fa-plus me-2"></i>Add Item
+            </button>
+
+            <div class="bg-light rounded p-3 mb-4">
+                <div class="row g-3">
+                    <div class="col-4 text-center">
+                        <div class="small fw-bold text-muted text-uppercase mb-1">TOTAL GROSS</div>
+                        <div class="h5 mb-0 fw-bold"><span id="plTotalGross">0</span> <span class="pl-unit-label">lbs</span></div>
+                    </div>
+                    <div class="col-4 text-center">
+                        <div class="small fw-bold text-muted text-uppercase mb-1">TOTAL TARE</div>
+                        <div class="h5 mb-0 fw-bold text-muted"><span id="plTotalTare">0</span> <span class="pl-unit-label">lbs</span></div>
+                    </div>
+                    <div class="col-4 text-center">
+                        <div class="small fw-bold text-muted text-uppercase mb-1">TOTAL NET</div>
+                        <div class="h5 mb-0 fw-bold text-primary"><span id="plTotalNet">0</span> <span class="pl-unit-label">lbs</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-text small mb-4">Tip: Hit "Enter" to auto-fill next row</div>
+
+            <div class="d-flex gap-2 justify-content-end mt-4">
+                <button type="button" class="btn btn-light btn-sm px-3 fw-semibold" onclick="previewPackingList()">Preview</button>
+                <button type="submit" class="btn btn-primary btn-sm px-4 fw-bold">Submit</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- Document List Modal -->
 <div class="modal fade" id="documentListModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
@@ -940,6 +1076,72 @@
                 el.style.transform = 'translateX(20px)';
                 setTimeout(() => el.remove(), 300);
             }
+        });
+    }
+
+    function previewPackingList() {
+        const form = document.getElementById('packingListForm');
+        const originalTarget = form.target;
+        form.target = '_blank';
+        form.submit();
+        form.target = originalTarget;
+    }
+
+    function addPlRow() {
+        const tbody = document.querySelector('#plItemsTable tbody');
+        const rowCount = tbody.querySelectorAll('tr').length;
+        const newRow = tbody.querySelector('.pl-item-row').cloneNode(true);
+        
+        // Update row number
+        newRow.querySelector('td:first-child').innerText = rowCount + 1;
+        
+        // Clear inputs
+        newRow.querySelectorAll('input').forEach(input => input.value = '');
+        newRow.querySelector('.pl-net').value = '0';
+        
+        tbody.appendChild(newRow);
+        updatePlUnitLabels();
+    }
+
+    function removePlRow(btn) {
+        const tbody = document.querySelector('#plItemsTable tbody');
+        if (tbody.querySelectorAll('tr').length > 1) {
+            btn.closest('tr').remove();
+            // Re-index
+            tbody.querySelectorAll('tr').forEach((row, idx) => {
+                row.querySelector('td:first-child').innerText = idx + 1;
+            });
+            calculatePlTotals();
+        }
+    }
+
+    function calculatePlNet(input) {
+        const row = input.closest('tr');
+        const gross = parseFloat(row.querySelector('.pl-gross').value) || 0;
+        const tare = parseFloat(row.querySelector('.pl-tare').value) || 0;
+        const net = gross - tare;
+        row.querySelector('.pl-net').value = net.toFixed(1);
+        calculatePlTotals();
+    }
+
+    function calculatePlTotals() {
+        let totalGross = 0;
+        let totalTare = 0;
+        let totalNet = 0;
+
+        document.querySelectorAll('.pl-gross').forEach(input => totalGross += (parseFloat(input.value) || 0));
+        document.querySelectorAll('.pl-tare').forEach(input => totalTare += (parseFloat(input.value) || 0));
+        document.querySelectorAll('.pl-net').forEach(input => totalNet += (parseFloat(input.value) || 0));
+
+        document.getElementById('plTotalGross').innerText = totalGross.toFixed(1);
+        document.getElementById('plTotalTare').innerText = totalTare.toFixed(1);
+        document.getElementById('plTotalNet').innerText = totalNet.toFixed(1);
+    }
+
+    function updatePlUnitLabels() {
+        const unit = document.getElementById('plWeightUnit').value;
+        document.querySelectorAll('.pl-unit-label').forEach(span => {
+            span.innerText = unit;
         });
     }
 
