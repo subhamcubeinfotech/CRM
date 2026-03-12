@@ -353,10 +353,7 @@
                                     <ul class="dropdown-menu shadow border-0" style="border-radius:12px;">
                                         {% if invoices %}
                                         {% for inv in invoices %}
-                                        <li><a class="dropdown-item"
-                                                href="{% url 'invoicing:invoice_detail' inv.pk %}"><i
-                                                    class="fas fa-eye me-2 text-muted"></i>View {{ inv.invoice_number
-                                                }}</a></li>
+                                        <li><a class="dropdown-item" href="{% url 'invoicing:invoice_detail' inv.pk %}"><i class="fas fa-eye me-2 text-muted"></i>View</a></li>
                                         {% endfor %}
                                         {% else %}
                                         <li><a class="dropdown-item"
@@ -380,12 +377,11 @@
                                         <i class="fas fa-ship text-info"></i>Shipping Confirmation
                                     </button>
                                     <ul class="dropdown-menu shadow border-0" style="border-radius:12px;">
-                                        <li><a class="dropdown-item" href="#" data-bs-toggle="offcanvas"
-                                                data-bs-target="#shipConfirmDrawer"><i
-                                                    class="fas fa-file-alt me-2 text-success"></i>Generate</a></li>
-                                        <li><a class="dropdown-item" href="#"
-                                                onclick="triggerUpload('commercial_invoice')"><i
-                                                    class="fas fa-upload me-2 text-muted"></i>Upload</a></li>
+                                        <li><a class="dropdown-item" href="#" data-bs-toggle="offcanvas" data-bs-target="#shipConfirmDrawer"><i class="fas fa-file-alt me-2 text-success"></i>Generate</a></li>
+                                        {% for doc in documents %}{% if doc.document_type == 'commercial_invoice' %}
+                                        <li><a class="dropdown-item" href="{% url 'shipments:document_download' doc.pk %}" target="_blank"><i class="fas fa-eye me-2 text-muted"></i>View</a></li>
+                                        {% endif %}{% endfor %}
+                                        <li><a class="dropdown-item" href="#" onclick="triggerUpload('commercial_invoice')"><i class="fas fa-upload me-2 text-muted"></i>Upload</a></li>
                                     </ul>
                                 </div>
 
@@ -395,11 +391,11 @@
                                         <i class="fas fa-file-alt text-warning"></i>Bill Of Lading
                                     </button>
                                     <ul class="dropdown-menu shadow border-0" style="border-radius:12px;">
-                                        <li><a class="dropdown-item"
-                                                href="{% url 'shipments:generate_bol' shipment.pk %}" target="_blank"><i
-                                                    class="fas fa-file-alt me-2 text-success"></i>Generate</a></li>
-                                        <li><a class="dropdown-item" href="#" onclick="triggerUpload('bol')"><i
-                                                    class="fas fa-upload me-2 text-muted"></i>Upload</a></li>
+                                        <li><a class="dropdown-item" href="{% url 'shipments:generate_bol' shipment.pk %}" target="_blank"><i class="fas fa-file-alt me-2 text-success"></i>Generate</a></li>
+                                        {% for doc in documents %}{% if doc.document_type == 'bol' %}
+                                        <li><a class="dropdown-item" href="{% url 'shipments:document_download' doc.pk %}" target="_blank"><i class="fas fa-eye me-2 text-muted"></i>View</a></li>
+                                        {% endif %}{% endfor %}
+                                        <li><a class="dropdown-item" href="#" onclick="triggerUpload('bol')"><i class="fas fa-upload me-2 text-muted"></i>Upload</a></li>
                                     </ul>
                                 </div>
 
@@ -409,12 +405,11 @@
                                         <i class="fas fa-boxes text-success"></i>Packing List
                                     </button>
                                     <ul class="dropdown-menu shadow border-0" style="border-radius:12px;">
-                                        <li><a class="dropdown-item"
-                                                href="{% url 'shipments:generate_packing_list' shipment.pk %}"
-                                                target="_blank"><i
-                                                    class="fas fa-file-alt me-2 text-success"></i>Generate</a></li>
-                                        <li><a class="dropdown-item" href="#" onclick="triggerUpload('packing_list')"><i
-                                                    class="fas fa-upload me-2 text-muted"></i>Upload</a></li>
+                                        <li><a class="dropdown-item" href="{% url 'shipments:generate_packing_list' shipment.pk %}" target="_blank"><i class="fas fa-file-alt me-2 text-success"></i>Generate</a></li>
+                                        {% for doc in documents %}{% if doc.document_type == 'packing_list' %}
+                                        <li><a class="dropdown-item" href="{% url 'shipments:document_download' doc.pk %}" target="_blank"><i class="fas fa-eye me-2 text-muted"></i>View</a></li>
+                                        {% endif %}{% endfor %}
+                                        <li><a class="dropdown-item" href="#" onclick="triggerUpload('packing_list')"><i class="fas fa-upload me-2 text-muted"></i>Upload</a></li>
                                     </ul>
                                 </div>
 
@@ -463,14 +458,11 @@
                                     <div class="fw-bold">{{ shipment.get_shipment_type_display }}</div>
                                 </div>
                             </div>
-                            {% if shipment.is_hazmat or shipment.is_temperature_controlled or
-                            shipment.requires_insurance %}
+                            {% if shipment.is_hazmat or shipment.is_temperature_controlled or shipment.requires_insurance %}
                             <div class="mt-3 d-flex gap-2">
                                 {% if shipment.is_hazmat %}<span class="badge bg-danger">Hazmat</span>{% endif %}
-                                {% if shipment.is_temperature_controlled %}<span class="badge bg-info">Temp.
-                                    Controlled</span>{% endif %}
-                                {% if shipment.requires_insurance %}<span class="badge bg-warning">Insurance
-                                    Req.</span>{% endif %}
+                                {% if shipment.is_temperature_controlled %}<span class="badge bg-info">Temp. Controlled</span>{% endif %}
+                                {% if shipment.requires_insurance %}<span class="badge bg-warning">Insurance Req.</span>{% endif %}
                             </div>
                             {% endif %}
                         </div>
@@ -568,12 +560,9 @@
                                 <div class="milestone-dot"></div>
                                 <div>
                                     <div class="fw-semibold" style="font-size:0.9rem;">{{ milestone.status }}</div>
-                                    {% if milestone.location %}<div class="text-muted small"><i
-                                            class="fas fa-map-marker-alt me-1"></i>{{ milestone.location }}</div>{%
-                                    endif %}
+                                    {% if milestone.location %}<div class="text-muted small"><i class="fas fa-map-marker-alt me-1"></i>{{ milestone.location }}</div>{% endif %}
                                     <div class="text-muted small">{{ milestone.timestamp|date:"M d, Y H:i" }}</div>
-                                    {% if milestone.notes %}<div class="text-muted small mt-1">{{ milestone.notes }}
-                                    </div>{% endif %}
+                                    {% if milestone.notes %}<div class="text-muted small mt-1">{{ milestone.notes }}</div>{% endif %}
                                 </div>
                             </div>
                             {% empty %}
@@ -681,7 +670,7 @@
                 <select name="user_contact" class="form-select form-select-sm" required>
                     <option value="">Select a contact</option>
                     {% for u in users %}
-                    <option value="{{ u.id }}" {% if u==request.user %}selected{% endif %}>{{
+                    <option value="{{ u.id }}" {% if u == request.user %}selected{% endif %}>{{
                         u.get_full_name|default:u.username }}</option>
                     {% endfor %}
                 </select>
@@ -704,8 +693,7 @@
             </div>
 
             <div class="d-flex gap-2 justify-content-end mt-4">
-                <button type="button" class="btn btn-light btn-sm px-3 fw-semibold"
-                    data-bs-dismiss="offcanvas">Preview</button>
+                <button type="button" class="btn btn-light btn-sm px-3 fw-semibold" onclick="previewShipConfirm()">Preview</button>
                 <button type="submit" class="btn btn-primary btn-sm px-4 fw-bold">Submit</button>
             </div>
         </form>
@@ -783,6 +771,14 @@
         if (input.files.length > 0) {
             document.getElementById('typed-upload-form').submit();
         }
+    }
+
+    function previewShipConfirm() {
+        const form = document.getElementById('shipConfirmForm');
+        const originalTarget = form.target;
+        form.target = '_blank';
+        form.submit();
+        form.target = originalTarget;
     }
 </script>
 {% endblock %}
