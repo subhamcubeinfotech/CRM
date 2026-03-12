@@ -29,12 +29,6 @@
             <table class="table table-sm mb-4">
                 <tr><td class="text-muted">Invoice Number</td><td class="fw-semibold text-primary">{{ next_invoice_number }}</td></tr>
                 <tr><td class="text-muted">Invoice Date</td><td class="fw-semibold">{{ today|date:"F d, Y" }}</td></tr>
-                <tr><td class="text-muted">Shipment</td><td class="fw-semibold">{{ shipment.shipment_number }}</td></tr>
-                {% if shipment.order %}<tr><td class="text-muted">Order</td><td class="fw-semibold">{{ shipment.order.order_number }}</td></tr>{% endif %}
-                <tr><td class="text-muted">Customer</td><td class="fw-semibold">{{ shipment.customer.name }}</td></tr>
-                <tr><td class="text-muted">Revenue (Subtotal)</td><td class="fw-semibold text-success">${{ shipment.revenue|floatformat:2 }}</td></tr>
-                <tr><td class="text-muted">Due Date</td><td class="fw-semibold">Net 30 days</td></tr>
-                <tr><td class="text-muted">Status</td><td><span class="badge bg-secondary">Draft</span></td></tr>
             </table>
 
             <form method="post">
