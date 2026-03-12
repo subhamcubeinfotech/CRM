@@ -42,6 +42,9 @@
                 <div class="col-md-6">
                     <h1 class="invoice-title">INVOICE</h1>
                     <p class="mb-1"><strong>Invoice #:</strong> {{ invoice.invoice_number }}</p>
+                    {% if invoice.file_name %}
+                    <p class="mb-1"><strong>File Name:</strong> {{ invoice.file_name }}</p>
+                    {% endif %}
                     <p class="mb-1"><strong>Date:</strong> {{ invoice.invoice_date|date:"F d, Y" }}</p>
                     <p class="mb-1"><strong>Due Date:</strong> {{ invoice.due_date|date:"F d, Y" }}</p>
                     <p class="mb-0"><strong>Terms:</strong> {{ invoice.terms }}</p>

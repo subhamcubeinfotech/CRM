@@ -135,6 +135,7 @@ def invoice_create(request):
             terms=request.POST.get('terms', 'Net 30 days'),
             payment_instructions=request.POST.get('payment_instructions', ''),
             tax_details=request.POST.get('tax_details', ''),
+            file_name=request.POST.get('file_name', ''),
             created_by=request.user,
             tenant=request.user.tenant,
         )
@@ -203,6 +204,7 @@ def invoice_edit(request, pk):
         invoice.terms = request.POST.get('terms', '')
         invoice.payment_instructions = request.POST.get('payment_instructions', '')
         invoice.tax_details = request.POST.get('tax_details', '')
+        invoice.file_name = request.POST.get('file_name', '')
         invoice.save()
         
         # Update line items

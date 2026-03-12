@@ -55,6 +55,7 @@
                     <thead>
                         <tr>
                             <th>Invoice #</th>
+                            <th>File Name</th>
                             <th>Customer</th>
                             <th>Invoice Date</th>
                             <th>Due Date</th>
@@ -72,6 +73,7 @@
                                     {{ invoice.invoice_number }}
                                 </a>
                             </td>
+                            <td>{{ invoice.file_name|default:"-" }}</td>
                             <td>{{ invoice.customer.name }}</td>
                             <td>{{ invoice.invoice_date|date:"M d, Y" }}</td>
                             <td>
