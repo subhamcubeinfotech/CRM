@@ -229,23 +229,33 @@ def order_create(request):
     logger.info(f'New order creation page accessed by {request.user}')
     
     user_company = request.user.company
+    
+    # Strictly filter suppliers and receivers by type
     suppliers = Company.objects.filter(company_type='vendor')
     receivers = Company.objects.filter(company_type='customer')
     
-    # Ensure current user's company is in both lists if it exists
+    # If the user's company is a carrier or vendor, it can be a supplier.
+    # If it's a customer, it should primarily be a receiver.
     if user_company:
-        suppliers = (suppliers | Company.objects.filter(pk=user_company.pk)).distinct()
-        receivers = (receivers | Company.objects.filter(pk=user_company.pk)).distinct()
+        if user_company.company_type in ['vendor', 'carrier']:
+            suppliers = (suppliers | Company.objects.filter(pk=user_company.pk)).distinct()
+        else:
+            # If it's a customer, only add to receivers
+            receivers = (receivers | Company.objects.filter(pk=user_company.pk)).distinct()
     
     inventory_items = InventoryItem.objects.filter(tenant=request.user.tenant) if request.user.tenant else InventoryItem.objects.all()
     if not inventory_items.exists():
         inventory_items = InventoryItem.plain_objects.all()
 
-    # Show ONLY user's company warehouses
-    if user_company:
-        warehouses = Warehouse.plain_objects.filter(company=user_company).order_by('name')
-    else:
-        warehouses = Warehouse.plain_objects.all().order_by('name')
+    # Show all warehouses in tenant, prioritize user's company
+    from django.db.models import Case, When, IntegerField
+    warehouses = Warehouse.plain_objects.all().annotate(
+        priority=Case(
+            When(company=user_company, then=0),
+            default=1,
+            output_field=IntegerField(),
+        )
+    ).order_by('priority', 'name')
 
     context = {
         'suppliers': suppliers,

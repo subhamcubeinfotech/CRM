@@ -155,6 +155,22 @@ def company_create(request):
             if hasattr(request.user, 'tenant'):
                 company.tenant = request.user.tenant
             company.save()
+            
+            # Create a default warehouse location if address is provided
+            if company.address_line1 or company.city:
+                from apps.inventory.models import Warehouse
+                Warehouse.objects.create(
+                    name=f"Main Office - {company.name}",
+                    code=f"{company.name[:3].upper()}-{company.pk}",
+                    address=company.address_line1,
+                    city=company.city,
+                    state=company.state,
+                    country=company.country,
+                    postal_code=company.postal_code,
+                    company=company,
+                    tenant=company.tenant
+                )
+            
             return redirect('accounts:company_list')
     else:
         # Pre-select company type if passed in URL
