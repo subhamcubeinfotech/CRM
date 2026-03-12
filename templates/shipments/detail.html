@@ -379,7 +379,7 @@
                                         {% if forloop.first %}<li><a class="dropdown-item" href="#" onclick="openDocumentModal('bol')"><i class="fas fa-external-link-alt me-2 text-muted"></i>View</a></li>{% endif %}
                                         {% endif %}{% endfor %}
                                         {% endif %}
-                                        <li><a class="dropdown-item" href="{% url 'shipments:generate_bol' shipment.pk %}" target="_blank"><i class="fas fa-plus me-2 text-primary"></i>Generate</a></li>
+                                        <li><a class="dropdown-item" href="#" data-bs-toggle="offcanvas" data-bs-target="#bolDrawer"><i class="fas fa-plus me-2 text-primary"></i>Generate</a></li>
                                         <li><a class="dropdown-item" href="#" onclick="triggerUpload('bol')"><i class="fas fa-upload me-2 text-muted"></i>Upload</a></li>
                                     </ul>
                                 </div>
@@ -707,6 +707,60 @@
     </div>
 </div>
 
+<!-- Bill of Lading Drawer (Offcanvas) -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="bolDrawer" aria-labelledby="bolDrawerLabel"
+    style="width: 450px; border-left: none; box-shadow: -5px 0 25px rgba(0,0,0,0.1);">
+    <div class="offcanvas-header border-bottom px-4">
+        <h5 class="offcanvas-title fw-bold" id="bolDrawerLabel">Bill of Lading</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body px-4 py-4">
+        <form method="post" action="{% url 'shipments:generate_bol_pdf' shipment.pk %}" id="bolForm">
+            {% csrf_token %}
+
+            <div class="mb-4">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-1">File Name <span class="text-danger">*</span></label>
+                <div class="input-group input-group-sm">
+                    <input type="text" name="file_name" class="form-control" value="{{ shipment.shipment_number }}_BoL">
+                    <span class="input-group-text bg-light text-muted">.pdf</span>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <div class="form-check form-switch d-flex align-items-center gap-2">
+                    <input class="form-check-input" type="checkbox" role="switch" name="blind_shipment" id="blindSwitch">
+                    <label class="form-check-label small fw-bold text-muted text-uppercase mb-0" for="blindSwitch">Blind Shipment?</label>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-1">Carrier Name</label>
+                <input type="text" name="carrier_name" class="form-control form-control-sm" placeholder="Insert carrier name" value="{{ shipment.carrier.name|default:'' }}">
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-1">Trailer Number</label>
+                <input type="text" name="trailer_number" class="form-control form-control-sm" placeholder="Insert trailer number">
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-1">Seal Number</label>
+                <input type="text" name="seal_number" class="form-control form-control-sm" placeholder="Insert seal number">
+            </div>
+
+            <div class="mb-5">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-1">Instructions</label>
+                <textarea name="instructions" class="form-control form-control-sm" rows="4" placeholder="Add special handling or instructions...">{{ shipment.special_instructions|default:'' }}</textarea>
+            </div>
+
+            <div class="d-flex gap-2 justify-content-end mt-4">
+                <button type="button" class="btn btn-light btn-sm px-3 fw-semibold" onclick="previewBol()">Preview</button>
+                <button type="submit" class="btn btn-primary btn-sm px-4 fw-bold">Submit</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- Document List Modal -->
 <div class="modal fade" id="documentListModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
@@ -887,6 +941,14 @@
                 setTimeout(() => el.remove(), 300);
             }
         });
+    }
+
+    function previewBol() {
+        const form = document.getElementById('bolForm');
+        const originalTarget = form.target;
+        form.target = '_blank';
+        form.submit();
+        form.target = originalTarget;
     }
 
     function previewShipConfirm() {

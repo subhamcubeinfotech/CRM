@@ -488,6 +488,196 @@ def generate_bol(request, pk):
 
 
 @login_required
+def generate_bol_pdf(request, pk):
+    """Generate professional Bill of Lading PDF using ReportLab with custom form data"""
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib import colors
+    from reportlab.lib.units import mm
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, HRFlowable
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.enums import TA_RIGHT, TA_CENTER, TA_LEFT
+    from io import BytesIO
+
+    shipment = get_object_or_404(Shipment.objects.select_related(
+        'carrier', 'customer', 'shipper', 'consignee'
+    ), pk=pk)
+    
+    # Get form data
+    file_name = request.POST.get('file_name', f"{shipment.shipment_number}_BoL.pdf")
+    if not file_name.endswith('.pdf'):
+        file_name += '.pdf'
+    
+    is_blind = request.POST.get('blind_shipment') == 'on'
+    carrier_name = request.POST.get('carrier_name', shipment.carrier.name if shipment.carrier else '')
+    trailer_number = request.POST.get('trailer_number', '')
+    seal_number = request.POST.get('seal_number', '')
+    custom_instructions = request.POST.get('instructions', shipment.special_instructions or '')
+    
+    bol_number = f"BOL-{datetime.now().year}-{shipment.id:05d}"
+    
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        rightMargin=15*mm, leftMargin=15*mm,
+        topMargin=15*mm, bottomMargin=15*mm,
+    )
+
+    styles = getSampleStyleSheet()
+    primary_color = colors.HexColor('#2a4d8f')
+    dark_gray = colors.HexColor('#1e293b')
+    light_gray = colors.HexColor('#f8fafc')
+    
+    # Custom Styles
+    title_style = ParagraphStyle('Title', parent=styles['Heading1'], fontSize=20, textColor=dark_gray, fontName='Helvetica-Bold', alignment=TA_CENTER, leading=24)
+    label_style = ParagraphStyle('Label', parent=styles['Normal'], fontSize=8, textColor=colors.HexColor('#64748b'), fontName='Helvetica-Bold', leading=10, textTransform='uppercase')
+    normal_style = ParagraphStyle('Normal2', parent=styles['Normal'], fontSize=10, textColor=dark_gray, fontName='Helvetica', leading=13)
+    bold_style = ParagraphStyle('Bold', parent=styles['Normal'], fontSize=10, textColor=dark_gray, fontName='Helvetica-Bold', leading=13)
+    th_style = ParagraphStyle('TH', parent=styles['Normal'], fontSize=9, textColor=colors.white, fontName='Helvetica-Bold', alignment=TA_LEFT)
+    td_style = ParagraphStyle('TD', parent=styles['Normal'], fontSize=9, textColor=dark_gray, fontName='Helvetica')
+    
+    elements = []
+
+    # ─── HEADER ───
+    shipment_info = [
+        Paragraph("<b>BILL OF LADING</b>", title_style),
+        Spacer(1, 4*mm),
+        Paragraph(f"<b>BOL #:</b> {bol_number}", normal_style),
+        Paragraph(f"<b>Date:</b> {datetime.now().strftime('%B %d, %Y')}", normal_style),
+        Paragraph(f"<b>Shipment #:</b> {shipment.shipment_number}", normal_style),
+    ]
+
+    company_lines = [
+        Paragraph("FreightPro", ParagraphStyle('CompName', parent=bold_style, fontSize=18, textColor=primary_color)),
+        Paragraph("Logistics & Freight Services", normal_style),
+        Paragraph("123 Logistics Way, Chicago, IL 60601", normal_style),
+        Paragraph("Phone: (555) 123-4567", normal_style),
+    ]
+
+    header_table = Table([[company_lines, shipment_info]], colWidths=[100*mm, 80*mm])
+    header_table.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'TOP')]))
+    elements.append(header_table)
+    elements.append(Spacer(1, 8*mm))
+    elements.append(HRFlowable(width="100%", thickness=1, color=colors.grey, spaceBefore=0, spaceAfter=8*mm))
+
+    # ─── PARTIES ───
+    shipper_box = [Paragraph("SHIPPER", label_style), Spacer(1, 1*mm)]
+    if is_blind:
+        shipper_box.append(Paragraph("CONFIDENTIAL", bold_style))
+        shipper_box.append(Paragraph("Shipper information withheld", normal_style))
+    else:
+        s = shipment.shipper or shipment.customer
+        if s:
+            shipper_box.append(Paragraph(s.name, bold_style))
+            shipper_box.append(Paragraph(shipment.origin_address or "", normal_style))
+            shipper_box.append(Paragraph(f"{shipment.origin_city}, {shipment.origin_state} {shipment.origin_postal_code}", normal_style))
+            shipper_box.append(Paragraph(shipment.origin_country or "", normal_style))
+
+    consignee_box = [Paragraph("CONSIGNEE / NOTIFY PARTY", label_style), Spacer(1, 1*mm)]
+    c = shipment.consignee
+    if c:
+        consignee_box.append(Paragraph(c.name, bold_style))
+        consignee_box.append(Paragraph(shipment.destination_address or "", normal_style))
+        consignee_box.append(Paragraph(f"{shipment.destination_city}, {shipment.destination_state} {shipment.destination_postal_code}", normal_style))
+        consignee_box.append(Paragraph(shipment.destination_country or "", normal_style))
+    else:
+        consignee_box.append(Paragraph("TO BE NOTIFIED", bold_style))
+
+    carrier_box = [Paragraph("CARRIER", label_style), Spacer(1, 1*mm)]
+    carrier_final = carrier_name or (shipment.carrier.name if shipment.carrier else "TO BE ASSIGNED")
+    carrier_box.append(Paragraph(carrier_final, bold_style))
+    if trailer_number: carrier_box.append(Paragraph(f"Trailer #: {trailer_number}", normal_style))
+    if seal_number: carrier_box.append(Paragraph(f"Seal #: {seal_number}", normal_style))
+
+    parties_table = Table([[shipper_box, consignee_box, carrier_box]], colWidths=[60*mm, 60*mm, 60*mm])
+    parties_table.setStyle(TableStyle([
+        ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('LEFTPADDING', (0,0), (-1,-1), 5),
+        ('RIGHTPADDING', (0,0), (-1,-1), 5),
+        ('TOPPADDING', (0,0), (-1,-1), 5),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 5),
+    ]))
+    elements.append(parties_table)
+    elements.append(Spacer(1, 6*mm))
+
+    # ─── CARGO DETAILS ───
+    elements.append(Paragraph("CARGO DETAILS", label_style))
+    elements.append(Spacer(1, 2*mm))
+    
+    cargo_data = [[Paragraph("CONTAINER #", th_style), Paragraph("SIZE", th_style), Paragraph("PIECES", th_style), Paragraph("WEIGHT (KG)", th_style), Paragraph("DESCRIPTION", th_style)]]
+    
+    containers = shipment.containers.all()
+    if containers:
+        for cont in containers:
+            cargo_data.append([
+                Paragraph(cont.container_number, td_style),
+                Paragraph(cont.get_size_display(), td_style),
+                Paragraph(str(shipment.number_of_pieces or "-"), td_style),
+                Paragraph(f"{cont.weight:,.0f}" if cont.weight else "-", td_style),
+                Paragraph(shipment.commodity_description or "Freight", td_style)
+            ])
+    else:
+        cargo_data.append([
+            Paragraph("N/A", td_style),
+            Paragraph("N/A", td_style),
+            Paragraph(str(shipment.number_of_pieces or "-"), td_style),
+            Paragraph(f"{shipment.total_weight:,.0f}" if shipment.total_weight else "-", td_style),
+            Paragraph(shipment.commodity_description or "Freight", td_style)
+        ])
+
+    cargo_table = Table(cargo_data, colWidths=[35*mm, 25*mm, 20*mm, 30*mm, 70*mm])
+    cargo_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), primary_color),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('LEFTPADDING', (0,0), (-1,-1), 5),
+        ('TOPPADDING', (0,0), (-1,-1), 5),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 5),
+    ]))
+    elements.append(cargo_table)
+    elements.append(Spacer(1, 10*mm))
+
+    # ─── INSTRUCTIONS ───
+    if custom_instructions:
+        elements.append(Paragraph("SPECIAL INSTRUCTIONS", label_style))
+        elements.append(Spacer(1, 2*mm))
+        elements.append(Paragraph(custom_instructions, normal_style))
+        elements.append(Spacer(1, 8*mm))
+
+    # ─── SIGNATURES ───
+    sig_data = [
+        [Paragraph("SHIPPER SIGNATURE", label_style), Paragraph("CARRIER SIGNATURE", label_style), Paragraph("CONSIGNEE SIGNATURE", label_style)],
+        [Spacer(1, 15*mm), Spacer(1, 15*mm), Spacer(1, 15*mm)],
+        [Paragraph("Date: _______________", normal_style), Paragraph("Date: _______________", normal_style), Paragraph("Date: _______________", normal_style)]
+    ]
+    sig_table = Table(sig_data, colWidths=[60*mm, 60*mm, 60*mm])
+    sig_table.setStyle(TableStyle([
+        ('GRID', (0,0), (-1,0), 0.5, colors.grey),
+        ('GRID', (0,1), (-1,1), 0.5, colors.grey),
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('LEFTPADDING', (0,0), (-1,-1), 5),
+    ]))
+    elements.append(sig_table)
+    
+    # ─── TERMS ───
+    elements.append(Spacer(1, 10*mm))
+    elements.append(Paragraph("TERMS AND CONDITIONS", label_style))
+    terms = """This Bill of Lading is issued subject to the terms and conditions of the carrier's tariff and applicable laws. The shipper certifies that the particulars furnished are correct and agrees to indemnify the carrier against all loss, damage, and expense arising from any inaccuracy. The carrier shall not be liable for any loss or damage unless a written claim is filed within 9 months from the date of delivery."""
+    elements.append(Paragraph(terms, ParagraphStyle('Terms', parent=styles['Normal'], fontSize=7, leading=9, textColor=colors.grey)))
+
+    doc.build(elements)
+    
+    pdf = buffer.getvalue()
+    buffer.close()
+    
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{file_name}"'
+    response.write(pdf)
+    return response
+
+
+@login_required
 def generate_shipping_confirmation(request, pk):
     """Generate Shipping Confirmation document (HTML version)"""
     shipment = get_object_or_404(Shipment.objects.select_related(
@@ -605,7 +795,7 @@ def generate_shipping_confirmation_pdf(request, pk):
     r = shipment.consignee or (shipment.order.receiver if shipment.order else None)
     if r:
         receiver_box.append(Paragraph(r.name, bold_style))
-        receiver_box.append(Paragraph(r.address_line1 or "", normal_style))
+        receiver_box.append(Paragraph(shipment.destination_address or "", normal_style))
         receiver_box.append(Paragraph(f"{r.city}, {r.state} {r.postal_code}, {r.country}", normal_style))
         if r.phone: receiver_box.append(Paragraph(f"Phone: {r.phone}", normal_style))
 
