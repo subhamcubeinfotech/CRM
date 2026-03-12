@@ -224,6 +224,8 @@ def shipment_detail(request, pk):
         'invoices': invoices,
         'users': CustomUser.objects.filter(tenant=request.user.tenant, is_active=True).order_by('first_name'),
         'map_data': json.dumps(map_data),
+        'next_invoice_number': Invoice.generate_invoice_number() if hasattr(Invoice, 'generate_invoice_number') else "Generating...",
+        'today': timezone.now().date(),
     }
     return render(request, 'shipments/detail.html', context)
 

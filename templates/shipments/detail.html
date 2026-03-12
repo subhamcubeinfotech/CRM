@@ -368,7 +368,7 @@
                                         {% if invoices %}
                                         <li><a class="dropdown-item" href="#" onclick="openDocumentModal('invoice')"><i class="fas fa-external-link-alt me-2 text-muted"></i>View</a></li>
                                         {% else %}
-                                        <li><a class="dropdown-item" href="{% url 'shipments:create_invoice' shipment.pk %}"><i class="fas fa-plus me-2 text-primary"></i>Generate</a></li>
+                                        <li><a class="dropdown-item" href="#" data-bs-toggle="offcanvas" data-bs-target="#invoiceDrawer"><i class="fas fa-plus me-2 text-primary"></i>Generate</a></li>
                                         {% endif %}
                                         <li>
                                             <hr class="dropdown-divider">
@@ -629,6 +629,89 @@
             </div>
             {% endif %}
         </div>
+    </div>
+</div>
+
+<!-- Invoice Drawer (Offcanvas) -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="invoiceDrawer" aria-labelledby="invoiceDrawerLabel"
+    style="width: 500px; border-left: none; box-shadow: -5px 0 25px rgba(0,0,0,0.1);">
+    <div class="offcanvas-header border-bottom px-4">
+        <h5 class="offcanvas-title fw-bold" id="invoiceDrawerLabel">Create Invoice</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body px-4 py-4">
+        <p class="text-muted small mb-4">An invoice will be auto-generated from the shipment and linked order data.</p>
+        
+        <div class="bg-light rounded p-3 mb-4">
+            <div class="row g-2">
+                <div class="col-6">
+                    <div class="small text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">Invoice Number</div>
+                    <div class="fw-bold text-primary">{{ next_invoice_number }}</div>
+                </div>
+                <div class="col-6">
+                    <div class="small text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">Invoice Date</div>
+                    <div class="fw-bold">{{ today|date:"F d, Y" }}</div>
+                </div>
+            </div>
+        </div>
+
+        <form method="post" action="{% url 'shipments:create_invoice' shipment.pk %}">
+            {% csrf_token %}
+            
+            <div class="mb-4">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-1">File Name</label>
+                <div class="input-group input-group-sm">
+                    <input type="text" name="file_name" class="form-control" value="invoice_{{ next_invoice_number }}">
+                    <span class="input-group-text bg-light text-muted">.pdf</span>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-1">Payment Terms</label>
+                <input type="text" name="terms" class="form-control form-control-sm" value="Net 30 days">
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-1">Payment Instructions</label>
+                <textarea name="payment_instructions" class="form-control form-control-sm" rows="3" placeholder="Payment instructions..."></textarea>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-1">Notes</label>
+                <textarea name="notes" class="form-control form-control-sm" rows="3" placeholder="Additional notes..."></textarea>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-1">Tax Details</label>
+                <input type="text" name="tax_details" class="form-control form-control-sm" placeholder="Tax information...">
+            </div>
+
+            <hr class="my-4">
+
+            <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" id="toggleInvoiceDescriptions" name="include_descriptions">
+                <label class="form-check-label small fw-bold text-muted text-uppercase" for="toggleInvoiceDescriptions">Include Material Descriptions</label>
+            </div>
+
+            <div id="invoiceMaterialDescriptions" style="display: none;" class="mb-4">
+                <h6 class="small fw-bold text-muted text-uppercase mb-3">Material Descriptions</h6>
+                {% if shipment.order %}
+                    {% for item in shipment.order.manifest_items.all %}
+                    <div class="mb-3 border-start ps-3 py-1">
+                        <label class="form-label small text-muted mb-1">{{ item.material }}</label>
+                        <input type="text" name="desc_{{ item.id }}" class="form-control form-control-sm" placeholder="Insert Material Description">
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted small">No manifest items found.</p>
+                {% endif %}
+            </div>
+
+            <div class="d-flex gap-2 justify-content-end mt-4">
+                <button type="button" class="btn btn-light btn-sm px-3 fw-semibold" data-bs-dismiss="offcanvas">Cancel</button>
+                <button type="submit" class="btn btn-primary btn-sm px-4 fw-bold">Create Invoice</button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -1101,6 +1184,15 @@
                 el.style.transform = 'translateX(20px)';
                 setTimeout(() => el.remove(), 300);
             }
+        });
+    }
+
+    // Toggle Invoice Material Descriptions
+    const toggleInvoiceDesc = document.getElementById('toggleInvoiceDescriptions');
+    if (toggleInvoiceDesc) {
+        toggleInvoiceDesc.addEventListener('change', function() {
+            const section = document.getElementById('invoiceMaterialDescriptions');
+            section.style.display = this.checked ? 'block' : 'none';
         });
     }
 
