@@ -521,7 +521,14 @@ def create_invoice(request, pk):
         return redirect('invoicing:invoice_detail', pk=existing.pk)
 
     if request.method == 'POST':
-        subtotal = shipment.revenue
+        # Calculate subtotal from manifest items if linked to an order
+        subtotal = Decimal('0.00')
+        if shipment.order:
+            for item in shipment.order.manifest_items.all():
+                subtotal += (item.weight * item.sell_price)
+        else:
+            subtotal = shipment.revenue
+            
         due_date = date.today() + timedelta(days=30)
 
         # Use transaction to ensure atomicity
@@ -548,25 +555,25 @@ def create_invoice(request, pk):
                     tenant=request.user.tenant,
                 )
                 print(f"DEBUG: Created invoice: {invoice.invoice_number}")  # Debug line
+                
+                # Add manifest items as invoice line items if available
+                if shipment.order:
+                    for item in shipment.order.manifest_items.all():
+                        try:
+                            InvoiceLineItem.objects.create(
+                                invoice=invoice,
+                                description=item.material,
+                                quantity=item.weight,
+                                unit_price=item.sell_price,
+                                total=item.weight * item.sell_price,
+                            )
+                        except Exception as e:
+                            print(f"DEBUG: Error creating line item: {e}")
+                            pass
         except Exception as e:
             print(f"DEBUG: Exception occurred: {e}")  # Debug line
             messages.error(request, f'Error creating invoice: {str(e)}')
             return redirect('shipments:create_invoice', pk=pk)
-
-        # Add manifest items as invoice line items if available
-        # TODO: Fix InvoiceItem creation - temporarily disabled
-        # if shipment.order:
-        #     for item in shipment.order.manifest_items.all():
-        #         try:
-        #             InvoiceItem.objects.create(
-        #                 invoice=invoice,
-        #                 description=item.material,
-        #                 quantity=item.weight,
-        #                 unit_price=item.sell_price,
-        #                 total=item.weight * item.sell_price,
-        #             )
-        #         except Exception:
-        #             pass  # InvoiceItem may have different fields
 
         messages.success(request, f'Invoice {invoice.invoice_number} created successfully!')
         return redirect('invoicing:invoice_list')
