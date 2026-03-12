@@ -4,30 +4,170 @@
 
 {% block extra_css %}
 <style>
-    .shipment-header-card { background: #fff; border-radius: 16px; box-shadow: 0 2px 16px rgba(0,0,0,0.08); padding: 1.5rem 2rem; margin-bottom: 0; }
-    .status-pill { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.35rem 1rem; border-radius: 999px; font-weight: 600; font-size: 0.85rem; cursor: pointer; user-select: none; }
-    .status-pill.draft { background: #f1f3f5; color: #495057; }
-    .status-pill.booked { background: #e8f4fd; color: #1971c2; }
-    .status-pill.picked_up { background: #fff3bf; color: #e67700; }
-    .status-pill.in_transit { background: #d3f9d8; color: #2f9e44; }
-    .status-pill.customs { background: #ffe8cc; color: #d9480f; }
-    .status-pill.out_for_delivery { background: #e5dbff; color: #6741d9; }
-    .status-pill.delivered { background: #d3f9d8; color: #2f9e44; }
-    .status-pill.cancelled { background: #ffe3e3; color: #c92a2a; }
-    .party-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: #adb5bd; font-weight: 600; }
-    .party-name { font-size: 1rem; font-weight: 700; color: #1c7ed6; }
-    .party-detail { font-size: 0.8rem; color: #495057; }
-    .nav-tabs-shipment .nav-link { color: #868e96; font-weight: 500; border: none; padding: 0.75rem 1.25rem; }
-    .nav-tabs-shipment .nav-link.active { color: #1c7ed6; border-bottom: 2px solid #1c7ed6; background: none; }
-    .gen-doc-btn { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; padding: 1rem; border-radius: 12px; border: 1.5px solid #e9ecef; background: #f8f9fa; font-size: 0.78rem; font-weight: 600; color: #495057; cursor: pointer; min-width: 80px; transition: all 0.2s; text-decoration: none; }
-    .gen-doc-btn:hover { border-color: #1c7ed6; color: #1c7ed6; background: #e8f4fd; }
-    .gen-doc-btn i { font-size: 1.6rem; }
-    .progress-track { height: 6px; background: #e9ecef; border-radius: 999px; }
-    .progress-fill { height: 6px; background: linear-gradient(90deg, #1c7ed6, #40c057); border-radius: 999px; transition: width 0.4s; }
-    .milestone-item { display: flex; gap: 1rem; padding: 0.75rem 0; border-bottom: 1px solid #f1f3f5; }
-    .milestone-dot { width: 10px; height: 10px; border-radius: 50%; background: #1c7ed6; margin-top: 5px; flex-shrink: 0; }
-    .chat-bubble { background: #f1f3f5; border-radius: 12px; padding: 0.75rem 1rem; margin-bottom: 0.75rem; font-size: 0.85rem; }
-    .actions-btn { background: #1c7ed6; color: #fff; border-radius: 10px; font-weight: 600; padding: 0.5rem 1.25rem; }
+    .shipment-header-card {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
+        padding: 1.5rem 2rem;
+        margin-bottom: 0;
+    }
+
+    .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.35rem 1rem;
+        border-radius: 999px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .status-pill.draft {
+        background: #f1f3f5;
+        color: #495057;
+    }
+
+    .status-pill.booked {
+        background: #e8f4fd;
+        color: #1971c2;
+    }
+
+    .status-pill.picked_up {
+        background: #fff3bf;
+        color: #e67700;
+    }
+
+    .status-pill.in_transit {
+        background: #d3f9d8;
+        color: #2f9e44;
+    }
+
+    .status-pill.customs {
+        background: #ffe8cc;
+        color: #d9480f;
+    }
+
+    .status-pill.out_for_delivery {
+        background: #e5dbff;
+        color: #6741d9;
+    }
+
+    .status-pill.delivered {
+        background: #d3f9d8;
+        color: #2f9e44;
+    }
+
+    .status-pill.cancelled {
+        background: #ffe3e3;
+        color: #c92a2a;
+    }
+
+    .party-label {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #adb5bd;
+        font-weight: 600;
+    }
+
+    .party-name {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #1c7ed6;
+    }
+
+    .party-detail {
+        font-size: 0.8rem;
+        color: #495057;
+    }
+
+    .nav-tabs-shipment .nav-link {
+        color: #868e96;
+        font-weight: 500;
+        border: none;
+        padding: 0.75rem 1.25rem;
+    }
+
+    .nav-tabs-shipment .nav-link.active {
+        color: #1c7ed6;
+        border-bottom: 2px solid #1c7ed6;
+        background: none;
+    }
+
+    .gen-doc-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 1rem;
+        border-radius: 12px;
+        border: 1.5px solid #e9ecef;
+        background: #f8f9fa;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #495057;
+        cursor: pointer;
+        min-width: 80px;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+
+    .gen-doc-btn:hover {
+        border-color: #1c7ed6;
+        color: #1c7ed6;
+        background: #e8f4fd;
+    }
+
+    .gen-doc-btn i {
+        font-size: 1.6rem;
+    }
+
+    .progress-track {
+        height: 6px;
+        background: #e9ecef;
+        border-radius: 999px;
+    }
+
+    .progress-fill {
+        height: 6px;
+        background: linear-gradient(90deg, #1c7ed6, #40c057);
+        border-radius: 999px;
+        transition: width 0.4s;
+    }
+
+    .milestone-item {
+        display: flex;
+        gap: 1rem;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #f1f3f5;
+    }
+
+    .milestone-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #1c7ed6;
+        margin-top: 5px;
+        flex-shrink: 0;
+    }
+
+    .chat-bubble {
+        background: #f1f3f5;
+        border-radius: 12px;
+        padding: 0.75rem 1rem;
+        margin-bottom: 0.75rem;
+        font-size: 0.85rem;
+    }
+
+    .actions-btn {
+        background: #1c7ed6;
+        color: #fff;
+        border-radius: 10px;
+        font-weight: 600;
+        padding: 0.5rem 1.25rem;
+    }
 </style>
 {% endblock %}
 
@@ -42,29 +182,36 @@
             <div>
                 <h2 class="fw-bold mb-0">{{ shipment.shipment_number }}
                     {% if shipment.customer %}
-                    <span class="badge bg-light text-secondary ms-2" style="font-size:0.75rem;">{{ shipment.customer.name|slice:":2"|upper }}</span>
+                    <span class="badge bg-light text-secondary ms-2" style="font-size:0.75rem;">{{
+                        shipment.customer.name|slice:":2"|upper }}</span>
                     {% endif %}
                 </h2>
                 {% if shipment.order %}
                 <div class="text-muted small mt-1">
-                    Order: <a href="{% url 'orders:order_detail' shipment.order.pk %}" class="text-primary fw-semibold">{{ shipment.order.order_number }}</a>
-                    <a href="{% url 'orders:order_detail' shipment.order.pk %}" class="ms-1 text-muted"><i class="fas fa-external-link-alt fa-xs"></i></a>
+                    Order: <a href="{% url 'orders:order_detail' shipment.order.pk %}"
+                        class="text-primary fw-semibold">{{ shipment.order.order_number }}</a>
+                    <a href="{% url 'orders:order_detail' shipment.order.pk %}" class="ms-1 text-muted"><i
+                            class="fas fa-external-link-alt fa-xs"></i></a>
                 </div>
                 {% endif %}
             </div>
             <div class="d-flex align-items-center gap-2">
                 <!-- Status Dropdown -->
                 <div class="dropdown">
-                    <div class="status-pill {{ shipment.status }} dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    <div class="status-pill {{ shipment.status }} dropdown-toggle" data-bs-toggle="dropdown"
+                        aria-expanded="false">
                         {{ shipment.get_status_display }} <i class="fas fa-chevron-down fa-xs"></i>
                     </div>
-                    <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="border-radius:12px; min-width: 180px;">
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0"
+                        style="border-radius:12px; min-width: 180px;">
                         {% for code, label in shipment.STATUS_CHOICES %}
                         <li>
                             <form method="post" action="{% url 'shipments:update_status' shipment.pk %}">
                                 {% csrf_token %}
                                 <input type="hidden" name="status" value="{{ code }}">
-                                <button type="submit" class="dropdown-item {% if shipment.status == code %}fw-bold text-primary{% endif %}" style="padding: 0.5rem 1.25rem;">
+                                <button type="submit"
+                                    class="dropdown-item {% if shipment.status == code %}fw-bold text-primary{% endif %}"
+                                    style="padding: 0.5rem 1.25rem;">
                                     {{ label }}
                                 </button>
                             </form>
@@ -78,13 +225,19 @@
                         <i class="fas fa-chevron-down me-1"></i> Actions
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="border-radius:12px;">
-                        <li><a class="dropdown-item" href="{% url 'shipments:shipment_edit' shipment.pk %}"><i class="fas fa-edit me-2 text-muted"></i>Edit Shipment</a></li>
-                        <li><a class="dropdown-item" href="{% url 'shipments:generate_bol' shipment.pk %}" target="_blank"><i class="fas fa-file-alt me-2 text-muted"></i>View BOL</a></li>
-                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{% url 'shipments:shipment_edit' shipment.pk %}"><i
+                                    class="fas fa-edit me-2 text-muted"></i>Edit Shipment</a></li>
+                        <li><a class="dropdown-item" href="{% url 'shipments:generate_bol' shipment.pk %}"
+                                target="_blank"><i class="fas fa-file-alt me-2 text-muted"></i>View BOL</a></li>
                         <li>
-                            <form method="post" action="{% url 'shipments:shipment_delete' shipment.pk %}" onsubmit="return confirm('Delete this shipment?')">
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li>
+                            <form method="post" action="{% url 'shipments:shipment_delete' shipment.pk %}"
+                                onsubmit="return confirm('Delete this shipment?')">
                                 {% csrf_token %}
-                                <button type="submit" class="dropdown-item text-danger"><i class="fas fa-trash me-2"></i>Delete</button>
+                                <button type="submit" class="dropdown-item text-danger"><i
+                                        class="fas fa-trash me-2"></i>Delete</button>
                             </form>
                         </li>
                     </ul>
@@ -104,19 +257,24 @@
                 <div class="party-label mb-1">Supplier</div>
                 <div class="party-name">{{ shipment.shipper.name|default:shipment.customer.name }}</div>
                 {% if shipment.shipper %}
-                <div class="party-detail"><i class="fas fa-map-marker-alt text-primary me-1"></i>{{ shipment.shipper.full_address }}</div>
+                <div class="party-detail"><i class="fas fa-map-marker-alt text-primary me-1"></i>{{
+                    shipment.shipper.full_address }}</div>
                 {% endif %}
                 <div class="party-detail mt-1"><i class="fas fa-handshake me-1 text-muted"></i>FOB Origin</div>
-                {% if shipment.pickup_date %}<div class="party-detail"><i class="fas fa-calendar me-1 text-muted"></i>{{ shipment.pickup_date|date:"l, M j" }}</div>{% endif %}
+                {% if shipment.pickup_date %}<div class="party-detail"><i class="fas fa-calendar me-1 text-muted"></i>{{
+                    shipment.pickup_date|date:"l, M j" }}</div>{% endif %}
             </div>
             <div class="col-md-5">
                 <div class="party-label mb-1">Receiver</div>
                 <div class="party-name">{{ shipment.consignee.name|default:shipment.customer.name }}</div>
                 {% if shipment.consignee %}
-                <div class="party-detail"><i class="fas fa-map-marker-alt text-primary me-1"></i>{{ shipment.consignee.full_address }}</div>
+                <div class="party-detail"><i class="fas fa-map-marker-alt text-primary me-1"></i>{{
+                    shipment.consignee.full_address }}</div>
                 {% endif %}
                 <div class="party-detail mt-1"><i class="fas fa-handshake me-1 text-muted"></i>FOB Destination</div>
-                {% if shipment.estimated_delivery_date %}<div class="party-detail"><i class="fas fa-calendar me-1 text-muted"></i>{{ shipment.estimated_delivery_date|date:"l, M j" }}</div>{% endif %}
+                {% if shipment.estimated_delivery_date %}<div class="party-detail"><i
+                        class="fas fa-calendar me-1 text-muted"></i>{{ shipment.estimated_delivery_date|date:"l, M j" }}
+                </div>{% endif %}
             </div>
         </div>
 
@@ -142,7 +300,8 @@
                             <h5 class="fw-bold mb-3">Manifest</h5>
                             <div class="table-responsive">
                                 <table class="table align-middle mb-0" style="font-size:0.875rem;">
-                                    <thead class="text-muted" style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em;">
+                                    <thead class="text-muted"
+                                        style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em;">
                                         <tr>
                                             <th>Material</th>
                                             <th>Buy Price</th>
@@ -154,20 +313,25 @@
                                     </thead>
                                     <tbody>
                                         {% if shipment.order %}
-                                            {% for item in shipment.order.manifest_items.all %}
-                                            <tr>
-                                                <td class="fw-semibold text-primary">{{ item.material }}</td>
-                                                <td>${{ item.buy_price|floatformat:3 }} / {{ item.buy_price_unit }}</td>
-                                                <td>${{ item.sell_price|floatformat:2 }} / {{ item.sell_price_unit }}</td>
-                                                <td>{{ item.weight|floatformat:0 }} {{ item.weight_unit }}</td>
-                                                <td>-</td>
-                                                <td>{{ item.packaging|default:"-" }}</td>
-                                            </tr>
-                                            {% empty %}
-                                            <tr><td colspan="6" class="text-muted text-center py-3">No manifest items</td></tr>
-                                            {% endfor %}
+                                        {% for item in shipment.order.manifest_items.all %}
+                                        <tr>
+                                            <td class="fw-semibold text-primary">{{ item.material }}</td>
+                                            <td>${{ item.buy_price|floatformat:3 }} / {{ item.buy_price_unit }}</td>
+                                            <td>${{ item.sell_price|floatformat:2 }} / {{ item.sell_price_unit }}</td>
+                                            <td>{{ item.weight|floatformat:0 }} {{ item.weight_unit }}</td>
+                                            <td>-</td>
+                                            <td>{{ item.packaging|default:"-" }}</td>
+                                        </tr>
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="6" class="text-muted text-center py-3">No manifest items</td>
+                                        </tr>
+                                        {% endfor %}
                                         {% else %}
-                                        <tr><td colspan="6" class="text-muted text-center py-3">{{ shipment.commodity_description|default:"No manifest items" }}</td></tr>
+                                        <tr>
+                                            <td colspan="6" class="text-muted text-center py-3">{{
+                                                shipment.commodity_description|default:"No manifest items" }}</td>
+                                        </tr>
                                         {% endif %}
                                     </tbody>
                                 </table>
@@ -189,12 +353,19 @@
                                     <ul class="dropdown-menu shadow border-0" style="border-radius:12px;">
                                         {% if invoices %}
                                         {% for inv in invoices %}
-                                        <li><a class="dropdown-item" href="{% url 'invoicing:invoice_detail' inv.pk %}"><i class="fas fa-eye me-2 text-muted"></i>View {{ inv.invoice_number }}</a></li>
+                                        <li><a class="dropdown-item"
+                                                href="{% url 'invoicing:invoice_detail' inv.pk %}"><i
+                                                    class="fas fa-eye me-2 text-muted"></i>View {{ inv.invoice_number
+                                                }}</a></li>
                                         {% endfor %}
                                         {% else %}
-                                        <li><a class="dropdown-item" href="{% url 'shipments:create_invoice' shipment.pk %}"><i class="fas fa-plus me-2 text-success"></i>Create Invoice</a></li>
+                                        <li><a class="dropdown-item"
+                                                href="{% url 'shipments:create_invoice' shipment.pk %}"><i
+                                                    class="fas fa-plus me-2 text-success"></i>Create Invoice</a></li>
                                         {% endif %}
-                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <hr class="dropdown-divider">
+                                        </li>
                                         <li>
                                             <a class="dropdown-item" href="#" onclick="triggerUpload('invoice')">
                                                 <i class="fas fa-upload me-2 text-muted"></i>Upload Invoice
@@ -209,8 +380,12 @@
                                         <i class="fas fa-ship text-info"></i>Shipping Confirmation
                                     </button>
                                     <ul class="dropdown-menu shadow border-0" style="border-radius:12px;">
-                                        <li><a class="dropdown-item" href="{% url 'shipments:generate_shipping_confirmation' shipment.pk %}" target="_blank"><i class="fas fa-file-alt me-2 text-success"></i>Generate</a></li>
-                                        <li><a class="dropdown-item" href="#" onclick="triggerUpload('commercial_invoice')"><i class="fas fa-upload me-2 text-muted"></i>Upload</a></li>
+                                        <li><a class="dropdown-item" href="#" data-bs-toggle="offcanvas"
+                                                data-bs-target="#shipConfirmDrawer"><i
+                                                    class="fas fa-file-alt me-2 text-success"></i>Generate</a></li>
+                                        <li><a class="dropdown-item" href="#"
+                                                onclick="triggerUpload('commercial_invoice')"><i
+                                                    class="fas fa-upload me-2 text-muted"></i>Upload</a></li>
                                     </ul>
                                 </div>
 
@@ -220,8 +395,11 @@
                                         <i class="fas fa-file-alt text-warning"></i>Bill Of Lading
                                     </button>
                                     <ul class="dropdown-menu shadow border-0" style="border-radius:12px;">
-                                        <li><a class="dropdown-item" href="{% url 'shipments:generate_bol' shipment.pk %}" target="_blank"><i class="fas fa-file-alt me-2 text-success"></i>Generate</a></li>
-                                        <li><a class="dropdown-item" href="#" onclick="triggerUpload('bol')"><i class="fas fa-upload me-2 text-muted"></i>Upload</a></li>
+                                        <li><a class="dropdown-item"
+                                                href="{% url 'shipments:generate_bol' shipment.pk %}" target="_blank"><i
+                                                    class="fas fa-file-alt me-2 text-success"></i>Generate</a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="triggerUpload('bol')"><i
+                                                    class="fas fa-upload me-2 text-muted"></i>Upload</a></li>
                                     </ul>
                                 </div>
 
@@ -231,8 +409,12 @@
                                         <i class="fas fa-boxes text-success"></i>Packing List
                                     </button>
                                     <ul class="dropdown-menu shadow border-0" style="border-radius:12px;">
-                                        <li><a class="dropdown-item" href="{% url 'shipments:generate_packing_list' shipment.pk %}" target="_blank"><i class="fas fa-file-alt me-2 text-success"></i>Generate</a></li>
-                                        <li><a class="dropdown-item" href="#" onclick="triggerUpload('packing_list')"><i class="fas fa-upload me-2 text-muted"></i>Upload</a></li>
+                                        <li><a class="dropdown-item"
+                                                href="{% url 'shipments:generate_packing_list' shipment.pk %}"
+                                                target="_blank"><i
+                                                    class="fas fa-file-alt me-2 text-success"></i>Generate</a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="triggerUpload('packing_list')"><i
+                                                    class="fas fa-upload me-2 text-muted"></i>Upload</a></li>
                                     </ul>
                                 </div>
 
@@ -247,7 +429,9 @@
                             </div>
 
                             <!-- Hidden typed upload form -->
-                            <form id="typed-upload-form" method="post" action="{% url 'shipments:document_upload' shipment.pk %}" enctype="multipart/form-data" style="display:none;">
+                            <form id="typed-upload-form" method="post"
+                                action="{% url 'shipments:document_upload' shipment.pk %}" enctype="multipart/form-data"
+                                style="display:none;">
                                 {% csrf_token %}
                                 <input type="hidden" name="document_type" id="upload-doc-type">
                                 <input type="hidden" name="title" id="upload-doc-title">
@@ -279,11 +463,14 @@
                                     <div class="fw-bold">{{ shipment.get_shipment_type_display }}</div>
                                 </div>
                             </div>
-                            {% if shipment.is_hazmat or shipment.is_temperature_controlled or shipment.requires_insurance %}
+                            {% if shipment.is_hazmat or shipment.is_temperature_controlled or
+                            shipment.requires_insurance %}
                             <div class="mt-3 d-flex gap-2">
                                 {% if shipment.is_hazmat %}<span class="badge bg-danger">Hazmat</span>{% endif %}
-                                {% if shipment.is_temperature_controlled %}<span class="badge bg-info">Temp. Controlled</span>{% endif %}
-                                {% if shipment.requires_insurance %}<span class="badge bg-warning">Insurance Req.</span>{% endif %}
+                                {% if shipment.is_temperature_controlled %}<span class="badge bg-info">Temp.
+                                    Controlled</span>{% endif %}
+                                {% if shipment.requires_insurance %}<span class="badge bg-warning">Insurance
+                                    Req.</span>{% endif %}
                             </div>
                             {% endif %}
                         </div>
@@ -296,16 +483,27 @@
                         <div class="card-body">
                             <h5 class="fw-bold mb-3">Financial Details</h5>
                             <table class="table table-sm">
-                                <tr><td class="text-muted">Quoted Amount</td><td class="text-end fw-semibold">${{ shipment.quoted_amount|floatformat:2 }}</td></tr>
-                                <tr><td class="text-muted">Cost</td><td class="text-end fw-semibold">${{ shipment.cost|floatformat:2 }}</td></tr>
-                                <tr><td class="text-muted">Revenue</td><td class="text-end fw-semibold">${{ shipment.revenue|floatformat:2 }}</td></tr>
+                                <tr>
+                                    <td class="text-muted">Quoted Amount</td>
+                                    <td class="text-end fw-semibold">${{ shipment.quoted_amount|floatformat:2 }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Cost</td>
+                                    <td class="text-end fw-semibold">${{ shipment.cost|floatformat:2 }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Revenue</td>
+                                    <td class="text-end fw-semibold">${{ shipment.revenue|floatformat:2 }}</td>
+                                </tr>
                                 <tr class="table-success">
                                     <td class="fw-bold">Gross Profit</td>
-                                    <td class="text-end fw-bold text-success">${{ shipment.gross_profit|floatformat:2 }}</td>
+                                    <td class="text-end fw-bold text-success">${{ shipment.gross_profit|floatformat:2 }}
+                                    </td>
                                 </tr>
                                 <tr>
                                     <td class="text-muted">Profit Margin</td>
-                                    <td class="text-end fw-semibold text-success">{{ shipment.profit_margin|floatformat:1 }}%</td>
+                                    <td class="text-end fw-semibold text-success">{{
+                                        shipment.profit_margin|floatformat:1 }}%</td>
                                 </tr>
                             </table>
                             {% if invoices %}
@@ -327,21 +525,24 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h5 class="fw-bold mb-0">Documents</h5>
-                                <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                                <button class="btn btn-primary btn-sm" data-bs-toggle="modal"
+                                    data-bs-target="#uploadModal">
                                     <i class="fas fa-upload me-1"></i>Upload
                                 </button>
                             </div>
                             {% if documents %}
                             <div class="list-group">
                                 {% for doc in documents %}
-                                <div class="list-group-item d-flex justify-content-between align-items-center border-0 px-0 py-2 border-bottom">
+                                <div
+                                    class="list-group-item d-flex justify-content-between align-items-center border-0 px-0 py-2 border-bottom">
                                     <div>
                                         <i class="fas fa-file-pdf text-danger me-2"></i>
                                         <span class="fw-semibold">{{ doc.title }}</span>
                                         <span class="badge bg-secondary ms-2">{{ doc.get_document_type_display }}</span>
                                         <br><small class="text-muted">{{ doc.uploaded_at|date:"M d, Y" }}</small>
                                     </div>
-                                    <a href="{% url 'shipments:document_download' doc.pk %}" class="btn btn-sm btn-outline-primary">
+                                    <a href="{% url 'shipments:document_download' doc.pk %}"
+                                        class="btn btn-sm btn-outline-primary">
                                         <i class="fas fa-download"></i>
                                     </a>
                                 </div>
@@ -367,9 +568,12 @@
                                 <div class="milestone-dot"></div>
                                 <div>
                                     <div class="fw-semibold" style="font-size:0.9rem;">{{ milestone.status }}</div>
-                                    {% if milestone.location %}<div class="text-muted small"><i class="fas fa-map-marker-alt me-1"></i>{{ milestone.location }}</div>{% endif %}
+                                    {% if milestone.location %}<div class="text-muted small"><i
+                                            class="fas fa-map-marker-alt me-1"></i>{{ milestone.location }}</div>{%
+                                    endif %}
                                     <div class="text-muted small">{{ milestone.timestamp|date:"M d, Y H:i" }}</div>
-                                    {% if milestone.notes %}<div class="text-muted small mt-1">{{ milestone.notes }}</div>{% endif %}
+                                    {% if milestone.notes %}<div class="text-muted small mt-1">{{ milestone.notes }}
+                                    </div>{% endif %}
                                 </div>
                             </div>
                             {% empty %}
@@ -397,7 +601,8 @@
                         <p class="mb-0 mt-1">{{ shipment.internal_notes }}</p>
                     </div>
                     {% else %}
-                    <p class="text-muted small text-center py-2"><i class="fas fa-info-circle me-1"></i>No comments yet</p>
+                    <p class="text-muted small text-center py-2"><i class="fas fa-info-circle me-1"></i>No comments yet
+                    </p>
                     {% endif %}
                     {% if shipment.special_instructions %}
                     <div class="chat-bubble bg-light">
@@ -411,17 +616,30 @@
             <!-- Shipment Info -->
             <div class="card border-0 shadow-sm" style="border-radius:14px;">
                 <div class="card-body">
-                    <h6 class="fw-bold mb-3 text-muted text-uppercase" style="font-size:0.75rem; letter-spacing:0.05em;">Schedule</h6>
-                    <div class="d-flex justify-content-between py-1 border-bottom"><span class="text-muted small">Pickup</span><span class="small fw-semibold">{{ shipment.pickup_date|date:"M d, Y"|default:"-" }}</span></div>
-                    <div class="d-flex justify-content-between py-1 border-bottom"><span class="text-muted small">Est. Delivery</span><span class="small fw-semibold">{{ shipment.estimated_delivery_date|date:"M d, Y"|default:"-" }}</span></div>
-                    <div class="d-flex justify-content-between py-1"><span class="text-muted small">Actual Delivery</span><span class="small fw-semibold">{{ shipment.actual_delivery_date|date:"M d, Y"|default:"Pending" }}</span></div>
+                    <h6 class="fw-bold mb-3 text-muted text-uppercase"
+                        style="font-size:0.75rem; letter-spacing:0.05em;">Schedule</h6>
+                    <div class="d-flex justify-content-between py-1 border-bottom"><span
+                            class="text-muted small">Pickup</span><span class="small fw-semibold">{{
+                            shipment.pickup_date|date:"M d, Y"|default:"-" }}</span></div>
+                    <div class="d-flex justify-content-between py-1 border-bottom"><span class="text-muted small">Est.
+                            Delivery</span><span class="small fw-semibold">{{ shipment.estimated_delivery_date|date:"M
+                            d, Y"|default:"-" }}</span></div>
+                    <div class="d-flex justify-content-between py-1"><span class="text-muted small">Actual
+                            Delivery</span><span class="small fw-semibold">{{ shipment.actual_delivery_date|date:"M d,
+                            Y"|default:"Pending" }}</span></div>
 
-                    <h6 class="fw-bold mt-3 mb-2 text-muted text-uppercase" style="font-size:0.75rem; letter-spacing:0.05em;">Identifiers</h6>
-                    <div class="d-flex justify-content-between py-1 border-bottom"><span class="text-muted small">Tracking #</span><span class="small fw-semibold">{{ shipment.tracking_number|default:"-" }}</span></div>
-                    <div class="d-flex justify-content-between py-1"><span class="text-muted small">Booking #</span><span class="small fw-semibold">{{ shipment.booking_number|default:"-" }}</span></div>
+                    <h6 class="fw-bold mt-3 mb-2 text-muted text-uppercase"
+                        style="font-size:0.75rem; letter-spacing:0.05em;">Identifiers</h6>
+                    <div class="d-flex justify-content-between py-1 border-bottom"><span
+                            class="text-muted small">Tracking #</span><span class="small fw-semibold">{{
+                            shipment.tracking_number|default:"-" }}</span></div>
+                    <div class="d-flex justify-content-between py-1"><span class="text-muted small">Booking
+                            #</span><span class="small fw-semibold">{{ shipment.booking_number|default:"-" }}</span>
+                    </div>
 
                     {% if containers %}
-                    <h6 class="fw-bold mt-3 mb-2 text-muted text-uppercase" style="font-size:0.75rem; letter-spacing:0.05em;">Containers</h6>
+                    <h6 class="fw-bold mt-3 mb-2 text-muted text-uppercase"
+                        style="font-size:0.75rem; letter-spacing:0.05em;">Containers</h6>
                     {% for c in containers %}
                     <div class="d-flex justify-content-between py-1 border-bottom">
                         <span class="small fw-semibold">{{ c.container_number }}</span>
@@ -435,11 +653,71 @@
     </div>
 </div>
 
+<!-- Shipping Confirmation Drawer (Offcanvas) -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="shipConfirmDrawer" aria-labelledby="shipConfirmDrawerLabel"
+    style="width: 450px; border-left: none; box-shadow: -5px 0 25px rgba(0,0,0,0.1);">
+    <div class="offcanvas-header border-bottom px-4">
+        <h5 class="offcanvas-title fw-bold" id="shipConfirmDrawerLabel">Shipping Confirmation</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body px-4 py-4">
+        <form method="post" action="{% url 'shipments:generate_shipping_confirmation_pdf' shipment.pk %}"
+            id="shipConfirmForm">
+            {% csrf_token %}
+
+            <div class="mb-4">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-1">File Name <span
+                        class="text-danger">*</span></label>
+                <div class="input-group input-group-sm">
+                    <input type="text" name="file_name" class="form-control"
+                        value="{{ shipment.shipment_number }}_SHIP">
+                    <span class="input-group-text bg-light text-muted">.pdf</span>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-1">User Contact <span
+                        class="text-danger">*</span></label>
+                <select name="user_contact" class="form-select form-select-sm" required>
+                    <option value="">Select a contact</option>
+                    {% for u in users %}
+                    <option value="{{ u.id }}" {% if u==request.user %}selected{% endif %}>{{
+                        u.get_full_name|default:u.username }}</option>
+                    {% endfor %}
+                </select>
+                <div class="form-text small">Who is responsible for this document?</div>
+            </div>
+
+            <div class="mb-4">
+                <div class="form-check form-switch d-flex align-items-center gap-2">
+                    <input class="form-check-input" type="checkbox" role="switch" name="scale_required" id="scaleSwitch"
+                        {% if shipment.is_hazmat %}checked{% endif %}>
+                    <label class="form-check-label small fw-bold text-muted text-uppercase mb-0" for="scaleSwitch">Scale
+                        Required?</label>
+                </div>
+            </div>
+
+            <div class="mb-5">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-1">Instructions</label>
+                <textarea name="instructions" class="form-control form-control-sm" rows="4"
+                    placeholder="Add special handling or instructions...">{{ shipment.special_instructions }}</textarea>
+            </div>
+
+            <div class="d-flex gap-2 justify-content-end mt-4">
+                <button type="button" class="btn btn-light btn-sm px-3 fw-semibold"
+                    data-bs-dismiss="offcanvas">Preview</button>
+                <button type="submit" class="btn btn-primary btn-sm px-4 fw-bold">Submit</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- Upload Modal -->
 <div class="modal fade" id="uploadModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content" style="border-radius:16px; border:none;">
-            <form method="post" action="{% url 'shipments:document_upload' shipment.pk %}" enctype="multipart/form-data">
+            <form method="post" action="{% url 'shipments:document_upload' shipment.pk %}"
+                enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="modal-header border-0">
                     <h5 class="modal-title fw-bold">Upload Document</h5>

@@ -20,6 +20,7 @@ urlpatterns = [
 
     # Document Generation
     path('<int:pk>/shipping-confirmation/', views.generate_shipping_confirmation, name='generate_shipping_confirmation'),
+    path('<int:pk>/shipping-confirmation/pdf/', views.generate_shipping_confirmation_pdf, name='generate_shipping_confirmation_pdf'),
     path('<int:pk>/packing-list/', views.generate_packing_list, name='generate_packing_list'),
     path('<int:pk>/bol/', views.generate_bol, name='generate_bol'),
     path('<int:pk>/invoice/create/', views.create_invoice, name='create_invoice'),
