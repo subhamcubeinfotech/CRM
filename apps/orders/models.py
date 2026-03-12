@@ -81,6 +81,10 @@ class Order(TenantAwareModel):
     # Weight tracking
     total_weight_target = models.DecimalField(max_digits=15, decimal_places=2, help_text="Target weight in lbs")
     
+    # Schedule
+    expected_pickup_date = models.DateField(null=True, blank=True)
+    expected_delivery_date = models.DateField(null=True, blank=True)
+    
     # Metadata
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

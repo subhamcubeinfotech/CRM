@@ -1,4 +1,4 @@
-﻿{% extends 'base.html' %}
+{% extends 'base.html' %}
 
 {% block title %}New Order - FreightPro{% endblock %}
 
@@ -63,6 +63,11 @@
                     <label class="form-label fw-bold small text-uppercase">SO Number</label>
                     <input type="text" name="so_number" class="form-control" placeholder="Insert a number">
                 </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-bold small text-uppercase">Expected Pickup Date</label>
+                    <input type="date" name="expected_pickup_date" class="form-control">
+                </div>
             </div>
 
             <div class="col-md-6">
@@ -113,6 +118,11 @@
                 <div class="mb-4">
                     <label class="form-label fw-bold small text-uppercase">Customer PO Number</label>
                     <input type="text" name="po_number" class="form-control" placeholder="Insert a number">
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-bold small text-uppercase">Expected Delivery Date</label>
+                    <input type="date" name="expected_delivery_date" class="form-control">
                 </div>
             </div>
         </div>
@@ -269,8 +279,7 @@
             </div>
         </div>
 
-        <!-- Order Number (Hidden/Auto-generated) -->
-        <input type="hidden" name="order_number" value="STH-O-{{ user.id }}-{% now 'U' %}">
+        <!-- Order Number Handled by Backend -->
 
         <div class="d-grid gap-2 pt-4">
             <button type="submit" class="btn btn-primary btn-lg">Submit Order</button>
