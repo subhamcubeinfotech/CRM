@@ -37,33 +37,37 @@
                 <tr><td class="text-muted">Status</td><td><span class="badge bg-secondary">Draft</span></td></tr>
             </table>
 
-            <!-- Additional Fields -->
-            <div class="card shadow-sm border-0 mb-4">
-                <div class="card-header bg-white py-3">
-                    <h5 class="card-title mb-0">Additional Information</h5>
-                </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Payment Terms</label>
-                        <input type="text" name="terms" class="form-control" placeholder="Insert a value" value="Net 30 days">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Payment Instructions</label>
-                        <textarea name="payment_instructions" class="form-control" rows="3" placeholder="Payment instructions for the customer..."></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Terms and Conditions</label>
-                        <textarea name="terms_and_conditions" class="form-control" rows="3" placeholder="Terms and conditions..."></textarea>
-                    </div>
-                    <div class="mb-0">
-                        <label class="form-label fw-bold">Tax</label>
-                        <input type="text" name="tax" class="form-control" placeholder="Insert a value">
-                    </div>
-                </div>
-            </div>
-
             <form method="post">
                 {% csrf_token %}
+                <!-- Additional Fields -->
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white py-3">
+                        <h5 class="card-title mb-0">Additional Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">File Name</label>
+                            <input type="text" name="file_name" class="form-control" placeholder="e.g. invoice_2024_001.pdf" value="invoice_{{ next_invoice_number }}.pdf">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Payment Terms</label>
+                            <input type="text" name="terms" class="form-control" placeholder="Insert a value" value="Net 30 days">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Payment Instructions</label>
+                            <textarea name="payment_instructions" class="form-control" rows="3" placeholder="Payment instructions for the customer..."></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Notes</label>
+                            <textarea name="notes" class="form-control" rows="3" placeholder="Additional notes..."></textarea>
+                        </div>
+                        <div class="mb-0">
+                            <label class="form-label fw-bold">Tax Details</label>
+                            <input type="text" name="tax_details" class="form-control" placeholder="Tax information...">
+                        </div>
+                    </div>
+                </div>
+
                 <div class="d-flex gap-2">
                     <button type="submit" class="btn btn-primary px-4 fw-semibold">
                         <i class="fas fa-file-invoice me-2"></i>Create Invoice

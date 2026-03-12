@@ -550,6 +550,8 @@ def create_invoice(request, pk):
                     status='draft',
                     payment_instructions=request.POST.get('payment_instructions', ''),
                     tax_details=request.POST.get('tax_details', ''),
+                    notes=request.POST.get('notes', ''),
+                    file_name=request.POST.get('file_name', ''),
                     terms=request.POST.get('terms', 'Net 30 days'),
                     created_by=request.user,
                     tenant=request.user.tenant,
