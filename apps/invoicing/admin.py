@@ -20,7 +20,7 @@ class PaymentInline(admin.TabularInline):
 class InvoiceAdmin(admin.ModelAdmin):
     list_display = [
         'invoice_number', 'customer', 'invoice_date', 'due_date', 
-        'total', 'status', 'balance_due'
+        'total', 'status', 'balance_due', 'file_name'
     ]
     list_filter = ['status', 'invoice_date', 'due_date']
     search_fields = ['invoice_number', 'customer__name']
@@ -29,7 +29,7 @@ class InvoiceAdmin(admin.ModelAdmin):
     
     fieldsets = (
         ('Identification', {
-            'fields': ('invoice_number',)
+            'fields': ('invoice_number', 'file_name')
         }),
         ('Parties', {
             'fields': ('customer', 'shipment')
@@ -44,7 +44,7 @@ class InvoiceAdmin(admin.ModelAdmin):
             )
         }),
         ('Status & Notes', {
-            'fields': ('status', 'notes', 'terms')
+            'fields': ('status', 'notes', 'terms', 'payment_instructions', 'tax_details')
         }),
         ('Metadata', {
             'fields': ('created_by', 'created_at', 'updated_at'),
@@ -52,9 +52,9 @@ class InvoiceAdmin(admin.ModelAdmin):
         }),
     )
     
+    @admin.display(description='Balance Due')
     def balance_due(self, obj):
         return f"${obj.balance_due:,.2f}"
-    balance_due.short_description = 'Balance Due'
 
 
 @admin.register(InvoiceLineItem)
