@@ -22,6 +22,9 @@ class OrderListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         qs = Order.objects.all().order_by('-created_at')
+        # Allow access if user is receiver OR the creator of the order
+        if self.request.user.role == 'customer' and self.request.user.company:
+            return qs.filter(Q(receiver=self.request.user.company) | Q(created_by=self.request.user))
         return filter_by_user_company(qs, self.request.user, company_field='receiver')
 
     def get_context_data(self, **kwargs):
@@ -55,6 +58,9 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
 
     def get_object(self, queryset=None):
         obj = super().get_object(queryset)
+        # Allow creator to see the order even if they are not the receiver
+        if obj.created_by == self.request.user:
+            return obj
         check_company_access(obj.receiver, self.request.user)
         return obj
 
