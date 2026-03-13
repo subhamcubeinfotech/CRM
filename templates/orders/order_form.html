@@ -30,7 +30,7 @@
                                 class="fas fa-plus"></i> Add</a>
                     </div>
                     <div style="min-height: 21px;">
-                        {% if user.company and user.company.company_type != 'customer' %}
+                        {% if user.company %}
                         <a href="#" id="assign-supplier-mine" class="small text-decoration-none mt-1 d-inline-block"
                             data-company-id="{{ user.company_id }}">Click to assign to your company.</a>
                         {% endif %}
@@ -58,11 +58,8 @@
                     </div>
                     <div style="min-height: 21px;">
                         {% if user.company %}
-                        <a href="#" id="assign-source-my-location" class="small text-decoration-none mt-1 d-inline-block"
-                            data-address="{{ user.company.full_address }}"
-                            data-city="{% if user.company.city %}{{ user.company.city }}{% else %}City{% endif %}"
-                            data-name="{{ user.company.name }}">Click to use
-                            your signup address.</a>
+                        <a href="#" id="assign-source-my-location" class="small text-decoration-none mt-1 d-inline-block">Click to use
+                            selected supplier's address.</a>
                         {% endif %}
                     </div>
                 </div>
@@ -94,7 +91,7 @@
                                 class="fas fa-plus"></i> Add</a>
                     </div>
                     <div style="min-height: 21px;">
-                        {% if user.company and user.company.company_type == 'customer' %}
+                        {% if user.company %}
                         <a href="#" id="assign-receiver-mine" class="small text-decoration-none mt-1 d-inline-block"
                             data-company-id="{{ user.company_id }}">Click to assign to your company.</a>
                         {% endif %}
@@ -122,11 +119,8 @@
                     </div>
                     <div style="min-height: 21px;">
                         {% if user.company %}
-                        <a href="#" id="assign-dest-my-location" class="small text-decoration-none mt-1 d-inline-block"
-                            data-address="{{ user.company.full_address }}"
-                            data-city="{% if user.company.city %}{{ user.company.city }}{% else %}City{% endif %}"
-                            data-name="{{ user.company.name }}">Click to use
-                            your signup address.</a>
+                        <a href="#" id="assign-dest-my-location" class="small text-decoration-none mt-1 d-inline-block">Click to use
+                            selected receiver's address.</a>
                         {% endif %}
                     </div>
                 </div>
@@ -184,7 +178,8 @@
         <div class="mb-5 border-top pt-4">
             <h5 class="mb-4 text-uppercase fw-bold h6">Manifest Items</h5>
             <div id="manifest-items-container">
-                <div class="manifest-item card p-4 mb-3 border-light shadow-sm bg-light-subtle">
+                <div class="manifest-item card p-4 mb-3 border-light shadow-sm bg-light-subtle position-relative">
+                    <button type="button" class="btn-close remove-item-btn position-absolute top-0 end-0 m-3" aria-label="Remove" style="display: none;"></button>
                     <div class="row g-3">
                         <div class="col-md-12">
                             <label class="form-label fw-bold small">Material<span class="text-danger">*</span></label>
@@ -192,10 +187,12 @@
                                 <select name="material[]" class="form-select material-select" required>
                                     <option value="" data-max="0">Select Material</option>
                                     {% for item in inventory_items %}
+                                    {% if item.quantity > 0 %}
                                     <option value="{{ item.product_name }}" data-max="{{ item.quantity }}"
                                         data-unit="{{ item.unit_of_measure }}">
                                         {{ item.product_name }} - {{ item.display_stock }}
                                     </option>
+                                    {% endif %}
                                     {% endfor %}
                                 </select>
                                 <button class="btn btn-outline-primary" type="button"><i class="fas fa-plus"></i>
@@ -334,23 +331,41 @@
         document.getElementById('rep-select').value = this.dataset.userId;
     });
 
-    // Assign My Signup Address to Location
-    function assignMyLocation(selectId, addressStr) {
-        const select = document.getElementById(selectId);
-        if (!addressStr) return;
+    // Assign Selected Company Address to Location
+    function assignCompanyLocation(selectId, partySelectId) {
+        const partySelect = document.getElementById(partySelectId);
+        const locationSelect = document.getElementById(selectId);
+        
+        const selectedOption = partySelect.selectedOptions[0];
+        const addressStr = selectedOption?.dataset.address;
+        const companyId = partySelect.value;
+        
+        if (!addressStr || !companyId) {
+            alert("Please select a company first.");
+            return;
+        }
 
         const virtualValue = "temp_addr_" + addressStr;
-        select.value = virtualValue;
+        
+        // Ensure option exists (filterLocations might have removed it if it was temporary)
+        let option = [...locationSelect.options].find(o => o.value === virtualValue);
+        if (!option) {
+            option = new Option(addressStr, virtualValue);
+            option.dataset.companyId = companyId;
+            locationSelect.add(option);
+        }
+        
+        locationSelect.value = virtualValue;
     }
 
     document.getElementById('assign-source-my-location')?.addEventListener('click', function (e) {
         e.preventDefault();
-        assignMyLocation('source-location-select', this.dataset.address);
+        assignCompanyLocation('source-location-select', 'supplier-select');
     });
 
     document.getElementById('assign-dest-my-location')?.addEventListener('click', function (e) {
         e.preventDefault();
-        assignMyLocation('dest-location-select', this.dataset.address);
+        assignCompanyLocation('dest-location-select', 'receiver-select');
     });
 
     // Inventory Validation Logic
@@ -425,7 +440,7 @@
 
             // If no warehouse found for selected company, add their main address as an option
             if (!found && companyId && companyAddress) {
-                const newOpt = new Option(companyAddress + " (Company Address)", "temp_addr_" + companyAddress);
+                const newOpt = new Option(companyAddress, "temp_addr_" + companyAddress);
                 newOpt.dataset.companyId = companyId;
                 locationSelect.add(newOpt);
                 locationSelect.value = newOpt.value;
@@ -458,9 +473,22 @@
             input.classList.remove('is-invalid');
         });
         newItem.querySelector('.weight-warning').style.display = 'none';
+        
+        // Show remove button for NEW items
+        const removeBtn = newItem.querySelector('.remove-item-btn');
+        if (removeBtn) {
+            removeBtn.style.display = 'block';
+        }
 
         container.appendChild(newItem);
         setupInventoryValidation(newItem);
+    });
+
+    // Event delegation for removal
+    document.getElementById('manifest-items-container').addEventListener('click', function(e) {
+        if (e.target.classList.contains('remove-item-btn')) {
+            e.target.closest('.manifest-item').remove();
+        }
     });
 </script>
 {% endblock %}

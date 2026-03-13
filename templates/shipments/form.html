@@ -185,11 +185,11 @@
                     <div class="card-body">
                         <div class="mb-3">
                             <label class="form-label">Pickup Date</label>
-                            <input type="date" name="pickup_date" class="form-control" value="{{ shipment.pickup_date|date:'Y-m-d'|default:'' }}">
+                            <input type="date" name="pickup_date" class="form-control" value="{% if is_create %}{{ order.expected_pickup_date|date:'Y-m-d' }}{% else %}{{ shipment.pickup_date|date:'Y-m-d' }}{% endif %}">
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Estimated Delivery Date</label>
-                            <input type="date" name="estimated_delivery_date" class="form-control" value="{{ shipment.estimated_delivery_date|date:'Y-m-d'|default:'' }}">
+                            <input type="date" name="estimated_delivery_date" class="form-control" value="{% if is_create %}{{ order.expected_delivery_date|date:'Y-m-d' }}{% else %}{{ shipment.estimated_delivery_date|date:'Y-m-d' }}{% endif %}">
                         </div>
                     </div>
                 </div>

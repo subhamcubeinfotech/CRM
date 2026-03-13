@@ -6,9 +6,7 @@ from .models import CustomUser
 @login_required
 def team_list(request):
     """List all team members in the current tenant"""
-    if not request.user.role == 'admin':
-        messages.error(request, "Only tenant administrators can manage the team.")
-        return redirect('dashboard')
+    # Removed strict admin check to allow read access for all users
         
     team_members = CustomUser.objects.filter(tenant=request.user.tenant)
     

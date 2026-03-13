@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - FreightPro{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+        <h1 class="h2">{{ title }}</h1>
+        <a href="{% url 'inventory:warehouse_detail' warehouse.pk %}" class="btn btn-outline-secondary btn-sm">Cancel</a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-uppercase">SKU / Part Number</label>
+                                {{ form.sku }}
+                                {% if form.sku.errors %}
+                                    <div class="text-danger small">{{ form.sku.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-uppercase">Product Name</label>
+                                {{ form.product_name }}
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label fw-bold small text-uppercase">Description</label>
+                                {{ form.description }}
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-uppercase">Warehouse</label>
+                                <input type="text" class="form-control bg-light" value="{{ warehouse.name }}" readonly disabled>
+                                <div class="d-none">{{ form.warehouse }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-uppercase">Bin / Location</label>
+                                {{ form.location }}
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small text-uppercase">Current Quantity</label>
+                                {{ form.quantity }}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small text-uppercase">Unit of Measure</label>
+                                {{ form.unit_of_measure }}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small text-uppercase">Reorder Level</label>
+                                {{ form.reorder_level }}
+                                <div class="form-text small">Alert when stock falls below this.</div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small text-uppercase">Unit Cost ($)</label>
+                                {{ form.unit_cost }}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small text-uppercase">Lot Number</label>
+                                {{ form.lot_number }}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small text-uppercase">Serial Number</label>
+                                {{ form.serial_number }}
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 mt-5">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                {% if item %}Update Item{% else %}Add to Inventory{% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
