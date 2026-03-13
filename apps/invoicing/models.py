@@ -129,12 +129,21 @@ class Invoice(TenantAwareModel):
         super().save(*args, **kwargs)
     
     @classmethod
-    def generate_invoice_number(cls):
-        """Generate unique invoice number"""
+    def generate_invoice_number(cls, shipment=None):
+        """Generate unique invoice number, synced with shipment if possible"""
         from django.db import transaction
         from datetime import date
-        import uuid
         
+        if shipment and shipment.shipment_number:
+            # Sync with shipment number e.g. INV-2026-01707
+            # Replace SHP with INV prefix if present
+            base_number = shipment.shipment_number
+            if base_number.startswith('SHP-'):
+                base_number = base_number.replace('SHP-', 'INV-', 1)
+            else:
+                base_number = f"INV-{base_number}"
+            return base_number
+            
         with transaction.atomic():
             # Lock table to prevent race conditions
             last_invoice = cls.objects.select_for_update().filter(
@@ -143,16 +152,17 @@ class Invoice(TenantAwareModel):
             
             if last_invoice:
                 try:
-                    last_num = int(last_invoice.invoice_number.split('-')[-1].split('_')[0])  # Handle UUID suffix
-                    new_num = last_num + 1
+                    # Handle possible UUID suffix from old invoices
+                    num_part = last_invoice.invoice_number.split('-')[-1]
+                    if '_' in num_part:
+                        num_part = num_part.split('_')[0]
+                    new_num = int(num_part) + 1
                 except (ValueError, IndexError):
                     new_num = 1
             else:
                 new_num = 1
                 
-            # Add UUID suffix to guarantee uniqueness
-            unique_suffix = str(uuid.uuid4())[:8]
-            return f"INV-{date.today().year}-{new_num:05d}_{unique_suffix}"
+            return f"INV-{date.today().year}-{new_num:05d}"
 
 
 class InvoiceLineItem(models.Model):

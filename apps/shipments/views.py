@@ -224,7 +224,7 @@ def shipment_detail(request, pk):
         'invoices': invoices,
         'users': CustomUser.objects.filter(tenant=request.user.tenant, is_active=True).order_by('first_name'),
         'map_data': json.dumps(map_data),
-        'next_invoice_number': Invoice.generate_invoice_number() if hasattr(Invoice, 'generate_invoice_number') else "Generating...",
+        'next_invoice_number': Invoice.generate_invoice_number(shipment) if hasattr(Invoice, 'generate_invoice_number') else "Generating...",
         'today': timezone.now().date(),
     }
     return render(request, 'shipments/detail.html', context)
@@ -1142,7 +1142,7 @@ def create_invoice(request, pk):
         try:
             with transaction.atomic():
                 # Generate invoice number first
-                invoice_number = Invoice.generate_invoice_number()
+                invoice_number = Invoice.generate_invoice_number(shipment)
                 
                 invoice = Invoice.objects.create(
                     customer=shipment.customer,
@@ -1194,7 +1194,7 @@ def create_invoice(request, pk):
     from datetime import date
     # Generate preview number (but don't save)
     try:
-        next_invoice_number = Invoice.generate_invoice_number()
+        next_invoice_number = Invoice.generate_invoice_number(shipment)
     except:
         next_invoice_number = "Generating..."
     
