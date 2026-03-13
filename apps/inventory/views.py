@@ -1,11 +1,13 @@
 """
 Inventory Views
 """
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Sum, F, Q, ExpressionWrapper, DecimalField
 from .models import Warehouse, InventoryItem
+from .forms import WarehouseForm, InventoryItemForm
 import logging
 
 logger = logging.getLogger('apps.inventory')
@@ -51,6 +53,12 @@ def warehouse_list(request):
 def warehouse_detail(request, pk):
     """Warehouse detail view"""
     warehouse = get_object_or_404(Warehouse, pk=pk)
+    
+    # Fix for items created without tenant (migration/manual entry fix)
+    # We use plain_objects to see items regardless of tenant filters
+    orphan_items = InventoryItem.plain_objects.filter(warehouse=warehouse, tenant__isnull=True)
+    if orphan_items.exists() and warehouse.tenant:
+        orphan_items.update(tenant=warehouse.tenant)
     
     items = warehouse.inventory_items.all()
     total_value = sum(item.total_value for item in items)
@@ -109,5 +117,74 @@ def inventory_item_detail(request, pk):
         'item': item,
     }
     return render(request, 'inventory/item_detail.html', context)
+
+
+@login_required
+def warehouse_edit(request, pk):
+    """Edit warehouse details"""
+    warehouse = get_object_or_404(Warehouse, pk=pk)
+    if request.method == 'POST':
+        form = WarehouseForm(request.POST, instance=warehouse)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Warehouse '{warehouse.name}' updated successfully.")
+            return redirect('inventory:warehouse_detail', pk=warehouse.pk)
+    else:
+        form = WarehouseForm(instance=warehouse)
+    
+    context = {
+        'form': form,
+        'warehouse': warehouse,
+        'title': f'Edit {warehouse.name}',
+    }
+    return render(request, 'inventory/warehouse_form.html', context)
+
+
+@login_required
+def inventory_item_add(request, pk):
+    """Add inventory item to a specific warehouse"""
+    warehouse = get_object_or_404(Warehouse, pk=pk)
+    if request.method == 'POST':
+        form = InventoryItemForm(request.POST)
+        if form.is_valid():
+            item = form.save(commit=False)
+            item.warehouse = warehouse
+            item.save()
+            messages.success(request, f"Item '{item.product_name}' added to {warehouse.name}.")
+            return redirect('inventory:warehouse_detail', pk=warehouse.pk)
+    else:
+        # Pre-fill warehouse
+        form = InventoryItemForm(initial={'warehouse': warehouse})
+    
+    context = {
+        'form': form,
+        'warehouse': warehouse,
+        'title': f'Add Item to {warehouse.name}',
+    }
+    return render(request, 'inventory/item_form.html', context)
+
+
+@login_required
+def inventory_item_edit(request, pk):
+    """Edit an existing inventory item"""
+    item = get_object_or_404(InventoryItem, pk=pk)
+    warehouse = item.warehouse
+    
+    if request.method == 'POST':
+        form = InventoryItemForm(request.POST, instance=item)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Item '{item.product_name}' updated successfully.")
+            return redirect('inventory:warehouse_detail', pk=warehouse.pk)
+    else:
+        form = InventoryItemForm(instance=item)
+    
+    context = {
+        'form': form,
+        'warehouse': warehouse,
+        'item': item,
+        'title': f'Edit {item.product_name}',
+    }
+    return render(request, 'inventory/item_form.html', context)
 
 

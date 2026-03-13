@@ -22,6 +22,9 @@ class OrderListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         qs = Order.objects.all().order_by('-created_at')
+        # Allow access if user is receiver OR the creator of the order
+        if self.request.user.role == 'customer' and self.request.user.company:
+            return qs.filter(Q(receiver=self.request.user.company) | Q(created_by=self.request.user))
         return filter_by_user_company(qs, self.request.user, company_field='receiver')
 
     def get_context_data(self, **kwargs):
@@ -55,6 +58,9 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
 
     def get_object(self, queryset=None):
         obj = super().get_object(queryset)
+        # Allow creator to see the order even if they are not the receiver
+        if obj.created_by == self.request.user:
+            return obj
         check_company_access(obj.receiver, self.request.user)
         return obj
 
@@ -68,9 +74,10 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
         user_tenant = self.request.user.tenant
         user_company = self.request.user.company
         
-        # Filter companies by tenant
-        context['suppliers'] = Company.objects.filter(tenant=user_tenant, company_type='vendor')
-        context['receivers'] = Company.objects.filter(tenant=user_tenant, company_type='customer')
+        # Show all active companies in tenant
+        all_companies = Company.objects.filter(tenant=user_tenant, is_active=True)
+        context['suppliers'] = all_companies
+        context['receivers'] = all_companies
         
         # Locations (Prioritize user's company and filter by tenant)
         warehouses = Warehouse.plain_objects.filter(tenant=user_tenant)
@@ -230,22 +237,15 @@ def order_create(request):
     
     user_company = request.user.company
     
-    # Strictly filter suppliers and receivers by type
-    suppliers = Company.objects.filter(company_type='vendor')
-    receivers = Company.objects.filter(company_type='customer')
+    # Show all active companies (multitenancy handled by model manager usually, but being explicit)
+    company_qs = Company.objects.filter(is_active=True)
+    if request.user.tenant:
+        company_qs = company_qs.filter(tenant=request.user.tenant)
     
-    # If the user's company is a carrier or vendor, it can be a supplier.
-    # If it's a customer, it should primarily be a receiver.
-    if user_company:
-        if user_company.company_type in ['vendor', 'carrier']:
-            suppliers = (suppliers | Company.objects.filter(pk=user_company.pk)).distinct()
-        else:
-            # If it's a customer, only add to receivers
-            receivers = (receivers | Company.objects.filter(pk=user_company.pk)).distinct()
+    suppliers = company_qs
+    receivers = company_qs
     
-    inventory_items = InventoryItem.objects.filter(tenant=request.user.tenant) if request.user.tenant else InventoryItem.objects.all()
-    if not inventory_items.exists():
-        inventory_items = InventoryItem.plain_objects.all()
+    inventory_items = InventoryItem.plain_objects.all()
 
     # Show all warehouses in tenant, prioritize user's company
     from django.db.models import Case, When, IntegerField

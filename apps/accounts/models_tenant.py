@@ -23,5 +23,10 @@ class TenantAwareModel(models.Model):
     objects = TenantManager()
     plain_objects = models.Manager()
 
+    def save(self, *args, **kwargs):
+        if not self.tenant:
+            self.tenant = get_current_tenant()
+        super().save(*args, **kwargs)
+
     class Meta:
         abstract = True
