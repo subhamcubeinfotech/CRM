@@ -149,13 +149,16 @@ def order_create(request):
                 
                 raw_address = str(val).replace('temp_addr_', '')[:200]
                 
-                # Check if Main Office location already exists to avoid duplicates
+                # Generate a unique code to avoid IntegrityError if a location with MAIN-<id> already exists
+                import random
+                unique_code = f"LOC-{company.id}-{random.randint(1000, 9999)}"[:20]
+                
                 hq, created = Warehouse.objects.get_or_create(
                     company=company,
                     tenant=company.tenant,
                     name=raw_address,
                     defaults={
-                        'code': f"MAIN-{company.id}"[:20],
+                        'code': unique_code,
                         'address': company.address_line1,
                         'city': company.city[:100],
                         'state': company.state[:100],
