@@ -58,11 +58,8 @@
                     </div>
                     <div style="min-height: 21px;">
                         {% if user.company %}
-                        <a href="#" id="assign-source-my-location" class="small text-decoration-none mt-1 d-inline-block"
-                            data-address="{{ user.company.full_address }}"
-                            data-city="{% if user.company.city %}{{ user.company.city }}{% else %}City{% endif %}"
-                            data-name="{{ user.company.name }}">Click to use
-                            your signup address.</a>
+                        <a href="#" id="assign-source-my-location" class="small text-decoration-none mt-1 d-inline-block">Click to use
+                            selected supplier's address.</a>
                         {% endif %}
                     </div>
                 </div>
@@ -122,11 +119,8 @@
                     </div>
                     <div style="min-height: 21px;">
                         {% if user.company %}
-                        <a href="#" id="assign-dest-my-location" class="small text-decoration-none mt-1 d-inline-block"
-                            data-address="{{ user.company.full_address }}"
-                            data-city="{% if user.company.city %}{{ user.company.city }}{% else %}City{% endif %}"
-                            data-name="{{ user.company.name }}">Click to use
-                            your signup address.</a>
+                        <a href="#" id="assign-dest-my-location" class="small text-decoration-none mt-1 d-inline-block">Click to use
+                            selected receiver's address.</a>
                         {% endif %}
                     </div>
                 </div>
@@ -335,23 +329,41 @@
         document.getElementById('rep-select').value = this.dataset.userId;
     });
 
-    // Assign My Signup Address to Location
-    function assignMyLocation(selectId, addressStr) {
-        const select = document.getElementById(selectId);
-        if (!addressStr) return;
+    // Assign Selected Company Address to Location
+    function assignCompanyLocation(selectId, partySelectId) {
+        const partySelect = document.getElementById(partySelectId);
+        const locationSelect = document.getElementById(selectId);
+        
+        const selectedOption = partySelect.selectedOptions[0];
+        const addressStr = selectedOption?.dataset.address;
+        const companyId = partySelect.value;
+        
+        if (!addressStr || !companyId) {
+            alert("Please select a company first.");
+            return;
+        }
 
         const virtualValue = "temp_addr_" + addressStr;
-        select.value = virtualValue;
+        
+        // Ensure option exists (filterLocations might have removed it if it was temporary)
+        let option = [...locationSelect.options].find(o => o.value === virtualValue);
+        if (!option) {
+            option = new Option(addressStr, virtualValue);
+            option.dataset.companyId = companyId;
+            locationSelect.add(option);
+        }
+        
+        locationSelect.value = virtualValue;
     }
 
     document.getElementById('assign-source-my-location')?.addEventListener('click', function (e) {
         e.preventDefault();
-        assignMyLocation('source-location-select', this.dataset.address);
+        assignCompanyLocation('source-location-select', 'supplier-select');
     });
 
     document.getElementById('assign-dest-my-location')?.addEventListener('click', function (e) {
         e.preventDefault();
-        assignMyLocation('dest-location-select', this.dataset.address);
+        assignCompanyLocation('dest-location-select', 'receiver-select');
     });
 
     // Inventory Validation Logic
@@ -426,7 +438,7 @@
 
             // If no warehouse found for selected company, add their main address as an option
             if (!found && companyId && companyAddress) {
-                const newOpt = new Option(companyAddress + " (Company Address)", "temp_addr_" + companyAddress);
+                const newOpt = new Option(companyAddress, "temp_addr_" + companyAddress);
                 newOpt.dataset.companyId = companyId;
                 locationSelect.add(newOpt);
                 locationSelect.value = newOpt.value;
