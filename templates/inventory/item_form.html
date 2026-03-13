@@ -73,7 +73,9 @@
                         </div>
 
                         <div class="d-grid gap-2 mt-5">
-                            <button type="submit" class="btn btn-primary btn-lg">Add to Inventory</button>
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                {% if item %}Update Item{% else %}Add to Inventory{% endif %}
+                            </button>
                         </div>
                     </form>
                 </div>

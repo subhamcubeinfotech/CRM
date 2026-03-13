@@ -164,3 +164,27 @@ def inventory_item_add(request, pk):
     return render(request, 'inventory/item_form.html', context)
 
 
+@login_required
+def inventory_item_edit(request, pk):
+    """Edit an existing inventory item"""
+    item = get_object_or_404(InventoryItem, pk=pk)
+    warehouse = item.warehouse
+    
+    if request.method == 'POST':
+        form = InventoryItemForm(request.POST, instance=item)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Item '{item.product_name}' updated successfully.")
+            return redirect('inventory:warehouse_detail', pk=warehouse.pk)
+    else:
+        form = InventoryItemForm(instance=item)
+    
+    context = {
+        'form': form,
+        'warehouse': warehouse,
+        'item': item,
+        'title': f'Edit {item.product_name}',
+    }
+    return render(request, 'inventory/item_form.html', context)
+
+

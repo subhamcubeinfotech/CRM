@@ -78,6 +78,7 @@
                             <th>Quantity</th>
                             <th>Value</th>
                             <th>Status</th>
+                            <th class="text-end">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -92,6 +93,11 @@
                                 <span class="badge bg-{% if item.quantity <= item.reorder_level %}warning text-dark{% else %}success{% endif %}">
                                     {{ item.get_stock_status_display|default:item.stock_status }}
                                 </span>
+                            </td>
+                            <td class="text-end">
+                                <a href="{% url 'inventory:inventory_item_edit' item.pk %}" class="btn btn-sm btn-outline-primary" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
                             </td>
                         </tr>
                         {% endfor %}
