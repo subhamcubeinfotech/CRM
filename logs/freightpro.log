@@ -8966,3 +8966,154 @@ ValueError: save() prohibited to prevent data loss due to unsaved related object
 [2026-03-13 10:07:23] INFO django.server basehttp.log_message:213 — "GET /shipments/ HTTP/1.1" 200 27109
 [2026-03-13 10:07:23] WARNING django.request log.log_response:253 — Not Found: /favicon.ico
 [2026-03-13 10:07:23] WARNING django.server basehttp.log_message:213 — "GET /favicon.ico HTTP/1.1" 404 7025
+[2026-03-13 10:09:23] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: TCS (Customer)
+[2026-03-13 10:09:23] INFO django.server basehttp.log_message:213 — "GET /shipments/ HTTP/1.1" 200 27109
+[2026-03-13 10:09:30] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: TCS (Customer)
+[2026-03-13 10:09:30] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: TCS (Customer)
+[2026-03-13 10:09:30] INFO django.server basehttp.log_message:213 — "GET /dashboard/ HTTP/1.1" 200 25558
+[2026-03-13 10:09:31] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: TCS (Customer)
+[2026-03-13 10:09:32] INFO django.server basehttp.log_message:213 — "GET /shipments/ HTTP/1.1" 200 27109
+[2026-03-13 10:09:32] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 21799
+[2026-03-13 10:09:35] INFO apps.orders views.order_create:236 — New order creation page accessed by sahil (Customer)
+[2026-03-13 10:09:35] INFO django.server basehttp.log_message:213 — "GET /orders/create/ HTTP/1.1" 200 47157
+[2026-03-13 10:09:37] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: TCS (Customer)
+[2026-03-13 10:09:37] INFO django.server basehttp.log_message:213 — "GET /shipments/ HTTP/1.1" 200 27109
+[2026-03-13 10:09:39] INFO django.server basehttp.log_message:213 — "GET /inventory/ HTTP/1.1" 200 21880
+[2026-03-13 10:09:56] INFO django.server basehttp.log_message:213 — "GET /companies/ HTTP/1.1" 200 26685
+[2026-03-13 10:10:00] INFO django.server basehttp.log_message:213 — "GET /companies/28/edit/ HTTP/1.1" 200 20459
+[2026-03-13 10:10:02] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: TCS (Customer)
+[2026-03-13 10:10:02] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: TCS (Customer)
+[2026-03-13 10:10:02] INFO django.server basehttp.log_message:213 — "GET /dashboard/ HTTP/1.1" 200 25558
+[2026-03-13 10:10:07] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: TCS (Customer)
+[2026-03-13 10:10:07] INFO django.server basehttp.log_message:213 — "GET /shipments/ HTTP/1.1" 200 27109
+[2026-03-13 10:10:08] INFO django.server basehttp.log_message:213 — "GET /inventory/ HTTP/1.1" 200 21880
+[2026-03-13 10:10:09] INFO django.server basehttp.log_message:213 — "GET /companies/ HTTP/1.1" 200 26685
+[2026-03-13 10:10:11] INFO django.server basehttp.log_message:213 — "GET /companies/?search=&type= HTTP/1.1" 200 26685
+[2026-03-13 10:10:15] INFO django.server basehttp.log_message:213 — "GET /companies/?search=&type=customer HTTP/1.1" 200 18034
+[2026-03-13 10:10:20] INFO django.server basehttp.log_message:213 — "GET /companies/?search=&type=carrier HTTP/1.1" 200 15572
+[2026-03-13 10:10:24] INFO django.server basehttp.log_message:213 — "GET /companies/?search=&type=vendor HTTP/1.1" 200 23811
+[2026-03-13 10:10:28] INFO django.server basehttp.log_message:213 — "GET /companies/?search=&type= HTTP/1.1" 200 26685
+[2026-03-13 10:10:32] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: TCS (Customer)
+[2026-03-13 10:10:32] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: TCS (Customer)
+[2026-03-13 10:10:32] INFO django.server basehttp.log_message:213 — "GET /dashboard/ HTTP/1.1" 200 25558
+[2026-03-13 10:10:38] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 21799
+[2026-03-13 10:10:39] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: TCS (Customer)
+[2026-03-13 10:10:40] INFO django.server basehttp.log_message:213 — "GET /shipments/ HTTP/1.1" 200 27109
+[2026-03-13 10:10:43] INFO django.server basehttp.log_message:213 — "GET /inventory/ HTTP/1.1" 200 21880
+[2026-03-13 10:10:45] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: TCS (Customer)
+[2026-03-13 10:10:45] INFO django.server basehttp.log_message:213 — "GET /shipments/ HTTP/1.1" 200 27109
+[2026-03-13 10:10:46] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 21799
+[2026-03-13 10:10:48] INFO apps.orders views.order_create:236 — New order creation page accessed by sahil (Customer)
+[2026-03-13 10:10:48] INFO django.server basehttp.log_message:213 — "GET /orders/create/ HTTP/1.1" 200 47157
+[2026-03-13 10:11:07] INFO django.server basehttp.log_message:213 — "GET /inventory/ HTTP/1.1" 200 21880
+[2026-03-13 10:11:09] INFO django.server basehttp.log_message:213 — "GET /inventory/warehouses/33/ HTTP/1.1" 200 16435
+[2026-03-13 10:11:11] INFO django.server basehttp.log_message:213 — "GET /inventory/ HTTP/1.1" 200 21880
+[2026-03-13 10:11:12] INFO django.server basehttp.log_message:213 — "GET /inventory/warehouses/36/ HTTP/1.1" 200 17519
+[2026-03-13 10:11:17] INFO django.server basehttp.log_message:213 — "GET /inventory/warehouses/36/add-item/ HTTP/1.1" 200 18554
+[2026-03-13 10:11:20] INFO django.server basehttp.log_message:213 — "GET /inventory/warehouses/36/edit/ HTTP/1.1" 200 19724
+[2026-03-13 10:12:02] INFO django.server basehttp.log_message:213 — "GET /inventory/warehouses/36/edit/ HTTP/1.1" 200 19724
+[2026-03-13 10:12:09] INFO django.server basehttp.log_message:213 — "GET /inventory/warehouses/36/add-item/ HTTP/1.1" 200 18554
+[2026-03-13 10:12:40] INFO django.utils.autoreload autoreload.trigger_reload:265 — /app/apps/inventory/views.py changed, reloading.
+[2026-03-13 10:12:42] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-13 10:13:15] INFO django.server basehttp.log_message:213 — "GET /inventory/warehouses/36/ HTTP/1.1" 200 18193
+[2026-03-13 10:13:15] WARNING django.request log.log_response:253 — Not Found: /favicon.ico
+[2026-03-13 10:13:15] WARNING django.server basehttp.log_message:213 — "GET /favicon.ico HTTP/1.1" 404 7025
+[2026-03-13 10:13:17] INFO django.server basehttp.log_message:213 — "GET /inventory/items/10/edit/ HTTP/1.1" 200 18653
+[2026-03-13 10:13:23] INFO django.server basehttp.log_message:213 — "POST /inventory/items/10/edit/ HTTP/1.1" 302 0
+[2026-03-13 10:13:23] INFO django.server basehttp.log_message:213 — "GET /inventory/warehouses/36/ HTTP/1.1" 200 18519
+[2026-03-13 10:13:29] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: TCS (Customer)
+[2026-03-13 10:13:29] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: TCS (Customer)
+[2026-03-13 10:13:29] INFO django.server basehttp.log_message:213 — "GET /dashboard/ HTTP/1.1" 200 25558
+[2026-03-13 10:13:31] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 21799
+[2026-03-13 10:13:32] INFO apps.orders views.order_create:236 — New order creation page accessed by sahil (Customer)
+[2026-03-13 10:13:32] INFO django.server basehttp.log_message:213 — "GET /orders/create/ HTTP/1.1" 200 47161
+[2026-03-13 10:14:01] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: TCS (Customer)
+[2026-03-13 10:14:01] INFO django.server basehttp.log_message:213 — "GET /shipments/ HTTP/1.1" 200 27109
+[2026-03-13 10:14:05] INFO django.server basehttp.log_message:213 — "GET /shipments/133/ HTTP/1.1" 200 80315
+[2026-03-13 10:14:08] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 21799
+[2026-03-13 10:14:57] INFO apps.orders views.order_create:236 — New order creation page accessed by sahil (Customer)
+[2026-03-13 10:14:57] INFO django.server basehttp.log_message:213 — "GET /orders/create/ HTTP/1.1" 200 47161
+[2026-03-13 10:20:02] INFO apps.orders views.order_create:236 — New order creation page accessed by sahil (Customer)
+[2026-03-13 10:20:02] INFO django.server basehttp.log_message:213 — "GET /orders/create/ HTTP/1.1" 200 47574
+[2026-03-13 10:20:03] WARNING django.request log.log_response:253 — Not Found: /favicon.ico
+[2026-03-13 10:20:03] WARNING django.server basehttp.log_message:213 — "GET /favicon.ico HTTP/1.1" 404 7025
+[2026-03-13 10:22:24] INFO apps.orders views.order_create:236 — New order creation page accessed by sahil (Customer)
+[2026-03-13 10:22:24] INFO django.server basehttp.log_message:213 — "GET /orders/create/ HTTP/1.1" 200 47528
+[2026-03-13 10:22:25] WARNING django.request log.log_response:253 — Not Found: /favicon.ico
+[2026-03-13 10:22:25] WARNING django.server basehttp.log_message:213 — "GET /favicon.ico HTTP/1.1" 404 7025
+[2026-03-13 10:23:25] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 21799
+[2026-03-13 10:23:28] INFO apps.orders views.order_create:236 — New order creation page accessed by sahil (Customer)
+[2026-03-13 10:23:28] INFO django.server basehttp.log_message:213 — "GET /orders/create/ HTTP/1.1" 200 47528
+[2026-03-13 10:24:20] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: TCS (Customer)
+[2026-03-13 10:24:20] INFO django.server basehttp.log_message:213 — "GET /shipments/ HTTP/1.1" 200 27109
+[2026-03-13 10:24:24] INFO django.server basehttp.log_message:213 — "GET /inventory/ HTTP/1.1" 200 21880
+[2026-03-13 10:24:29] INFO django.server basehttp.log_message:213 — "GET /inventory/warehouses/36/ HTTP/1.1" 200 18195
+[2026-03-13 10:24:35] INFO django.server basehttp.log_message:213 — "GET /inventory/items/12/edit/ HTTP/1.1" 200 18631
+[2026-03-13 10:26:16] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: TCS (Customer)
+[2026-03-13 10:26:16] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: TCS (Customer)
+[2026-03-13 10:26:16] INFO django.server basehttp.log_message:213 — "GET /dashboard/ HTTP/1.1" 200 25558
+[2026-03-13 10:26:17] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 21799
+[2026-03-13 10:26:19] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 21799
+[2026-03-13 10:26:19] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: TCS (Customer)
+[2026-03-13 10:26:19] WARNING django.request log.log_response:253 — The request's session was deleted before the request completed. The user may have logged out in a concurrent request, for example.: /shipments/
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/base/base.py", line 303, in _commit
+    return self.connection.commit()
+sqlite3.OperationalError: disk I/O error
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/django/contrib/sessions/backends/db.py", line 126, in save
+    with transaction.atomic(using=using):
+  File "/usr/local/lib/python3.10/site-packages/django/db/transaction.py", line 263, in __exit__
+    connection.commit()
+  File "/usr/local/lib/python3.10/site-packages/django/utils/asyncio.py", line 26, in inner
+    return func(*args, **kwargs)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/base/base.py", line 327, in commit
+    self._commit()
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/base/base.py", line 302, in _commit
+    with debug_transaction(self, "COMMIT"), self.wrap_database_errors:
+  File "/usr/local/lib/python3.10/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/base/base.py", line 303, in _commit
+    return self.connection.commit()
+django.db.utils.OperationalError: disk I/O error
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/django/contrib/sessions/middleware.py", line 59, in process_response
+    request.session.save()
+  File "/usr/local/lib/python3.10/site-packages/django/contrib/sessions/backends/db.py", line 136, in save
+    raise UpdateError
+django.contrib.sessions.backends.base.UpdateError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/usr/local/lib/python3.10/site-packages/django/utils/deprecation.py", line 122, in __call__
+    response = self.process_response(request, response)
+  File "/usr/local/lib/python3.10/site-packages/django/contrib/sessions/middleware.py", line 61, in process_response
+    raise SessionInterrupted(
+django.contrib.sessions.exceptions.SessionInterrupted: The request's session was deleted before the request completed. The user may have logged out in a concurrent request, for example.
+[2026-03-13 10:26:19] WARNING django.server basehttp.log_message:213 — "GET /shipments/ HTTP/1.1" 400 107236
+[2026-03-13 10:26:22] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: TCS (Customer)
+[2026-03-13 10:26:22] INFO django.server basehttp.log_message:213 — "GET /shipments/ HTTP/1.1" 200 27109
+[2026-03-13 10:26:23] INFO django.server basehttp.log_message:213 — "GET /inventory/ HTTP/1.1" 200 21880
+[2026-03-13 10:26:25] INFO django.server basehttp.log_message:213 — "GET /inventory/warehouses/ HTTP/1.1" 200 18770
+[2026-03-13 10:26:32] INFO django.server basehttp.log_message:213 — "GET /companies/ HTTP/1.1" 200 26685
+[2026-03-13 10:26:34] INFO django.server basehttp.log_message:213 — "GET /tools/rate-comparison/ HTTP/1.1" 200 33816
+[2026-03-13 10:26:35] INFO django.server basehttp.log_message:213 — "GET /companies/team/ HTTP/1.1" 200 15933
+[2026-03-13 10:26:48] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: TCS (Customer)
+[2026-03-13 10:26:48] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: TCS (Customer)
+[2026-03-13 10:26:48] INFO django.server basehttp.log_message:213 — "GET /dashboard/ HTTP/1.1" 200 25558
+[2026-03-13 10:26:49] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 21799
+[2026-03-13 10:26:50] INFO apps.orders views.order_create:236 — New order creation page accessed by sahil (Customer)
+[2026-03-13 10:26:50] INFO django.server basehttp.log_message:213 — "GET /orders/create/ HTTP/1.1" 200 47528
+[2026-03-13 10:27:52] INFO apps.orders views.order_create:236 — New order creation page accessed by sahil (Customer)
+[2026-03-13 10:27:52] INFO django.server basehttp.log_message:213 — "GET /orders/create/ HTTP/1.1" 200 48139
+[2026-03-13 10:27:53] WARNING django.request log.log_response:253 — Not Found: /favicon.ico
+[2026-03-13 10:27:53] WARNING django.server basehttp.log_message:213 — "GET /favicon.ico HTTP/1.1" 404 7025

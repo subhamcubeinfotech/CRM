@@ -187,10 +187,12 @@
                                 <select name="material[]" class="form-select material-select" required>
                                     <option value="" data-max="0">Select Material</option>
                                     {% for item in inventory_items %}
+                                    {% if item.quantity > 0 %}
                                     <option value="{{ item.product_name }}" data-max="{{ item.quantity }}"
                                         data-unit="{{ item.unit_of_measure }}">
                                         {{ item.product_name }} - {{ item.display_stock }}
                                     </option>
+                                    {% endif %}
                                     {% endfor %}
                                 </select>
                                 <button class="btn btn-outline-primary" type="button"><i class="fas fa-plus"></i>
