@@ -30,7 +30,7 @@
                                 class="fas fa-plus"></i> Add</a>
                     </div>
                     <div style="min-height: 21px;">
-                        {% if user.company and user.company.company_type != 'customer' %}
+                        {% if user.company %}
                         <a href="#" id="assign-supplier-mine" class="small text-decoration-none mt-1 d-inline-block"
                             data-company-id="{{ user.company_id }}">Click to assign to your company.</a>
                         {% endif %}
@@ -94,7 +94,7 @@
                                 class="fas fa-plus"></i> Add</a>
                     </div>
                     <div style="min-height: 21px;">
-                        {% if user.company and user.company.company_type == 'customer' %}
+                        {% if user.company %}
                         <a href="#" id="assign-receiver-mine" class="small text-decoration-none mt-1 d-inline-block"
                             data-company-id="{{ user.company_id }}">Click to assign to your company.</a>
                         {% endif %}
