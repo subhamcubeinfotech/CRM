@@ -18,13 +18,19 @@ class Shipment(TenantAwareModel):
     ]
     
     STATUS_CHOICES = [
+        ('draft', 'Draft'),
         ('pending', 'Pending'),
+        ('booked', 'Booked'),
         ('dispatched', 'Dispatched'),
+        ('picked_up', 'Picked Up'),
         ('in_transit', 'In Transit'),
+        ('customs', 'Customs'),
+        ('out_for_delivery', 'Out for Delivery'),
         ('delivered', 'Delivered'),
         ('approved', 'Approved'),
         ('invoiced', 'Invoiced'),
         ('paid', 'Paid'),
+        ('cancelled', 'Cancelled'),
         ('rejected', 'Rejected'),
     ]
     
