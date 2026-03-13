@@ -245,9 +245,7 @@ def order_create(request):
     suppliers = company_qs
     receivers = company_qs
     
-    inventory_items = InventoryItem.objects.filter(tenant=request.user.tenant) if request.user.tenant else InventoryItem.objects.all()
-    if not inventory_items.exists():
-        inventory_items = InventoryItem.plain_objects.all()
+    inventory_items = InventoryItem.plain_objects.all()
 
     # Show all warehouses in tenant, prioritize user's company
     from django.db.models import Case, When, IntegerField
