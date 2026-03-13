@@ -184,7 +184,8 @@
         <div class="mb-5 border-top pt-4">
             <h5 class="mb-4 text-uppercase fw-bold h6">Manifest Items</h5>
             <div id="manifest-items-container">
-                <div class="manifest-item card p-4 mb-3 border-light shadow-sm bg-light-subtle">
+                <div class="manifest-item card p-4 mb-3 border-light shadow-sm bg-light-subtle position-relative">
+                    <button type="button" class="btn-close remove-item-btn position-absolute top-0 end-0 m-3" aria-label="Remove" style="display: none;"></button>
                     <div class="row g-3">
                         <div class="col-md-12">
                             <label class="form-label fw-bold small">Material<span class="text-danger">*</span></label>
@@ -458,9 +459,22 @@
             input.classList.remove('is-invalid');
         });
         newItem.querySelector('.weight-warning').style.display = 'none';
+        
+        // Show remove button for NEW items
+        const removeBtn = newItem.querySelector('.remove-item-btn');
+        if (removeBtn) {
+            removeBtn.style.display = 'block';
+        }
 
         container.appendChild(newItem);
         setupInventoryValidation(newItem);
+    });
+
+    // Event delegation for removal
+    document.getElementById('manifest-items-container').addEventListener('click', function(e) {
+        if (e.target.classList.contains('remove-item-btn')) {
+            e.target.closest('.manifest-item').remove();
+        }
     });
 </script>
 {% endblock %}
