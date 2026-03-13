@@ -365,11 +365,7 @@
                                         <i class="fas fa-file-invoice text-primary"></i>Invoice
                                     </button>
                                     <ul class="dropdown-menu shadow border-0" style="border-radius:12px;">
-                                        {% if invoices %}
-                                        <li><a class="dropdown-item" href="#" onclick="openDocumentModal('invoice')"><i class="fas fa-external-link-alt me-2 text-muted"></i>View</a></li>
-                                        {% else %}
                                         <li><a class="dropdown-item" href="#" data-bs-toggle="offcanvas" data-bs-target="#invoiceDrawer"><i class="fas fa-plus me-2 text-primary"></i>Generate</a></li>
-                                        {% endif %}
                                         <li>
                                             <hr class="dropdown-divider">
                                         </li>

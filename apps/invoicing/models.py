@@ -25,7 +25,7 @@ class Invoice(TenantAwareModel):
     
     # Related parties
     customer = models.ForeignKey('accounts.Company', on_delete=models.CASCADE, related_name='invoices', limit_choices_to={'company_type': 'customer'})
-    shipment = models.ForeignKey('shipments.Shipment', on_delete=models.SET_NULL, null=True, blank=True, related_name='invoices')
+    shipment = models.ForeignKey('shipments.Shipment', on_delete=models.SET_NULL, null=True, blank=True, related_name='invoices', unique=True)
     
     # Dates
     invoice_date = models.DateField(default=timezone.now)

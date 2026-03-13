@@ -1121,11 +1121,7 @@ def create_invoice(request, pk):
 
     shipment = get_object_or_404(Shipment.objects.select_related('order', 'customer'), pk=pk)
 
-    # If invoice already exists for this shipment, redirect to it
     existing = Invoice.objects.filter(shipment=shipment).first()
-    if existing:
-        messages.info(request, f'Invoice {existing.invoice_number} already exists for this shipment.')
-        return redirect('invoicing:invoice_detail', pk=existing.pk)
 
     if request.method == 'POST':
         # Calculate subtotal from manifest items if linked to an order
@@ -1141,27 +1137,43 @@ def create_invoice(request, pk):
         # Use transaction to ensure atomicity
         try:
             with transaction.atomic():
-                # Generate invoice number first
-                invoice_number = Invoice.generate_invoice_number(shipment)
-                
-                invoice = Invoice.objects.create(
-                    customer=shipment.customer,
-                    shipment=shipment,
-                    order=shipment.order,
-                    invoice_number=invoice_number,
-                    invoice_date=date.today(),
-                    due_date=due_date,
-                    subtotal=subtotal,
-                    total=subtotal,
-                    status='draft',
-                    payment_instructions=request.POST.get('payment_instructions', ''),
-                    tax_details=request.POST.get('tax_details', ''),
-                    notes=request.POST.get('notes', ''),
-                    file_name=request.POST.get('file_name', ''),
-                    terms=request.POST.get('terms', 'Net 30 days'),
-                    created_by=request.user,
-                    tenant=request.user.tenant,
-                )
+                if existing:
+                    # Update existing invoice
+                    invoice = existing
+                    invoice.subtotal = subtotal
+                    invoice.total = subtotal
+                    invoice.payment_instructions = request.POST.get('payment_instructions', invoice.payment_instructions)
+                    invoice.tax_details = request.POST.get('tax_details', invoice.tax_details)
+                    invoice.notes = request.POST.get('notes', invoice.notes)
+                    if request.POST.get('file_name'):
+                        invoice.file_name = request.POST.get('file_name')
+                    invoice.terms = request.POST.get('terms', invoice.terms)
+                    invoice.save()
+                    
+                    # Clear and recreate line items for consistency
+                    invoice.line_items.all().delete()
+                else:
+                    # Generate invoice number first
+                    invoice_number = Invoice.generate_invoice_number(shipment)
+                    
+                    invoice = Invoice.objects.create(
+                        customer=shipment.customer,
+                        shipment=shipment,
+                        order=shipment.order,
+                        invoice_number=invoice_number,
+                        invoice_date=date.today(),
+                        due_date=due_date,
+                        subtotal=subtotal,
+                        total=subtotal,
+                        status='draft',
+                        payment_instructions=request.POST.get('payment_instructions', ''),
+                        tax_details=request.POST.get('tax_details', ''),
+                        notes=request.POST.get('notes', ''),
+                        file_name=request.POST.get('file_name', ''),
+                        terms=request.POST.get('terms', 'Net 30 days'),
+                        created_by=request.user,
+                        tenant=request.user.tenant,
+                    )
                 
                 # Add manifest items as invoice line items if available
                 if shipment.order:
@@ -1184,11 +1196,12 @@ def create_invoice(request, pk):
                         except Exception as e:
                             pass
         except Exception as e:
-            messages.error(request, f'Error creating invoice: {str(e)}')
-            return redirect('shipments:create_invoice', pk=pk)
+            messages.error(request, f'Error processing invoice: {str(e)}')
+            return redirect('shipments:shipment_detail', pk=pk)
 
-        messages.success(request, f'Invoice {invoice.invoice_number} created successfully!')
-        return redirect('invoicing:invoice_list')
+        msg = f'Invoice {invoice.invoice_number} updated successfully!' if existing else f'Invoice {invoice.invoice_number} created successfully!'
+        messages.success(request, msg)
+        return redirect('shipments:shipment_detail', pk=pk)
 
     # Show confirmation page
     from datetime import date
