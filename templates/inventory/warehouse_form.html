@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - FreightPro{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+        <h1 class="h2">{{ title }}</h1>
+        <a href="{% if warehouse %}{% url 'inventory:warehouse_detail' warehouse.pk %}{% else %}{% url 'inventory:warehouse_list' %}{% endif %}" class="btn btn-outline-secondary btn-sm">Cancel</a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <label class="form-label fw-bold small text-uppercase">{{ form.name.label }}</label>
+                                {{ form.name }}
+                                {% if form.name.errors %}
+                                    <div class="text-danger small">{{ form.name.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small text-uppercase">{{ form.code.label }}</label>
+                                {{ form.code }}
+                                {% if form.code.errors %}
+                                    <div class="text-danger small">{{ form.code.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label fw-bold small text-uppercase">{{ form.address.label }}</label>
+                                {{ form.address }}
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small text-uppercase">{{ form.city.label }}</label>
+                                {{ form.city }}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small text-uppercase">{{ form.state.label }}</label>
+                                {{ form.state }}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small text-uppercase">{{ form.postal_code.label }}</label>
+                                {{ form.postal_code }}
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-uppercase">{{ form.phone.label }}</label>
+                                {{ form.phone }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-uppercase">{{ form.email.label }}</label>
+                                {{ form.email }}
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-uppercase">{{ form.company.label }}</label>
+                                {{ form.company }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-uppercase">{{ form.manager.label }}</label>
+                                {{ form.manager }}
+                            </div>
+
+                            <div class="col-12">
+                                <div class="form-check">
+                                    {{ form.is_active }}
+                                    <label class="form-check-label fw-bold small text-uppercase" for="{{ form.is_active.id_for_label }}">
+                                        {{ form.is_active.label }}
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary">Save Warehouse</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
