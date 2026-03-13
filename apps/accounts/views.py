@@ -21,22 +21,18 @@ def custom_logout(request):
 
 @login_required
 def company_list(request):
-    """List all companies — customers see only their own company"""
-    if request.user.role == 'customer':
-        if request.user.company:
-            companies = Company.objects.filter(pk=request.user.company.pk)
-        else:
-            companies = Company.objects.none()
-    else:
-        companies = Company.objects.all().order_by('name')
-        # Filter by type
-        company_type = request.GET.get('type')
-        if company_type:
-            companies = companies.filter(company_type=company_type)
-        # Search
-        search = request.GET.get('search')
-        if search:
-            companies = companies.filter(name__icontains=search)
+    """List all companies — filtered by tenant (handled by TenantManager)"""
+    companies = Company.objects.all().order_by('name')
+    
+    # Filter by type
+    company_type = request.GET.get('type')
+    if company_type:
+        companies = companies.filter(company_type=company_type)
+        
+    # Search
+    search = request.GET.get('search')
+    if search:
+        companies = companies.filter(name__icontains=search)
 
     company_type = request.GET.get('type')
     search = request.GET.get('search')
@@ -97,8 +93,8 @@ def carrier_list(request):
 def company_detail(request, pk):
     """View company details"""
     company = get_object_or_404(Company, pk=pk)
-    # Customer can only view their own company
-    if request.user.role == 'customer' and request.user.company:
+    # Customer can only view their own company or companies in their tenant
+    if request.user.role == 'customer':
         check_company_access(company, request.user)
     
     context = {

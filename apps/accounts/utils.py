@@ -26,10 +26,18 @@ def filter_by_user_company(queryset, user, company_field='customer'):
 def check_company_access(obj_company, user):
     """
     Raise PermissionDenied if a customer user tries to access
-    data that doesn't belong to their company.
+    data that doesn't belong to their tenant.
     """
-    if user.role == 'customer' and user.company:
-        if obj_company != user.company:
+    if user.role == 'customer':
+        # Allow access if same company OR same tenant
+        if user.company and obj_company == user.company:
+            return
+        
+        if user.tenant and obj_company.tenant == user.tenant:
+            return
+            
+        # If user has a company assigned, but trying to access something outside their tenant/company
+        if user.company:
             logger.warning(
                 f'SECURITY: {user.username} (company: {user.company}) '
                 f'tried to access data of company: {obj_company}'
