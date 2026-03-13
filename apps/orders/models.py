@@ -66,8 +66,8 @@ class Order(TenantAwareModel):
     so_number = models.CharField(max_length=100, blank=True, verbose_name="SO Number")
     
     # Parties
-    supplier = models.ForeignKey('accounts.Company', on_delete=models.CASCADE, related_name='orders_as_supplier', limit_choices_to={'company_type': 'vendor'})
-    receiver = models.ForeignKey('accounts.Company', on_delete=models.CASCADE, related_name='orders_as_receiver', limit_choices_to={'company_type': 'customer'})
+    supplier = models.ForeignKey('accounts.Company', on_delete=models.CASCADE, related_name='orders_as_supplier')
+    receiver = models.ForeignKey('accounts.Company', on_delete=models.CASCADE, related_name='orders_as_receiver')
     
     # Locations
     source_location = models.ForeignKey('inventory.Warehouse', on_delete=models.SET_NULL, null=True, blank=True, related_name='orders_as_source')
