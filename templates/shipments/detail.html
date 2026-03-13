@@ -513,7 +513,9 @@
                             <h6 class="fw-bold mt-4 mb-2">Linked Invoices</h6>
                             {% for inv in invoices %}
                             <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
-                                <span class="fw-semibold text-primary">{{ inv.invoice_number }}</span>
+                                <a href="{% url 'invoicing:invoice_detail' inv.pk %}" class="fw-semibold text-primary text-decoration-none">
+                                    {{ inv.invoice_number }}
+                                </a>
                                 <span class="badge bg-{{ inv.status }}">${{ inv.total|floatformat:2 }}</span>
                             </div>
                             {% endfor %}
