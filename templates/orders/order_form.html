@@ -495,7 +495,7 @@
             const sellP    = parseFloat(item.querySelector('[name="sell_price[]"]')?.value) || 0;
             const material = materialSelect?.selectedOptions[0]?.dataset.name || materialSelect?.value || `Item ${idx + 1}`;
 
-            if (qty === 0 || (buyP === 0 && sellP === 0)) return;
+            if (!materialSelect?.value || qty === 0 || (buyP === 0 && sellP === 0)) return;
             hasAny = true;
 
             const cost    = buyP * qty;
@@ -585,8 +585,12 @@
 
             unitDisplay.value = unit;
 
-            if (currentVal > maxVal) {
-                warning.textContent = `Only ${maxVal} ${unit} available!`;
+            if (!select.value && currentVal > 0) {
+                warning.innerHTML = '<i class="fas fa-hand-point-up me-1"></i> Please select Material* first!';
+                warning.style.display = 'block';
+                input.classList.add('is-invalid');
+            } else if (currentVal > maxVal) {
+                warning.innerHTML = `<i class="fas fa-exclamation-triangle me-1"></i> Only ${maxVal} ${unit} available!`;
                 warning.style.display = 'block';
                 input.classList.add('is-invalid');
             } else {
