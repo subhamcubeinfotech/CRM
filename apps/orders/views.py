@@ -125,6 +125,15 @@ def order_update_status(request, pk):
             order.status = status
             order.save()
             logger.info(f'Order {order.order_number} status: {old_status} → {order.get_status_display()} by {request.user}')
+        
+        # ── NEW: Handle Payment Status Update ──────────────────────
+        pay_status = request.POST.get('payment_status')
+        if pay_status in dict(Order.PAYMENT_STATUS_CHOICES):
+            old_pay = order.get_payment_status_display()
+            order.payment_status = pay_status
+            order.save()
+            logger.info(f'Order {order.order_number} payment: {old_pay} → {order.get_payment_status_display()} by {request.user}')
+        # ──────────────────────────────────────────────────────────
     return redirect('orders:order_detail', pk=pk)
 
 @login_required
