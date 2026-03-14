@@ -227,11 +227,11 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Cost ($)</label>
-                            <input type="number" name="cost" class="form-control" value="{{ shipment.cost|default:'0' }}" step="0.01" id="costInput">
+                            <input type="number" name="cost" class="form-control" value="{% if is_create %}{{ order.total_cost|floatformat:2 }}{% else %}{{ shipment.cost|floatformat:2 }}{% endif %}" step="0.01" id="costInput">
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Revenue ($)</label>
-                            <input type="number" name="revenue" class="form-control" value="{{ shipment.revenue|default:'0' }}" step="0.01" id="revenueInput">
+                            <input type="number" name="revenue" class="form-control" value="{% if is_create %}{{ order.total_revenue|floatformat:2 }}{% else %}{{ shipment.revenue|floatformat:2 }}{% endif %}" step="0.01" id="revenueInput">
                         </div>
                         <div class="alert alert-info mb-0">
                             <small>
