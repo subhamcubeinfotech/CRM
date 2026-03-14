@@ -234,6 +234,13 @@ def order_create(request):
                 print(f"Error creating manifest item {i}: {e}")
                 continue
         
+        # ── NEW: Send email notification to supplier ──────────────────
+        try:
+            send_order_notification_to_supplier(order, request)
+        except Exception as e:
+            logger.warning(f'Supplier email failed for order {order.order_number}: {e}')
+        # ──────────────────────────────────────────────────────────────
+
         return redirect('orders:order_detail', pk=order.pk)
     
     logger.info(f'New order creation page accessed by {request.user}')
@@ -307,3 +314,98 @@ def order_edit(request, pk):
     # For AJAX/Offcanvas pre-fill if needed, but here we just redirect back 
     # since the offcanvas is embedded in the detail page.
     return redirect('orders:order_detail', pk=order.pk)
+
+
+# ══════════════════════════════════════════════════════════════════
+# NEW: Supplier Order Email Notification
+# ══════════════════════════════════════════════════════════════════
+def send_order_notification_to_supplier(order, request):
+    """
+    Sends a professional HTML email to the supplier when a new order is created.
+    Silently skips if supplier has no email address.
+    """
+    from django.core.mail import send_mail
+    from django.conf import settings
+    from django.template.loader import render_to_string
+    from apps.inventory.models import InventoryItem
+
+    supplier = order.supplier
+    if not supplier or not supplier.email:
+        logger.info(f'Order {order.order_number}: Supplier has no email — skipping notification.')
+        return
+
+    manifest_items = order.manifest_items.all()
+
+    # Prepare items data for template
+    items_data = []
+    for item in manifest_items:
+        # Fetch current stock for this item
+        try:
+            inv_item = InventoryItem.objects.filter(
+                product_name=item.material, 
+                warehouse__tenant=order.tenant
+            ).first()
+            available = inv_item.quantity if inv_item else 0
+        except Exception:
+            available = 0
+
+        # Styles for template
+        is_over = float(item.weight) > float(available)
+        items_data.append({
+            'material': item.material,
+            'weight': item.weight,
+            'weight_unit': item.weight_unit,
+            'available': available,
+            'buy_price': item.buy_price,
+            'buy_price_unit': item.buy_price_unit,
+            'stock_color': "#dc2626" if is_over else "#16a34a",
+            'warning_style': "background:#fffbeb;" if is_over else ""
+        })
+
+    def _fmt_date(val):
+        if not val:
+            return '—'
+        if hasattr(val, 'strftime'):
+            return val.strftime('%d %b %Y')
+        try:
+            from datetime import datetime
+            return datetime.strptime(str(val), '%Y-%m-%d').strftime('%d %b %Y')
+        except Exception:
+            return str(val)
+
+    pickup   = _fmt_date(order.expected_pickup_date)
+    delivery = _fmt_date(order.expected_delivery_date)
+    receiver_name = order.receiver.name if order.receiver else '—'
+    from_company  = request.user.company.name if request.user.company else 'FreightPro'
+
+    # Context for template
+    context = {
+        'order': order,
+        'supplier': supplier,
+        'receiver_name': receiver_name,
+        'from_company': from_company,
+        'pickup': pickup,
+        'delivery': delivery,
+        'items': items_data,
+    }
+
+    # Render HTML from template file
+    html_message = render_to_string('emails/supplier_order_notification.html', context)
+
+    plain_message = (
+        f"New Purchase Order: {order.order_number}\n"
+        f"Supplier: {supplier.name}\n"
+        f"Receiver: {receiver_name}\n"
+        f"Pickup: {pickup} | Delivery: {delivery}\n"
+        f"Items: {len(items_data)} item(s)\n"
+    )
+
+    send_mail(
+        subject=f"New Purchase Order #{order.order_number} — {from_company}",
+        message=plain_message,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[supplier.email],
+        html_message=html_message,
+        fail_silently=True,
+    )
+    logger.info(f'Order {order.order_number}: Supplier notification email sent to {supplier.email}')
