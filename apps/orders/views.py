@@ -232,6 +232,11 @@ def order_create(request):
                         inv_item.quantity = max(0, inv_item.quantity - int(qty_to_deduct))
                         inv_item.save()
                         logger.info(f"Deducted {qty_to_deduct} from {inv_item.product_name}. New stock: {inv_item.quantity}")
+                        
+                        # ── NEW: Trigger Low Stock Notification ───────────
+                        if inv_item.quantity <= 10:
+                            send_low_stock_notification(inv_item, request)
+                        # ──────────────────────────────────────────────────
             except Exception as e:
                 logger.warning(f"Stock deduction failed for item {materials[i]}: {e}")
             # ──────────────────────────────────────────────────────────
@@ -427,3 +432,66 @@ def send_order_notification_to_supplier(order, request):
         fail_silently=True,
     )
     logger.info(f'Order {order.order_number}: Supplier notification email sent to {supplier.email}')
+
+
+def send_low_stock_notification(item, request):
+    """
+    Sends a professional HTML email when stock drops to 10 or less.
+    Routes to: Warehouse Email > Company Email > Tenant Admin.
+    """
+    from django.core.mail import send_mail
+    from django.conf import settings
+    from django.template.loader import render_to_string
+    from django.contrib.auth import get_user_model
+
+    # 1. Determine Recipient
+    recipient_email = None
+    
+    # Priority A: Warehouse Email
+    if item.warehouse and item.warehouse.email:
+        recipient_email = item.warehouse.email
+        logger.info(f"Low stock alert for {item.product_name}: Using Warehouse email {recipient_email}")
+    
+    # Priority B: Company Email
+    if not recipient_email and item.warehouse and item.warehouse.company and item.warehouse.company.email:
+        recipient_email = item.warehouse.company.email
+        logger.info(f"Low stock alert for {item.product_name}: Using Company email {recipient_email}")
+        
+    # Priority C: Tenant Admin Email
+    if not recipient_email and item.tenant:
+        User = get_user_model()
+        admin_user = User.objects.filter(tenant=item.tenant, role='admin').first()
+        if admin_user and admin_user.email:
+            recipient_email = admin_user.email
+            logger.info(f"Low stock alert for {item.product_name}: Using Admin email {recipient_email}")
+
+    if not recipient_email:
+        logger.warning(f"Low stock alert for {item.product_name}: No recipient email found.")
+        return
+
+    # 2. Prepare Context
+    from_company = request.user.company.name if request.user and request.user.company else 'FreightPro'
+    dashboard_url = request.build_absolute_uri('/') # Link to landing/dashboard
+    
+    context = {
+        'item': item,
+        'from_company': from_company,
+        'dashboard_url': dashboard_url,
+    }
+
+    # 3. Render and Send
+    try:
+        html_message = render_to_string('emails/low_stock_notification.html', context)
+        plain_message = f"Alert: Low stock for {item.product_name}. Current quantity: {item.quantity} {item.unit_of_measure}."
+        
+        send_mail(
+            subject=f"⚠️ Low Stock Alert: {item.product_name} at {item.warehouse.name}",
+            message=plain_message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[recipient_email],
+            html_message=html_message,
+            fail_silently=True,
+        )
+        logger.info(f"Low stock notification sent for {item.product_name} to {recipient_email}")
+    except Exception as e:
+        logger.error(f"Failed to send low stock notification for {item.product_name}: {e}")
