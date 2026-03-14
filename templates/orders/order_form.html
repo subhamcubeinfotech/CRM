@@ -604,22 +604,37 @@
     }
 
     // ── Smart Date Logic ─────────────────────────────────────────
-    const pickupDateInput = document.getElementById('expected_pickup_date');
-    const deliveryDateInput = document.getElementById('expected_delivery_date');
+    const pickupInput = document.getElementById('expected_pickup_date');
+    const deliveryInput = document.getElementById('expected_delivery_date');
 
-    if (pickupDateInput && deliveryDateInput) {
-        pickupDateInput.addEventListener('change', function() {
-            deliveryDateInput.min = this.value;
-            // If delivery is now earlier than pickup, reset it or clear it
-            if (deliveryDateInput.value && deliveryDateInput.value < this.value) {
-                deliveryDateInput.value = this.value;
+    if (pickupInput && deliveryInput) {
+        // Set min date for pickup to today
+        const today = new Date().toISOString().split('T')[0];
+        pickupInput.min = today;
+
+        // Prevent interaction if pickup is empty
+        const checkSequence = function(e) {
+            if (!pickupInput.value) {
+                alert("Please select Expected Pickup Date first!");
+                this.blur();
+                e.preventDefault();
+            }
+        };
+
+        deliveryInput.addEventListener('mousedown', checkSequence);
+        deliveryInput.addEventListener('keydown', checkSequence);
+
+        pickupInput.addEventListener('change', function() {
+            deliveryInput.min = this.value;
+            if (deliveryInput.value && deliveryInput.value < this.value) {
+                deliveryInput.value = this.value;
             }
         });
 
-        deliveryDateInput.addEventListener('change', function() {
-            if (pickupDateInput.value && this.value < pickupDateInput.value) {
+        deliveryInput.addEventListener('change', function() {
+            if (pickupInput.value && this.value < pickupInput.value) {
                 alert("Delivery Date cannot be earlier than Pickup Date!");
-                this.value = pickupDateInput.value;
+                this.value = pickupInput.value;
             }
         });
     }
