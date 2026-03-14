@@ -226,6 +226,7 @@ def shipment_detail(request, pk):
         'map_data': json.dumps(map_data),
         'next_invoice_number': Invoice.generate_invoice_number(shipment) if hasattr(Invoice, 'generate_invoice_number') else "Generating...",
         'today': timezone.now().date(),
+        'download_invoice_id': request.session.pop('download_invoice_id', None),
     }
     return render(request, 'shipments/detail.html', context)
 
@@ -1141,10 +1142,10 @@ def create_invoice(request, pk):
                     # Update existing invoice
                     invoice = existing
                     invoice.subtotal = subtotal
-                    invoice.total = subtotal
                     invoice.payment_instructions = request.POST.get('payment_instructions', invoice.payment_instructions)
                     invoice.tax_details = request.POST.get('tax_details', invoice.tax_details)
                     invoice.notes = request.POST.get('notes', invoice.notes)
+                    invoice.tax_rate = Decimal(request.POST.get('tax_rate', '18.00'))
                     if request.POST.get('file_name'):
                         invoice.file_name = request.POST.get('file_name')
                     invoice.terms = request.POST.get('terms', invoice.terms)
@@ -1164,11 +1165,11 @@ def create_invoice(request, pk):
                         invoice_date=date.today(),
                         due_date=due_date,
                         subtotal=subtotal,
-                        total=subtotal,
                         status='draft',
                         payment_instructions=request.POST.get('payment_instructions', ''),
                         tax_details=request.POST.get('tax_details', ''),
                         notes=request.POST.get('notes', ''),
+                        tax_rate=Decimal(request.POST.get('tax_rate', '18.00')),
                         file_name=request.POST.get('file_name', ''),
                         terms=request.POST.get('terms', 'Net 30 days'),
                         created_by=request.user,
@@ -1201,6 +1202,7 @@ def create_invoice(request, pk):
 
         msg = f'Invoice {invoice.invoice_number} updated successfully!' if existing else f'Invoice {invoice.invoice_number} created successfully!'
         messages.success(request, msg)
+        request.session['download_invoice_id'] = invoice.invoice_number
         return redirect('shipments:shipment_detail', pk=pk)
 
     # Show confirmation page

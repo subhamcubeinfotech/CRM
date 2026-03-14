@@ -6,6 +6,8 @@ from django.contrib.auth import get_user_model
 from .models import Company
 
 class CompanyForm(forms.ModelForm):
+    email = forms.EmailField(required=True, widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Email Address'}))
+
     class Meta:
         model = Company
         fields = [

@@ -680,8 +680,11 @@
             </div>
 
             <div class="mb-4">
-                <label class="form-label small fw-bold text-muted text-uppercase mb-1">Tax Details</label>
-                <input type="text" name="tax_details" class="form-control form-control-sm" placeholder="Tax information...">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-1">Tax Rate (%)</label>
+                <div class="input-group input-group-sm">
+                    <input type="number" step="0.01" name="tax_rate" class="form-control" value="18.00">
+                    <span class="input-group-text bg-light text-muted">%</span>
+                </div>
             </div>
 
             <hr class="my-4">
@@ -1275,5 +1278,33 @@
         form.submit();
         form.target = originalTarget;
     }
+
+    // Auto-close offcanvas on form submission for document generation
+    document.addEventListener('DOMContentLoaded', function() {
+        const formsToCloseCanvas = ['bolForm', 'shipConfirmForm', 'packingListForm'];
+        formsToCloseCanvas.forEach(formId => {
+            const form = document.getElementById(formId);
+            if (form) {
+                form.addEventListener('submit', function() {
+                    const offcanvasEl = this.closest('.offcanvas');
+                    if (offcanvasEl) {
+                        const bsOffcanvas = bootstrap.Offcanvas.getInstance(offcanvasEl);
+                        if (bsOffcanvas) {
+                            // Small delay to ensure form submission starts before closing
+                            setTimeout(() => bsOffcanvas.hide(), 100);
+                        }
+                    }
+                });
+            }
+        });
+
+        {% if download_invoice_id %}
+        // Auto-download invoice PDF
+        setTimeout(() => {
+            const downloadUrl = "{% url 'invoicing:invoice_pdf' download_invoice_id %}";
+            window.location.href = downloadUrl;
+        }, 1000);
+        {% endif %}
+    });
 </script>
 {% endblock %}

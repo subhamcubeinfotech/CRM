@@ -141,6 +141,23 @@
                         </form>
                     </div>
                 </div>
+
+                <!-- ── NEW: Payment Status Dropdown ────────────────── -->
+                <div class="ms-2 dropdown">
+                    <button class="btn btn-sm fw-bold rounded-pill px-3 {% if order.payment_status == 'paid' %}btn-success{% else %}btn-outline-danger{% endif %} dropdown-toggle" type="button" data-bs-toggle="dropdown" style="font-size: 0.75rem;">
+                        {{ order.get_payment_status_display }}
+                    </button>
+                    <div class="dropdown-menu">
+                        {% for code, label in order.PAYMENT_STATUS_CHOICES %}
+                        <form action="{% url 'orders:order_update_status' order.pk %}" method="POST">
+                            {% csrf_token %}
+                            <input type="hidden" name="payment_status" value="{{ code }}">
+                            <button type="submit" class="dropdown-item {% if order.payment_status == code %}active{% endif %}">{{ label }}</button>
+                        </form>
+                        {% endfor %}
+                    </div>
+                </div>
+                <!-- ────────────────────────────────────────────────── -->
             </div>
             <div class="dropdown">
                 <button class="btn btn-primary d-flex align-items-center px-4" type="button" id="mainActions"
@@ -152,7 +169,7 @@
                         data-bs-target="#offcanvasEditOrder">
                         <i class="fas fa-edit me-2 text-muted"></i>Edit Parameters
                     </a>
-                    <a class="dropdown-item py-2" href="{% url 'shipments:shipment_create' %}?order={{ order.pk }}"><i
+                    <a class="dropdown-item py-2" href="{% url 'shipments:shipment_create' %}?order_id={{ order.pk }}"><i
                             class="fas fa-truck-moving me-2 text-muted"></i>Schedule Shipment</a>
                     <a class="dropdown-item py-2" href="#"><i
                             class="fas fa-file-invoice-dollar me-2 text-muted"></i>Issue Invoice</a>
