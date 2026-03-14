@@ -188,8 +188,8 @@
                                     <option value="" data-max="0">Select Material</option>
                                     {% for item in inventory_items %}
                                     {% if item.quantity > 0 %}
-                                    <option value="{{ item.product_name }}" data-max="{{ item.quantity }}"
-                                        data-unit="{{ item.unit_of_measure }}">
+                                    <option value="{{ item.id }}" data-max="{{ item.quantity }}"
+                                        data-unit="{{ item.unit_of_measure }}" data-name="{{ item.product_name }}">
                                         {{ item.product_name }} - {{ item.display_stock }}
                                     </option>
                                     {% endif %}
@@ -489,10 +489,11 @@
         let hasAny = false;
 
         items.forEach((item, idx) => {
+            const materialSelect = item.querySelector('.material-select');
             const qty      = parseFloat(item.querySelector('.weight-input')?.value) || 0;
             const buyP     = parseFloat(item.querySelector('[name="buy_price[]"]')?.value) || 0;
             const sellP    = parseFloat(item.querySelector('[name="sell_price[]"]')?.value) || 0;
-            const material = item.querySelector('.material-select')?.value || `Item ${idx + 1}`;
+            const material = materialSelect?.selectedOptions[0]?.dataset.name || materialSelect?.value || `Item ${idx + 1}`;
 
             if (qty === 0 || (buyP === 0 && sellP === 0)) return;
             hasAny = true;

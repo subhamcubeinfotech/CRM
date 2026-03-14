@@ -217,18 +217,37 @@ def order_create(request):
             if not materials[i]:
                 continue
                 
+            material_name = materials[i]
+            qty_to_deduct = float(weights[i]) if i < len(weights) and weights[i] else 0
+            
+            # ── NEW: Deduct Stock if material is an ID ────────────────
+            try:
+                # Check if materials[i] is an ID (integer)
+                if materials[i].isdigit():
+                    inv_item = InventoryItem.objects.get(pk=materials[i])
+                    material_name = inv_item.product_name # Use product name for manifest
+                    
+                    # Deduct stock
+                    if qty_to_deduct > 0:
+                        inv_item.quantity = max(0, inv_item.quantity - int(qty_to_deduct))
+                        inv_item.save()
+                        logger.info(f"Deducted {qty_to_deduct} from {inv_item.product_name}. New stock: {inv_item.quantity}")
+            except Exception as e:
+                logger.warning(f"Stock deduction failed for item {materials[i]}: {e}")
+            # ──────────────────────────────────────────────────────────
+
             try:
                 ManifestItem.objects.create(
                     order=order,
-                    material=materials[i],
-                    weight=weights[i] if i < len(weights) else 0,
+                    material=material_name,
+                    weight=qty_to_deduct,
                     weight_unit=weight_units[i] if i < len(weight_units) else "lbs",
                     buy_price=buy_prices[i] if i < len(buy_prices) else 0,
                     buy_price_unit=buy_price_units[i] if i < len(buy_price_units) else "per lbs",
                     sell_price=sell_prices[i] if i < len(sell_prices) else 0,
                     sell_price_unit=sell_price_units[i] if i < len(sell_price_units) else "per lbs",
                     packaging=packagings[i] if i < len(packagings) else "",
-                    is_palletized=False # Need a better way for checkboxes in arrays
+                    is_palletized=False 
                 )
             except Exception as e:
                 print(f"Error creating manifest item {i}: {e}")
@@ -327,7 +346,6 @@ def send_order_notification_to_supplier(order, request):
     from django.core.mail import send_mail
     from django.conf import settings
     from django.template.loader import render_to_string
-    from apps.inventory.models import InventoryItem
 
     supplier = order.supplier
     if not supplier or not supplier.email:
