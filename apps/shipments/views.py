@@ -1142,10 +1142,10 @@ def create_invoice(request, pk):
                     # Update existing invoice
                     invoice = existing
                     invoice.subtotal = subtotal
-                    invoice.total = subtotal
                     invoice.payment_instructions = request.POST.get('payment_instructions', invoice.payment_instructions)
                     invoice.tax_details = request.POST.get('tax_details', invoice.tax_details)
                     invoice.notes = request.POST.get('notes', invoice.notes)
+                    invoice.tax_rate = Decimal(request.POST.get('tax_rate', '18.00'))
                     if request.POST.get('file_name'):
                         invoice.file_name = request.POST.get('file_name')
                     invoice.terms = request.POST.get('terms', invoice.terms)
@@ -1165,11 +1165,11 @@ def create_invoice(request, pk):
                         invoice_date=date.today(),
                         due_date=due_date,
                         subtotal=subtotal,
-                        total=subtotal,
                         status='draft',
                         payment_instructions=request.POST.get('payment_instructions', ''),
                         tax_details=request.POST.get('tax_details', ''),
                         notes=request.POST.get('notes', ''),
+                        tax_rate=Decimal(request.POST.get('tax_rate', '18.00')),
                         file_name=request.POST.get('file_name', ''),
                         terms=request.POST.get('terms', 'Net 30 days'),
                         created_by=request.user,

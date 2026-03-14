@@ -680,8 +680,11 @@
             </div>
 
             <div class="mb-4">
-                <label class="form-label small fw-bold text-muted text-uppercase mb-1">Tax Details</label>
-                <input type="text" name="tax_details" class="form-control form-control-sm" placeholder="Tax information...">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-1">Tax Rate (%)</label>
+                <div class="input-group input-group-sm">
+                    <input type="number" step="0.01" name="tax_rate" class="form-control" value="18.00">
+                    <span class="input-group-text bg-light text-muted">%</span>
+                </div>
             </div>
 
             <hr class="my-4">
