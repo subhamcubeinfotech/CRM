@@ -71,7 +71,7 @@
 
                 <div class="mb-4">
                     <label class="form-label fw-bold small text-uppercase">Expected Pickup Date</label>
-                    <input type="date" name="expected_pickup_date" class="form-control">
+                    <input type="date" name="expected_pickup_date" id="expected_pickup_date" class="form-control">
                 </div>
             </div>
 
@@ -132,7 +132,7 @@
 
                 <div class="mb-4">
                     <label class="form-label fw-bold small text-uppercase">Expected Delivery Date</label>
-                    <input type="date" name="expected_delivery_date" class="form-control">
+                    <input type="date" name="expected_delivery_date" id="expected_delivery_date" class="form-control">
                 </div>
             </div>
         </div>
@@ -601,6 +601,27 @@
 
         select.addEventListener('change', validate);
         input.addEventListener('input', validate);
+    }
+
+    // ── Smart Date Logic ─────────────────────────────────────────
+    const pickupDateInput = document.getElementById('expected_pickup_date');
+    const deliveryDateInput = document.getElementById('expected_delivery_date');
+
+    if (pickupDateInput && deliveryDateInput) {
+        pickupDateInput.addEventListener('change', function() {
+            deliveryDateInput.min = this.value;
+            // If delivery is now earlier than pickup, reset it or clear it
+            if (deliveryDateInput.value && deliveryDateInput.value < this.value) {
+                deliveryDateInput.value = this.value;
+            }
+        });
+
+        deliveryDateInput.addEventListener('change', function() {
+            if (pickupDateInput.value && this.value < pickupDateInput.value) {
+                alert("Delivery Date cannot be earlier than Pickup Date!");
+                this.value = pickupDateInput.value;
+            }
+        });
     }
 
     // Initialize for existing items
