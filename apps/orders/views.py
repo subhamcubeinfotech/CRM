@@ -125,6 +125,15 @@ def order_update_status(request, pk):
             order.status = status
             order.save()
             logger.info(f'Order {order.order_number} status: {old_status} → {order.get_status_display()} by {request.user}')
+        
+        # ── NEW: Handle Payment Status Update ──────────────────────
+        pay_status = request.POST.get('payment_status')
+        if pay_status in dict(Order.PAYMENT_STATUS_CHOICES):
+            old_pay = order.get_payment_status_display()
+            order.payment_status = pay_status
+            order.save()
+            logger.info(f'Order {order.order_number} payment: {old_pay} → {order.get_payment_status_display()} by {request.user}')
+        # ──────────────────────────────────────────────────────────
     return redirect('orders:order_detail', pk=pk)
 
 @login_required
@@ -217,23 +226,54 @@ def order_create(request):
             if not materials[i]:
                 continue
                 
+            material_name = materials[i]
+            qty_to_deduct = float(weights[i]) if i < len(weights) and weights[i] else 0
+            
+            # ── NEW: Deduct Stock if material is an ID ────────────────
+            try:
+                # Check if materials[i] is an ID (integer)
+                if materials[i].isdigit():
+                    inv_item = InventoryItem.objects.get(pk=materials[i])
+                    material_name = inv_item.product_name # Use product name for manifest
+                    
+                    # Deduct stock
+                    if qty_to_deduct > 0:
+                        inv_item.quantity = max(0, inv_item.quantity - int(qty_to_deduct))
+                        inv_item.save()
+                        logger.info(f"Deducted {qty_to_deduct} from {inv_item.product_name}. New stock: {inv_item.quantity}")
+                        
+                        # ── NEW: Trigger Low Stock Notification ───────────
+                        if inv_item.quantity <= 10:
+                            send_low_stock_notification(inv_item, request)
+                        # ──────────────────────────────────────────────────
+            except Exception as e:
+                logger.warning(f"Stock deduction failed for item {materials[i]}: {e}")
+            # ──────────────────────────────────────────────────────────
+
             try:
                 ManifestItem.objects.create(
                     order=order,
-                    material=materials[i],
-                    weight=weights[i] if i < len(weights) else 0,
+                    material=material_name,
+                    weight=qty_to_deduct,
                     weight_unit=weight_units[i] if i < len(weight_units) else "lbs",
                     buy_price=buy_prices[i] if i < len(buy_prices) else 0,
                     buy_price_unit=buy_price_units[i] if i < len(buy_price_units) else "per lbs",
                     sell_price=sell_prices[i] if i < len(sell_prices) else 0,
                     sell_price_unit=sell_price_units[i] if i < len(sell_price_units) else "per lbs",
                     packaging=packagings[i] if i < len(packagings) else "",
-                    is_palletized=False # Need a better way for checkboxes in arrays
+                    is_palletized=False 
                 )
             except Exception as e:
                 print(f"Error creating manifest item {i}: {e}")
                 continue
         
+        # ── NEW: Send email notification to supplier ──────────────────
+        try:
+            send_order_notification_to_supplier(order, request)
+        except Exception as e:
+            logger.warning(f'Supplier email failed for order {order.order_number}: {e}')
+        # ──────────────────────────────────────────────────────────────
+
         return redirect('orders:order_detail', pk=order.pk)
     
     logger.info(f'New order creation page accessed by {request.user}')
@@ -307,3 +347,160 @@ def order_edit(request, pk):
     # For AJAX/Offcanvas pre-fill if needed, but here we just redirect back 
     # since the offcanvas is embedded in the detail page.
     return redirect('orders:order_detail', pk=order.pk)
+
+
+# ══════════════════════════════════════════════════════════════════
+# NEW: Supplier Order Email Notification
+# ══════════════════════════════════════════════════════════════════
+def send_order_notification_to_supplier(order, request):
+    """
+    Sends a professional HTML email to the supplier when a new order is created.
+    Silently skips if supplier has no email address.
+    """
+    from django.core.mail import send_mail
+    from django.conf import settings
+    from django.template.loader import render_to_string
+
+    supplier = order.supplier
+    if not supplier or not supplier.email:
+        logger.info(f'Order {order.order_number}: Supplier has no email — skipping notification.')
+        return
+
+    manifest_items = order.manifest_items.all()
+
+    # Prepare items data for template
+    items_data = []
+    for item in manifest_items:
+        # Fetch current stock for this item
+        try:
+            inv_item = InventoryItem.objects.filter(
+                product_name=item.material, 
+                warehouse__tenant=order.tenant
+            ).first()
+            available = inv_item.quantity if inv_item else 0
+        except Exception:
+            available = 0
+
+        # Styles for template
+        is_over = float(item.weight) > float(available)
+        items_data.append({
+            'material': item.material,
+            'weight': item.weight,
+            'weight_unit': item.weight_unit,
+            'available': available,
+            'buy_price': item.buy_price,
+            'buy_price_unit': item.buy_price_unit,
+            'stock_color': "#dc2626" if is_over else "#16a34a",
+            'warning_style': "background:#fffbeb;" if is_over else ""
+        })
+
+    def _fmt_date(val):
+        if not val:
+            return '—'
+        if hasattr(val, 'strftime'):
+            return val.strftime('%d %b %Y')
+        try:
+            from datetime import datetime
+            return datetime.strptime(str(val), '%Y-%m-%d').strftime('%d %b %Y')
+        except Exception:
+            return str(val)
+
+    pickup   = _fmt_date(order.expected_pickup_date)
+    delivery = _fmt_date(order.expected_delivery_date)
+    receiver_name = order.receiver.name if order.receiver else '—'
+    from_company  = request.user.company.name if request.user.company else 'FreightPro'
+
+    # Context for template
+    context = {
+        'order': order,
+        'supplier': supplier,
+        'receiver_name': receiver_name,
+        'from_company': from_company,
+        'pickup': pickup,
+        'delivery': delivery,
+        'items': items_data,
+    }
+
+    # Render HTML from template file
+    html_message = render_to_string('emails/supplier_order_notification.html', context)
+
+    plain_message = (
+        f"New Purchase Order: {order.order_number}\n"
+        f"Supplier: {supplier.name}\n"
+        f"Receiver: {receiver_name}\n"
+        f"Pickup: {pickup} | Delivery: {delivery}\n"
+        f"Items: {len(items_data)} item(s)\n"
+    )
+
+    send_mail(
+        subject=f"New Purchase Order #{order.order_number} — {from_company}",
+        message=plain_message,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[supplier.email],
+        html_message=html_message,
+        fail_silently=True,
+    )
+    logger.info(f'Order {order.order_number}: Supplier notification email sent to {supplier.email}')
+
+
+def send_low_stock_notification(item, request):
+    """
+    Sends a professional HTML email when stock drops to 10 or less.
+    Routes to: Warehouse Email > Company Email > Tenant Admin.
+    """
+    from django.core.mail import send_mail
+    from django.conf import settings
+    from django.template.loader import render_to_string
+    from django.contrib.auth import get_user_model
+
+    # 1. Determine Recipient
+    recipient_email = None
+    
+    # Priority A: Warehouse Email
+    if item.warehouse and item.warehouse.email:
+        recipient_email = item.warehouse.email
+        logger.info(f"Low stock alert for {item.product_name}: Using Warehouse email {recipient_email}")
+    
+    # Priority B: Company Email
+    if not recipient_email and item.warehouse and item.warehouse.company and item.warehouse.company.email:
+        recipient_email = item.warehouse.company.email
+        logger.info(f"Low stock alert for {item.product_name}: Using Company email {recipient_email}")
+        
+    # Priority C: Tenant Admin Email
+    if not recipient_email and item.tenant:
+        User = get_user_model()
+        admin_user = User.objects.filter(tenant=item.tenant, role='admin').first()
+        if admin_user and admin_user.email:
+            recipient_email = admin_user.email
+            logger.info(f"Low stock alert for {item.product_name}: Using Admin email {recipient_email}")
+
+    if not recipient_email:
+        logger.warning(f"Low stock alert for {item.product_name}: No recipient email found.")
+        return
+
+    # 2. Prepare Context
+    from_company = request.user.company.name if request.user and request.user.company else 'FreightPro'
+    dashboard_url = request.build_absolute_uri('/') # Link to landing/dashboard
+    
+    context = {
+        'item': item,
+        'from_company': from_company,
+        'dashboard_url': dashboard_url,
+    }
+
+    # 3. Render and Send
+    try:
+        html_message = render_to_string('emails/low_stock_notification.html', context)
+        plain_message = f"Alert: Low stock for {item.product_name}. Current quantity: {item.quantity} {item.unit_of_measure}."
+        
+        send_mail(
+            subject=f"⚠️ Low Stock Alert: {item.product_name} at {item.warehouse.name}",
+            message=plain_message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[recipient_email],
+            html_message=html_message,
+            fail_silently=True,
+        )
+        logger.info(f"Low stock notification sent for {item.product_name} to {recipient_email}")
+    except Exception as e:
+        logger.error(f"Failed to send low stock notification for {item.product_name}: {e}")

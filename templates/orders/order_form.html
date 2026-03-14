@@ -71,7 +71,7 @@
 
                 <div class="mb-4">
                     <label class="form-label fw-bold small text-uppercase">Expected Pickup Date</label>
-                    <input type="date" name="expected_pickup_date" class="form-control">
+                    <input type="date" name="expected_pickup_date" id="expected_pickup_date" class="form-control">
                 </div>
             </div>
 
@@ -132,7 +132,7 @@
 
                 <div class="mb-4">
                     <label class="form-label fw-bold small text-uppercase">Expected Delivery Date</label>
-                    <input type="date" name="expected_delivery_date" class="form-control">
+                    <input type="date" name="expected_delivery_date" id="expected_delivery_date" class="form-control">
                 </div>
             </div>
         </div>
@@ -188,8 +188,8 @@
                                     <option value="" data-max="0">Select Material</option>
                                     {% for item in inventory_items %}
                                     {% if item.quantity > 0 %}
-                                    <option value="{{ item.product_name }}" data-max="{{ item.quantity }}"
-                                        data-unit="{{ item.unit_of_measure }}">
+                                    <option value="{{ item.id }}" data-max="{{ item.quantity }}"
+                                        data-unit="{{ item.unit_of_measure }}" data-name="{{ item.product_name }}">
                                         {{ item.product_name }} - {{ item.display_stock }}
                                     </option>
                                     {% endif %}
@@ -282,6 +282,118 @@
             </button>
         </div>
 
+        <!-- Profit Estimator Card -->
+        <div id="profit-estimator-card" style="
+            display: none;
+            background: #ffffff;
+            border: 1px solid #e5e9f2;
+            border-radius: 14px;
+            box-shadow: 0 4px 24px rgba(67,97,238,0.07), 0 1.5px 6px rgba(0,0,0,0.04);
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        ">
+            <!-- Header -->
+            <div style="
+                background: linear-gradient(90deg, #1a1f36 0%, #2d3561 100%);
+                padding: 14px 22px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            ">
+                <div style="
+                    background: rgba(255,255,255,0.12);
+                    border-radius: 8px;
+                    width: 34px; height: 34px;
+                    display:flex; align-items:center; justify-content:center;
+                ">
+                    <i class="fas fa-chart-line" style="color:#a5b4fc; font-size:0.95rem;"></i>
+                </div>
+                <div>
+                    <div style="color:#fff; font-size:0.85rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase;">Profit Estimator</div>
+                    <div style="color:rgba(255,255,255,0.45); font-size:0.7rem;">Real-time calculation based on item prices</div>
+                </div>
+                <span style="
+                    margin-left: auto;
+                    background: #22c55e;
+                    color: #fff;
+                    font-size: 0.65rem;
+                    font-weight: 700;
+                    padding: 3px 9px;
+                    border-radius: 20px;
+                    letter-spacing: 0.05em;
+                    text-transform: uppercase;
+                    display: flex; align-items:center; gap:4px;
+                ">
+                    <span style="width:6px;height:6px;background:#fff;border-radius:50%;display:inline-block;opacity:0.8;animation:livepulse 1.4s infinite;"></span>
+                    LIVE
+                </span>
+            </div>
+
+            <!-- KPI Stats Row -->
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; border-bottom: 1px solid #f0f2f8;">
+                <!-- Revenue -->
+                <div style="padding: 18px 22px; border-right: 1px solid #f0f2f8;">
+                    <div style="display:flex; align-items:center; gap:7px; margin-bottom:6px;">
+                        <div style="width:28px;height:28px;border-radius:7px;background:#eef2ff;display:flex;align-items:center;justify-content:center;">
+                            <i class="fas fa-arrow-up" style="font-size:0.7rem;color:#4f46e5;"></i>
+                        </div>
+                        <span style="font-size:0.72rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">Revenue</span>
+                    </div>
+                    <div id="est-revenue" style="font-size:1.45rem;font-weight:800;color:#1a1f36;line-height:1;">$0.00</div>
+                    <div style="font-size:0.7rem;color:#9ca3af;margin-top:3px;">Total sell value</div>
+                </div>
+                <!-- Cost -->
+                <div style="padding: 18px 22px; border-right: 1px solid #f0f2f8;">
+                    <div style="display:flex; align-items:center; gap:7px; margin-bottom:6px;">
+                        <div style="width:28px;height:28px;border-radius:7px;background:#fff7ed;display:flex;align-items:center;justify-content:center;">
+                            <i class="fas fa-arrow-down" style="font-size:0.7rem;color:#f97316;"></i>
+                        </div>
+                        <span style="font-size:0.72rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">Cost</span>
+                    </div>
+                    <div id="est-cost" style="font-size:1.45rem;font-weight:800;color:#1a1f36;line-height:1;">$0.00</div>
+                    <div style="font-size:0.7rem;color:#9ca3af;margin-top:3px;">Total buy value</div>
+                </div>
+                <!-- Profit -->
+                <div style="padding: 18px 22px; background: #f8faff;">
+                    <div style="display:flex; align-items:center; gap:7px; margin-bottom:6px;">
+                        <div style="width:28px;height:28px;border-radius:7px;background:#dcfce7;display:flex;align-items:center;justify-content:center;" id="profit-icon-bg">
+                            <i class="fas fa-star" style="font-size:0.7rem;color:#16a34a;" id="profit-icon"></i>
+                        </div>
+                        <span style="font-size:0.72rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">Est. Profit</span>
+                    </div>
+                    <div id="est-profit" style="font-size:1.45rem;font-weight:800;color:#16a34a;line-height:1;">$0.00</div>
+                    <div style="font-size:0.7rem;color:#9ca3af;margin-top:3px;" id="est-margin-text">Margin: —</div>
+                </div>
+            </div>
+
+            <!-- Margin Bar -->
+            <div style="padding: 12px 22px; background:#fafbff; border-bottom: 1px solid #f0f2f8;" id="margin-bar-section">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <span style="font-size:0.72rem;color:#6b7280;font-weight:600;">Profit Margin</span>
+                    <span id="margin-bar-label" style="font-size:0.72rem;font-weight:700;color:#6b7280;">—</span>
+                </div>
+                <div style="background:#e5e9f2;border-radius:99px;height:6px;overflow:hidden;">
+                    <div id="margin-bar-fill" style="height:100%;width:0%;border-radius:99px;background:linear-gradient(90deg,#4f46e5,#22c55e);transition:width 0.4s ease;"></div>
+                </div>
+            </div>
+
+            <!-- Per-Item Breakdown -->
+            <div id="profit-items-breakdown" style="display:none;">
+                <div style="padding: 10px 22px 4px; display:flex; align-items:center; gap:6px;">
+                    <i class="fas fa-list-ul" style="font-size:0.7rem;color:#9ca3af;"></i>
+                    <span style="font-size:0.7rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.06em;">Per Item Breakdown</span>
+                </div>
+                <div id="profit-items-list" style="padding: 0 22px 14px;"></div>
+            </div>
+        </div>
+
+        <style>
+        @keyframes livepulse {
+            0%,100% { opacity: 0.5; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.3); }
+        }
+        </style>
+
         <!-- Total Weight Target (Global for Order) -->
         <div class="card bg-light border-0 mb-4">
             <div class="card-body">
@@ -368,7 +480,97 @@
         assignCompanyLocation('dest-location-select', 'receiver-select');
     });
 
-    // Inventory Validation Logic
+    // ── Profit Estimator ─────────────────────────────────────────
+    function recalcProfit() {
+        const items = document.querySelectorAll('.manifest-item');
+        let totalRevenue = 0, totalCost = 0;
+        const breakdownList = document.getElementById('profit-items-list');
+        breakdownList.innerHTML = '';
+        let hasAny = false;
+
+        items.forEach((item, idx) => {
+            const materialSelect = item.querySelector('.material-select');
+            const qty      = parseFloat(item.querySelector('.weight-input')?.value) || 0;
+            const buyP     = parseFloat(item.querySelector('[name="buy_price[]"]')?.value) || 0;
+            const sellP    = parseFloat(item.querySelector('[name="sell_price[]"]')?.value) || 0;
+            const material = materialSelect?.selectedOptions[0]?.dataset.name || materialSelect?.value || `Item ${idx + 1}`;
+
+            if (!materialSelect?.value || qty === 0 || (buyP === 0 && sellP === 0)) return;
+            hasAny = true;
+
+            const cost    = buyP * qty;
+            const revenue = sellP * qty;
+            const profit  = revenue - cost;
+
+            totalRevenue += revenue;
+            totalCost    += cost;
+
+            // Per-item breakdown row (clean white style)
+            const isPos    = profit >= 0;
+            const pillColor = isPos ? '#dcfce7' : '#fee2e2';
+            const textColor = isPos ? '#15803d' : '#dc2626';
+            const sign      = isPos ? '+' : '';
+            breakdownList.innerHTML += `
+                <div style="display:flex;justify-content:space-between;align-items:center;
+                            padding:7px 0;border-bottom:1px solid #f3f4f6;font-size:0.82rem;">
+                    <div style="display:flex;align-items:center;gap:7px;">
+                        <div style="width:6px;height:6px;border-radius:50%;background:${textColor};flex-shrink:0;"></div>
+                        <span style="color:#374151;font-weight:500;">${material}</span>
+                    </div>
+                    <span style="background:${pillColor};color:${textColor};padding:2px 9px;
+                                 border-radius:99px;font-weight:700;font-size:0.75rem;">${sign}$${profit.toFixed(2)}</span>
+                </div>`;
+        });
+
+        const totalProfit = totalRevenue - totalCost;
+        const marginVal   = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
+        const isProfit    = totalProfit >= 0;
+        const profitColor = isProfit ? '#16a34a' : '#dc2626';
+
+        // KPI values
+        document.getElementById('est-revenue').textContent = '$' + totalRevenue.toFixed(2);
+        document.getElementById('est-cost').textContent    = '$' + totalCost.toFixed(2);
+        document.getElementById('est-profit').textContent  = (isProfit ? '+' : '') + '$' + totalProfit.toFixed(2);
+        document.getElementById('est-profit').style.color  = profitColor;
+
+        // Margin text under profit
+        document.getElementById('est-margin-text').textContent = totalRevenue > 0 ? `Margin: ${marginVal.toFixed(1)}%` : 'Margin: —';
+
+        // Profit icon
+        const iconBg = document.getElementById('profit-icon-bg');
+        const icon   = document.getElementById('profit-icon');
+        if (iconBg && icon) {
+            iconBg.style.background = isProfit ? '#dcfce7' : '#fee2e2';
+            icon.style.color        = profitColor;
+            icon.className          = isProfit ? 'fas fa-star' : 'fas fa-exclamation-triangle';
+        }
+
+        // Margin bar
+        const barFill  = document.getElementById('margin-bar-fill');
+        const barLabel = document.getElementById('margin-bar-label');
+        if (barFill && barLabel) {
+            const barWidth = Math.min(Math.max(Math.abs(marginVal), 0), 100);
+            barFill.style.width      = barWidth + '%';
+            barFill.style.background = isProfit
+                ? 'linear-gradient(90deg,#4f46e5,#22c55e)'
+                : 'linear-gradient(90deg,#f97316,#dc2626)';
+            barLabel.textContent     = totalRevenue > 0 ? marginVal.toFixed(1) + '%' : '—';
+            barLabel.style.color     = profitColor;
+        }
+
+        // Show/hide entire card
+        document.getElementById('profit-estimator-card').style.display = hasAny ? 'block' : 'none';
+
+        // Per-item breakdown visibility
+        document.getElementById('profit-items-breakdown').style.display =
+            hasAny && items.length > 1 ? 'block' : 'none';
+    }
+
+    // Listen for changes on dynamically added items via delegation
+    document.getElementById('manifest-items-container').addEventListener('input', recalcProfit);
+    document.getElementById('manifest-items-container').addEventListener('change', recalcProfit);
+
+    // ── Inventory Validation Logic ────────────────────────────────
     function setupInventoryValidation(container) {
         const select = container.querySelector('.material-select');
         const input = container.querySelector('.weight-input');
@@ -383,8 +585,12 @@
 
             unitDisplay.value = unit;
 
-            if (currentVal > maxVal) {
-                warning.textContent = `Only ${maxVal} ${unit} available!`;
+            if (!select.value && currentVal > 0) {
+                warning.innerHTML = '<i class="fas fa-hand-point-up me-1"></i> Please select Material* first!';
+                warning.style.display = 'block';
+                input.classList.add('is-invalid');
+            } else if (currentVal > maxVal) {
+                warning.innerHTML = `<i class="fas fa-exclamation-triangle me-1"></i> Only ${maxVal} ${unit} available!`;
                 warning.style.display = 'block';
                 input.classList.add('is-invalid');
             } else {
@@ -395,6 +601,42 @@
 
         select.addEventListener('change', validate);
         input.addEventListener('input', validate);
+    }
+
+    // ── Smart Date Logic ─────────────────────────────────────────
+    const pickupInput = document.getElementById('expected_pickup_date');
+    const deliveryInput = document.getElementById('expected_delivery_date');
+
+    if (pickupInput && deliveryInput) {
+        // Set min date for pickup to today
+        const today = new Date().toISOString().split('T')[0];
+        pickupInput.min = today;
+
+        // Prevent interaction if pickup is empty
+        const checkSequence = function(e) {
+            if (!pickupInput.value) {
+                alert("Please select Expected Pickup Date first!");
+                this.blur();
+                e.preventDefault();
+            }
+        };
+
+        deliveryInput.addEventListener('mousedown', checkSequence);
+        deliveryInput.addEventListener('keydown', checkSequence);
+
+        pickupInput.addEventListener('change', function() {
+            deliveryInput.min = this.value;
+            if (deliveryInput.value && deliveryInput.value < this.value) {
+                deliveryInput.value = this.value;
+            }
+        });
+
+        deliveryInput.addEventListener('change', function() {
+            if (pickupInput.value && this.value < pickupInput.value) {
+                alert("Delivery Date cannot be earlier than Pickup Date!");
+                this.value = pickupInput.value;
+            }
+        });
     }
 
     // Initialize for existing items
