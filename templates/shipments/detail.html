@@ -1294,6 +1294,14 @@
                 });
             }
         });
+
+        {% if download_invoice_id %}
+        // Auto-download invoice PDF
+        setTimeout(() => {
+            const downloadUrl = "{% url 'invoicing:invoice_pdf' download_invoice_id %}";
+            window.location.href = downloadUrl;
+        }, 1000);
+        {% endif %}
     });
 </script>
 {% endblock %}

@@ -226,6 +226,7 @@ def shipment_detail(request, pk):
         'map_data': json.dumps(map_data),
         'next_invoice_number': Invoice.generate_invoice_number(shipment) if hasattr(Invoice, 'generate_invoice_number') else "Generating...",
         'today': timezone.now().date(),
+        'download_invoice_id': request.session.pop('download_invoice_id', None),
     }
     return render(request, 'shipments/detail.html', context)
 
@@ -1201,6 +1202,7 @@ def create_invoice(request, pk):
 
         msg = f'Invoice {invoice.invoice_number} updated successfully!' if existing else f'Invoice {invoice.invoice_number} created successfully!'
         messages.success(request, msg)
+        request.session['download_invoice_id'] = invoice.invoice_number
         return redirect('shipments:shipment_detail', pk=pk)
 
     # Show confirmation page
