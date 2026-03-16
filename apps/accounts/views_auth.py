@@ -4,6 +4,10 @@ from django.contrib.auth import logout
 from django.views import View
 from .forms import SignupStep1Form, SignupStep2Form
 from .models_tenant import Tenant
+from .models import SystemSetting
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.conf import settings
 import logging
 
 logger = logging.getLogger('apps.accounts')
@@ -66,3 +70,54 @@ class SignupView(View):
                 return redirect('login')
                 
             return render(request, self.template_step2, {'form': form})
+
+
+def public_wholesale_request_view(request):
+    """
+    Public view for non-logged-in users to request a wholesale account.
+    """
+    if request.method == 'POST':
+        company_name = request.POST.get('company_name')
+        business_address = request.POST.get('business_address')
+        contact_name = request.POST.get('contact_name')
+        contact_email = request.POST.get('contact_email')
+
+        # Priority: Database setting -> settings.py hardcoded
+        recipient_email = SystemSetting.get_val('wholesale_recipient', getattr(settings, 'WHOLESALE_ONBOARDING_RECIPIENT', 'subham@yopmail.com'))
+
+        try:
+            # Prepare context for the polished email template
+            # We pass a dictionary that mimics the company object structure used in the template
+            context = {
+                'company': {
+                    'name': company_name,
+                    'full_address': business_address,
+                    'email': contact_email,
+                },
+                'user': {
+                    'get_full_name': contact_name,
+                    'username': contact_email,
+                }
+            }
+            
+            html_message = render_to_string('emails/wholesale_account_request.html', context)
+            subject = f"Public Wholesale Request: {company_name}"
+            
+            send_mail(
+                subject=subject,
+                message=f"Public Wholesale Request from {company_name}. Please see HTML version.",
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[recipient_email],
+                html_message=html_message,
+                fail_silently=False,
+            )
+            
+            messages.success(request, "Success! Your wholesale request has been sent to our team. We'll be in touch soon.")
+            logger.info(f"Public wholesale request sent from {company_name} ({contact_email})")
+            return redirect('accounts:public_wholesale_request')
+            
+        except Exception as e:
+            messages.error(request, f"Oops! We couldn't send your request right now. Please try again later.")
+            logger.error(f"Failed to process public wholesale request: {str(e)}")
+
+    return render(request, 'accounts/public_wholesale_request.html')

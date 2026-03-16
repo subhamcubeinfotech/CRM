@@ -102,4 +102,25 @@ class CustomUser(AbstractUser):
         return self.role == 'warehouse'
     
 
-# from .models_subscription import Subscription
+
+class SystemSetting(models.Model):
+    """Generic settings model to allow configuration via UI (Admin)"""
+    key = models.CharField(max_length=100, unique=True, help_text="Unique key for the setting (e.g. 'wholesale_recipient')")
+    value = models.TextField(help_text="The value of the setting")
+    description = models.CharField(max_length=255, blank=True, help_text="What this setting controls")
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'System Setting'
+        verbose_name_plural = 'System Settings'
+
+    def __str__(self):
+        return f"{self.key}: {self.value}"
+
+    @classmethod
+    def get_val(cls, key, default=None):
+        """Helper to get setting value by key"""
+        try:
+            return cls.objects.get(key=key).value
+        except cls.DoesNotExist:
+            return default

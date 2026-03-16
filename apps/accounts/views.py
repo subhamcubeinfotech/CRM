@@ -5,9 +5,13 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 from django.core.paginator import Paginator
-from .models import Company
+from .models import Company, SystemSetting
 from .forms import CompanyForm
 from .utils import filter_by_user_company, check_company_access
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.conf import settings
+from django.contrib import messages
 import logging
 
 logger = logging.getLogger('apps.accounts')
@@ -183,3 +187,43 @@ def company_create(request):
         'is_edit': False
     }
     return render(request, 'accounts/company_form.html', context)
+
+
+@login_required
+def wholesale_request_view(request, pk):
+    """
+    Handles a request to Urban Poling for a wholesale account tier.
+    Only accessible via POST for security.
+    """
+    company = get_object_or_404(Company, pk=pk)
+    
+    # Access control
+    if request.user.role == 'customer':
+        check_company_access(company, request.user)
+    
+    if request.method == 'POST':
+        recipient_email = SystemSetting.get_val('wholesale_recipient', getattr(settings, 'WHOLESALE_ONBOARDING_RECIPIENT', 'subham@yopmail.com'))
+        
+        try:
+            context = {
+                'company': company,
+                'user': request.user,
+            }
+            html_message = render_to_string('emails/wholesale_account_request.html', context)
+            subject = f"Wholesale Account Request: {company.name}"
+            
+            send_mail(
+                subject=subject,
+                message=f"Request for {company.name}. Please see HTML version.",
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[recipient_email],
+                html_message=html_message,
+                fail_silently=False,
+            )
+            messages.success(request, f"Wholesale account request for {company.name} sent successfully.")
+            logger.info(f'Wholesale request sent for {company.name} (ID: {pk}) by {request.user} to {recipient_email}')
+        except Exception as e:
+            messages.error(request, f"Could not send request: {str(e)}")
+            logger.error(f'Critical error sending wholesale request for {company.name}: {e}')
+            
+    return redirect('accounts:company_detail', pk=pk)
