@@ -194,6 +194,7 @@ def order_create(request):
             source_location_id=resolve_location(source_loc_val, request.user),
             destination_location_id=resolve_location(dest_loc_val, request.user),
             total_weight_target=request.POST.get('total_weight_target') or 0,
+            freight_cost=request.POST.get('freight_cost') or 0,
             expected_pickup_date=request.POST.get('expected_pickup_date') or None,
             expected_delivery_date=request.POST.get('expected_delivery_date') or None,
             shipping_terms_id=request.POST.get('shipping_terms'),
@@ -330,6 +331,7 @@ def order_edit(request, pk):
         order.so_number = request.POST.get('so_number')
         order.shipping_terms_id = request.POST.get('shipping_terms')
         order.representative_id = request.POST.get('representative')
+        order.freight_cost = request.POST.get('freight_cost') or 0
         order.expected_pickup_date = request.POST.get('expected_pickup_date') or None
         order.expected_delivery_date = request.POST.get('expected_delivery_date') or None
         

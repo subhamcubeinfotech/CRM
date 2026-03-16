@@ -282,6 +282,24 @@
             </button>
         </div>
 
+        <!-- Freight Cost Section (Styled like Manifest Item) -->
+        <div class="card p-4 mb-4 border-light shadow-sm bg-light-subtle">
+            <div class="row g-3 align-items-center">
+                <div class="col-md-8">
+                    <label class="form-label fw-bold small text-uppercase mb-1">Freight Shipment Cost</label>
+                    <div class="small text-muted">Enter the total estimated shipping cost for this entire order.</div>
+                </div>
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-primary-subtle text-primary fw-bold">$</span>
+                        <input type="number" step="0.01" name="freight_cost" id="freight-cost-input" 
+                            class="form-control border-primary-subtle fw-bold" placeholder="0.00"
+                            style="font-size: 1rem;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Profit Estimator Card -->
         <div id="profit-estimator-card" style="
             display: none;
@@ -484,6 +502,7 @@
     function recalcProfit() {
         const items = document.querySelectorAll('.manifest-item');
         let totalRevenue = 0, totalCost = 0;
+        const freightCost = parseFloat(document.getElementById('freight-cost-input')?.value) || 0;
         const breakdownList = document.getElementById('profit-items-list');
         breakdownList.innerHTML = '';
         let hasAny = false;
@@ -521,6 +540,9 @@
                                  border-radius:99px;font-weight:700;font-size:0.75rem;">${sign}$${profit.toFixed(2)}</span>
                 </div>`;
         });
+        
+        // Add Freight Cost to total cost
+        totalCost += freightCost;
 
         const totalProfit = totalRevenue - totalCost;
         const marginVal   = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
@@ -569,6 +591,7 @@
     // Listen for changes on dynamically added items via delegation
     document.getElementById('manifest-items-container').addEventListener('input', recalcProfit);
     document.getElementById('manifest-items-container').addEventListener('change', recalcProfit);
+    document.getElementById('freight-cost-input').addEventListener('input', recalcProfit);
 
     // ── Inventory Validation Logic ────────────────────────────────
     function setupInventoryValidation(container) {
