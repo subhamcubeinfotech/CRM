@@ -4,7 +4,7 @@ from django.contrib.auth import logout
 from django.views import View
 from .forms import SignupStep1Form, SignupStep2Form
 from .models_tenant import Tenant
-from .models import SystemSetting
+from .models import SystemSetting, WholesaleRequest
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.conf import settings
@@ -82,6 +82,26 @@ def public_wholesale_request_view(request):
         contact_name = request.POST.get('contact_name')
         contact_email = request.POST.get('contact_email')
         wholesaler_email = request.POST.get('wholesaler_email')
+        desired_username = (request.POST.get('desired_username') or '').strip()
+
+        # Backend Validation for Username
+        if len(desired_username) < 5 or len(desired_username) > 15:
+            messages.error(request, "Username must be between 5 and 15 characters.")
+            return render(request, 'accounts/public_wholesale_request.html', {'form_data': request.POST})
+        
+        if desired_username and desired_username[0].isdigit():
+            messages.error(request, "Username cannot start with a number.")
+            return render(request, 'accounts/public_wholesale_request.html', {'form_data': request.POST})
+
+        # 1. Save request to database for tracking
+        wholesale_request = WholesaleRequest.objects.create(
+            company_name=company_name,
+            contact_name=contact_name,
+            wholesaler_email=wholesaler_email,
+            desired_username=desired_username,
+            business_address=business_address,
+            status='pending'
+        )
 
         # Priority: Database setting -> settings.py hardcoded
         recipient_email = SystemSetting.get_val('wholesale_recipient', getattr(settings, 'WHOLESALE_ONBOARDING_RECIPIENT', 'subham@yopmail.com'))
@@ -94,10 +114,12 @@ def public_wholesale_request_view(request):
                     'name': company_name,
                     'full_address': business_address,
                     'email': wholesaler_email,
+                    'desired_username': desired_username,
                 },
                 'user': {
                     'get_full_name': contact_name,
-                    'username': wholesaler_email,
+                    'username': desired_username,
+                    'email': wholesaler_email,
                 },
                 'receiver_email': contact_email
             }

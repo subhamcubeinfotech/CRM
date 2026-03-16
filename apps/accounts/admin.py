@@ -7,7 +7,7 @@ from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.conf import settings
 from django.contrib import messages
-from .models import CustomUser, Company, SystemSetting
+from .models import CustomUser, Company, SystemSetting, WholesaleRequest
 import logging
 
 logger = logging.getLogger('apps.accounts')
@@ -108,3 +108,12 @@ class CustomUserAdmin(UserAdmin):
 class SystemSettingAdmin(admin.ModelAdmin):
     list_display = ['key', 'value', 'description', 'updated_at']
     search_fields = ['key', 'value']
+
+
+@admin.register(WholesaleRequest)
+class WholesaleRequestAdmin(admin.ModelAdmin):
+    list_display = ['company_name', 'contact_name', 'desired_username', 'wholesaler_email', 'status', 'created_at']
+    list_filter = ['status', 'created_at']
+    search_fields = ['company_name', 'contact_name', 'wholesaler_email', 'desired_username']
+    readonly_fields = ['created_at', 'updated_at']
+    list_editable = ['status']

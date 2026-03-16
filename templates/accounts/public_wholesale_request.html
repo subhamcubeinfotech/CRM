@@ -201,7 +201,7 @@
                     <div class="input-group">
                         <span class="input-group-text"><i class="fas fa-briefcase"></i></span>
                         <input type="text" name="company_name" class="form-control with-icon"
-                            placeholder="e.g. Urban Sports Ltd." required>
+                            placeholder="e.g. Urban Sports Ltd." value="{{ form_data.company_name }}" required>
                     </div>
                 </div>
 
@@ -210,7 +210,7 @@
                     <div class="input-group">
                         <span class="input-group-text"><i class="fas fa-location-dot"></i></span>
                         <textarea name="business_address" class="form-control with-icon" rows="2"
-                            placeholder="Full street address, city, and province" required></textarea>
+                            placeholder="Full street address, city, and province" required>{{ form_data.business_address }}</textarea>
                     </div>
                 </div>
 
@@ -222,16 +222,28 @@
                         <div class="input-group">
                             <span class="input-group-text"><i class="fas fa-user"></i></span>
                             <input type="text" name="contact_name" class="form-control with-icon"
-                                placeholder="First & Last Name" value="{% if user.is_authenticated %}{{ user.get_full_name }}{% endif %}" required>
+                                placeholder="First & Last Name" value="{% if form_data.contact_name %}{{ form_data.contact_name }}{% elif user.is_authenticated %}{{ user.get_full_name }}{% endif %}" required>
                         </div>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">Wholesaler Email</label>
+                        <label class="form-label">Desired Username</label>
                         <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-envelope"></i></span>
-                            <input type="email" name="wholesaler_email" class="form-control with-icon"
-                                placeholder="your-email@company.com" value="{% if user.is_authenticated %}{{ user.email }}{% endif %}" required>
+                            <span class="input-group-text"><i class="fas fa-id-badge"></i></span>
+                            <input type="text" name="desired_username" id="id_desired_username" class="form-control with-icon"
+                                placeholder="e.g. urban" maxlength="15" value="{{ form_data.desired_username }}" required>
                         </div>
+                        <div id="username-feedback" class="invalid-feedback d-block" style="font-size: 11px; display: none !important;">
+                            5 to 15 chars, cannot start with a number.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Wholesaler Email</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                        <input type="email" name="wholesaler_email" class="form-control with-icon"
+                            placeholder="your-email@company.com" value="{% if form_data.wholesaler_email %}{{ form_data.wholesaler_email }}{% elif user.is_authenticated %}{{ user.email }}{% endif %}" required>
                     </div>
                 </div>
 
@@ -255,6 +267,31 @@
             </div>
         </div>
     </div>
+    <script>
+        document.getElementById('id_desired_username').addEventListener('input', function(e) {
+            const val = e.target.value;
+            const feedback = document.getElementById('username-feedback');
+            const submitBtn = document.querySelector('.btn-submit');
+            
+            let isInvalid = false;
+            
+            // Rule 1: 5 to 15 characters
+            if (val.length > 0 && (val.length < 5 || val.length > 15)) isInvalid = true;
+            
+            // Rule 2: Cannot start with a number
+            if (val.length > 0 && /^\d/.test(val)) isInvalid = true;
+            
+            if (isInvalid) {
+                e.target.classList.add('is-invalid');
+                feedback.style.setProperty('display', 'block', 'important');
+                submitBtn.disabled = true;
+            } else {
+                e.target.classList.remove('is-invalid');
+                feedback.style.setProperty('display', 'none', 'important');
+                submitBtn.disabled = false;
+            }
+        });
+    </script>
 </body>
 
 </html>

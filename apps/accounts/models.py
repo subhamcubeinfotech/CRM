@@ -110,17 +110,41 @@ class SystemSetting(models.Model):
     description = models.CharField(max_length=255, blank=True, help_text="What this setting controls")
     updated_at = models.DateTimeField(auto_now=True)
 
-    class Meta:
-        verbose_name = 'System Setting'
-        verbose_name_plural = 'System Settings'
-
     def __str__(self):
-        return f"{self.key}: {self.value}"
+        return self.key
 
     @classmethod
     def get_val(cls, key, default=None):
-        """Helper to get setting value by key"""
         try:
             return cls.objects.get(key=key).value
         except cls.DoesNotExist:
             return default
+
+    class Meta:
+        verbose_name = 'System Setting'
+        verbose_name_plural = 'System Settings'
+
+
+class WholesaleRequest(models.Model):
+    """Tracks public requests for wholesale accounts"""
+    STATUS_CHOICES = [
+        ('pending', 'Pending Review'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+    
+    company_name = models.CharField(max_length=255)
+    contact_name = models.CharField(max_length=255)
+    wholesaler_email = models.EmailField()
+    desired_username = models.CharField(max_length=15, help_text="5 to 15 characters, must not start with a number")
+    business_address = models.TextField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.company_name} - {self.status}"
