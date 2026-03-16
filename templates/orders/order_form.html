@@ -32,7 +32,7 @@
                     <div style="min-height: 21px;">
                         {% if user.company %}
                         <a href="#" id="assign-supplier-mine" class="small text-decoration-none mt-1 d-inline-block"
-                            data-company-id="{{ user.company_id }}">Click to assign to your company.</a>
+                            data-company-id="{{ user.company_id }}" data-address="{{ user.company.full_address }}">Click to assign to your company.</a>
                         {% endif %}
                     </div>
                 </div>
@@ -57,10 +57,6 @@
                         <button class="btn btn-outline-primary" type="button"><i class="fas fa-plus"></i> Add</button>
                     </div>
                     <div style="min-height: 21px;">
-                        {% if user.company %}
-                        <a href="#" id="assign-source-my-location" class="small text-decoration-none mt-1 d-inline-block">Click to use
-                            selected supplier's address.</a>
-                        {% endif %}
                     </div>
                 </div>
 
@@ -93,7 +89,7 @@
                     <div style="min-height: 21px;">
                         {% if user.company %}
                         <a href="#" id="assign-receiver-mine" class="small text-decoration-none mt-1 d-inline-block"
-                            data-company-id="{{ user.company_id }}">Click to assign to your company.</a>
+                            data-company-id="{{ user.company_id }}" data-address="{{ user.company.full_address }}">Click to assign to your company.</a>
                         {% endif %}
                     </div>
                 </div>
@@ -118,10 +114,6 @@
                         <button class="btn btn-outline-primary" type="button"><i class="fas fa-plus"></i> Add</button>
                     </div>
                     <div style="min-height: 21px;">
-                        {% if user.company %}
-                        <a href="#" id="assign-dest-my-location" class="small text-decoration-none mt-1 d-inline-block">Click to use
-                            selected receiver's address.</a>
-                        {% endif %}
                     </div>
                 </div>
 
@@ -432,7 +424,7 @@
 
 <script>
     // Quick Assignment Links
-    function assignMyCompany(selectId, companyId, companyName) {
+    function assignMyCompany(selectId, companyId, companyName, companyAddress) {
         const select = document.getElementById(selectId);
         if (!companyId) return;
 
@@ -441,19 +433,22 @@
         if (!option) {
             // Add option dynamically
             option = new Option(companyName + " (Your Company)", companyId);
+            option.dataset.address = companyAddress || "";
             select.add(option);
         }
         select.value = companyId;
+        // Manually trigger change event
+        select.dispatchEvent(new Event('change'));
     }
 
     document.getElementById('assign-supplier-mine')?.addEventListener('click', function (e) {
         e.preventDefault();
-        assignMyCompany('supplier-select', this.dataset.companyId, "{{ user.company.name|default:'My Company' }}");
+        assignMyCompany('supplier-select', this.dataset.companyId, "{{ user.company.name|default:'My Company' }}", this.dataset.address);
     });
 
     document.getElementById('assign-receiver-mine')?.addEventListener('click', function (e) {
         e.preventDefault();
-        assignMyCompany('receiver-select', this.dataset.companyId, "{{ user.company.name|default:'My Company' }}");
+        assignMyCompany('receiver-select', this.dataset.companyId, "{{ user.company.name|default:'My Company' }}", this.dataset.address);
     });
 
     document.getElementById('assign-rep-me')?.addEventListener('click', function (e) {
