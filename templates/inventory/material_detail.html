@@ -15,10 +15,6 @@
         <div class="card-body p-4">
             <div class="d-flex justify-content-between align-items-start mb-4">
                 <div class="d-flex align-items-center gap-4">
-                    <div class="material-logo-placeholder d-flex align-items-center justify-content-center" 
-                         style="width: 120px; height: 120px; background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                        <i class="fas fa-box-open fa-3x text-primary" style="opacity: 0.3;"></i>
-                    </div>
                     <div>
                         <h2 class="fw-bold mb-1" style="color: #1e293b; font-size: 2rem;">{{ material.name }}</h2>
                         <div class="d-flex align-items-center gap-2">
@@ -50,6 +46,9 @@
                 </li>
                 <li class="nav-item">
                     <a class="nav-link {% if active_tab == 'documents' %}active{% endif %}" href="?name={{ material.name }}&tab=documents">Documents</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if active_tab == 'history' %}active{% endif %}" href="?name={{ material.name }}&tab=history">History</a>
                 </li>
             </ul>
         </div>
@@ -152,33 +151,63 @@
                 </div>
 
                 {% elif active_tab == 'orders' %}
-                <div class="table-responsive">
-                    <table class="table align-middle">
-                        <thead>
+                <div class="p-4">
+                    <h5 class="fw-bold mb-4">Recent Orders</h5>
+                    <div class="table-responsive">
+                    <table class="table align-middle table-hover" style="font-size: 0.85rem;">
+                        <thead class="bg-light">
                             <tr class="text-muted small text-uppercase">
-                                <th>Order #</th>
-                                <th>Date</th>
-                                <th>Customer/Supplier</th>
+                                <th class="ps-3">ID</th>
                                 <th>Status</th>
-                                <th>Actions</th>
+                                <th>Create Date</th>
+                                <th>Supplier</th>
+                                <th>Pickup</th>
+                                <th>Receiver</th>
+                                <th>Destination</th>
+                                <th>Total Weight</th>
+                                <th>PO Number</th>
+                                <th>SO Number</th>
+                                <th class="text-end">Total Revenue</th>
+                                <th class="text-end pe-3">Total Cost</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for order in related_orders %}
                             <tr>
-                                <td class="fw-bold text-primary">{{ order.order_number }}</td>
-                                <td>{{ order.created_at|date:"M d, Y" }}</td>
-                                <td>{{ order.receiver.name }}</td>
-                                <td>
-                                    <span class="badge bg-light text-dark border rounded-pill">{{ order.get_status_display }}</span>
+                                <td class="ps-3">
+                                    <a href="{% url 'orders:order_detail' order.pk %}" class="fw-bold text-primary text-decoration-none">{{ order.order_number }}</a>
                                 </td>
                                 <td>
-                                    <a href="{% url 'shipments:order_detail' order.pk %}" class="btn btn-sm btn-light rounded-pill px-3">View</a>
+                                    {% if order.status == 'confirmed' or order.status == 'delivered' or order.status == 'closed' %}
+                                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-3">Completed</span>
+                                    {% else %}
+                                    <span class="badge bg-info-subtle text-info border border-info-subtle rounded-pill px-3">Open</span>
+                                    {% endif %}
                                 </td>
+                                <td class="text-muted">{{ order.created_at|date:"m/d/Y" }}</td>
+                                <td class="text-dark">{{ order.supplier.name|truncatechars:25 }}</td>
+                                <td class="text-muted">
+                                    {% if order.source_location %}
+                                    {{ order.source_location.city }}, {{ order.source_location.state }}
+                                    {% else %}—{% endif %}
+                                </td>
+                                <td class="text-dark">{{ order.receiver.name|truncatechars:25 }}</td>
+                                <td class="text-muted">
+                                    {% if order.destination_location %}
+                                    {{ order.destination_location.city }}, {{ order.destination_location.state }}
+                                    {% else %}—{% endif %}
+                                </td>
+                                <td class="fw-bold">
+                                    {{ order.total_weight_target|floatformat:"0" }} {{ order.manifest_items.first.weight_unit|default:"lbs" }}
+                                </td>
+                                <td class="text-muted small">{{ order.po_number|default:"—" }}</td>
+                                <td class="text-muted small">{{ order.so_number|default:"—" }}</td>
+                                <td class="text-end fw-semibold">${{ order.total_revenue|floatformat:"2" }}</td>
+                                <td class="text-end fw-semibold pe-3">${{ order.total_cost|floatformat:"2" }}</td>
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="5" class="text-center py-4 text-muted">No order history available.</td>
+                                <td colspan="12" class="text-center py-4 text-muted">No order history available.</td>
                             </tr>
                             {% endfor %}
                         </tbody>
