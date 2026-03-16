@@ -1,0 +1,287 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid py-4" style="background: #f8fafc; min-height: 100vh;">
+    <!-- Header with Back Button and Name -->
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <a href="javascript:history.back()" class="btn btn-link text-decoration-none text-muted p-0">
+            <i class="fas fa-chevron-left me-1"></i> Back
+        </a>
+    </div>
+
+    <!-- Material Profile Header -->
+    <div class="card border-0 shadow-sm mb-4" style="border-radius: 20px; overflow: hidden;">
+        <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-start mb-4">
+                <div class="d-flex align-items-center gap-4">
+                    <div class="material-logo-placeholder d-flex align-items-center justify-content-center" 
+                         style="width: 120px; height: 120px; background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                        <i class="fas fa-box-open fa-3x text-primary" style="opacity: 0.3;"></i>
+                    </div>
+                    <div>
+                        <h2 class="fw-bold mb-1" style="color: #1e293b; font-size: 2rem;">{{ material.name }}</h2>
+                        <div class="d-flex align-items-center gap-2">
+                             <span class="badge bg-light text-primary border border-primary-subtle px-3 py-2 rounded-pill">Active</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="dropdown">
+                    <button class="btn btn-primary px-4 fw-bold rounded-pill" type="button" data-bs-toggle="dropdown">
+                        Actions <i class="fas fa-chevron-down ms-2 small"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg" style="border-radius: 12px;">
+                        <li><a class="dropdown-item py-2 px-3" href="#"><i class="fas fa-edit me-2 text-muted"></i> Edit Material</a></li>
+                        <li><a class="dropdown-item py-2 px-3 text-danger" href="#"><i class="fas fa-trash me-2"></i> Delete</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <ul class="nav nav-pills custom-tabs border-bottom mb-0" id="materialTabs">
+                <li class="nav-item">
+                    <a class="nav-link {% if active_tab == 'details' %}active{% endif %}" href="?name={{ material.name }}&tab=details">Details</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if active_tab == 'haves' %}active{% endif %}" href="?name={{ material.name }}&tab=haves">Haves</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if active_tab == 'orders' %}active{% endif %}" href="?name={{ material.name }}&tab=orders">Orders</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if active_tab == 'documents' %}active{% endif %}" href="?name={{ material.name }}&tab=documents">Documents</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="row g-4">
+        <div class="col-lg-12">
+            <div class="card border-0 shadow-sm p-4" style="border-radius: 20px; min-height: 400px;">
+                {% if active_tab == 'details' %}
+                <div class="row g-5">
+                    <div class="col-md-8">
+                        
+                        <div class="row g-4 mb-5">
+                            <div class="col-md-3">
+                                <label class="text-muted small text-uppercase fw-bold mb-1 d-block" style="letter-spacing: 0.05em;">Material Type</label>
+                                <span class="fw-semibold text-dark">{{ material.material_type|default:"—" }}</span>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="text-muted small text-uppercase fw-bold mb-1 d-block" style="letter-spacing: 0.05em;">Grade</label>
+                                <span class="fw-semibold text-dark">{{ material.grade|default:"—" }}</span>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="text-muted small text-uppercase fw-bold mb-1 d-block" style="letter-spacing: 0.05em;">Color</label>
+                                <span class="fw-semibold text-dark">{{ material.color|default:"—" }}</span>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="text-muted small text-uppercase fw-bold mb-1 d-block" style="letter-spacing: 0.05em;">Product Type</label>
+                                <span class="fw-semibold text-dark">{{ material.product_type|default:"—" }}</span>
+                            </div>
+                        </div>
+
+                        <div class="h5 fw-bold mb-4 border-bottom pb-2">Pricing</div>
+                        
+                        <div class="pricing-card bg-white border rounded-4 p-4 mb-4">
+                            <div class="d-flex justify-content-end align-items-center mb-4">
+                                <div class="h5 mb-0 fw-bold text-dark">
+                                    <span class="text-muted small fw-normal">Avg Buy:</span> ${{ avg_buy|floatformat:"2" }} 
+                                    <span class="mx-2 text-muted">|</span>
+                                    <span class="text-muted small fw-normal">Avg Sell:</span> ${{ avg_sell|floatformat:"2" }}
+                                </div>
+                            </div>
+                            
+                            <!-- Legend -->
+                            <div class="d-flex gap-4 mb-4">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span style="width: 12px; height: 12px; border-radius: 50%; background: #3b82f6; display: inline-block;"></span>
+                                    <span class="small text-muted">Avg Buy Price</span>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span style="width: 12px; height: 12px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
+                                    <span class="small text-muted">Avg Sell Price</span>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span style="width: 12px; height: 12px; border-radius: 50%; background: #e2e8f0; display: inline-block;"></span>
+                                    <span class="small text-muted">Volume (Weight)</span>
+                                </div>
+                            </div>
+
+                            <div style="height: 300px; position: relative;">
+                                <canvas id="pricingChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% elif active_tab == 'haves' %}
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr class="text-muted small text-uppercase">
+                                <th>Warehouse</th>
+                                <th>Quantity</th>
+                                <th>Unit Cost</th>
+                                <th>Value</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in inventory_items %}
+                            <tr>
+                                <td>{{ item.warehouse.name }}</td>
+                                <td class="fw-bold">{{ item.quantity }} {{ item.unit|default:"lbs" }}</td>
+                                <td>${{ item.unit_cost }}</td>
+                                <td>${{ item.total_value }}</td>
+                                <td>
+                                    {% if item.is_low_stock %}
+                                    <span class="badge bg-danger-subtle text-danger rounded-pill">Low Stock</span>
+                                    {% else %}
+                                    <span class="badge bg-success-subtle text-success rounded-pill">In Stock</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-4 text-muted">No inventory found for this material.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% elif active_tab == 'orders' %}
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr class="text-muted small text-uppercase">
+                                <th>Order #</th>
+                                <th>Date</th>
+                                <th>Customer/Supplier</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in related_orders %}
+                            <tr>
+                                <td class="fw-bold text-primary">{{ order.order_number }}</td>
+                                <td>{{ order.created_at|date:"M d, Y" }}</td>
+                                <td>{{ order.receiver.name }}</td>
+                                <td>
+                                    <span class="badge bg-light text-dark border rounded-pill">{{ order.get_status_display }}</span>
+                                </td>
+                                <td>
+                                    <a href="{% url 'shipments:order_detail' order.pk %}" class="btn btn-sm btn-light rounded-pill px-3">View</a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-4 text-muted">No order history available.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <!-- Other tabs -->
+                <div class="text-center py-5">
+                    <div class="mb-3">
+                        <i class="fas fa-folder-open fa-3x text-muted opacity-25"></i>
+                    </div>
+                    <h5 class="text-muted">No data available in this section</h5>
+                    <p class="text-muted small">Information for "{{ active_tab|capfirst }}" will appear here.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .custom-tabs .nav-link {
+        border: none;
+        color: #64748b;
+        font-weight: 600;
+        padding: 12px 24px;
+        position: relative;
+        transition: all 0.2s;
+    }
+    .custom-tabs .nav-link:hover {
+        color: #1e293b;
+        background: transparent;
+    }
+    .custom-tabs .nav-link.active {
+        color: #3b82f6 !important;
+        background: transparent !important;
+        border-bottom: 3px solid #3b82f6;
+        border-radius: 0;
+    }
+    .rounded-4 { border-radius: 16px !important; }
+    .btn-light { background: #f8fafc; color: #475569; font-weight: 500; }
+    .btn-light:hover { background: #f1f5f9; }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const chartData = JSON.parse('{{ chart_data|escapejs }}');
+        const ctx = document.getElementById('pricingChart').getContext('2d');
+        
+        new Chart(ctx, {
+            data: {
+                labels: chartData.labels,
+                datasets: [
+                    {
+                        type: 'line',
+                        label: 'Avg Buy Price',
+                        data: chartData.buy,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'transparent',
+                        tension: 0.4,
+                        yAxisID: 'y'
+                    },
+                    {
+                        type: 'line',
+                        label: 'Avg Sell Price',
+                        data: chartData.sell,
+                        borderColor: '#10b981',
+                        backgroundColor: 'transparent',
+                        tension: 0.4,
+                        yAxisID: 'y'
+                    },
+                    {
+                        type: 'bar',
+                        label: 'Volume',
+                        data: chartData.weight,
+                        backgroundColor: '#f1f5f9',
+                        borderRadius: 4,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        position: 'left',
+                        grid: { color: '#f1f5f9' },
+                        title: { display: true, text: 'Price ($/lb)', color: '#64748b' }
+                    },
+                    y1: {
+                        beginAtZero: true,
+                        position: 'right',
+                        grid: { display: false },
+                        title: { display: true, text: 'Volume (lbs)', color: '#64748b' }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

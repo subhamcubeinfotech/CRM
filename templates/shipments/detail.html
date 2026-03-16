@@ -330,7 +330,13 @@
                                         {% if shipment.order %}
                                         {% for item in shipment.order.manifest_items.all %}
                                         <tr>
-                                            <td class="fw-semibold text-primary">{{ item.material }}</td>
+                                            <td class="py-3 px-2">
+                                                <div class="fw-bold">
+                                                <a href="{% url 'materials:material_lookup' %}?name={{ item.material|urlencode }}" class="text-primary text-decoration-none">
+                                                    {{ item.material }}
+                                                </a>
+                                                </div>
+                                            </td>
                                             <td>${{ item.buy_price|floatformat:3 }} / {{ item.buy_price_unit }}</td>
                                             <td>${{ item.sell_price|floatformat:2 }} / {{ item.sell_price_unit }}</td>
                                             <td>{{ item.weight|floatformat:0 }} {{ item.weight_unit }}</td>

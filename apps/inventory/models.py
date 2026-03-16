@@ -88,6 +88,33 @@ class Warehouse(TenantAwareModel):
         parts.append(name_part)
         
         return " - ".join(parts)
+    
+    @property
+    def full_display(self):
+        """Return full display name"""
+        return f"{self.name} - {self.city}, {self.state}"
+
+
+class Material(TenantAwareModel):
+    """Material model for tracking specific material types and grades"""
+    name = models.CharField(max_length=200, unique=True)
+    material_type = models.CharField(max_length=100, blank=True, help_text="e.g. PE, PP, PVC")
+    grade = models.CharField(max_length=100, blank=True, help_text="e.g. Post-Industrial, Virgin")
+    color = models.CharField(max_length=100, blank=True, help_text="e.g. Mixed, Clear, White")
+    product_type = models.CharField(max_length=100, blank=True, help_text="e.g. Film, Flake, Regrind")
+    
+    description = models.TextField(blank=True)
+    image = models.ImageField(upload_to='materials/', null=True, blank=True)
+    
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['name']
+    
+    def __str__(self):
+        return self.name
 
 
 class InventoryItem(TenantAwareModel):
