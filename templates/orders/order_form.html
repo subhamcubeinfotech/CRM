@@ -462,7 +462,7 @@
     });
 
     // Assign Selected Company Address to Location
-    function assignCompanyLocation(selectId, partySelectId) {
+    function assignCompanyLocation(selectId, partySelectId, force = false) {
         const partySelect = document.getElementById(partySelectId);
         const locationSelect = document.getElementById(selectId);
         
@@ -471,13 +471,13 @@
         const companyId = partySelect.value;
         
         if (!addressStr || !companyId) {
-            alert("Please select a company first.");
+            if (force) alert("Please select a company first.");
             return;
         }
 
         const virtualValue = "temp_addr_" + addressStr;
         
-        // Ensure option exists (filterLocations might have removed it if it was temporary)
+        // Ensure option exists
         let option = [...locationSelect.options].find(o => o.value === virtualValue);
         if (!option) {
             option = new Option(addressStr, virtualValue);
@@ -673,22 +673,22 @@
             const companyId = partySelect.value;
             const companyAddress = partySelect.selectedOptions[0]?.dataset.address;
             
-            // Clear existing company-specific virtual options
+            // 1. Clear ALL existing temporary addresses first to avoid duplicates
             [...locationSelect.options].forEach(opt => {
                 if (opt.value.startsWith('temp_addr_')) {
                     opt.remove();
                 }
             });
 
-            let found = false;
-            let firstVisible = null;
+            let foundWarehouse = false;
+            let firstVisibleWarehouse = null;
 
+            // 2. Filter existing warehouses
             [...locationSelect.options].forEach(opt => {
-                if (!opt.value) return; // Skip placeholder
+                if (!opt.value) return; 
                 
                 const optCompanyId = opt.dataset.companyId;
                 
-                // BUG FIX: If no company is selected, hide everything
                 if (!companyId) {
                     opt.style.display = 'none';
                     return;
@@ -696,30 +696,28 @@
 
                 if (optCompanyId === companyId || (!optCompanyId && companyId === "{{ user.company_id }}")) {
                     opt.style.display = '';
-                    found = true;
-                    if (!firstVisible) firstVisible = opt.value;
+                    foundWarehouse = true;
+                    if (!firstVisibleWarehouse) firstVisibleWarehouse = opt.value;
                 } else {
                     opt.style.display = 'none';
                 }
             });
 
-            // If no warehouse found for selected company, add their main address as an option
-            if (!found && companyId && companyAddress) {
-                const newOpt = new Option(companyAddress, "temp_addr_" + companyAddress);
-                newOpt.dataset.companyId = companyId;
-                locationSelect.add(newOpt);
-                locationSelect.value = newOpt.value;
+            // 3. SELECTION LOGIC:
+            if (!companyId) {
+                locationSelect.value = "";
+            } else if (foundWarehouse) {
+                // If company has warehouses, pick the first one
+                locationSelect.value = firstVisibleWarehouse;
+            } else if (companyAddress) {
+                // If NO warehouses but we have a company address, use it
+                assignCompanyLocation(locationSelectId, partySelectId);
             } else {
-                // If we found something or reset, clear the value if it's no longer valid
-                const currentOpt = locationSelect.selectedOptions[0];
-                if (currentOpt && currentOpt.style.display === 'none') {
-                    locationSelect.value = "";
-                }
+                locationSelect.value = "";
             }
         }
 
         partySelect.addEventListener('change', updateFilter);
-        // Trigger initial filter
         updateFilter();
     }
 
