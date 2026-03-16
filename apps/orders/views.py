@@ -234,7 +234,7 @@ def order_create(request):
             try:
                 # Check if materials[i] is an ID (integer)
                 if materials[i].isdigit():
-                    inv_item = InventoryItem.objects.get(pk=materials[i])
+                    inv_item = InventoryItem.plain_objects.get(pk=materials[i])
                     material_name = inv_item.product_name # Use product name for manifest
                     
                     # Deduct stock
