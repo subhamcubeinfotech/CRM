@@ -135,7 +135,7 @@ class WholesaleRequest(models.Model):
     
     company_name = models.CharField(max_length=255)
     contact_name = models.CharField(max_length=255)
-    wholesaler_email = models.EmailField()
+    wholesaler_email = models.EmailField(unique=True)
     desired_username = models.CharField(max_length=15, help_text="5 to 15 characters, must not start with a number")
     business_address = models.TextField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')

@@ -93,6 +93,16 @@ def public_wholesale_request_view(request):
             messages.error(request, "Username cannot start with a number.")
             return render(request, 'accounts/public_wholesale_request.html', {'form_data': request.POST})
 
+        # Check for existing accounts BEFORE creating the request
+        from .models import CustomUser
+        if CustomUser.objects.filter(email__iexact=wholesaler_email).exists():
+            messages.error(request, f"An account with the email '{wholesaler_email}' already exists. Please login instead.")
+            return render(request, 'accounts/public_wholesale_request.html', {'form_data': request.POST})
+            
+        if CustomUser.objects.filter(username__iexact=desired_username).exists():
+            messages.error(request, f"The username '{desired_username}' is already taken. Please choose another.")
+            return render(request, 'accounts/public_wholesale_request.html', {'form_data': request.POST})
+
         # 1. Save request to database for tracking
         wholesale_request = WholesaleRequest.objects.create(
             company_name=company_name,
