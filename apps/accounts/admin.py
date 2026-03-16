@@ -192,8 +192,18 @@ class WholesaleRequestAdmin(admin.ModelAdmin):
                     # 4. Generate Token and Send Invitation Link
                     token = default_token_generator.make_token(user)
                     uid = urlsafe_base64_encode(force_bytes(user.pk))
-                    domain = get_current_site(request).domain
-                    protocol = 'https' if request.is_secure() else 'http'
+                    
+                    # Environment-based Site URL logic
+                    site_url = getattr(settings, 'SITE_URL', '').rstrip('/')
+                    if site_url:
+                        # Extract protocol and domain from SITE_URL (e.g., https://example.com)
+                        if '://' in site_url:
+                            protocol, domain = site_url.split('://', 1)
+                        else:
+                            protocol, domain = 'http', site_url
+                    else:
+                        domain = get_current_site(request).domain
+                        protocol = 'https' if request.is_secure() else 'http'
                     
                     context = {
                         'contact_name': req.contact_name,

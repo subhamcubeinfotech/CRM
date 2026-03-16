@@ -249,3 +249,6 @@ DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER)
 
 # Wholesale Onboarding Settings
 WHOLESALE_ONBOARDING_RECIPIENT = os.environ.get('WHOLESALE_ONBOARDING_RECIPIENT', 'subham@yopmail.com')
+
+# Link / Domain Settings
+SITE_URL = os.environ.get('SITE_URL', '') # e.g. https://crm.urbanpoling.com or http://127.0.0.1:8000
