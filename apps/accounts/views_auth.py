@@ -81,6 +81,7 @@ def public_wholesale_request_view(request):
         business_address = request.POST.get('business_address')
         contact_name = request.POST.get('contact_name')
         contact_email = request.POST.get('contact_email')
+        wholesaler_email = request.POST.get('wholesaler_email')
 
         # Priority: Database setting -> settings.py hardcoded
         recipient_email = SystemSetting.get_val('wholesale_recipient', getattr(settings, 'WHOLESALE_ONBOARDING_RECIPIENT', 'subham@yopmail.com'))
@@ -92,12 +93,13 @@ def public_wholesale_request_view(request):
                 'company': {
                     'name': company_name,
                     'full_address': business_address,
-                    'email': contact_email,
+                    'email': wholesaler_email,
                 },
                 'user': {
                     'get_full_name': contact_name,
-                    'username': contact_email,
-                }
+                    'username': wholesaler_email,
+                },
+                'receiver_email': contact_email
             }
             
             html_message = render_to_string('emails/wholesale_account_request.html', context)
