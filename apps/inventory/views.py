@@ -263,12 +263,12 @@ def material_detail(request, pk=None):
         # Use get_or_create to handle tenant-aware lookup and creation safely
         material, created = Material.objects.get_or_create(
             name=name,
+            tenant=request.user.tenant,
             defaults={
                 'material_type': "PE",
                 'grade': "Post-Industrial",
                 'color': "Mixed",
                 'product_type': "Film",
-                'tenant': request.user.tenant
             }
         )
         if created:
