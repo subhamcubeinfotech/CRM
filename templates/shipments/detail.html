@@ -967,11 +967,16 @@
                             </td>
                             <td>
                                 <select name="packaging[]" class="form-select form-select-sm border-0 bg-transparent ps-0">
-                                    <option value="Select" selected>Select</option>
-                                    <option value="Rolls">Rolls</option>
-                                    <option value="Pallets">Pallets</option>
-                                    <option value="Boxes">Boxes</option>
-                                    <option value="Drums">Drums</option>
+                                    <option value="Select">Select</option>
+                                    <option value="Rolls" {% if item.packaging == "Rolls" %}selected{% endif %}>Rolls</option>
+                                    <option value="Pallets" {% if item.packaging == "Pallets" or item.is_palletized %}selected{% endif %}>Pallets</option>
+                                    <option value="Boxes" {% if item.packaging == "Boxes" %}selected{% endif %}>Boxes</option>
+                                    <option value="Drums" {% if item.packaging == "Drums" %}selected{% endif %}>Drums</option>
+                                    <option value="Bales" {% if item.packaging == "Bales" %}selected{% endif %}>Bales</option>
+                                    <option value="Supersacks" {% if item.packaging == "Supersacks" %}selected{% endif %}>Supersacks</option>
+                                    {% if item.packaging and item.packaging not in "Rolls,Pallets,Boxes,Drums,Bales,Supersacks" %}
+                                    <option value="{{ item.packaging }}" selected>{{ item.packaging }}</option>
+                                    {% endif %}
                                 </select>
                             </td>
                             <td class="text-center align-middle">

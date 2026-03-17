@@ -216,12 +216,7 @@ def order_create(request):
         sell_prices = request.POST.getlist('sell_price[]')
         sell_price_units = request.POST.getlist('sell_price_unit[]')
         packagings = request.POST.getlist('packaging[]')
-        
-        # Checkboxes are tricky: they only submit if checked.
-        # However, we can use a hidden field pattern or just zip carefully if the user only has select/input fields.
-        # Since is_palletized[] is an array of checkboxes, we'll have to match them carefully or assume 
-        # sequential ordering if the user provided values for all. 
-        # For now, let's just make the loop safe.
+        is_palletized_list = request.POST.getlist('is_palletized_h[]')
         
         for i in range(len(materials)):
             if not materials[i]:
@@ -262,7 +257,7 @@ def order_create(request):
                     sell_price=sell_prices[i] if i < len(sell_prices) else 0,
                     sell_price_unit=sell_price_units[i] if i < len(sell_price_units) else "per lbs",
                     packaging=packagings[i] if i < len(packagings) else "",
-                    is_palletized=False 
+                    is_palletized=is_palletized_list[i].lower() == 'true' if i < len(is_palletized_list) else False 
                 )
             except Exception as e:
                 print(f"Error creating manifest item {i}: {e}")

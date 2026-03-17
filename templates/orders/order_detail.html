@@ -246,7 +246,12 @@
                                             lbs</td>
                                         <td>${{ item.buy_price|floatformat:2 }} / lb</td>
                                         <td>${{ item.sell_price|floatformat:2 }} / lb</td>
-                                        <td class="pe-3">{{ item.packaging }}</td>
+                                        <td class="pe-3">
+                                            {{ item.packaging|default:"-" }}
+                                            {% if item.is_palletized %}
+                                            <span class="badge bg-soft-info text-info smaller ms-1">Palletized</span>
+                                            {% endif %}
+                                        </td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>

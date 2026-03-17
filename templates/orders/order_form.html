@@ -251,8 +251,8 @@
                             </div>
                         </div>
                         <div class="col-md-8">
-                            <label class="form-label fw-bold small">Packaging</label>
-                            <select name="packaging[]" class="form-select form-select-sm">
+                            <label class="form-label fw-bold small">Packaging<span class="text-danger">*</span></label>
+                            <select name="packaging[]" class="form-select form-select-sm" required>
                                 <option value="">Select packaging type</option>
                                 {% for ptype in packaging_types %}
                                 <option value="{{ ptype.name }}">{{ ptype.name }}</option>
@@ -261,7 +261,8 @@
                         </div>
                         <div class="col-md-4 d-flex align-items-end mb-1">
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="is_palletized[]">
+                                <input type="hidden" name="is_palletized_h[]" value="false" class="palletized-hidden">
+                                <input class="form-check-input palletized-checkbox" type="checkbox" onchange="this.previousElementSibling.value = this.checked ? 'true' : 'false'">
                                 <label class="form-check-label small fw-bold">Is the packaging palletized?</label>
                             </div>
                         </div>
@@ -730,6 +731,12 @@
             else input.value = '';
             input.classList.remove('is-invalid');
         });
+        newItem.querySelectorAll('select').forEach(select => {
+            select.value = '';
+        });
+        // Reset hidden palletized field
+        const hiddenPallet = newItem.querySelector('.palletized-hidden');
+        if (hiddenPallet) hiddenPallet.value = 'false';
         newItem.querySelector('.weight-warning').style.display = 'none';
         
         // Show remove button for NEW items
