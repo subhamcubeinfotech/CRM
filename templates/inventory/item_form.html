@@ -6,7 +6,7 @@
 <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
         <h1 class="h2">{{ title }}</h1>
-        <a href="{% url 'inventory:warehouse_detail' warehouse.pk %}" class="btn btn-outline-secondary btn-sm">Cancel</a>
+        <a href="{% if warehouse %}{% url 'inventory:warehouse_detail' warehouse.pk %}{% else %}{% url 'inventory:dashboard' %}{% endif %}" class="btn btn-outline-secondary btn-sm">Cancel</a>
     </div>
 
     <div class="row justify-content-center">
@@ -29,15 +29,23 @@
                                 {{ form.product_name }}
                             </div>
 
-                            <div class="col-12">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-uppercase">Company</label>
+                                <input type="text" class="form-control bg-light" value="{{ company.name|default:'N/A' }}" readonly disabled>
+                            </div>
+                            <div class="col-md-6">
                                 <label class="form-label fw-bold small text-uppercase">Description</label>
                                 {{ form.description }}
                             </div>
 
                             <div class="col-md-6">
                                 <label class="form-label fw-bold small text-uppercase">Warehouse</label>
-                                <input type="text" class="form-control bg-light" value="{{ warehouse.name }}" readonly disabled>
-                                <div class="d-none">{{ form.warehouse }}</div>
+                                {% if warehouse %}
+                                    <input type="text" class="form-control bg-light" value="{{ warehouse.name }}" readonly disabled>
+                                    <div class="d-none">{{ form.warehouse }}</div>
+                                {% else %}
+                                    {{ form.warehouse }}
+                                {% endif %}
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-bold small text-uppercase">Bin / Location</label>

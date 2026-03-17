@@ -10,7 +10,7 @@ from apps.accounts.models import TenantAwareModel
 class Warehouse(TenantAwareModel):
     """Warehouse model"""
     name = models.CharField(max_length=200)
-    code = models.CharField(max_length=20, unique=True)
+    code = models.CharField(max_length=20)
     
     # Address
     address = models.CharField(max_length=255)
@@ -29,6 +29,7 @@ class Warehouse(TenantAwareModel):
     # Management
     manager = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='managed_warehouses')
     is_active = models.BooleanField(default=True)
+    is_storage = models.BooleanField(default=True, help_text="If False, this is a temporary order location and won't show in Inventory.")
     
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
@@ -38,6 +39,7 @@ class Warehouse(TenantAwareModel):
         verbose_name = 'Warehouse'
         verbose_name_plural = 'Warehouses'
         ordering = ['name']
+        unique_together = ('tenant', 'code')
     
     def __str__(self):
         return f"{self.name} ({self.code})"
@@ -97,7 +99,7 @@ class Warehouse(TenantAwareModel):
 
 class Material(TenantAwareModel):
     """Material model for tracking specific material types and grades"""
-    name = models.CharField(max_length=200, unique=True)
+    name = models.CharField(max_length=200)
     material_type = models.CharField(max_length=100, blank=True, help_text="e.g. PE, PP, PVC")
     grade = models.CharField(max_length=100, blank=True, help_text="e.g. Post-Industrial, Virgin")
     color = models.CharField(max_length=100, blank=True, help_text="e.g. Mixed, Clear, White")
@@ -112,6 +114,7 @@ class Material(TenantAwareModel):
     
     class Meta:
         ordering = ['name']
+        unique_together = ('tenant', 'name')
     
     def __str__(self):
         return self.name

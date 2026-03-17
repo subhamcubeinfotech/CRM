@@ -106,6 +106,16 @@ class Order(TenantAwareModel):
         return sum(s.total_weight for s in self.shipments.all())
 
     @property
+    def total_pieces(self):
+        """Calculate total pieces from manifest items where unit is pcs"""
+        return sum(item.weight for item in self.manifest_items.filter(weight_unit='pcs'))
+
+    @property
+    def total_manifest_weight(self):
+        """Calculate total weight from manifest items where unit is not pcs"""
+        return sum(item.weight for item in self.manifest_items.exclude(weight_unit='pcs'))
+
+    @property
     def weight_progress_percentage(self):
         """Calculate weight progress percentage"""
         if self.total_weight_target > 0:

@@ -5,8 +5,8 @@ class WarehouseForm(forms.ModelForm):
     class Meta:
         model = Warehouse
         fields = [
-            'name', 'code', 'address', 'city', 'state', 'country', 
-            'postal_code', 'phone', 'email', 'company', 'manager', 'is_active'
+            'name', 'code', 'address', 'city', 'state', 
+            'postal_code', 'phone', 'email', 'is_active'
         ]
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control'}),

@@ -23,7 +23,7 @@ logger = logging.getLogger('apps.inventory')
 @login_required
 def inventory_dashboard(request):
     """Inventory dashboard"""
-    total_warehouses = Warehouse.objects.filter(is_active=True).count()
+    total_warehouses = Warehouse.objects.filter(is_active=True, is_storage=True).count()
     total_items = InventoryItem.objects.count()
     total_value = InventoryItem.objects.annotate(
         val=ExpressionWrapper(F('quantity') * F('unit_cost'), output_field=DecimalField())
@@ -35,7 +35,7 @@ def inventory_dashboard(request):
         'total_items': total_items,
         'total_value': total_value,
         'low_stock_count': low_stock_count,
-        'warehouses': Warehouse.objects.filter(is_active=True)[:5],
+        'warehouses': Warehouse.objects.filter(is_active=True, is_storage=True)[:5],
     }
     return render(request, 'inventory/dashboard.html', context)
 
@@ -43,7 +43,7 @@ def inventory_dashboard(request):
 @login_required
 def warehouse_list(request):
     """List all warehouses"""
-    warehouses = Warehouse.objects.filter(is_active=True).order_by('name')
+    warehouses = Warehouse.objects.filter(is_active=True, is_storage=True).order_by('name')
     
     paginator = Paginator(warehouses, 25)
     page = request.GET.get('page')
@@ -147,6 +147,62 @@ def warehouse_edit(request, pk):
 
 
 @login_required
+def warehouse_create(request):
+    """Create a new warehouse"""
+    if request.method == 'POST':
+        form = WarehouseForm(request.POST)
+        if form.is_valid():
+            warehouse = form.save(commit=False)
+            warehouse.tenant = request.user.tenant
+            warehouse.company = request.user.company
+            warehouse.manager = request.user
+            warehouse.is_storage = True
+            warehouse.save()
+            messages.success(request, f"Warehouse '{warehouse.name}' created successfully.")
+            return redirect('inventory:warehouse_detail', pk=warehouse.pk)
+    else:
+        form = WarehouseForm()
+    
+    context = {
+        'form': form,
+        'title': 'Create New Warehouse',
+    }
+    return render(request, 'inventory/warehouse_form.html', context)
+
+
+@login_required
+def inventory_item_add_general(request):
+    """General view to add inventory item with warehouse selection"""
+    if request.method == 'POST':
+        form = InventoryItemForm(request.POST)
+        if form.is_valid():
+            item = form.save(commit=False)
+            item.tenant = request.user.tenant
+            item.save()
+            messages.success(request, f"Item '{item.product_name}' added successfully.")
+            return redirect('inventory:warehouse_detail', pk=item.warehouse.pk)
+    else:
+        # Filter warehouses to only show those of the current user's company
+        warehouses = Warehouse.objects.filter(is_active=True, is_storage=True)
+        if request.user.company:
+            warehouses = warehouses.filter(company=request.user.company)
+        
+        initial = {}
+        if warehouses.count() == 1:
+            initial['warehouse'] = warehouses.first()
+            
+        form = InventoryItemForm(initial=initial)
+        form.fields['warehouse'].queryset = warehouses
+    
+    context = {
+        'form': form,
+        'title': 'Add New Item',
+        'company': request.user.company,
+    }
+    return render(request, 'inventory/item_form.html', context)
+
+
+@login_required
 def inventory_item_add(request, pk):
     """Add inventory item to a specific warehouse"""
     warehouse = get_object_or_404(Warehouse, pk=pk)
@@ -204,16 +260,19 @@ def material_detail(request, pk=None):
         if not name:
             return redirect('inventory:item_list')
         
-        material = Material.objects.filter(name=name).first()
-        if not material:
-            material = Material.objects.create(
-                name=name,
-                material_type="PE",
-                grade="Post-Industrial",
-                color="Mixed",
-                product_type="Film",
-                tenant=request.user.tenant
-            )
+        # Use get_or_create to handle tenant-aware lookup and creation safely
+        material, created = Material.objects.get_or_create(
+            name=name,
+            tenant=request.user.tenant,
+            defaults={
+                'material_type': "PE",
+                'grade': "Post-Industrial",
+                'color': "Mixed",
+                'product_type': "Film",
+            }
+        )
+        if created:
+            logger.info(f"New material record created via lookup: {name} for tenant {request.user.tenant}")
 
     # --- Live Data Aggregation ---
     

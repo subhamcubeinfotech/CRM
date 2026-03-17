@@ -11,7 +11,10 @@
             <a href="{% url 'inventory:item_list' %}" class="btn btn-outline-primary me-2">
                 <i class="fas fa-list me-1"></i>All Items
             </a>
-            <a href="{% url 'inventory:warehouse_list' %}" class="btn btn-primary">
+            <a href="{% url 'inventory:inventory_item_add_general' %}" class="btn btn-primary me-2">
+                <i class="fas fa-plus me-1"></i>Add Item
+            </a>
+            <a href="{% url 'inventory:warehouse_create' %}" class="btn btn-outline-primary">
                 <i class="fas fa-plus me-1"></i>New Warehouse
             </a>
         </div>
