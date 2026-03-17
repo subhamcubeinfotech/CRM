@@ -156,7 +156,7 @@
                         <div class="row">
                             <div class="col-md-4 mb-3">
                                 <label class="form-label">Weight (kg)</label>
-                                <input type="number" name="total_weight" class="form-control" value="{{ shipment.total_weight|default:'0' }}" step="0.01">
+                                <input type="number" name="total_weight" class="form-control" value="{% if is_create %}{{ default_weight|floatformat:2 }}{% else %}{{ shipment.total_weight|default:'0' }}{% endif %}" step="0.01">
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label class="form-label">Volume (m³)</label>
@@ -164,7 +164,7 @@
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label class="form-label">Number of Pieces</label>
-                                <input type="number" name="number_of_pieces" class="form-control" value="{{ shipment.number_of_pieces|default:'1' }}">
+                                <input type="number" name="number_of_pieces" class="form-control" value="{% if is_create %}{{ default_pieces }}{% else %}{{ shipment.number_of_pieces|default:'1' }}{% endif %}">
                             </div>
                         </div>
                         <div class="mb-3">

@@ -9208,3 +9208,112 @@ django.contrib.sessions.exceptions.SessionInterrupted: The request's session was
 [2026-03-17 07:25:42] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: TCS (Customer)
 [2026-03-17 07:25:42] INFO django.server basehttp.log_message:213 — "GET /shipments/ HTTP/1.1" 200 22212
 [2026-03-17 07:25:44] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 26086
+[2026-03-17 07:26:08] INFO django.server basehttp.log_message:213 — "GET /orders/110/ HTTP/1.1" 200 37014
+[2026-03-17 07:26:14] INFO django.server basehttp.log_message:213 — "GET /shipments/147/ HTTP/1.1" 200 83415
+[2026-03-17 07:27:27] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 26086
+[2026-03-17 07:27:29] INFO django.server basehttp.log_message:213 — "GET /orders/110/ HTTP/1.1" 200 37014
+[2026-03-17 07:27:36] INFO django.server basehttp.log_message:213 — "GET /shipments/147/ HTTP/1.1" 200 83415
+[2026-03-17 07:29:07] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 26086
+[2026-03-17 07:29:08] INFO django.server basehttp.log_message:213 — "GET /orders/110/ HTTP/1.1" 200 37424
+[2026-03-17 07:29:14] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: TCS (Customer)
+[2026-03-17 07:29:14] INFO django.server basehttp.log_message:213 — "GET /shipments/ HTTP/1.1" 200 22212
+[2026-03-17 07:29:16] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 26086
+[2026-03-17 07:29:17] INFO django.server basehttp.log_message:213 — "GET /orders/109/ HTTP/1.1" 200 37394
+[2026-03-17 07:29:38] INFO django.server basehttp.log_message:213 — "GET /orders/109/ HTTP/1.1" 200 37394
+[2026-03-17 07:29:39] WARNING django.request log.log_response:253 — Not Found: /favicon.ico
+[2026-03-17 07:29:39] WARNING django.server basehttp.log_message:213 — "GET /favicon.ico HTTP/1.1" 404 7178
+[2026-03-17 07:29:41] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 26086
+[2026-03-17 07:29:42] INFO django.server basehttp.log_message:213 — "GET /orders/109/ HTTP/1.1" 200 37394
+[2026-03-17 07:29:44] INFO django.server basehttp.log_message:213 — "GET /orders/109/ HTTP/1.1" 200 37394
+[2026-03-17 07:29:44] WARNING django.request log.log_response:253 — Not Found: /favicon.ico
+[2026-03-17 07:29:44] WARNING django.server basehttp.log_message:213 — "GET /favicon.ico HTTP/1.1" 404 7178
+[2026-03-17 07:29:45] INFO django.server basehttp.log_message:213 — "GET /orders/109/ HTTP/1.1" 200 37394
+[2026-03-17 07:29:45] WARNING django.request log.log_response:253 — Not Found: /favicon.ico
+[2026-03-17 07:29:45] WARNING django.server basehttp.log_message:213 — "GET /favicon.ico HTTP/1.1" 404 7178
+[2026-03-17 07:29:45] INFO django.server basehttp.log_message:213 — "GET /orders/109/ HTTP/1.1" 200 37394
+[2026-03-17 07:29:45] WARNING django.request log.log_response:253 — Not Found: /favicon.ico
+[2026-03-17 07:29:45] WARNING django.server basehttp.log_message:213 — "GET /favicon.ico HTTP/1.1" 404 7178
+[2026-03-17 07:29:45] INFO django.server basehttp.log_message:213 — "GET /orders/109/ HTTP/1.1" 200 37394
+[2026-03-17 07:29:46] INFO django.server basehttp.log_message:213 — "GET /orders/109/ HTTP/1.1" 200 37394
+[2026-03-17 07:29:46] WARNING django.request log.log_response:253 — Not Found: /favicon.ico
+[2026-03-17 07:29:46] WARNING django.server basehttp.log_message:213 — "GET /favicon.ico HTTP/1.1" 404 7178
+[2026-03-17 07:29:48] INFO django.server basehttp.log_message:213 — "GET /shipments/146/ HTTP/1.1" 200 83340
+[2026-03-17 07:29:55] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: TCS (Customer)
+[2026-03-17 07:29:56] INFO django.server basehttp.log_message:213 — "GET /shipments/ HTTP/1.1" 200 22212
+[2026-03-17 07:29:57] INFO django.server basehttp.log_message:213 — "GET /shipments/147/ HTTP/1.1" 200 83415
+[2026-03-17 07:29:59] INFO django.server basehttp.log_message:213 — "GET /materials/lookup/?name=NZXT%20H7%20Flow%20Case HTTP/1.1" 200 22499
+[2026-03-17 07:30:09] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 26086
+[2026-03-17 07:30:16] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: TCS (Customer)
+[2026-03-17 07:30:16] INFO django.server basehttp.log_message:213 — "GET /shipments/ HTTP/1.1" 200 22212
+[2026-03-17 07:30:19] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 26086
+[2026-03-17 07:30:22] INFO django.server basehttp.log_message:213 — "GET /orders/110/ HTTP/1.1" 200 37424
+[2026-03-17 07:30:29] INFO django.server basehttp.log_message:213 — "GET /shipments/147/ HTTP/1.1" 200 83415
+[2026-03-17 07:30:38] INFO django.server basehttp.log_message:213 — "GET /orders/110/ HTTP/1.1" 200 37424
+[2026-03-17 07:30:41] INFO django.server basehttp.log_message:213 — "GET /shipments/147/ HTTP/1.1" 200 83415
+[2026-03-17 07:30:44] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 26086
+[2026-03-17 07:30:48] INFO django.server basehttp.log_message:213 — "GET /orders/110/ HTTP/1.1" 200 37424
+[2026-03-17 07:30:55] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 26086
+[2026-03-17 07:30:56] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 26086
+[2026-03-17 07:31:12] INFO django.server basehttp.log_message:213 — "GET /orders/110/ HTTP/1.1" 200 37424
+[2026-03-17 07:31:22] INFO django.server basehttp.log_message:213 — "GET /admin/shipments/shipment/ HTTP/1.1" 200 86068
+[2026-03-17 07:31:22] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-17 07:31:28] INFO django.server basehttp.log_message:213 — "POST /admin/shipments/shipment/ HTTP/1.1" 200 17628
+[2026-03-17 07:31:29] INFO django.server basehttp.log_message:213 — "POST /admin/shipments/shipment/ HTTP/1.1" 302 0
+[2026-03-17 07:31:30] INFO django.server basehttp.log_message:213 — "GET /admin/shipments/shipment/ HTTP/1.1" 200 86275
+[2026-03-17 07:31:30] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-17 07:31:35] INFO django.server basehttp.log_message:213 — "GET /admin/shipments/shipment/ HTTP/1.1" 200 86136
+[2026-03-17 07:31:35] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-17 07:31:42] INFO django.server basehttp.log_message:213 — "GET /orders/110/ HTTP/1.1" 200 35755
+[2026-03-17 07:31:44] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: TCS (Customer)
+[2026-03-17 07:31:44] INFO django.server basehttp.log_message:213 — "GET /shipments/ HTTP/1.1" 200 17729
+[2026-03-17 07:31:45] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 26064
+[2026-03-17 07:31:53] INFO django.server basehttp.log_message:213 — "GET /admin/orders/order/ HTTP/1.1" 200 58170
+[2026-03-17 07:31:54] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-17 07:31:58] INFO django.server basehttp.log_message:213 — "POST /admin/orders/order/ HTTP/1.1" 200 17384
+[2026-03-17 07:31:59] INFO django.server basehttp.log_message:213 — "POST /admin/orders/order/ HTTP/1.1" 302 0
+[2026-03-17 07:32:00] INFO django.server basehttp.log_message:213 — "GET /admin/orders/order/ HTTP/1.1" 200 57160
+[2026-03-17 07:32:00] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-17 07:32:02] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 21799
+[2026-03-17 07:32:03] INFO apps.orders views.order_create:275 — New order creation page accessed by sahil (Customer)
+[2026-03-17 07:32:03] INFO django.server basehttp.log_message:213 — "GET /orders/create/ HTTP/1.1" 200 97276
+[2026-03-17 07:32:51] INFO apps.orders views.order_create:239 — Deducted 92.0 from Pizza. New stock: 300
+[2026-03-17 07:32:55] INFO apps.orders views.send_order_notification_to_supplier:440 — Order STH-O-14-1773732770-6026: Supplier notification email sent to sharma@yopmail.com
+[2026-03-17 07:32:55] INFO django.server basehttp.log_message:213 — "POST /orders/create/ HTTP/1.1" 302 0
+[2026-03-17 07:32:55] INFO django.server basehttp.log_message:213 — "GET /orders/111/ HTTP/1.1" 200 35724
+[2026-03-17 07:34:24] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: TCS (Customer)
+[2026-03-17 07:34:24] INFO django.server basehttp.log_message:213 — "GET /shipments/ HTTP/1.1" 200 17729
+[2026-03-17 07:34:26] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 23586
+[2026-03-17 07:34:28] INFO django.server basehttp.log_message:213 — "GET /orders/111/ HTTP/1.1" 200 35724
+[2026-03-17 07:34:30] INFO django.server basehttp.log_message:213 — "GET /shipments/create/?order_id=111 HTTP/1.1" 200 29547
+[2026-03-17 07:36:00] INFO apps.shipments views.shipment_create:317 — Shipment created: SHP-2026-50696 for TCS (Customer) by sahil (Customer)
+[2026-03-17 07:36:00] INFO django.server basehttp.log_message:213 — "POST /shipments/create/?order_id=111 HTTP/1.1" 302 0
+[2026-03-17 07:36:00] INFO django.server basehttp.log_message:213 — "GET /shipments/148/ HTTP/1.1" 200 83678
+[2026-03-17 07:36:08] INFO django.server basehttp.log_message:213 — "GET /materials/lookup/?name=Pizza HTTP/1.1" 200 22421
+[2026-03-17 07:36:13] INFO django.server basehttp.log_message:213 — "GET /materials/lookup/?name=Pizza HTTP/1.1" 200 22421
+[2026-03-17 07:39:14] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: TCS (Customer)
+[2026-03-17 07:39:14] INFO django.server basehttp.log_message:213 — "GET /shipments/ HTTP/1.1" 200 19759
+[2026-03-17 07:39:17] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: TCS (Customer)
+[2026-03-17 07:39:18] INFO django.server basehttp.log_message:213 — "GET /shipments/ HTTP/1.1" 200 19759
+[2026-03-17 07:39:19] INFO django.server basehttp.log_message:213 — "GET /shipments/148/ HTTP/1.1" 200 83353
+[2026-03-17 07:39:25] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 23592
+[2026-03-17 07:39:26] INFO django.server basehttp.log_message:213 — "GET /orders/111/ HTTP/1.1" 200 37391
+[2026-03-17 07:39:28] INFO django.server basehttp.log_message:213 — "GET /shipments/148/ HTTP/1.1" 200 83353
+[2026-03-17 07:40:59] INFO django.server basehttp.log_message:213 — "GET /admin/shipments/shipment/ HTTP/1.1" 200 86098
+[2026-03-17 07:40:59] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-17 07:41:01] INFO django.server basehttp.log_message:213 — "GET /admin/shipments/shipment/148/change/ HTTP/1.1" 200 81090
+[2026-03-17 07:41:01] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/admin/DateTimeShortcuts.js HTTP/1.1" 304 0
+[2026-03-17 07:41:01] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/calendar.js HTTP/1.1" 304 0
+[2026-03-17 07:41:01] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/inlines.js HTTP/1.1" 304 0
+[2026-03-17 07:41:01] INFO django.server basehttp.log_message:213 — "GET /static/admin/css/forms.css HTTP/1.1" 304 0
+[2026-03-17 07:41:01] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/prepopulate_init.js HTTP/1.1" 304 0
+[2026-03-17 07:41:01] INFO django.server basehttp.log_message:213 — "GET /static/admin/css/widgets.css HTTP/1.1" 304 0
+[2026-03-17 07:41:01] INFO django.server basehttp.log_message:213 — "GET /static/admin/img/icon-changelink.svg HTTP/1.1" 304 0
+[2026-03-17 07:41:01] INFO django.server basehttp.log_message:213 — "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2026-03-17 07:41:01] INFO django.server basehttp.log_message:213 — "GET /static/admin/img/icon-deletelink.svg HTTP/1.1" 304 0
+[2026-03-17 07:41:01] INFO django.server basehttp.log_message:213 — "GET /static/admin/img/icon-unknown.svg HTTP/1.1" 304 0
+[2026-03-17 07:41:01] INFO django.server basehttp.log_message:213 — "GET /static/admin/js/change_form.js HTTP/1.1" 304 0
+[2026-03-17 07:41:01] INFO django.server basehttp.log_message:213 — "GET /static/admin/img/icon-calendar.svg HTTP/1.1" 304 0
+[2026-03-17 07:41:57] INFO django.utils.autoreload autoreload.trigger_reload:265 — /app/apps/orders/models.py changed, reloading.
+[2026-03-17 07:42:00] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-17 07:42:05] INFO django.utils.autoreload autoreload.trigger_reload:265 — /app/apps/shipments/views.py changed, reloading.
+[2026-03-17 07:42:06] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader

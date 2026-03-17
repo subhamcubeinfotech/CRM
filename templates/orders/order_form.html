@@ -341,7 +341,7 @@
             </div>
 
             <!-- KPI Stats Row -->
-            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; border-bottom: 1px solid #f0f2f8;">
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; border-bottom: 1px solid #f0f2f8;">
                 <!-- Revenue -->
                 <div style="padding: 18px 22px; border-right: 1px solid #f0f2f8;">
                     <div style="display:flex; align-items:center; gap:7px; margin-bottom:6px;">
@@ -365,7 +365,7 @@
                     <div style="font-size:0.7rem;color:#9ca3af;margin-top:3px;">Total buy value</div>
                 </div>
                 <!-- Profit -->
-                <div style="padding: 18px 22px; background: #f8faff;">
+                <div style="padding: 18px 22px; background: #f8faff; border-right: 1px solid #f0f2f8;">
                     <div style="display:flex; align-items:center; gap:7px; margin-bottom:6px;">
                         <div style="width:28px;height:28px;border-radius:7px;background:#dcfce7;display:flex;align-items:center;justify-content:center;" id="profit-icon-bg">
                             <i class="fas fa-star" style="font-size:0.7rem;color:#16a34a;" id="profit-icon"></i>
@@ -374,6 +374,17 @@
                     </div>
                     <div id="est-profit" style="font-size:1.45rem;font-weight:800;color:#16a34a;line-height:1;">$0.00</div>
                     <div style="font-size:0.7rem;color:#9ca3af;margin-top:3px;" id="est-margin-text">Margin: —</div>
+                </div>
+                <!-- Total Pieces (NEW) -->
+                <div style="padding: 18px 22px;">
+                    <div style="display:flex; align-items:center; gap:7px; margin-bottom:6px;">
+                        <div style="width:28px;height:28px;border-radius:7px;background:#e0f2fe;display:flex;align-items:center;justify-content:center;">
+                            <i class="fas fa-cubes" style="font-size:0.7rem;color:#0ea5e9;"></i>
+                        </div>
+                        <span style="font-size:0.72rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">Total Pieces</span>
+                    </div>
+                    <div id="est-pieces" style="font-size:1.45rem;font-weight:800;color:#1a1f36;line-height:1;">0</div>
+                    <div style="font-size:0.7rem;color:#9ca3af;margin-top:3px;">From manifest</div>
                 </div>
             </div>
 
@@ -497,7 +508,7 @@
     // ── Profit Estimator ─────────────────────────────────────────
     function recalcProfit() {
         const items = document.querySelectorAll('.manifest-item');
-        let totalRevenue = 0, totalCost = 0;
+        let totalRevenue = 0, totalCost = 0, totalPieces = 0;
         const freightCost = parseFloat(document.getElementById('freight-cost-input')?.value) || 0;
         const breakdownList = document.getElementById('profit-items-list');
         breakdownList.innerHTML = '';
@@ -506,12 +517,17 @@
         items.forEach((item, idx) => {
             const materialSelect = item.querySelector('.material-select');
             const qty      = parseFloat(item.querySelector('.weight-input')?.value) || 0;
+            const unit     = item.querySelector('.unit-display')?.value || 'lbs';
             const buyP     = parseFloat(item.querySelector('[name="buy_price[]"]')?.value) || 0;
             const sellP    = parseFloat(item.querySelector('[name="sell_price[]"]')?.value) || 0;
             const material = materialSelect?.selectedOptions[0]?.dataset.name || materialSelect?.value || `Item ${idx + 1}`;
 
             if (!materialSelect?.value || qty === 0 || (buyP === 0 && sellP === 0)) return;
             hasAny = true;
+
+            if (unit === 'pcs') {
+                totalPieces += qty;
+            }
 
             const cost    = buyP * qty;
             const revenue = sellP * qty;
@@ -550,6 +566,7 @@
         document.getElementById('est-cost').textContent    = '$' + totalCost.toFixed(2);
         document.getElementById('est-profit').textContent  = (isProfit ? '+' : '') + '$' + totalProfit.toFixed(2);
         document.getElementById('est-profit').style.color  = profitColor;
+        document.getElementById('est-pieces').textContent  = Math.round(totalPieces);
 
         // Margin text under profit
         document.getElementById('est-margin-text').textContent = totalRevenue > 0 ? `Margin: ${marginVal.toFixed(1)}%` : 'Margin: —';

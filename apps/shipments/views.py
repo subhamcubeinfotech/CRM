@@ -329,6 +329,8 @@ def shipment_create(request):
         'carriers': carriers,
         'all_companies': all_companies,
         'shipment_types': Shipment.SHIPMENT_TYPE_CHOICES,
+        'default_pieces': int(order.total_pieces) if order.total_pieces else 1,
+        'default_weight': order.total_manifest_weight if order.total_manifest_weight else 0,
         'is_create': True,
     }
     return render(request, 'shipments/form.html', context)
