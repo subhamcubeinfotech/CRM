@@ -36,7 +36,7 @@ def dashboard(request):
     
     # Stat cards
     active_shipments = base_qs.filter(
-        status__in=['booked', 'picked_up', 'in_transit', 'customs', 'out_for_delivery']
+        status__in=['pending', 'dispatched', 'in_transit']
     ).count()
     
     monthly_revenue = base_qs.filter(
@@ -83,20 +83,20 @@ def dashboard(request):
     # Shipment status distribution
     status_counts = base_qs.values('status').annotate(count=Count('id'))
     status_data = {
+        'pending': 0,
+        'dispatched': 0,
         'in_transit': 0,
         'delivered': 0,
-        'customs': 0,
-        'booked': 0,
     }
     for item in status_counts:
-        if item['status'] in ['in_transit', 'picked_up', 'out_for_delivery']:
-            status_data['in_transit'] += item['count']
+        if item['status'] == 'pending':
+            status_data['pending'] = item['count']
+        elif item['status'] == 'dispatched':
+            status_data['dispatched'] = item['count']
+        elif item['status'] == 'in_transit':
+            status_data['in_transit'] = item['count']
         elif item['status'] == 'delivered':
             status_data['delivered'] = item['count']
-        elif item['status'] == 'customs':
-            status_data['customs'] = item['count']
-        elif item['status'] == 'booked':
-            status_data['booked'] = item['count']
     
     # Recent shipments
     recent_shipments = base_qs.select_related('customer').order_by('-created_at')[:10]
@@ -113,7 +113,7 @@ def dashboard(request):
         'revenue_labels': json.dumps(months),
         'revenue_data': json.dumps(revenue_data),
         'status_data': json.dumps(list(status_data.values())),
-        'status_labels': json.dumps(['In Transit', 'Delivered', 'Customs', 'Booked']),
+        'status_labels': json.dumps(['Pending', 'Dispatched', 'In Transit', 'Delivered']),
         
         # Recent shipments
         'recent_shipments': recent_shipments,
@@ -262,7 +262,7 @@ def shipment_create(request):
             shipper_id=shipper_id or None,
             consignee_id=consignee_id or None,
             shipment_type=request.POST.get('shipment_type', 'road'),
-            status='draft',
+            status='pending',
             
             # Origin
             origin_address=request.POST.get('origin_address', ''),

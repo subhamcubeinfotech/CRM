@@ -18,19 +18,13 @@ class Shipment(TenantAwareModel):
     ]
     
     STATUS_CHOICES = [
-        ('draft', 'Draft'),
         ('pending', 'Pending'),
-        ('booked', 'Booked'),
         ('dispatched', 'Dispatched'),
-        ('picked_up', 'Picked Up'),
         ('in_transit', 'In Transit'),
-        ('customs', 'Customs'),
-        ('out_for_delivery', 'Out for Delivery'),
         ('delivered', 'Delivered'),
         ('approved', 'Approved'),
         ('invoiced', 'Invoiced'),
         ('paid', 'Paid'),
-        ('cancelled', 'Cancelled'),
         ('rejected', 'Rejected'),
     ]
     
@@ -47,7 +41,7 @@ class Shipment(TenantAwareModel):
     
     # Shipment details
     shipment_type = models.CharField(max_length=20, choices=SHIPMENT_TYPE_CHOICES, default='road')
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     
     # Origin address
     origin_address = models.CharField(max_length=255, blank=True)
@@ -129,7 +123,7 @@ class Shipment(TenantAwareModel):
     @property
     def ordered_statuses(self):
         """Return the list of statuses in progress order for the UI"""
-        return ['pending', 'dispatched', 'in_transit', 'arrived', 'delivered', 'approved', 'invoiced', 'paid']
+        return ['pending', 'dispatched', 'in_transit', 'delivered', 'approved', 'invoiced', 'paid']
 
     @property
     def status_index(self):
