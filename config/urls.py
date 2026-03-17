@@ -54,6 +54,7 @@ urlpatterns = [
     path('invoices/', include('apps.invoicing.urls', namespace='invoicing')),
     path('orders/', include('apps.orders.urls', namespace='orders')),
     path('inventory/', include('apps.inventory.urls', namespace='inventory')),
+    path('materials/', include('apps.inventory.material_urls', namespace='materials')),
     path('companies/', include('apps.accounts.urls')),
     path('portal/', include('apps.customers.urls')),
     path('tools/', include('apps.tools.urls')),

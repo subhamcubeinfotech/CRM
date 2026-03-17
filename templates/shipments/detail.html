@@ -330,7 +330,13 @@
                                         {% if shipment.order %}
                                         {% for item in shipment.order.manifest_items.all %}
                                         <tr>
-                                            <td class="fw-semibold text-primary">{{ item.material }}</td>
+                                            <td class="py-3 px-2">
+                                                <div class="fw-bold">
+                                                <a href="{% url 'materials:material_lookup' %}?name={{ item.material|urlencode }}" class="text-primary text-decoration-none">
+                                                    {{ item.material }}
+                                                </a>
+                                                </div>
+                                            </td>
                                             <td>${{ item.buy_price|floatformat:3 }} / {{ item.buy_price_unit }}</td>
                                             <td>${{ item.sell_price|floatformat:2 }} / {{ item.sell_price_unit }}</td>
                                             <td>{{ item.weight|floatformat:0 }} {{ item.weight_unit }}</td>
@@ -643,8 +649,9 @@
         <div class="bg-light rounded p-3 mb-4">
             <div class="row g-2">
                 <div class="col-6">
-                    <div class="small text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">Invoice Number</div>
-                    <div class="fw-bold text-primary">{{ next_invoice_number }}</div>
+                    <label class="form-label small text-muted text-uppercase fw-bold mb-1" style="font-size: 0.65rem;">Invoice Number</label>
+                    <input type="text" name="invoice_number" class="form-control form-control-sm border-primary-subtle text-primary fw-bold" 
+                           value="{{ next_invoice_number }}" required>
                 </div>
                 <div class="col-6">
                     <div class="small text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">Invoice Date</div>
