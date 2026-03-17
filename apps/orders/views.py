@@ -173,7 +173,8 @@ def order_create(request):
                         'state': company.state[:100],
                         'country': company.country[:100],
                         'postal_code': company.postal_code[:20],
-                        'phone': company.phone[:20]
+                        'phone': company.phone[:20],
+                        'is_storage': False
                     }
                 )
                 print(f"Resolved to Warehouse ID: {hq.id} (Created: {created})")

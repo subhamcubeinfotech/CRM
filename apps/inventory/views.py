@@ -23,7 +23,7 @@ logger = logging.getLogger('apps.inventory')
 @login_required
 def inventory_dashboard(request):
     """Inventory dashboard"""
-    total_warehouses = Warehouse.objects.filter(is_active=True).count()
+    total_warehouses = Warehouse.objects.filter(is_active=True, is_storage=True).count()
     total_items = InventoryItem.objects.count()
     total_value = InventoryItem.objects.annotate(
         val=ExpressionWrapper(F('quantity') * F('unit_cost'), output_field=DecimalField())
@@ -35,7 +35,7 @@ def inventory_dashboard(request):
         'total_items': total_items,
         'total_value': total_value,
         'low_stock_count': low_stock_count,
-        'warehouses': Warehouse.objects.filter(is_active=True)[:5],
+        'warehouses': Warehouse.objects.filter(is_active=True, is_storage=True)[:5],
     }
     return render(request, 'inventory/dashboard.html', context)
 
@@ -43,7 +43,7 @@ def inventory_dashboard(request):
 @login_required
 def warehouse_list(request):
     """List all warehouses"""
-    warehouses = Warehouse.objects.filter(is_active=True).order_by('name')
+    warehouses = Warehouse.objects.filter(is_active=True, is_storage=True).order_by('name')
     
     paginator = Paginator(warehouses, 25)
     page = request.GET.get('page')

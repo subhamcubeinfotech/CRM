@@ -29,6 +29,7 @@ class Warehouse(TenantAwareModel):
     # Management
     manager = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='managed_warehouses')
     is_active = models.BooleanField(default=True)
+    is_storage = models.BooleanField(default=True, help_text="If False, this is a temporary order location and won't show in Inventory.")
     
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
