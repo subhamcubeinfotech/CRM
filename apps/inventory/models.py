@@ -10,7 +10,7 @@ from apps.accounts.models import TenantAwareModel
 class Warehouse(TenantAwareModel):
     """Warehouse model"""
     name = models.CharField(max_length=200)
-    code = models.CharField(max_length=20, unique=True)
+    code = models.CharField(max_length=20)
     
     # Address
     address = models.CharField(max_length=255)
@@ -39,6 +39,7 @@ class Warehouse(TenantAwareModel):
         verbose_name = 'Warehouse'
         verbose_name_plural = 'Warehouses'
         ordering = ['name']
+        unique_together = ('tenant', 'code')
     
     def __str__(self):
         return f"{self.name} ({self.code})"
