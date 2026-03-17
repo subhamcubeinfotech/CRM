@@ -1149,13 +1149,29 @@ def create_invoice(request, pk):
                     if request.POST.get('file_name'):
                         invoice.file_name = request.POST.get('file_name')
                     invoice.terms = request.POST.get('terms', invoice.terms)
+                    
+                    # Allow editing invoice number for existing invoices too
+                    new_inv_num = request.POST.get('invoice_number')
+                    if new_inv_num and new_inv_num != invoice.invoice_number:
+                        if Invoice.objects.filter(invoice_number=new_inv_num).exists():
+                             messages.error(request, f'Invoice number {new_inv_num} already exists. Please use a unique number.')
+                             return redirect('shipments:shipment_detail', pk=pk)
+                        invoice.invoice_number = new_inv_num
+                    
                     invoice.save()
                     
                     # Clear and recreate line items for consistency
                     invoice.line_items.all().delete()
                 else:
-                    # Generate invoice number first
-                    invoice_number = Invoice.generate_invoice_number(shipment)
+                    # Use provided invoice number or generate one
+                    invoice_number = request.POST.get('invoice_number')
+                    if not invoice_number:
+                        invoice_number = Invoice.generate_invoice_number(shipment)
+                    
+                    # Check for duplicates if manually entered
+                    if Invoice.objects.filter(invoice_number=invoice_number).exists():
+                         messages.error(request, f'Invoice number {invoice_number} already exists. Please use a unique number.')
+                         return redirect('shipments:shipment_detail', pk=pk)
                     
                     invoice = Invoice.objects.create(
                         customer=shipment.customer,
@@ -1207,11 +1223,14 @@ def create_invoice(request, pk):
 
     # Show confirmation page
     from datetime import date
-    # Generate preview number (but don't save)
-    try:
-        next_invoice_number = Invoice.generate_invoice_number(shipment)
-    except:
-        next_invoice_number = "Generating..."
+    # Generate preview number or use existing
+    if existing:
+        next_invoice_number = existing.invoice_number
+    else:
+        try:
+            next_invoice_number = Invoice.generate_invoice_number(shipment)
+        except:
+            next_invoice_number = "Generating..."
     
     context = {
         'shipment': shipment,

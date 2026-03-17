@@ -81,6 +81,9 @@ class Order(TenantAwareModel):
     # Weight tracking
     total_weight_target = models.DecimalField(max_digits=15, decimal_places=2, help_text="Target weight in lbs")
     
+    # Financial details
+    freight_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0, help_text="Total estimated freight shipment cost")
+    
     # Schedule
     expected_pickup_date = models.DateField(null=True, blank=True)
     expected_delivery_date = models.DateField(null=True, blank=True)
@@ -121,8 +124,8 @@ class Order(TenantAwareModel):
 
     @property
     def gross_profit(self):
-        """Calculate gross profit"""
-        return self.total_revenue - self.total_cost
+        """Calculate gross profit (Revenue - Cost - Freight Cost)"""
+        return self.total_revenue - self.total_cost - self.freight_cost
 
 class ManifestItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='manifest_items')
