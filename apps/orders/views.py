@@ -74,8 +74,8 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
         user_tenant = self.request.user.tenant
         user_company = self.request.user.company
         
-        # Show all active companies in tenant
-        all_companies = Company.objects.filter(tenant=user_tenant, is_active=True)
+        # Show all active companies (tenant-specific + global)
+        all_companies = Company.plain_objects.filter(is_active=True).filter(Q(tenant=user_tenant) | Q(tenant__isnull=True))
         context['suppliers'] = all_companies
         context['receivers'] = all_companies
         
@@ -277,9 +277,10 @@ def order_create(request):
     user_company = request.user.company
     
     # Show all active companies (multitenancy handled by model manager usually, but being explicit)
-    company_qs = Company.objects.filter(is_active=True)
+    # Include both tenant-specific and global companies (where tenant is null)
+    company_qs = Company.plain_objects.filter(is_active=True)
     if request.user.tenant:
-        company_qs = company_qs.filter(tenant=request.user.tenant)
+        company_qs = company_qs.filter(Q(tenant=request.user.tenant) | Q(tenant__isnull=True))
     
     suppliers = company_qs
     receivers = company_qs
