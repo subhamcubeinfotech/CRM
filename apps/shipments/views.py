@@ -40,8 +40,10 @@ def dashboard(request):
     ).count()
     
     monthly_revenue = base_qs.filter(
-        status='delivered',
-        actual_delivery_date__gte=month_start
+        status='delivered'
+    ).filter(
+        Q(actual_delivery_date__gte=month_start) | 
+        Q(actual_delivery_date__isnull=True, estimated_delivery_date__gte=month_start)
     ).aggregate(total=Sum('revenue'))['total'] or 0
     
     pending_invoices = invoice_qs.filter(
@@ -69,9 +71,10 @@ def dashboard(request):
         month_end_date = (month_start_date + timedelta(days=32)).replace(day=1) - timedelta(days=1)
         
         month_revenue = base_qs.filter(
-            status='delivered',
-            actual_delivery_date__gte=month_start_date,
-            actual_delivery_date__lte=month_end_date
+            status='delivered'
+        ).filter(
+            Q(actual_delivery_date__gte=month_start_date, actual_delivery_date__lte=month_end_date) |
+            Q(actual_delivery_date__isnull=True, estimated_delivery_date__gte=month_start_date, estimated_delivery_date__lte=month_end_date)
         ).aggregate(total=Sum('revenue'))['total'] or 0
         
         months.append(month_date.strftime('%b'))
@@ -387,6 +390,10 @@ def shipment_edit(request, pk):
         shipment.special_instructions = request.POST.get('special_instructions', '')
         shipment.internal_notes = request.POST.get('internal_notes', '')
         
+        # Auto-set actual_delivery_date if status is delivered
+        if shipment.status == 'delivered' and not shipment.actual_delivery_date:
+            shipment.actual_delivery_date = timezone.now().date()
+            
         shipment.save()
         
         logger.info(f'Shipment updated: {shipment.shipment_number} by {request.user}')
@@ -1265,6 +1272,11 @@ def update_status(request, pk):
         if new_status and new_status in valid_statuses:
             old_status = shipment.get_status_display()
             shipment.status = new_status
+            
+            # Auto-set actual_delivery_date if status is delivered
+            if shipment.status == 'delivered' and not shipment.actual_delivery_date:
+                shipment.actual_delivery_date = timezone.now().date()
+                
             shipment.save()
             ShipmentMilestone.objects.create(
                 shipment=shipment,
