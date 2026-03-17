@@ -8,6 +8,10 @@ from .models import Company
 class CompanyForm(forms.ModelForm):
     email = forms.EmailField(required=True, widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Email Address'}))
 
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+
     class Meta:
         model = Company
         fields = [
@@ -75,8 +79,23 @@ class CompanyForm(forms.ModelForm):
 
     def clean_name(self):
         name = self.cleaned_data.get('name')
-        if name and len(name.strip()) < 2:
-            raise ValidationError("Company name must be at least 2 characters long.")
+        if name:
+            name = name.strip()
+            if len(name) < 2:
+                raise ValidationError("Company name must be at least 2 characters long.")
+            
+            # Check for duplicates in the same tenant
+            queryset = Company.objects.filter(name__iexact=name)
+            
+            # If editing, exclude current instance
+            if self.instance.pk:
+                queryset = queryset.exclude(pk=self.instance.pk)
+            
+            # If we have a user/tenant context, ensure we check within that
+            # Note: TenantManager should handle filtering if current_tenant is set,
+            # but being explicit is safer if the middleware isn't active in this context.
+            if queryset.exists():
+                raise ValidationError(f"A company with the name '{name}' already exists.")
         return name
 
 class CustomPasswordResetForm(PasswordResetForm):
@@ -143,6 +162,14 @@ class SignupStep2Form(forms.ModelForm):
             'tax_id': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Tax ID / Business Registration Number'}),
             'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Phone Number', 'required': True}),
         }
+
+    def clean_name(self):
+        name = self.cleaned_data.get('name')
+        if name:
+            name = name.strip()
+            if Company.objects.filter(name__iexact=name).exists():
+                raise ValidationError(f"A company with the name '{name}' already exists.")
+        return name
 
     # Reusing some clean methods from CompanyForm
     def clean_phone(self):

@@ -91,7 +91,10 @@
                     <h5 class="card-title mb-0">Recent Activity</h5>
                     <ul class="nav nav-pills card-header-pills" id="companyTabs" role="tablist">
                         <li class="nav-item">
-                            <button class="nav-link active py-1 px-3" id="shipments-tab" data-bs-toggle="tab" data-bs-target="#shipments" type="button">Shipments</button>
+                            <button class="nav-link active py-1 px-3" id="orders-tab" data-bs-toggle="tab" data-bs-target="#orders" type="button">Orders</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link py-1 px-3" id="locations-tab" data-bs-toggle="tab" data-bs-target="#locations" type="button">Locations</button>
                         </li>
                         <li class="nav-item">
                             <button class="nav-link py-1 px-3" id="invoices-tab" data-bs-toggle="tab" data-bs-target="#invoices" type="button">Invoices</button>
@@ -100,26 +103,42 @@
                 </div>
                 <div class="card-body p-0">
                     <div class="tab-content" id="companyTabsContent">
-                        <!-- Shipments Tab -->
-                        <div class="tab-pane fade show active" id="shipments" role="tabpanel">
-                            {% if shipments %}
+                        <!-- Orders Tab -->
+                        <div class="tab-pane fade show active" id="orders" role="tabpanel">
+                            {% if orders %}
                             <div class="table-responsive">
                                 <table class="table table-hover mb-0">
                                     <thead class="bg-light small">
                                         <tr>
-                                            <th class="ps-4">No.</th>
-                                            <th>Route</th>
+                                            <th class="ps-4">Order No.</th>
                                             <th>Status</th>
+                                            <th>Role</th>
+                                            <th>Destination</th>
+                                            <th>Weight</th>
                                             <th class="text-end pe-4">Date</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {% for shipment in shipments %}
+                                        {% for order in orders %}
                                         <tr>
-                                            <td class="ps-4 fw-bold text-primary">{{ shipment.shipment_number }}</td>
-                                            <td>{{ shipment.origin_city }} → {{ shipment.destination_city }}</td>
-                                            <td><span class="badge badge-{{ shipment.status }}">{{ shipment.get_status_display }}</span></td>
-                                            <td class="text-end pe-4 small text-muted">{{ shipment.created_at|date:"M d, Y" }}</td>
+                                            <td class="ps-4">
+                                                <a href="{% url 'orders:order_detail' order.pk %}" class="fw-bold text-primary">{{ order.order_number }}</a>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-{% if order.status == 'delivered' or order.status == 'closed' %}success{% elif order.status == 'cancelled' %}danger{% elif order.status == 'draft' %}secondary{% else %}info{% endif %}">
+                                                    {{ order.get_status_display }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {% if order.supplier == company %}
+                                                    <span class="text-muted"><i class="fas fa-arrow-up me-1 small"></i>Supplier</span>
+                                                {% else %}
+                                                    <span class="text-muted"><i class="fas fa-arrow-down me-1 small"></i>Receiver</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ order.destination_location.city|default:"—" }}, {{ order.destination_location.state|default:"—" }}</td>
+                                            <td class="fw-medium">{{ order.total_weight_target|floatformat:0 }} lbs</td>
+                                            <td class="text-end pe-4 small text-muted">{{ order.created_at|date:"M d, Y" }}</td>
                                         </tr>
                                         {% endfor %}
                                     </tbody>
@@ -127,11 +146,61 @@
                             </div>
                             {% else %}
                             <div class="text-center py-5 text-muted">
-                                <i class="fas fa-box-open fa-2x mb-3 opacity-25"></i>
-                                <p>No recent shipments found.</p>
+                                <i class="fas fa-receipt fa-2x mb-3 opacity-25"></i>
+                                <p>No orders found for this company.</p>
                             </div>
                             {% endif %}
                         </div>
+
+                        <!-- Locations Tab -->
+                        <div class="tab-pane fade" id="locations" role="tabpanel">
+                            <div class="row g-0">
+                                <div class="col-md-5 border-end" style="max-height: 500px; overflow-y: auto;">
+                                    <div class="p-3 bg-light border-bottom d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0 fw-bold">All Locations</h6>
+                                        <button class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i>Add</button>
+                                    </div>
+                                    <div class="list-group list-group-flush">
+                                        {% for loc in locations %}
+                                        <div class="list-group-item p-3 location-card" 
+                                             data-address="{{ loc.full_address }}" 
+                                             data-city="{{ loc.city }}"
+                                             data-country="{{ loc.country }}"
+                                             data-name="{{ loc.name }}">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <h6 class="mb-0 fw-bold">{{ loc.name }}</h6>
+                                                <span class="badge bg-light text-muted small border">{{ loc.code }}</span>
+                                            </div>
+                                            <p class="small text-muted mb-2">
+                                                <i class="fas fa-map-marker-alt me-2"></i>{{ loc.full_address }}
+                                            </p>
+                                            <div class="d-flex gap-3 small text-muted mb-2">
+                                                <span><i class="fas fa-phone me-1"></i>{{ loc.phone|default:"N/A" }}</span>
+                                                <span><i class="fas fa-envelope me-1"></i>{{ loc.email|default:"N/A" }}</span>
+                                            </div>
+                                            <a href="https://www.google.com/maps/search/?api=1&query={{ loc.full_address|urlencode }}" target="_blank" class="btn btn-outline-primary btn-sm w-100 py-1">
+                                                <i class="fab fa-google me-1"></i>View on Google Maps
+                                            </a>
+                                        </div>
+                                        {% empty %}
+                                        <div class="p-4 text-center text-muted">
+                                            <i class="fas fa-map-signs fa-2x mb-3 opacity-25"></i>
+                                            <p>No locations registered.</p>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                <div class="col-md-7">
+                                    <div id="map" style="height: 500px; width: 100%;" class="bg-light d-flex align-items-center justify-content-center">
+                                        <div class="text-center text-muted p-4">
+                                            <div class="spinner-border spinner-border-sm mb-2" role="status"></div>
+                                            <p class="mb-0 small">Initializing map...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Invoices Tab -->
                         <div class="tab-pane fade" id="invoices" role="tabpanel">
                             {% if invoices %}
@@ -148,7 +217,9 @@
                                     <tbody>
                                         {% for invoice in invoices %}
                                         <tr>
-                                            <td class="ps-4 fw-bold text-primary">{{ invoice.invoice_number }}</td>
+                                            <td class="ps-4">
+                                                <a href="{% url 'invoicing:invoice_detail' invoice.pk %}" class="fw-bold text-primary">{{ invoice.invoice_number }}</a>
+                                            </td>
                                             <td class="fw-bold">${{ invoice.total }}</td>
                                             <td><span class="badge bg-{% if invoice.status == 'paid' %}success{% elif invoice.status == 'overdue' %}danger{% else %}warning text-dark{% endif %}">{{ invoice.get_status_display }}</span></td>
                                             <td class="text-end pe-4 small text-muted">{{ invoice.due_date|date:"M d, Y" }}</td>
@@ -164,10 +235,128 @@
                             </div>
                             {% endif %}
                         </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .location-card {
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border-left: 4px solid transparent;
+    }
+    .location-card:hover {
+        background-color: #f8f9fa;
+        border-left-color: var(--primary-color);
+    }
+    .location-card.active {
+        background-color: #eef2ff;
+        border-left-color: var(--primary-color);
+    }
+    #map {
+        border-radius: 0;
+        z-index: 1;
+    }
+    .leaflet-popup-content-wrapper {
+        border-radius: 8px;
+        padding: 5px;
+    }
+    .leaflet-popup-content {
+        margin: 10px;
+        font-family: inherit;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const locationsTab = document.getElementById('locations-tab');
+    let mapInitialized = false;
+    let map;
+    let markers = [];
+
+    function initMap() {
+        if (mapInitialized) return;
+        
+        // Map container div clear
+        document.getElementById('map').innerHTML = '';
+        
+        // Initialize map
+        map = L.map('map').setView([20, 0], 2);
+        L.tileLayer('{{ MAP_TILE_SERVER_URL|safe }}', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 20
+        }).addTo(map);
+
+        const locationCards = document.querySelectorAll('.location-card');
+        const bounds = L.latLngBounds();
+
+        async function geocodeAddress(address, city, country) {
+            // Try 1: Full Address
+            let response = await fetch(`{{ MAP_GEOCODING_API_URL|safe }}?format=json&q=${encodeURIComponent(address)}`);
+            let data = await response.json();
+            
+            // Try 2: City, Country only (Fallback)
+            if (!data || data.length === 0) {
+                console.warn(`Fallback for: ${address}`);
+                const fallbackQuery = `${city}, ${country}`;
+                response = await fetch(`{{ MAP_GEOCODING_API_URL|safe }}?format=json&q=${encodeURIComponent(fallbackQuery)}`);
+                data = await response.json();
+            }
+            return data;
+        }
+
+        locationCards.forEach(async (card) => {
+            const address = card.dataset.address;
+            const city = card.dataset.city;
+            const country = card.dataset.country;
+            const name = card.dataset.name;
+
+            try {
+                const data = await geocodeAddress(address, city, country);
+                if (data && data.length > 0) {
+                    const lat = parseFloat(data[0].lat);
+                    const lon = parseFloat(data[0].lon);
+                    const marker = L.marker([lat, lon]).addTo(map);
+                    
+                    const gMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+                    marker.bindPopup(`
+                        <strong>${name}</strong><br>
+                        <small class="d-block mb-2">${data[0].display_name}</small>
+                        <a href="${gMapsUrl}" target="_blank" class="btn btn-primary btn-sm text-white w-100">Open Google Maps</a>
+                    `);
+                    markers.push({marker, card});
+                    bounds.extend([lat, lon]);
+
+                    map.fitBounds(bounds, {padding: [50, 50], maxZoom: 15});
+
+                    card.addEventListener('click', () => {
+                        locationCards.forEach(c => c.classList.remove('active'));
+                        card.classList.add('active');
+                        map.setView([lat, lon], 15);
+                        marker.openPopup();
+                    });
+                }
+            } catch (err) {
+                console.error('Geocoding error:', err);
+            }
+        });
+
+        mapInitialized = true;
+    }
+
+    // Initialize map when tab is shown
+    locationsTab.addEventListener('shown.bs.tab', function() {
+        setTimeout(initMap, 100);
+    });
+});
+</script>
 {% endblock %}

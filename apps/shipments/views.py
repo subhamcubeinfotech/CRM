@@ -36,12 +36,14 @@ def dashboard(request):
     
     # Stat cards
     active_shipments = base_qs.filter(
-        status__in=['booked', 'picked_up', 'in_transit', 'customs', 'out_for_delivery']
+        status__in=['pending', 'dispatched', 'in_transit']
     ).count()
     
     monthly_revenue = base_qs.filter(
-        status='delivered',
-        actual_delivery_date__gte=month_start
+        status='delivered'
+    ).filter(
+        Q(actual_delivery_date__gte=month_start) | 
+        Q(actual_delivery_date__isnull=True, estimated_delivery_date__gte=month_start)
     ).aggregate(total=Sum('revenue'))['total'] or 0
     
     pending_invoices = invoice_qs.filter(
@@ -69,9 +71,10 @@ def dashboard(request):
         month_end_date = (month_start_date + timedelta(days=32)).replace(day=1) - timedelta(days=1)
         
         month_revenue = base_qs.filter(
-            status='delivered',
-            actual_delivery_date__gte=month_start_date,
-            actual_delivery_date__lte=month_end_date
+            status='delivered'
+        ).filter(
+            Q(actual_delivery_date__gte=month_start_date, actual_delivery_date__lte=month_end_date) |
+            Q(actual_delivery_date__isnull=True, estimated_delivery_date__gte=month_start_date, estimated_delivery_date__lte=month_end_date)
         ).aggregate(total=Sum('revenue'))['total'] or 0
         
         months.append(month_date.strftime('%b'))
@@ -80,20 +83,20 @@ def dashboard(request):
     # Shipment status distribution
     status_counts = base_qs.values('status').annotate(count=Count('id'))
     status_data = {
+        'pending': 0,
+        'dispatched': 0,
         'in_transit': 0,
         'delivered': 0,
-        'customs': 0,
-        'booked': 0,
     }
     for item in status_counts:
-        if item['status'] in ['in_transit', 'picked_up', 'out_for_delivery']:
-            status_data['in_transit'] += item['count']
+        if item['status'] == 'pending':
+            status_data['pending'] = item['count']
+        elif item['status'] == 'dispatched':
+            status_data['dispatched'] = item['count']
+        elif item['status'] == 'in_transit':
+            status_data['in_transit'] = item['count']
         elif item['status'] == 'delivered':
             status_data['delivered'] = item['count']
-        elif item['status'] == 'customs':
-            status_data['customs'] = item['count']
-        elif item['status'] == 'booked':
-            status_data['booked'] = item['count']
     
     # Recent shipments
     recent_shipments = base_qs.select_related('customer').order_by('-created_at')[:10]
@@ -110,7 +113,7 @@ def dashboard(request):
         'revenue_labels': json.dumps(months),
         'revenue_data': json.dumps(revenue_data),
         'status_data': json.dumps(list(status_data.values())),
-        'status_labels': json.dumps(['In Transit', 'Delivered', 'Customs', 'Booked']),
+        'status_labels': json.dumps(['Pending', 'Dispatched', 'In Transit', 'Delivered']),
         
         # Recent shipments
         'recent_shipments': recent_shipments,
@@ -259,7 +262,7 @@ def shipment_create(request):
             shipper_id=shipper_id or None,
             consignee_id=consignee_id or None,
             shipment_type=request.POST.get('shipment_type', 'road'),
-            status='draft',
+            status='pending',
             
             # Origin
             origin_address=request.POST.get('origin_address', ''),
@@ -329,6 +332,8 @@ def shipment_create(request):
         'carriers': carriers,
         'all_companies': all_companies,
         'shipment_types': Shipment.SHIPMENT_TYPE_CHOICES,
+        'default_pieces': int(order.total_pieces) if order.total_pieces else 1,
+        'default_weight': order.total_manifest_weight if order.total_manifest_weight else 0,
         'is_create': True,
     }
     return render(request, 'shipments/form.html', context)
@@ -385,6 +390,10 @@ def shipment_edit(request, pk):
         shipment.special_instructions = request.POST.get('special_instructions', '')
         shipment.internal_notes = request.POST.get('internal_notes', '')
         
+        # Auto-set actual_delivery_date if status is delivered
+        if shipment.status == 'delivered' and not shipment.actual_delivery_date:
+            shipment.actual_delivery_date = timezone.now().date()
+            
         shipment.save()
         
         logger.info(f'Shipment updated: {shipment.shipment_number} by {request.user}')
@@ -1263,6 +1272,11 @@ def update_status(request, pk):
         if new_status and new_status in valid_statuses:
             old_status = shipment.get_status_display()
             shipment.status = new_status
+            
+            # Auto-set actual_delivery_date if status is delivered
+            if shipment.status == 'delivered' and not shipment.actual_delivery_date:
+                shipment.actual_delivery_date = timezone.now().date()
+                
             shipment.save()
             ShipmentMilestone.objects.create(
                 shipment=shipment,

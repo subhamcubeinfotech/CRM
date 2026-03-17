@@ -232,9 +232,10 @@
                                 <thead>
                                     <tr>
                                         <th class="ps-3 text-primary">Material</th>
-                                        <th>Weight <i class="fas fa-arrows-alt-v ms-1 op-30"></i></th>
                                         <th>Buy Price <i class="fas fa-arrows-alt-v ms-1 op-30"></i></th>
                                         <th>Sell Price <i class="fas fa-arrows-alt-v ms-1 op-30"></i></th>
+                                        <th>Weight <i class="fas fa-arrows-alt-v ms-1 op-30"></i></th>
+                                        <th>Pieces</th>
                                         <th class="pe-3">Packaging</th>
                                     </tr>
                                 </thead>
@@ -242,11 +243,28 @@
                                     {% for item in manifest_items %}
                                     <tr>
                                         <td class="ps-3"><a href="#" class="text-primary fw-600 text-decoration-none">{{ item.material }}</a></td>
-                                        <td>{{ item.weight|intcomma }} lbs / {{ order.total_weight_target|intcomma }}
-                                            lbs</td>
-                                        <td>${{ item.buy_price|floatformat:2 }} / lb</td>
-                                        <td>${{ item.sell_price|floatformat:2 }} / lb</td>
-                                        <td class="pe-3">{{ item.packaging }}</td>
+                                        <td>${{ item.buy_price|floatformat:2 }} / {{ item.buy_price_unit|default:"lb" }}</td>
+                                        <td>${{ item.sell_price|floatformat:2 }} / {{ item.sell_price_unit|default:"lb" }}</td>
+                                        <td>
+                                            {% if item.weight_unit == "pcs" %}
+                                            -
+                                            {% else %}
+                                            {{ item.weight|intcomma }} {{ item.weight_unit }} / {{ order.total_weight_target|intcomma }} lbs
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if item.weight_unit == "pcs" %}
+                                            {{ item.weight|intcomma }} pcs
+                                            {% else %}
+                                            -
+                                            {% endif %}
+                                        </td>
+                                        <td class="pe-3">
+                                            {{ item.packaging|default:"-" }}
+                                            {% if item.is_palletized %}
+                                            <span class="badge bg-soft-info text-info smaller ms-1">Palletized</span>
+                                            {% endif %}
+                                        </td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>

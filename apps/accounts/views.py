@@ -8,6 +8,7 @@ from django.core.paginator import Paginator
 from .models import Company
 from .forms import CompanyForm
 from .utils import filter_by_user_company, check_company_access
+from django.db.models import Q
 import logging
 
 logger = logging.getLogger('apps.accounts')
@@ -97,10 +98,42 @@ def company_detail(request, pk):
     if request.user.role == 'customer':
         check_company_access(company, request.user)
     
+    from apps.orders.models import Order
+    orders = Order.objects.filter(
+        Q(supplier=company) | Q(receiver=company)
+    ).order_by('-created_at')[:20]
+
+    # Construct locations list (Company address + Warehouses)
+    locations = []
+    if company.address_line1:
+        locations.append({
+            'name': f"Main Office - {company.name}",
+            'code': 'HQ',
+            'full_address': company.full_address,
+            'city': company.city,
+            'state': company.state,
+            'country': company.country,
+            'phone': company.phone,
+            'email': company.email
+        })
+    
+    for wh in company.warehouses.filter(is_active=True):
+        locations.append({
+            'name': wh.name,
+            'code': wh.code,
+            'full_address': wh.full_address,
+            'city': wh.city,
+            'state': wh.state,
+            'country': wh.country,
+            'phone': wh.phone,
+            'email': wh.email
+        })
+
     context = {
         'company': company,
-        'shipments': company.shipments_as_customer.all()[:10] if company.company_type == 'customer' else None,
         'invoices': company.invoices.all()[:10] if company.company_type == 'customer' else None,
+        'orders': orders,
+        'locations': locations,
     }
     return render(request, 'accounts/company_detail.html', context)
 
@@ -110,7 +143,7 @@ def company_edit(request, pk):
     """Edit an existing company"""
     company = get_object_or_404(Company, pk=pk)
     if request.method == 'POST':
-        form = CompanyForm(request.POST, instance=company)
+        form = CompanyForm(request.POST, instance=company, user=request.user)
         if form.is_valid():
             form.save()
             logger.info(f'Company updated: {company.name} (ID: {pk}) by {request.user}')
@@ -118,7 +151,7 @@ def company_edit(request, pk):
         else:
             logger.warning(f'Company edit form invalid for ID {pk}: {form.errors}')
     else:
-        form = CompanyForm(instance=company)
+        form = CompanyForm(instance=company, user=request.user)
     context = {
         'form': form,
         'company': company,
@@ -145,7 +178,7 @@ def company_delete(request, pk):
 def company_create(request):
     """Create a new company"""
     if request.method == 'POST':
-        form = CompanyForm(request.POST)
+        form = CompanyForm(request.POST, user=request.user)
         if form.is_valid():
             company = form.save(commit=False)
             if hasattr(request.user, 'tenant'):
@@ -175,7 +208,7 @@ def company_create(request):
         if company_type in [choice[0] for choice in Company.COMPANY_TYPE_CHOICES]:
             initial_data['company_type'] = company_type
         
-        form = CompanyForm(initial=initial_data)
+        form = CompanyForm(initial=initial_data, user=request.user)
         
     context = {
         'form': form,

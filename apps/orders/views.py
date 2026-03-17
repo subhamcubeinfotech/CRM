@@ -74,8 +74,8 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
         user_tenant = self.request.user.tenant
         user_company = self.request.user.company
         
-        # Show all active companies in tenant
-        all_companies = Company.objects.filter(tenant=user_tenant, is_active=True)
+        # Show all active companies (tenant-specific + global)
+        all_companies = Company.plain_objects.filter(is_active=True).filter(Q(tenant=user_tenant) | Q(tenant__isnull=True))
         context['suppliers'] = all_companies
         context['receivers'] = all_companies
         
@@ -173,7 +173,8 @@ def order_create(request):
                         'state': company.state[:100],
                         'country': company.country[:100],
                         'postal_code': company.postal_code[:20],
-                        'phone': company.phone[:20]
+                        'phone': company.phone[:20],
+                        'is_storage': False
                     }
                 )
                 print(f"Resolved to Warehouse ID: {hq.id} (Created: {created})")
@@ -216,12 +217,7 @@ def order_create(request):
         sell_prices = request.POST.getlist('sell_price[]')
         sell_price_units = request.POST.getlist('sell_price_unit[]')
         packagings = request.POST.getlist('packaging[]')
-        
-        # Checkboxes are tricky: they only submit if checked.
-        # However, we can use a hidden field pattern or just zip carefully if the user only has select/input fields.
-        # Since is_palletized[] is an array of checkboxes, we'll have to match them carefully or assume 
-        # sequential ordering if the user provided values for all. 
-        # For now, let's just make the loop safe.
+        is_palletized_list = request.POST.getlist('is_palletized_h[]')
         
         for i in range(len(materials)):
             if not materials[i]:
@@ -262,7 +258,7 @@ def order_create(request):
                     sell_price=sell_prices[i] if i < len(sell_prices) else 0,
                     sell_price_unit=sell_price_units[i] if i < len(sell_price_units) else "per lbs",
                     packaging=packagings[i] if i < len(packagings) else "",
-                    is_palletized=False 
+                    is_palletized=is_palletized_list[i].lower() == 'true' if i < len(is_palletized_list) else False 
                 )
             except Exception as e:
                 print(f"Error creating manifest item {i}: {e}")
@@ -282,9 +278,10 @@ def order_create(request):
     user_company = request.user.company
     
     # Show all active companies (multitenancy handled by model manager usually, but being explicit)
-    company_qs = Company.objects.filter(is_active=True)
+    # Include both tenant-specific and global companies (where tenant is null)
+    company_qs = Company.plain_objects.filter(is_active=True)
     if request.user.tenant:
-        company_qs = company_qs.filter(tenant=request.user.tenant)
+        company_qs = company_qs.filter(Q(tenant=request.user.tenant) | Q(tenant__isnull=True))
     
     suppliers = company_qs
     receivers = company_qs

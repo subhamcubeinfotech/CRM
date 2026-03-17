@@ -15,7 +15,6 @@
     .status-pill.pending { background: #fff5f5; color: #fa5252; }
     .status-pill.dispatched { background: #fff4e6; color: #fd7e14; }
     .status-pill.in_transit { background: #fff9db; color: #f08c00; }
-    .status-pill.arrived { background: #e3fafc; color: #0b7285; }
     .status-pill.delivered { background: #ebfbee; color: #40c057; }
     .status-pill.approved { background: #f3f0ff; color: #7950f2; }
     .status-pill.invoiced { background: #e7f5ff; color: #1c7ed6; }
@@ -339,8 +338,20 @@
                                             </td>
                                             <td>${{ item.buy_price|floatformat:3 }} / {{ item.buy_price_unit }}</td>
                                             <td>${{ item.sell_price|floatformat:2 }} / {{ item.sell_price_unit }}</td>
-                                            <td>{{ item.weight|floatformat:0 }} {{ item.weight_unit }}</td>
-                                            <td>-</td>
+                                            <td>
+                                                {% if item.weight_unit == "pcs" %}
+                                                -
+                                                {% else %}
+                                                {{ item.weight|floatformat:0 }} {{ item.weight_unit }}
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if item.weight_unit == "pcs" %}
+                                                {{ item.weight|floatformat:0 }} pcs
+                                                {% else %}
+                                                -
+                                                {% endif %}
+                                            </td>
                                             <td>{{ item.packaging|default:"-" }}</td>
                                         </tr>
                                         {% empty %}
@@ -967,11 +978,16 @@
                             </td>
                             <td>
                                 <select name="packaging[]" class="form-select form-select-sm border-0 bg-transparent ps-0">
-                                    <option value="Select" selected>Select</option>
-                                    <option value="Rolls">Rolls</option>
-                                    <option value="Pallets">Pallets</option>
-                                    <option value="Boxes">Boxes</option>
-                                    <option value="Drums">Drums</option>
+                                    <option value="Select">Select</option>
+                                    <option value="Rolls" {% if item.packaging == "Rolls" %}selected{% endif %}>Rolls</option>
+                                    <option value="Pallets" {% if item.packaging == "Pallets" or item.is_palletized %}selected{% endif %}>Pallets</option>
+                                    <option value="Boxes" {% if item.packaging == "Boxes" %}selected{% endif %}>Boxes</option>
+                                    <option value="Drums" {% if item.packaging == "Drums" %}selected{% endif %}>Drums</option>
+                                    <option value="Bales" {% if item.packaging == "Bales" %}selected{% endif %}>Bales</option>
+                                    <option value="Supersacks" {% if item.packaging == "Supersacks" %}selected{% endif %}>Supersacks</option>
+                                    {% if item.packaging and item.packaging not in "Rolls,Pallets,Boxes,Drums,Bales,Supersacks" %}
+                                    <option value="{{ item.packaging }}" selected>{{ item.packaging }}</option>
+                                    {% endif %}
                                 </select>
                             </td>
                             <td class="text-center align-middle">
