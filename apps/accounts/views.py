@@ -8,6 +8,7 @@ from django.core.paginator import Paginator
 from .models import Company
 from .forms import CompanyForm
 from .utils import filter_by_user_company, check_company_access
+from django.db.models import Q
 import logging
 
 logger = logging.getLogger('apps.accounts')
@@ -97,10 +98,15 @@ def company_detail(request, pk):
     if request.user.role == 'customer':
         check_company_access(company, request.user)
     
+    from apps.orders.models import Order
+    orders = Order.objects.filter(
+        Q(supplier=company) | Q(receiver=company)
+    ).order_by('-created_at')[:20]
+
     context = {
         'company': company,
-        'shipments': company.shipments_as_customer.all()[:10] if company.company_type == 'customer' else None,
         'invoices': company.invoices.all()[:10] if company.company_type == 'customer' else None,
+        'orders': orders,
     }
     return render(request, 'accounts/company_detail.html', context)
 
