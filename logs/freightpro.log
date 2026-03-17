@@ -9117,3 +9117,94 @@ django.contrib.sessions.exceptions.SessionInterrupted: The request's session was
 [2026-03-13 10:27:52] INFO django.server basehttp.log_message:213 — "GET /orders/create/ HTTP/1.1" 200 48139
 [2026-03-13 10:27:53] WARNING django.request log.log_response:253 — Not Found: /favicon.ico
 [2026-03-13 10:27:53] WARNING django.server basehttp.log_message:213 — "GET /favicon.ico HTTP/1.1" 404 7025
+[2026-03-17 07:11:51] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-17 07:13:46] INFO django.server basehttp.log_message:213 — "GET /orders/109/ HTTP/1.1" 200 36981
+[2026-03-17 07:13:46] WARNING django.request log.log_response:253 — Not Found: /favicon.ico
+[2026-03-17 07:13:46] WARNING django.server basehttp.log_message:213 — "GET /favicon.ico HTTP/1.1" 404 7178
+[2026-03-17 07:13:47] INFO django.server basehttp.log_message:213 — "GET /orders/109/ HTTP/1.1" 200 36981
+[2026-03-17 07:13:47] WARNING django.request log.log_response:253 — Not Found: /favicon.ico
+[2026-03-17 07:13:47] WARNING django.server basehttp.log_message:213 — "GET /favicon.ico HTTP/1.1" 404 7178
+[2026-03-17 07:13:48] INFO django.server basehttp.log_message:213 — "GET /orders/109/ HTTP/1.1" 200 36981
+[2026-03-17 07:13:48] WARNING django.request log.log_response:253 — Not Found: /favicon.ico
+[2026-03-17 07:13:48] WARNING django.server basehttp.log_message:213 — "GET /favicon.ico HTTP/1.1" 404 7178
+[2026-03-17 07:13:48] INFO django.server basehttp.log_message:213 — "GET /orders/109/ HTTP/1.1" 200 36981
+[2026-03-17 07:13:50] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 23610
+[2026-03-17 07:13:51] INFO apps.orders views.order_create:275 — New order creation page accessed by sahil (Customer)
+[2026-03-17 07:13:51] INFO django.server basehttp.log_message:213 — "GET /orders/create/ HTTP/1.1" 200 97592
+[2026-03-17 07:14:06] INFO apps.orders views.order_create:275 — New order creation page accessed by sahil (Customer)
+[2026-03-17 07:14:06] INFO django.server basehttp.log_message:213 — "GET /orders/create/ HTTP/1.1" 200 97592
+[2026-03-17 07:14:09] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: TCS (Customer)
+[2026-03-17 07:14:09] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: TCS (Customer)
+[2026-03-17 07:14:09] INFO django.server basehttp.log_message:213 — "GET /dashboard/ HTTP/1.1" 200 20895
+[2026-03-17 07:14:10] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: TCS (Customer)
+[2026-03-17 07:14:10] INFO django.server basehttp.log_message:213 — "GET /shipments/ HTTP/1.1" 200 19761
+[2026-03-17 07:14:11] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 23610
+[2026-03-17 07:14:13] INFO django.server basehttp.log_message:213 — "GET /orders/109/ HTTP/1.1" 200 36981
+[2026-03-17 07:14:15] INFO django.server basehttp.log_message:213 — "GET /shipments/create/?order_id=109 HTTP/1.1" 200 29560
+[2026-03-17 07:14:20] INFO django.server basehttp.log_message:213 — "GET /shipments/146/ HTTP/1.1" 200 82956
+[2026-03-17 07:15:00] INFO django.server basehttp.log_message:213 — "GET /orders/109/ HTTP/1.1" 200 36981
+[2026-03-17 07:15:00] WARNING django.request log.log_response:253 — Not Found: /favicon.ico
+[2026-03-17 07:15:00] WARNING django.server basehttp.log_message:213 — "GET /favicon.ico HTTP/1.1" 404 7178
+[2026-03-17 07:15:00] INFO django.server basehttp.log_message:213 — "GET /orders/109/ HTTP/1.1" 200 36981
+[2026-03-17 07:15:00] INFO django.server basehttp.log_message:213 — "GET /orders/109/ HTTP/1.1" 200 36981
+[2026-03-17 07:15:00] INFO django.server basehttp.log_message:213 — "GET /orders/109/ HTTP/1.1" 200 36981
+[2026-03-17 07:15:01] WARNING django.request log.log_response:253 — Not Found: /favicon.ico
+[2026-03-17 07:15:01] WARNING django.server basehttp.log_message:213 — "GET /favicon.ico HTTP/1.1" 404 7178
+[2026-03-17 07:15:01] INFO django.server basehttp.log_message:213 — "GET /orders/109/ HTTP/1.1" 200 36981
+[2026-03-17 07:15:02] WARNING django.request log.log_response:253 — Not Found: /favicon.ico
+[2026-03-17 07:15:02] WARNING django.server basehttp.log_message:213 — "GET /favicon.ico HTTP/1.1" 404 7178
+[2026-03-17 07:15:02] INFO django.server basehttp.log_message:213 — "GET /orders/109/ HTTP/1.1" 200 36981
+[2026-03-17 07:15:02] WARNING django.request log.log_response:253 — Not Found: /favicon.ico
+[2026-03-17 07:15:02] WARNING django.server basehttp.log_message:213 — "GET /favicon.ico HTTP/1.1" 404 7178
+[2026-03-17 07:15:02] INFO django.server basehttp.log_message:213 — "GET /orders/109/ HTTP/1.1" 200 36981
+[2026-03-17 07:15:03] WARNING django.request log.log_response:253 — Not Found: /favicon.ico
+[2026-03-17 07:15:03] WARNING django.server basehttp.log_message:213 — "GET /favicon.ico HTTP/1.1" 404 7178
+[2026-03-17 07:15:03] INFO django.server basehttp.log_message:213 — "GET /orders/109/ HTTP/1.1" 200 36981
+[2026-03-17 07:15:03] WARNING django.request log.log_response:253 — Not Found: /favicon.ico
+[2026-03-17 07:15:03] WARNING django.server basehttp.log_message:213 — "GET /favicon.ico HTTP/1.1" 404 7178
+[2026-03-17 07:15:03] INFO django.server basehttp.log_message:213 — "GET /orders/109/ HTTP/1.1" 200 36981
+[2026-03-17 07:15:04] INFO django.server basehttp.log_message:213 — "GET /orders/109/ HTTP/1.1" 200 36981
+[2026-03-17 07:15:04] WARNING django.request log.log_response:253 — Not Found: /favicon.ico
+[2026-03-17 07:15:04] WARNING django.server basehttp.log_message:213 — "GET /favicon.ico HTTP/1.1" 404 7178
+[2026-03-17 07:15:04] INFO django.server basehttp.log_message:213 — "GET /orders/109/ HTTP/1.1" 200 36981
+[2026-03-17 07:15:04] WARNING django.request log.log_response:253 — Not Found: /favicon.ico
+[2026-03-17 07:15:04] WARNING django.server basehttp.log_message:213 — "GET /favicon.ico HTTP/1.1" 404 7178
+[2026-03-17 07:15:04] INFO django.server basehttp.log_message:213 — "GET /orders/109/ HTTP/1.1" 200 36981
+[2026-03-17 07:15:07] INFO django.server basehttp.log_message:213 — "GET /shipments/146/ HTTP/1.1" 200 82956
+[2026-03-17 07:15:39] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 23610
+[2026-03-17 07:15:39] INFO apps.orders views.order_create:275 — New order creation page accessed by sahil (Customer)
+[2026-03-17 07:15:40] INFO django.server basehttp.log_message:213 — "GET /orders/create/ HTTP/1.1" 200 97592
+[2026-03-17 07:16:36] INFO apps.orders views.order_create:239 — Deducted 5465.0 from NZXT H7 Flow Case. New stock: 0
+[2026-03-17 07:16:36] INFO apps.orders views.send_low_stock_notification:472 — Low stock alert for NZXT H7 Flow Case: Using Admin email admin@alpha.com
+[2026-03-17 07:16:41] INFO apps.orders views.send_low_stock_notification:501 — Low stock notification sent for NZXT H7 Flow Case to admin@alpha.com
+[2026-03-17 07:16:41] INFO apps.orders views.send_order_notification_to_supplier:363 — Order STH-O-14-1773731796-7721: Supplier has no email — skipping notification.
+[2026-03-17 07:16:42] INFO django.server basehttp.log_message:213 — "POST /orders/create/ HTTP/1.1" 302 0
+[2026-03-17 07:16:42] INFO django.server basehttp.log_message:213 — "GET /orders/110/ HTTP/1.1" 200 35345
+[2026-03-17 07:17:07] INFO django.server basehttp.log_message:213 — "GET /shipments/create/?order_id=110 HTTP/1.1" 200 29563
+[2026-03-17 07:17:31] INFO apps.shipments views.shipment_create:317 — Shipment created: SHP-2026-43815 for TCS (Customer) by sahil (Customer)
+[2026-03-17 07:17:31] INFO django.server basehttp.log_message:213 — "POST /shipments/create/?order_id=110 HTTP/1.1" 302 0
+[2026-03-17 07:17:31] INFO django.server basehttp.log_message:213 — "GET /shipments/147/ HTTP/1.1" 200 83356
+[2026-03-17 07:19:09] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 26086
+[2026-03-17 07:19:11] INFO apps.orders views.order_create:275 — New order creation page accessed by sahil (Customer)
+[2026-03-17 07:19:11] INFO django.server basehttp.log_message:213 — "GET /orders/create/ HTTP/1.1" 200 97276
+[2026-03-17 07:19:57] INFO django.server basehttp.log_message:213 — "GET /materials/lookup/?name=NZXT%20H7%20Flow%20Case HTTP/1.1" 200 22499
+[2026-03-17 07:19:59] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: TCS (Customer)
+[2026-03-17 07:19:59] INFO django.server basehttp.log_message:213 — "GET /shipments/ HTTP/1.1" 200 22212
+[2026-03-17 07:20:01] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 26086
+[2026-03-17 07:20:03] INFO django.server basehttp.log_message:213 — "GET /orders/110/ HTTP/1.1" 200 37014
+[2026-03-17 07:20:05] INFO django.server basehttp.log_message:213 — "GET /shipments/147/ HTTP/1.1" 200 83031
+[2026-03-17 07:25:25] INFO django.server basehttp.log_message:213 — "GET /shipments/147/ HTTP/1.1" 200 83415
+[2026-03-17 07:25:25] WARNING django.request log.log_response:253 — Not Found: /favicon.ico
+[2026-03-17 07:25:25] WARNING django.server basehttp.log_message:213 — "GET /favicon.ico HTTP/1.1" 404 7178
+[2026-03-17 07:25:27] INFO django.server basehttp.log_message:213 — "GET /shipments/147/ HTTP/1.1" 200 83415
+[2026-03-17 07:25:27] WARNING django.request log.log_response:253 — Not Found: /favicon.ico
+[2026-03-17 07:25:27] WARNING django.server basehttp.log_message:213 — "GET /favicon.ico HTTP/1.1" 404 7178
+[2026-03-17 07:25:36] INFO django.server basehttp.log_message:213 — "GET /orders/110/ HTTP/1.1" 200 37014
+[2026-03-17 07:25:36] WARNING django.request log.log_response:253 — Not Found: /favicon.ico
+[2026-03-17 07:25:36] WARNING django.server basehttp.log_message:213 — "GET /favicon.ico HTTP/1.1" 404 7178
+[2026-03-17 07:25:36] INFO django.server basehttp.log_message:213 — "GET /orders/110/ HTTP/1.1" 200 37014
+[2026-03-17 07:25:36] WARNING django.request log.log_response:253 — Not Found: /favicon.ico
+[2026-03-17 07:25:36] WARNING django.server basehttp.log_message:213 — "GET /favicon.ico HTTP/1.1" 404 7178
+[2026-03-17 07:25:42] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for sahil → company: TCS (Customer)
+[2026-03-17 07:25:42] INFO django.server basehttp.log_message:213 — "GET /shipments/ HTTP/1.1" 200 22212
+[2026-03-17 07:25:44] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 26086

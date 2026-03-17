@@ -339,8 +339,20 @@
                                             </td>
                                             <td>${{ item.buy_price|floatformat:3 }} / {{ item.buy_price_unit }}</td>
                                             <td>${{ item.sell_price|floatformat:2 }} / {{ item.sell_price_unit }}</td>
-                                            <td>{{ item.weight|floatformat:0 }} {{ item.weight_unit }}</td>
-                                            <td>-</td>
+                                            <td>
+                                                {% if item.weight_unit == "pcs" %}
+                                                -
+                                                {% else %}
+                                                {{ item.weight|floatformat:0 }} {{ item.weight_unit }}
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if item.weight_unit == "pcs" %}
+                                                {{ item.weight|floatformat:0 }} pcs
+                                                {% else %}
+                                                -
+                                                {% endif %}
+                                            </td>
                                             <td>{{ item.packaging|default:"-" }}</td>
                                         </tr>
                                         {% empty %}
