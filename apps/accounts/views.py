@@ -103,10 +103,37 @@ def company_detail(request, pk):
         Q(supplier=company) | Q(receiver=company)
     ).order_by('-created_at')[:20]
 
+    # Construct locations list (Company address + Warehouses)
+    locations = []
+    if company.address_line1:
+        locations.append({
+            'name': f"Main Office - {company.name}",
+            'code': 'HQ',
+            'full_address': company.full_address,
+            'city': company.city,
+            'state': company.state,
+            'country': company.country,
+            'phone': company.phone,
+            'email': company.email
+        })
+    
+    for wh in company.warehouses.filter(is_active=True):
+        locations.append({
+            'name': wh.name,
+            'code': wh.code,
+            'full_address': wh.full_address,
+            'city': wh.city,
+            'state': wh.state,
+            'country': wh.country,
+            'phone': wh.phone,
+            'email': wh.email
+        })
+
     context = {
         'company': company,
         'invoices': company.invoices.all()[:10] if company.company_type == 'customer' else None,
         'orders': orders,
+        'locations': locations,
     }
     return render(request, 'accounts/company_detail.html', context)
 
