@@ -204,16 +204,19 @@ def material_detail(request, pk=None):
         if not name:
             return redirect('inventory:item_list')
         
-        material = Material.objects.filter(name=name).first()
-        if not material:
-            material = Material.objects.create(
-                name=name,
-                material_type="PE",
-                grade="Post-Industrial",
-                color="Mixed",
-                product_type="Film",
-                tenant=request.user.tenant
-            )
+        # Use get_or_create to handle tenant-aware lookup and creation safely
+        material, created = Material.objects.get_or_create(
+            name=name,
+            defaults={
+                'material_type': "PE",
+                'grade': "Post-Industrial",
+                'color': "Mixed",
+                'product_type': "Film",
+                'tenant': request.user.tenant
+            }
+        )
+        if created:
+            logger.info(f"New material record created via lookup: {name} for tenant {request.user.tenant}")
 
     # --- Live Data Aggregation ---
     

@@ -110,7 +110,7 @@ def company_edit(request, pk):
     """Edit an existing company"""
     company = get_object_or_404(Company, pk=pk)
     if request.method == 'POST':
-        form = CompanyForm(request.POST, instance=company)
+        form = CompanyForm(request.POST, instance=company, user=request.user)
         if form.is_valid():
             form.save()
             logger.info(f'Company updated: {company.name} (ID: {pk}) by {request.user}')
@@ -118,7 +118,7 @@ def company_edit(request, pk):
         else:
             logger.warning(f'Company edit form invalid for ID {pk}: {form.errors}')
     else:
-        form = CompanyForm(instance=company)
+        form = CompanyForm(instance=company, user=request.user)
     context = {
         'form': form,
         'company': company,
@@ -145,7 +145,7 @@ def company_delete(request, pk):
 def company_create(request):
     """Create a new company"""
     if request.method == 'POST':
-        form = CompanyForm(request.POST)
+        form = CompanyForm(request.POST, user=request.user)
         if form.is_valid():
             company = form.save(commit=False)
             if hasattr(request.user, 'tenant'):
@@ -175,7 +175,7 @@ def company_create(request):
         if company_type in [choice[0] for choice in Company.COMPANY_TYPE_CHOICES]:
             initial_data['company_type'] = company_type
         
-        form = CompanyForm(initial=initial_data)
+        form = CompanyForm(initial=initial_data, user=request.user)
         
     context = {
         'form': form,

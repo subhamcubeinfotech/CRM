@@ -97,7 +97,7 @@ class Warehouse(TenantAwareModel):
 
 class Material(TenantAwareModel):
     """Material model for tracking specific material types and grades"""
-    name = models.CharField(max_length=200, unique=True)
+    name = models.CharField(max_length=200)
     material_type = models.CharField(max_length=100, blank=True, help_text="e.g. PE, PP, PVC")
     grade = models.CharField(max_length=100, blank=True, help_text="e.g. Post-Industrial, Virgin")
     color = models.CharField(max_length=100, blank=True, help_text="e.g. Mixed, Clear, White")
@@ -112,6 +112,7 @@ class Material(TenantAwareModel):
     
     class Meta:
         ordering = ['name']
+        unique_together = ('tenant', 'name')
     
     def __str__(self):
         return self.name
