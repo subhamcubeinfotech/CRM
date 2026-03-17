@@ -295,7 +295,6 @@
 
         <!-- Profit Estimator Card -->
         <div id="profit-estimator-card" style="
-            display: none;
             background: #ffffff;
             border: 1px solid #e5e9f2;
             border-radius: 14px;
@@ -400,7 +399,7 @@
             </div>
 
             <!-- Per-Item Breakdown -->
-            <div id="profit-items-breakdown" style="display:none;">
+            <div id="profit-items-breakdown">
                 <div style="padding: 10px 22px 4px; display:flex; align-items:center; gap:6px;">
                     <i class="fas fa-list-ul" style="font-size:0.7rem;color:#9ca3af;"></i>
                     <span style="font-size:0.7rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.06em;">Per Item Breakdown</span>
@@ -593,12 +592,11 @@
             barLabel.style.color     = profitColor;
         }
 
-        // Show/hide entire card
-        document.getElementById('profit-estimator-card').style.display = hasAny ? 'block' : 'none';
+        // Show/hide entire card logic removed (permanently visible)
+        // document.getElementById('profit-estimator-card').style.display = hasAny ? 'block' : 'none';
 
-        // Per-item breakdown visibility
-        document.getElementById('profit-items-breakdown').style.display =
-            hasAny && items.length > 1 ? 'block' : 'none';
+        // Per-item breakdown visibility logic removed (permanently visible if has any)
+        document.getElementById('profit-items-breakdown').style.display = hasAny ? 'block' : 'none';
     }
 
     // Listen for changes on dynamically added items via delegation
@@ -736,6 +734,9 @@
 
     filterLocations('supplier-select', 'source-location-select');
     filterLocations('receiver-select', 'dest-location-select');
+
+    // Run initial profit calculation
+    recalcProfit();
 
     // Initialize cloning logic to initialize new items
     document.getElementById('add-item-btn').addEventListener('click', function () {
