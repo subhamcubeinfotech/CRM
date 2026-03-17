@@ -91,7 +91,7 @@
                     <h5 class="card-title mb-0">Recent Activity</h5>
                     <ul class="nav nav-pills card-header-pills" id="companyTabs" role="tablist">
                         <li class="nav-item">
-                            <button class="nav-link active py-1 px-3" id="shipments-tab" data-bs-toggle="tab" data-bs-target="#shipments" type="button">Shipments</button>
+                            <button class="nav-link active py-1 px-3" id="orders-tab" data-bs-toggle="tab" data-bs-target="#orders" type="button">Orders</button>
                         </li>
                         <li class="nav-item">
                             <button class="nav-link py-1 px-3" id="invoices-tab" data-bs-toggle="tab" data-bs-target="#invoices" type="button">Invoices</button>
@@ -100,26 +100,42 @@
                 </div>
                 <div class="card-body p-0">
                     <div class="tab-content" id="companyTabsContent">
-                        <!-- Shipments Tab -->
-                        <div class="tab-pane fade show active" id="shipments" role="tabpanel">
-                            {% if shipments %}
+                        <!-- Orders Tab -->
+                        <div class="tab-pane fade show active" id="orders" role="tabpanel">
+                            {% if orders %}
                             <div class="table-responsive">
                                 <table class="table table-hover mb-0">
                                     <thead class="bg-light small">
                                         <tr>
-                                            <th class="ps-4">No.</th>
-                                            <th>Route</th>
+                                            <th class="ps-4">Order No.</th>
                                             <th>Status</th>
+                                            <th>Role</th>
+                                            <th>Destination</th>
+                                            <th>Weight</th>
                                             <th class="text-end pe-4">Date</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {% for shipment in shipments %}
+                                        {% for order in orders %}
                                         <tr>
-                                            <td class="ps-4 fw-bold text-primary">{{ shipment.shipment_number }}</td>
-                                            <td>{{ shipment.origin_city }} → {{ shipment.destination_city }}</td>
-                                            <td><span class="badge badge-{{ shipment.status }}">{{ shipment.get_status_display }}</span></td>
-                                            <td class="text-end pe-4 small text-muted">{{ shipment.created_at|date:"M d, Y" }}</td>
+                                            <td class="ps-4">
+                                                <a href="{% url 'orders:order_detail' order.pk %}" class="fw-bold text-primary">{{ order.order_number }}</a>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-{% if order.status == 'delivered' or order.status == 'closed' %}success{% elif order.status == 'cancelled' %}danger{% elif order.status == 'draft' %}secondary{% else %}info{% endif %}">
+                                                    {{ order.get_status_display }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {% if order.supplier == company %}
+                                                    <span class="text-muted"><i class="fas fa-arrow-up me-1 small"></i>Supplier</span>
+                                                {% else %}
+                                                    <span class="text-muted"><i class="fas fa-arrow-down me-1 small"></i>Receiver</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ order.destination_location.city|default:"—" }}, {{ order.destination_location.state|default:"—" }}</td>
+                                            <td class="fw-medium">{{ order.total_weight_target|floatformat:0 }} lbs</td>
+                                            <td class="text-end pe-4 small text-muted">{{ order.created_at|date:"M d, Y" }}</td>
                                         </tr>
                                         {% endfor %}
                                     </tbody>
@@ -127,11 +143,12 @@
                             </div>
                             {% else %}
                             <div class="text-center py-5 text-muted">
-                                <i class="fas fa-box-open fa-2x mb-3 opacity-25"></i>
-                                <p>No recent shipments found.</p>
+                                <i class="fas fa-receipt fa-2x mb-3 opacity-25"></i>
+                                <p>No orders found for this company.</p>
                             </div>
                             {% endif %}
                         </div>
+
                         <!-- Invoices Tab -->
                         <div class="tab-pane fade" id="invoices" role="tabpanel">
                             {% if invoices %}
@@ -148,7 +165,9 @@
                                     <tbody>
                                         {% for invoice in invoices %}
                                         <tr>
-                                            <td class="ps-4 fw-bold text-primary">{{ invoice.invoice_number }}</td>
+                                            <td class="ps-4">
+                                                <a href="{% url 'invoicing:invoice_detail' invoice.pk %}" class="fw-bold text-primary">{{ invoice.invoice_number }}</a>
+                                            </td>
                                             <td class="fw-bold">${{ invoice.total }}</td>
                                             <td><span class="badge bg-{% if invoice.status == 'paid' %}success{% elif invoice.status == 'overdue' %}danger{% else %}warning text-dark{% endif %}">{{ invoice.get_status_display }}</span></td>
                                             <td class="text-end pe-4 small text-muted">{{ invoice.due_date|date:"M d, Y" }}</td>
