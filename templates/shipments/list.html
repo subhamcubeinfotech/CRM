@@ -21,7 +21,7 @@
                     </div>
                 </div>
                 <div class="col-md-2">
-                    <select name="status" class="form-select">
+                    <select name="status" class="form-select" onchange="this.form.submit()">
                         <option value="">All Statuses</option>
                         {% for code, label in status_choices %}
                         <option value="{{ code }}" {% if status_filter == code %}selected{% endif %}>{{ label }}</option>
@@ -29,7 +29,7 @@
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <select name="type" class="form-select">
+                    <select name="type" class="form-select" onchange="this.form.submit()">
                         <option value="">All Types</option>
                         {% for code, label in type_choices %}
                         <option value="{{ code }}" {% if type_filter == code %}selected{% endif %}>{{ label }}</option>
@@ -43,9 +43,14 @@
                     <input type="date" name="date_to" class="form-control" placeholder="To Date" value="{{ date_to|default:'' }}">
                 </div>
                 <div class="col-md-1">
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="fas fa-filter"></i>
-                    </button>
+                    <div class="btn-group w-100">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-filter"></i>
+                        </button>
+                        <a href="{% url 'shipments:shipment_list' %}" class="btn btn-outline-secondary" title="Clear Filters">
+                            <i class="fas fa-times"></i>
+                        </a>
+                    </div>
                 </div>
             </form>
         </div>

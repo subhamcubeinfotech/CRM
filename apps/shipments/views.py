@@ -129,19 +129,24 @@ def shipment_list(request):
             Q(customer__name__icontains=search)
         )
     
-    # Status filter
+    # Filter parameters
     status = request.GET.get('status')
-    if status:
+    shipment_type = request.GET.get('type')
+    date_from = request.GET.get('date_from')
+    date_to = request.GET.get('date_to')
+
+    # Debug logging
+    logger.debug(f"Shipment list filters: search={search}, status={status}, type={shipment_type}, from={date_from}, to={date_to}")
+    
+    # Status filter
+    if status and status != '':
         shipments = shipments.filter(status=status)
     
     # Type filter
-    shipment_type = request.GET.get('type')
-    if shipment_type:
+    if shipment_type and shipment_type != '':
         shipments = shipments.filter(shipment_type=shipment_type)
     
     # Date range filter
-    date_from = request.GET.get('date_from')
-    date_to = request.GET.get('date_to')
     if date_from:
         shipments = shipments.filter(pickup_date__gte=date_from)
     if date_to:
@@ -150,6 +155,10 @@ def shipment_list(request):
     # Sorting
     sort_by = request.GET.get('sort', '-created_at')
     shipments = shipments.order_by(sort_by)
+    
+    # Final count after filters
+    total_count = shipments.count()
+    logger.debug(f"Total shipments after filtering: {total_count}")
     
     # Pagination
     paginator = Paginator(shipments, 25)
