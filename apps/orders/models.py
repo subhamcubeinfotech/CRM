@@ -214,6 +214,28 @@ class Order(TenantAwareModel):
         }
         return mapping.get(code, 'secondary')
 
+class OrderEvent(models.Model):
+    EVENT_TYPES = (
+        ('order_created', 'Order Created'),
+        ('shipment_created', 'Shipment Created'),
+        ('status_updated', 'Status Updated'),
+        ('payment_status_updated', 'Payment Status Updated'),
+        ('note_added', 'Note Added'),
+        ('document_added', 'Document Added'),
+    )
+
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='events')
+    event_type = models.CharField(max_length=50, choices=EVENT_TYPES)
+    description = models.TextField()
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.order.order_number} - {self.get_event_type_display()} - {self.created_at}"
+
 class ManifestItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='manifest_items')
     material = models.CharField(max_length=200)
