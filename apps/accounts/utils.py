@@ -43,3 +43,43 @@ def check_company_access(obj_company, user):
                 f'tried to access data of company: {obj_company}'
             )
             raise PermissionDenied("You do not have access to this record.")
+import random
+import string
+from django.core.mail import send_mail
+from django.conf import settings
+from django.utils import timezone
+from datetime import timedelta
+
+def generate_otp(length=6):
+    """Generate a random numeric OTP"""
+    return ''.join(random.choices(string.digits, k=length))
+
+def send_otp_email(email, otp):
+    """Send OTP to the user's email"""
+    subject = f'{otp} is your FreightPro verification code'
+    message = f'''Hello,
+
+Thank you for choosing FreightPro! 
+
+Your verification code is: {otp}
+
+This code will expire in 5 minutes. Please enter it to complete your registration.
+
+If you didn't request this code, you can safely ignore this email.
+
+Thanks,
+The FreightPro Team'''
+    
+    try:
+        send_mail(
+            subject,
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            [email],
+            fail_silently=False,
+        )
+        return True
+    except Exception as e:
+        logger = logging.getLogger('apps.accounts')
+        logger.error(f"Failed to send OTP email to {email}: {str(e)}")
+        return False

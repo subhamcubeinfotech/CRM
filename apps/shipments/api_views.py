@@ -40,6 +40,9 @@ def shipment_detail_api(request, pk):
         'id': shipment.id,
         'shipment_number': shipment.shipment_number,
         'tracking_number': shipment.tracking_number,
+        'vehicle_number': shipment.vehicle_number,
+        'driver_name': shipment.driver_name,
+        'driver_phone': shipment.driver_phone,
         'customer': shipment.customer.name,
         'carrier': shipment.carrier.name if shipment.carrier else None,
         'origin': shipment.origin_full,
@@ -63,6 +66,9 @@ def shipment_detail_api(request, pk):
         'gross_profit': float(shipment.gross_profit),
         'profit_margin': float(shipment.profit_margin),
         'progress_percentage': shipment.progress_percentage,
+        'current_location': shipment.current_location_display,
+        'last_location_updated_at': shipment.last_location_updated_at.isoformat() if shipment.last_location_updated_at else None,
+        'tracking_active': shipment.tracking_active,
     }
     
     return JsonResponse(data)
@@ -100,13 +106,21 @@ def shipment_tracking_api(request, pk):
         'current': {
             'lat': float(shipment.current_latitude) if shipment.current_latitude else None,
             'lng': float(shipment.current_longitude) if shipment.current_longitude else None,
+            'label': shipment.current_location_display,
+            'updated_at': shipment.last_location_updated_at.isoformat() if shipment.last_location_updated_at else None,
         },
     }
-    
+
     data = {
         'shipment_number': shipment.shipment_number,
         'status': shipment.status,
         'status_display': shipment.get_status_display(),
+        'current_location': shipment.current_location_display,
+        'last_location_updated_at': shipment.last_location_updated_at.isoformat() if shipment.last_location_updated_at else None,
+        'tracking_active': shipment.tracking_active,
+        'vehicle_number': shipment.vehicle_number,
+        'driver_name': shipment.driver_name,
+        'driver_phone': shipment.driver_phone,
         'milestones': milestones,
         'map_data': map_data,
     }

@@ -18,9 +18,6 @@
     }
 
     .status-dropdown .btn {
-        background: #fef9c3;
-        color: #854d0e;
-        border: 1px solid #fde047;
         font-weight: 600;
         border-radius: 8px;
         padding: 0.25rem 0.75rem;
@@ -80,6 +77,16 @@
         border-radius: 3px;
     }
 
+    .status-badge-delivered { background: rgba(22,163,74,0.1); color: #16a34a; }
+    .status-badge-pending, .status-badge-dispatched, .status-badge-in_transit { background: rgba(239,68,68,0.1); color: #dc2626; }
+
+    .status-btn-success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    .status-btn-primary { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+    .status-btn-warning { background: #fef9c3; color: #854d0e; border: 1px solid #fde047; }
+    .status-btn-danger { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+    .status-btn-info { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+    .status-btn-secondary { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+
     .conversation-sidebar {
         background: #f8f9fc;
         border-left: 1px solid #e3e6f0;
@@ -125,8 +132,11 @@
                     </div>
                 </div>
                 <div class="ms-3 status-dropdown dropdown">
-                    <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                        {% if order.status == 'draft' or order.status == 'confirmed' or order.status == 'in_transit' %}Open{% else %}Complete{% endif %}
+                    <button id="orderStatusBtn" 
+                            class="btn dropdown-toggle status-btn-{{ order.live_status_class }}" 
+                            type="button" 
+                            data-bs-toggle="dropdown">
+                        {{ order.live_status }}
                     </button>
                     <div class="dropdown-menu">
                         <form action="{% url 'orders:order_update_status' order.pk %}" method="POST">
@@ -242,7 +252,7 @@
                                 <tbody>
                                     {% for item in manifest_items %}
                                     <tr>
-                                        <td class="ps-3"><a href="#" class="text-primary fw-600 text-decoration-none">{{ item.material }}</a></td>
+                                        <td class="ps-3"><a href="{% url 'materials:material_lookup' %}?name={{ item.material|urlencode }}" class="text-primary fw-600 text-decoration-none">{{ item.material }}</a></td>
                                         <td>${{ item.buy_price|floatformat:2 }} / {{ item.buy_price_unit|default:"lb" }}</td>
                                         <td>${{ item.sell_price|floatformat:2 }} / {{ item.sell_price_unit|default:"lb" }}</td>
                                         <td>
@@ -300,9 +310,7 @@
                                         <td class="ps-3"><a href="{% url 'shipments:shipment_detail' ship.pk %}"
                                                 class="text-primary text-decoration-none fw-600">{{ ship.shipment_number }}</a></td>
                                         <td>
-                                            <span
-                                                class="badge rounded-3 py-2 px-3 {% if ship.status  ==  'delivered' %}bg-success-soft text-success{% else %}bg-danger-soft text-danger{% endif %}"
-                                                style="background: {% if ship.status  ==  'delivered' %}rgba(22,163,74,0.1){% else %}rgba(239,68,68,0.1){% endif %};">
+                                            <span class="badge rounded-3 py-2 px-3 status-badge-{{ ship.status }}">
                                                 {{ ship.get_status_display }}
                                             </span>
                                         </td>
@@ -321,7 +329,7 @@
                                     </tr>
                                     {% empty %}
                                     <tr>
-                                        <td colspan="8" class="text-center py-4 text-muted">No shipmets recorded for
+                                        <td colspan="8" class="text-center py-4 text-muted">No shipments recorded for
                                             this order</td>
                                     </tr>
                                     {% endfor %}
@@ -330,26 +338,54 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- History Tab Pane -->
+                <div class="tab-pane fade" id="history">
+                    <div class="timeline-container p-4">
+                        {% for event in events %}
+                        <div class="timeline-item d-flex gap-4 mb-4 position-relative">
+                            <div class="timeline-marker bg-primary rounded-circle" style="width: 12px; height: 12px; margin-top: 6px; z-index: 2;"></div>
+                            <div class="timeline-content">
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <h6 class="fw-bold mb-0">{{ event.get_event_type_display }}</h6>
+                                    <span class="text-muted smaller">{{ event.created_at|date:"M d, Y H:i" }}</span>
+                                </div>
+                                <p class="text-muted small mb-0">{{ event.description }}</p>
+                            </div>
+                            {% if not forloop.last %}
+                            <div class="timeline-line position-absolute h-100 border-start border-2 border-light" style="left: 5px; top: 18px; z-index: 1;"></div>
+                            {% endif %}
+                        </div>
+                        {% empty %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-history fa-3x text-light mb-3"></i>
+                            <p class="text-muted">No history found for this order.</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
         </div>
 
         <!-- Sidebar Section -->
         <div class="col-lg-4 conversation-sidebar p-4">
-            <h5 class="fw-bold mb-4">Conversation</h5>
-            <div class="flex-grow-1 overflow-auto pe-2">
-                <div class="chat-bubble">
-                    <div class="d-flex justify-content-between mb-2">
-                        <span class="fw-bold small">System Log</span>
-                        <span class="text-muted smaller">Just now</span>
+            <h5 class="fw-bold mb-4">Lifecycle Events</h5>
+            <div class="flex-grow-1 overflow-auto pe-2" style="max-height: 400px;">
+                {% for event in events|slice:":10" %}
+                <div class="chat-bubble mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="fw-bold small text-primary">{{ event.get_event_type_display }}</span>
+                        <span class="text-muted smaller">{{ event.created_at|timesince }} ago</span>
                     </div>
-                    <div class="small text-muted">Order status initialized as {% if order.status == 'draft' or order.status == 'confirmed' or order.status == 'in_transit' %}Open{% else %}Complete{% endif %}. All
-                        manifest items verified.</div>
+                    <div class="small text-dark">{{ event.description }}</div>
                 </div>
+                {% empty %}
                 <div class="text-center py-4">
                     <div class="bg-white border rounded-3 p-3 text-muted small">
-                        <i class="fas fa-info-circle me-2"></i> No comments yet
+                        <i class="fas fa-info-circle me-2"></i> No events recorded yet
                     </div>
                 </div>
+                {% endfor %}
             </div>
 
             <div class="bg-white border rounded-4 p-3 mt-4 shadow-sm">

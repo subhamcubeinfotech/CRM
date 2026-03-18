@@ -182,6 +182,38 @@
         font-weight: 600;
         padding: 0.5rem 1.25rem;
     }
+
+    .tracking-card {
+        border-radius: 14px;
+        overflow: hidden;
+    }
+
+    .tracking-map {
+        height: 220px;
+        border-radius: 12px;
+        overflow: hidden;
+        background: #e9ecef;
+    }
+
+    .tracking-stat {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 0.8rem 0.9rem;
+    }
+
+    .tracking-label {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        color: #868e96;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+    }
+
+    .tracking-value {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #212529;
+    }
 </style>
 {% endblock %}
 
@@ -250,6 +282,8 @@
                     <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="border-radius:12px;">
                         <li><a class="dropdown-item" href="{% url 'shipments:shipment_edit' shipment.pk %}"><i
                                     class="fas fa-edit me-2 text-muted"></i>Edit Shipment</a></li>
+                        <li><a class="dropdown-item" href="{% url 'shipments:shipment_tracking_mobile' shipment.pk %}"><i
+                                    class="fas fa-location-arrow me-2 text-muted"></i>Open Driver Tracking</a></li>
                         <li><a class="dropdown-item" href="{% url 'shipments:generate_bol' shipment.pk %}"
                                 target="_blank"><i class="fas fa-file-alt me-2 text-muted"></i>View BOL</a></li>
                         <li>
@@ -581,6 +615,7 @@
                     <div class="card border-0 shadow-sm" style="border-radius:14px;">
                         <div class="card-body">
                             <h5 class="fw-bold mb-3">Shipment History</h5>
+                            <div id="tracking-history-list">
                             {% for milestone in milestones %}
                             <div class="milestone-item">
                                 <div class="milestone-dot"></div>
@@ -597,6 +632,7 @@
                                 <p>No history recorded yet</p>
                             </div>
                             {% endfor %}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -606,6 +642,62 @@
 
         <!-- Sidebar: Conversation + Shipment Info -->
         <div class="col-lg-4">
+            <div class="card border-0 shadow-sm mb-4 tracking-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h5 class="fw-bold mb-1">Live Tracking</h5>
+                            <div class="small text-muted">Free mobile GPS based tracking</div>
+                        </div>
+                        <span class="badge {% if shipment.tracking_active %}bg-success-subtle text-success{% else %}bg-secondary-subtle text-secondary{% endif %}" id="tracking-active-badge">
+                            {% if shipment.tracking_active %}Active{% else %}Idle{% endif %}
+                        </span>
+                    </div>
+
+                    <div id="tracking-map" class="tracking-map mb-3"></div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <div class="tracking-stat">
+                                <div class="tracking-label">Current Location</div>
+                                <div class="tracking-value" id="tracking-current-location">{{ shipment.current_location_display }}</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="tracking-stat">
+                                <div class="tracking-label">Last Updated</div>
+                                <div class="tracking-value" id="tracking-last-updated">
+                                    {% if shipment.last_location_updated_at %}{{ shipment.last_location_updated_at|date:"M d, H:i" }}{% else %}Not yet{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="tracking-stat">
+                                <div class="tracking-label">Vehicle</div>
+                                <div class="tracking-value" id="tracking-vehicle">{{ shipment.vehicle_number|default:"Not assigned" }}</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="tracking-stat">
+                                <div class="tracking-label">Driver</div>
+                                <div class="tracking-value" id="tracking-driver">{{ shipment.driver_name|default:"Not assigned" }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <a class="btn btn-primary" href="{% url 'shipments:shipment_tracking_mobile' shipment.pk %}">
+                            <i class="fas fa-mobile-screen-button me-2"></i>Open Mobile Tracking
+                        </a>
+                        {% if shipment.driver_phone %}
+                        <a class="btn btn-outline-secondary" href="tel:{{ shipment.driver_phone }}">
+                            <i class="fas fa-phone me-2"></i>{{ shipment.driver_phone }}
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
             <!-- Conversation -->
             <div class="card border-0 shadow-sm mb-4" style="border-radius:14px;">
                 <div class="card-body">
@@ -1111,6 +1203,105 @@
         'customs': 'Customs Document',
         'pod': 'Proof of Delivery',
     };
+    const TRACKING_API_URL = "{% url 'api_shipment_tracking' shipment.pk %}";
+    const INITIAL_MAP_DATA = JSON.parse('{{ map_data|escapejs }}');
+    let trackingMap;
+    let trackingMarkers = {};
+
+    function formatTrackingTime(value) {
+        if (!value) return 'Not yet';
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return value;
+        return date.toLocaleString([], { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+    }
+
+    function initTrackingMap() {
+        const mapElement = document.getElementById('tracking-map');
+        if (!mapElement || trackingMap) return;
+
+        trackingMap = L.map(mapElement).setView([20.5937, 78.9629], 4);
+        L.tileLayer('{{ request.map_tile_server_url|default:"https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" }}', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(trackingMap);
+
+        updateTrackingMap(INITIAL_MAP_DATA);
+    }
+
+    function updateTrackingMap(mapData) {
+        if (!trackingMap || !mapData) return;
+
+        ['origin', 'destination', 'current'].forEach((key) => {
+            const point = mapData[key];
+            if (!point || point.lat === null || point.lng === null) return;
+
+            const latLng = [point.lat, point.lng];
+            if (!trackingMarkers[key]) {
+                trackingMarkers[key] = L.marker(latLng).addTo(trackingMap);
+            } else {
+                trackingMarkers[key].setLatLng(latLng);
+            }
+
+            let label = point.city || point.label || key;
+            if (key === 'current') label = point.label || 'Current vehicle position';
+            trackingMarkers[key].bindPopup(label);
+        });
+
+        const bounds = [];
+        Object.values(trackingMarkers).forEach((marker) => bounds.push(marker.getLatLng()));
+        if (bounds.length) {
+            trackingMap.fitBounds(bounds, { padding: [30, 30], maxZoom: bounds.length === 1 ? 12 : 8 });
+        }
+    }
+
+    function renderTrackingHistory(milestones) {
+        const historyList = document.getElementById('tracking-history-list');
+        if (!historyList) return;
+
+        if (!milestones || !milestones.length) {
+            historyList.innerHTML = `
+                <div class="text-center py-5 text-muted">
+                    <i class="fas fa-history fa-2x mb-2"></i>
+                    <p>No history recorded yet</p>
+                </div>
+            `;
+            return;
+        }
+
+        historyList.innerHTML = milestones.map((milestone) => `
+            <div class="milestone-item">
+                <div class="milestone-dot"></div>
+                <div>
+                    <div class="fw-semibold" style="font-size:0.9rem;">${milestone.status}</div>
+                    ${milestone.location ? `<div class="text-muted small"><i class="fas fa-map-marker-alt me-1"></i>${milestone.location}</div>` : ''}
+                    <div class="text-muted small">${formatTrackingTime(milestone.timestamp)}</div>
+                    ${milestone.notes ? `<div class="text-muted small mt-1">${milestone.notes}</div>` : ''}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function updateTrackingSummary(data) {
+        document.getElementById('tracking-current-location').innerText = data.current_location || 'Awaiting live update';
+        document.getElementById('tracking-last-updated').innerText = formatTrackingTime(data.last_location_updated_at);
+        document.getElementById('tracking-vehicle').innerText = data.vehicle_number || 'Not assigned';
+        document.getElementById('tracking-driver').innerText = data.driver_name || 'Not assigned';
+
+        const badge = document.getElementById('tracking-active-badge');
+        badge.innerText = data.tracking_active ? 'Active' : 'Idle';
+        badge.className = `badge ${data.tracking_active ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary'}`;
+    }
+
+    function refreshTrackingPanel() {
+        fetch(TRACKING_API_URL, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then((response) => response.json())
+            .then((data) => {
+                updateTrackingSummary(data);
+                updateTrackingMap(data.map_data);
+                renderTrackingHistory(data.milestones);
+            })
+            .catch(() => {});
+    }
 
     function triggerUpload(docType) {
         const input = document.getElementById('upload-file-input');
@@ -1304,6 +1495,10 @@
 
     // Auto-close offcanvas on form submission for document generation
     document.addEventListener('DOMContentLoaded', function() {
+        initTrackingMap();
+        refreshTrackingPanel();
+        setInterval(refreshTrackingPanel, 30000);
+
         const formsToCloseCanvas = ['bolForm', 'shipConfirmForm', 'packingListForm'];
         formsToCloseCanvas.forEach(formId => {
             const form = document.getElementById(formId);

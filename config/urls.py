@@ -30,7 +30,8 @@ urlpatterns = [
         email_template_name='registration/password_reset_email.html',
         subject_template_name='registration/password_reset_subject.txt',
         success_url='/password_reset/done/',
-        form_class=CustomPasswordResetForm
+        form_class=CustomPasswordResetForm,
+        extra_context={'domain': settings.SITE_DOMAIN, 'protocol': settings.SITE_PROTOCOL}
     ), name='password_reset'),
     path('password_reset/done/', auth_views.PasswordResetDoneView.as_view(
         template_name='registration/password_reset_done.html'

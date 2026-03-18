@@ -38,13 +38,26 @@
     <div class="text-danger small mb-3">{{ form.username.errors }}</div>
     {% endif %}
 
-    <div class="form-floating mb-3">
-        {{ form.email }}
-        <label for="{{ form.email.id_for_label }}"><i class="fas fa-envelope me-2"></i>Work Email</label>
+    <div class="mb-3">
+        <label for="{{ form.email.id_for_label }}" class="form-label small text-muted mb-1"><i class="fas fa-envelope me-2"></i>Work Email</label>
+        <div class="input-group">
+            {{ form.email }}
+            <button class="btn btn-outline-primary" type="button" id="btn-get-otp" style="border-top-right-radius: 10px; border-bottom-right-radius: 10px;">Get OTP</button>
+        </div>
+        {% if form.email.errors %}
+        <div class="text-danger small mt-1">{{ form.email.errors }}</div>
+        {% endif %}
     </div>
-    {% if form.email.errors %}
-    <div class="text-danger small mb-3">{{ form.email.errors }}</div>
-    {% endif %}
+
+    <!-- OTP Input Section (Hidden initially) -->
+    <div id="otp-section" style="display: none; background: #f8f9fa; padding: 15px; border-radius: 10px;" class="mb-3 animate__animated animate__fadeIn">
+        <label for="otp-code" class="form-label small text-muted mb-1"><i class="fas fa-key me-2"></i>Enter 6-digit Code</label>
+        <div class="input-group">
+            <input type="text" id="otp-code" class="form-control text-center fw-bold" placeholder="000000" maxlength="6" style="letter-spacing: 0.5rem;">
+            <button class="btn btn-success" type="button" id="btn-verify-otp">Verify</button>
+        </div>
+        <div id="otp-message" class="small mt-2 text-center"></div>
+    </div>
 
     <div class="row">
         <div class="col-md-6 mb-3">
@@ -72,10 +85,114 @@
     <div class="text-danger small mb-3">{{ form.non_field_errors }}</div>
     {% endif %}
 
-    <button type="submit" class="btn btn-primary">Continue to Step 2 <i class="fas fa-arrow-right ms-2"></i></button>
+    <button type="submit" id="btn-signup-continue" class="btn btn-primary" disabled>Continue to Step 2 <i class="fas fa-arrow-right ms-2"></i></button>
 </form>
 
 <div class="login-footer">
     <p>Already have an account? <a href="{% url 'login' %}">Sign in here</a>.</p>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const emailInput = document.getElementById('{{ form.email.id_for_label }}');
+    const getOtpBtn = document.getElementById('btn-get-otp');
+    const otpSection = document.getElementById('otp-section');
+    const otpInput = document.getElementById('otp-code');
+    const verifyOtpBtn = document.getElementById('btn-verify-otp');
+    const otpMessage = document.getElementById('otp-message');
+    const continueBtn = document.getElementById('btn-signup-continue');
+
+    // CSRF helper
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    getOtpBtn.addEventListener('click', async function() {
+        const email = emailInput.value.trim();
+        if (!email) {
+            alert('Please enter your email first.');
+            return;
+        }
+
+        getOtpBtn.disabled = true;
+        getOtpBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+        const formData = new FormData();
+        formData.append('email', email);
+
+        try {
+            const response = await fetch('{% url "accounts:ajax_send_otp" %}', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCookie('csrftoken') },
+                body: formData
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                otpSection.style.display = 'block';
+                otpMessage.className = 'text-success small mt-1';
+                otpMessage.innerText = data.message;
+                getOtpBtn.innerText = 'Resend';
+            } else {
+                alert(data.message);
+                getOtpBtn.innerText = 'Get OTP';
+            }
+        } catch (error) {
+            alert('Something went wrong. Please try again.');
+            getOtpBtn.innerText = 'Get OTP';
+        } finally {
+            getOtpBtn.disabled = false;
+        }
+    });
+
+    verifyOtpBtn.addEventListener('click', async function() {
+        const otp = otpInput.value.trim();
+        const email = emailInput.value.trim();
+
+        if (!otp) return;
+
+        verifyOtpBtn.disabled = true;
+        const formData = new FormData();
+        formData.append('email', email);
+        formData.append('otp', otp);
+
+        try {
+            const response = await fetch('{% url "accounts:ajax_verify_otp" %}', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCookie('csrftoken') },
+                body: formData
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                otpMessage.className = 'text-success small mt-1 fw-bold';
+                otpMessage.innerHTML = '<i class="fas fa-check-circle me-1"></i> Email Verified!';
+                emailInput.readOnly = true;
+                getOtpBtn.style.display = 'none';
+                otpInput.disabled = true;
+                verifyOtpBtn.style.display = 'none';
+                continueBtn.disabled = false;
+            } else {
+                otpMessage.className = 'text-danger small mt-1';
+                otpMessage.innerText = data.message;
+            }
+        } catch (error) {
+            alert('Verification failed.');
+        } finally {
+            verifyOtpBtn.disabled = false;
+        }
+    });
+});
+</script>
 {% endblock %}

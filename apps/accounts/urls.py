@@ -2,7 +2,7 @@
 Accounts URLs
 """
 from django.urls import path
-from . import views, views_team, views_profile
+from . import views, views_team, views_profile, views_auth
 
 app_name = 'accounts'
 
@@ -19,4 +19,8 @@ urlpatterns = [
     # Profile & Settings
     path('profile/', views_profile.profile_view, name='profile'),
     path('settings/', views_profile.settings_view, name='settings'),
+    
+    # AJAX OTP Endpoints
+    path('ajax/send-otp/', views_auth.ajax_send_otp, name='ajax_send_otp'),
+    path('ajax/verify-otp/', views_auth.ajax_verify_otp, name='ajax_verify_otp'),
 ]
