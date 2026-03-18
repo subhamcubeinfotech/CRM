@@ -107,11 +107,13 @@
 <body>
     <div class="login-container">
         <div class="login-card">
-            <div class="login-logo">
-                <i class="fas fa-shipping-fast"></i>
-                <h1>FreightPro</h1>
-                <p>Logistics Management Platform</p>
-            </div>
+            <a href="{% url 'marketing:home' %}" class="text-decoration-none text-dark">
+                <div class="login-logo">
+                    <i class="fas fa-shipping-fast" style="color: #667eea;"></i>
+                    <h1 class="text-dark">FreightPro</h1>
+                    <p class="text-muted">Logistics Management Platform</p>
+                </div>
+            </a>
             
             {% if form.errors %}
                 <div class="alert alert-danger" role="alert">
@@ -147,7 +149,13 @@
             </form>
             
             <div class="login-footer">
-                <p><a href="{% url 'password_reset' %}">Forgot password?</a></p>
+                <p class="mb-1"><a href="{% url 'password_reset' %}">Forgot password?</a></p>
+                <p class="mb-1">Don't have an account? <a href="{% url 'signup' %}" class="fw-bold">Sign Up</a></p>
+                <div class="mt-3 pt-3 border-top">
+                    <a href="{% url 'marketing:home' %}" class="text-muted text-decoration-none small">
+                        <i class="fas fa-arrow-left me-1"></i> Back to home page
+                    </a>
+                </div>
             </div>
         </div>
     </div>
