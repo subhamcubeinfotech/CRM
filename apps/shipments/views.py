@@ -36,7 +36,7 @@ def dashboard(request):
     
     # Stat cards
     active_shipments = base_qs.filter(
-        status__in=['pending', 'dispatched', 'in_transit']
+        status__in=['pending', 'dispatched', 'in_transit', 'approved', 'invoiced']
     ).count()
     
     monthly_revenue = base_qs.filter(
@@ -80,23 +80,15 @@ def dashboard(request):
         months.append(month_date.strftime('%b'))
         revenue_data.append(float(month_revenue))
     
-    # Shipment status distribution
+    # Shipment status distribution - dynamic for all choices
     status_counts = base_qs.values('status').annotate(count=Count('id'))
-    status_data = {
-        'pending': 0,
-        'dispatched': 0,
-        'in_transit': 0,
-        'delivered': 0,
-    }
-    for item in status_counts:
-        if item['status'] == 'pending':
-            status_data['pending'] = item['count']
-        elif item['status'] == 'dispatched':
-            status_data['dispatched'] = item['count']
-        elif item['status'] == 'in_transit':
-            status_data['in_transit'] = item['count']
-        elif item['status'] == 'delivered':
-            status_data['delivered'] = item['count']
+    status_counts_dict = {item['status']: item['count'] for item in status_counts}
+    
+    status_data = []
+    status_labels = []
+    for code, label in Shipment.STATUS_CHOICES:
+        status_data.append(status_counts_dict.get(code, 0))
+        status_labels.append(label)
     
     # Recent shipments
     recent_shipments = base_qs.select_related('customer').order_by('-created_at')[:10]
@@ -112,8 +104,8 @@ def dashboard(request):
         # Chart data
         'revenue_labels': json.dumps(months),
         'revenue_data': json.dumps(revenue_data),
-        'status_data': json.dumps(list(status_data.values())),
-        'status_labels': json.dumps(['Pending', 'Dispatched', 'In Transit', 'Delivered']),
+        'status_data': json.dumps(status_data),
+        'status_labels': json.dumps(status_labels),
         
         # Recent shipments
         'recent_shipments': recent_shipments,
