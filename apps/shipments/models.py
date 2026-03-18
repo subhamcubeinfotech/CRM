@@ -64,6 +64,12 @@ class Shipment(TenantAwareModel):
     # Current location (for tracking)
     current_latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     current_longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    last_location_text = models.CharField(max_length=255, blank=True)
+    last_location_updated_at = models.DateTimeField(null=True, blank=True)
+    tracking_active = models.BooleanField(default=False)
+    vehicle_number = models.CharField(max_length=50, blank=True)
+    driver_name = models.CharField(max_length=150, blank=True)
+    driver_phone = models.CharField(max_length=20, blank=True)
     
     # Schedule
     pickup_date = models.DateField(null=True, blank=True)
@@ -160,6 +166,15 @@ class Shipment(TenantAwareModel):
             parts.append(self.destination_state)
         parts.append(self.destination_country)
         return ', '.join(filter(None, parts))
+
+    @property
+    def current_location_display(self):
+        """Human-friendly current location for the tracking UI."""
+        if self.last_location_text:
+            return self.last_location_text
+        if self.current_latitude and self.current_longitude:
+            return f"{self.current_latitude}, {self.current_longitude}"
+        return "Awaiting live update"
     
     @property
     def route_display(self):

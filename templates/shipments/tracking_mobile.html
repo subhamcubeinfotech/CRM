@@ -1,0 +1,268 @@
+{% extends 'base.html' %}
+
+{% block title %}Track {{ shipment.shipment_number }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .tracking-shell {
+        max-width: 720px;
+        margin: 0 auto;
+    }
+
+    .tracking-hero {
+        background: linear-gradient(135deg, #0f4c81, #1c7ed6);
+        color: #fff;
+        border-radius: 20px;
+        padding: 1.5rem;
+    }
+
+    .tracking-card {
+        border-radius: 18px;
+    }
+
+    .signal-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+        background: #adb5bd;
+    }
+
+    .signal-dot.live {
+        background: #2f9e44;
+        box-shadow: 0 0 0 6px rgba(47, 158, 68, 0.12);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="tracking-shell">
+        <div class="tracking-hero shadow-sm mb-4">
+            <div class="d-flex justify-content-between align-items-start gap-3">
+                <div>
+                    <div class="small text-uppercase opacity-75 mb-2">Mobile Tracking</div>
+                    <h1 class="h3 fw-bold mb-1">{{ shipment.shipment_number }}</h1>
+                    <div class="opacity-75">{{ shipment.origin_full }} to {{ shipment.destination_full }}</div>
+                </div>
+                <span class="badge bg-light text-dark">{{ shipment.get_status_display }}</span>
+            </div>
+        </div>
+
+        <div class="card tracking-card shadow-sm border-0 mb-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0">Trip Control</h5>
+                    <div class="d-flex align-items-center gap-2">
+                        <span id="tracking-dot" class="signal-dot"></span>
+                        <span id="tracking-state" class="small text-muted">Idle</span>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Status update</label>
+                        <select id="status-select" class="form-select">
+                            {% for code, label in shipment.STATUS_CHOICES %}
+                            <option value="{{ code }}" {% if shipment.status == code %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2 mb-3">
+                    <button type="button" id="start-btn" class="btn btn-primary btn-lg" {% if not tracking_can_update %}disabled{% endif %}>
+                        <i class="fas fa-location-arrow me-2"></i>Start Live Tracking
+                    </button>
+                    <button type="button" id="send-btn" class="btn btn-outline-primary" {% if not tracking_can_update_status %}disabled{% endif %}>
+                        <i class="fas fa-paper-plane me-2"></i>{% if tracking_can_update %}Send One Update{% else %}Update Status{% endif %}
+                    </button>
+                    <button type="button" id="stop-btn" class="btn btn-outline-secondary" {% if not tracking_can_update %}disabled{% endif %}>
+                        <i class="fas fa-stop me-2"></i>Stop Sharing
+                    </button>
+                </div>
+
+                <div class="alert alert-light border mb-0">
+                    <div class="fw-semibold mb-1">Last response</div>
+                    <div id="tracking-message" class="small text-muted">
+                        {% if tracking_can_update %}
+                        Location permission allow karke tracking start karein. Uske baad GPS location automatically update hogi.
+                        {% else %}
+                        You can update the status, but only admin, sales, warehouse, or driver users can send live GPS location updates.
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card tracking-card shadow-sm border-0">
+            <div class="card-body">
+                <h5 class="fw-bold mb-3">Assigned Vehicle</h5>
+                <div class="row g-3">
+                    <div class="col-6">
+                        <div class="small text-uppercase text-muted fw-semibold mb-1">Vehicle</div>
+                        <div class="fw-semibold">{{ shipment.vehicle_number|default:"Not assigned" }}</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="small text-uppercase text-muted fw-semibold mb-1">Driver</div>
+                        <div class="fw-semibold">{{ shipment.driver_name|default:"Not assigned" }}</div>
+                    </div>
+                    <div class="col-12">
+                        <div class="small text-uppercase text-muted fw-semibold mb-1">Current saved location</div>
+                        <div class="fw-semibold" id="current-saved-location">{{ shipment.current_location_display }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const trackingUpdateUrl = "{{ tracking_update_url }}";
+    const csrfToken = "{{ csrf_token }}";
+    let watchId = null;
+    let lastPosition = null;
+
+    function setTrackingState(active, message) {
+        document.getElementById('tracking-state').innerText = active ? 'Live' : 'Idle';
+        document.getElementById('tracking-dot').classList.toggle('live', active);
+        if (message) {
+            document.getElementById('tracking-message').innerText = message;
+        }
+    }
+
+    function updateTrackingSnapshot(data) {
+        if (!data) return;
+        const locationEl = document.getElementById('current-saved-location');
+        if (locationEl && data.current_location) {
+            locationEl.innerText = data.current_location;
+        }
+
+        const statusSelect = document.getElementById('status-select');
+        if (statusSelect && data.status) {
+            statusSelect.value = data.status;
+        }
+    }
+
+    function buildPayload(position, extra = {}) {
+        const coords = position.coords;
+        const fallbackNote = `Lat ${coords.latitude.toFixed(5)}, Lng ${coords.longitude.toFixed(5)}`;
+        return {
+            latitude: coords.latitude,
+            longitude: coords.longitude,
+            location_text: fallbackNote,
+            status: document.getElementById('status-select').value,
+            tracking_active: true,
+            ...extra,
+        };
+    }
+
+    function sendPosition(position, extra = {}) {
+        lastPosition = position;
+        return fetch(trackingUpdateUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify(buildPayload(position, extra))
+        })
+        .then((response) => response.json())
+        .then((data) => {
+            if (data.error) throw new Error(data.error);
+            updateTrackingSnapshot(data);
+            setTrackingState(true, `${data.current_location} | ${data.status_display}`);
+        })
+        .catch((error) => {
+            setTrackingState(false, error.message || 'Tracking update failed');
+        });
+    }
+
+    function startTracking() {
+        if (!navigator.geolocation) {
+            setTrackingState(false, 'Browser GPS support available nahi hai.');
+            return;
+        }
+
+        if (watchId !== null) {
+            setTrackingState(true, 'Tracking already running');
+            return;
+        }
+
+        setTrackingState(true, 'Location fetch ki ja rahi hai...');
+
+        watchId = navigator.geolocation.watchPosition(
+            (position) => {
+                const event = lastPosition ? {} : { event: 'tracking_started' };
+                sendPosition(position, event);
+            },
+            (error) => {
+                setTrackingState(false, error.message || 'Location access denied');
+            },
+            { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
+        );
+    }
+
+    function sendSingleUpdate() {
+        {% if not tracking_can_update %}
+        fetch(trackingUpdateUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                status: document.getElementById('status-select').value
+            })
+        })
+        .then((response) => response.json())
+        .then((data) => {
+            if (data.error) throw new Error(data.error);
+            updateTrackingSnapshot(data);
+            setTrackingState(false, `Status updated: ${data.status_display}`);
+        })
+        .catch((error) => {
+            setTrackingState(false, error.message || 'Status update failed');
+        });
+        return;
+        {% endif %}
+
+        if (!navigator.geolocation) {
+            setTrackingState(false, 'Browser GPS support available nahi hai.');
+            return;
+        }
+
+        setTrackingState(true, 'One-time GPS update bheji ja rahi hai...');
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => sendPosition(position, lastPosition ? {} : { event: 'tracking_started' }),
+            (error) => setTrackingState(false, error.message || 'Current location fetch nahi ho paayi'),
+            { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
+        );
+    }
+
+    function stopTracking() {
+        if (watchId !== null) {
+            navigator.geolocation.clearWatch(watchId);
+            watchId = null;
+        }
+
+        if (lastPosition) {
+            sendPosition(lastPosition, { event: 'tracking_stopped', tracking_active: false })
+                .finally(() => setTrackingState(false, 'Live sharing stopped'));
+        } else {
+            setTrackingState(false, 'Live sharing stopped');
+        }
+    }
+
+    document.getElementById('send-btn').addEventListener('click', sendSingleUpdate);
+    {% if tracking_can_update %}
+    document.getElementById('start-btn').addEventListener('click', startTracking);
+    document.getElementById('stop-btn').addEventListener('click', stopTracking);
+    {% endif %}
+</script>
+{% endblock %}

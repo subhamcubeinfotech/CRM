@@ -4,13 +4,17 @@ Shipments Views - Main views for shipment management
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.conf import settings
 from django.core.paginator import Paginator
 from django.http import JsonResponse, HttpResponse
+from django.core.exceptions import PermissionDenied
 from django.db.models import Sum, Count, Q, F
 from django.utils import timezone
 from datetime import datetime, timedelta
 from decimal import Decimal
 import json
+from urllib.parse import urlencode
+from urllib.request import Request, urlopen
 
 from .models import Shipment, Container, ShipmentMilestone, Document
 from apps.accounts.models import Company, CustomUser
@@ -19,6 +23,57 @@ from apps.accounts.utils import filter_by_user_company, check_company_access
 import logging
 
 logger = logging.getLogger('apps.shipments')
+
+
+def _get_tracking_shipment_for_user(user, pk):
+    shipment = get_object_or_404(Shipment, pk=pk)
+    if user.tenant and shipment.tenant_id != user.tenant_id:
+        raise PermissionDenied("You do not have access to this shipment.")
+    return shipment
+
+
+def _reverse_geocode_location(latitude, longitude):
+    """
+    Resolve GPS coordinates into a short human-readable place label.
+    Falls back to raw coordinates if the reverse geocoding service is unavailable.
+    """
+    fallback = f"Lat {latitude:.5f}, Lng {longitude:.5f}"
+    try:
+        query = urlencode({
+            'lat': f'{latitude}',
+            'lon': f'{longitude}',
+            'format': 'jsonv2',
+            'zoom': 10,
+            'addressdetails': 1,
+        })
+        url = f"{settings.MAP_REVERSE_GEOCODING_API_URL}?{query}"
+        request = Request(url, headers={
+            'User-Agent': 'FreightPro/1.0 (live-tracking)',
+            'Accept': 'application/json',
+        })
+        with urlopen(request, timeout=5) as response:
+            payload = json.loads(response.read().decode('utf-8'))
+
+        address = payload.get('address', {})
+        city = (
+            address.get('city')
+            or address.get('town')
+            or address.get('village')
+            or address.get('county')
+            or address.get('state_district')
+        )
+        state = address.get('state')
+        country = address.get('country')
+
+        parts = [part for part in [city, state, country] if part]
+        if parts:
+            return ', '.join(parts[:3])
+
+        display_name = payload.get('display_name', fallback)
+        return ', '.join(display_name.split(',')[:3]).strip() or fallback
+    except Exception as exc:
+        logger.debug(f"Reverse geocoding failed for {latitude}, {longitude}: {exc}")
+        return fallback
 
 
 
@@ -231,8 +286,129 @@ def shipment_detail(request, pk):
         'next_invoice_number': Invoice.generate_invoice_number(shipment) if hasattr(Invoice, 'generate_invoice_number') else "Generating...",
         'today': timezone.now().date(),
         'download_invoice_id': request.session.pop('download_invoice_id', None),
+        'tracking_update_url': f"/shipments/{shipment.pk}/tracking/update/",
     }
     return render(request, 'shipments/detail.html', context)
+
+
+@login_required
+def shipment_tracking_mobile(request, pk):
+    """Mobile-first page for drivers or staff to stream GPS updates."""
+    shipment = _get_tracking_shipment_for_user(request.user, pk)
+    context = {
+        'shipment': shipment,
+        'tracking_update_url': f"/shipments/{shipment.pk}/tracking/update/",
+        'tracking_can_update': request.user.role != 'customer',
+        'tracking_can_update_status': True,
+    }
+    return render(request, 'shipments/tracking_mobile.html', context)
+
+
+@login_required
+def shipment_tracking_update(request, pk):
+    """Accept live GPS pings from the mobile tracking page."""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST required'}, status=405)
+
+    shipment = _get_tracking_shipment_for_user(request.user, pk)
+    try:
+        payload = json.loads(request.body.decode('utf-8') or '{}')
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON payload'}, status=400)
+
+    latitude = payload.get('latitude')
+    longitude = payload.get('longitude')
+    status = payload.get('status')
+    event = payload.get('event')
+    is_customer = request.user.role == 'customer'
+
+    milestone_status = None
+    milestone_notes = ''
+
+    if status in dict(Shipment.STATUS_CHOICES) and shipment.status != status:
+        previous_status = shipment.get_status_display()
+        shipment.status = status
+        milestone_status = f"Status changed to {shipment.get_status_display()}"
+        milestone_notes = f"Updated by {request.user.username} from {previous_status}"
+        if status == 'delivered' and not shipment.actual_delivery_date:
+            shipment.actual_delivery_date = timezone.now().date()
+
+    if is_customer:
+        shipment.save(update_fields=['status', 'actual_delivery_date', 'updated_at'])
+        if milestone_status:
+            ShipmentMilestone.objects.create(
+                shipment=shipment,
+                status=milestone_status,
+                location=shipment.current_location_display,
+                latitude=shipment.current_latitude,
+                longitude=shipment.current_longitude,
+                notes=milestone_notes,
+                created_by=request.user,
+            )
+        return JsonResponse({
+            'ok': True,
+            'shipment_number': shipment.shipment_number,
+            'status': shipment.status,
+            'status_display': shipment.get_status_display(),
+            'current_location': shipment.current_location_display,
+            'last_updated': shipment.last_location_updated_at.isoformat() if shipment.last_location_updated_at else None,
+            'tracking_active': shipment.tracking_active,
+        })
+
+    if latitude in (None, '') or longitude in (None, ''):
+        return JsonResponse({'error': 'Latitude and longitude are required'}, status=400)
+
+    try:
+        shipment.current_latitude = Decimal(str(latitude))
+        shipment.current_longitude = Decimal(str(longitude))
+    except Exception:
+        return JsonResponse({'error': 'Invalid coordinates'}, status=400)
+
+    resolved_location = _reverse_geocode_location(shipment.current_latitude, shipment.current_longitude)
+    shipment.last_location_text = resolved_location
+    shipment.last_location_updated_at = timezone.now()
+    shipment.tracking_active = payload.get('tracking_active', True)
+    if milestone_status and not milestone_notes:
+        milestone_notes = 'Live update received'
+    elif event == 'tracking_started':
+        milestone_status = 'Live tracking started'
+        milestone_notes = 'Driver/mobile location sharing started'
+    elif event == 'tracking_stopped':
+        shipment.tracking_active = False
+        milestone_status = 'Live tracking stopped'
+        milestone_notes = 'Driver/mobile location sharing stopped'
+
+    shipment.save(update_fields=[
+        'current_latitude',
+        'current_longitude',
+        'last_location_text',
+        'last_location_updated_at',
+        'tracking_active',
+        'status',
+        'actual_delivery_date',
+        'updated_at',
+    ])
+
+    if milestone_status:
+        ShipmentMilestone.objects.create(
+            shipment=shipment,
+            status=milestone_status,
+            location=resolved_location,
+            latitude=shipment.current_latitude,
+            longitude=shipment.current_longitude,
+            notes=milestone_notes,
+            created_by=request.user,
+        )
+
+    return JsonResponse({
+        'ok': True,
+        'shipment_number': shipment.shipment_number,
+        'status': shipment.status,
+        'status_display': shipment.get_status_display(),
+        'current_location': shipment.current_location_display,
+        'last_updated': shipment.last_location_updated_at.isoformat() if shipment.last_location_updated_at else None,
+        'tracking_active': shipment.tracking_active,
+    })
 
 
 @login_required
@@ -288,6 +464,11 @@ def shipment_create(request):
             total_volume=request.POST.get('total_volume', 0) or 0,
             number_of_pieces=request.POST.get('number_of_pieces', 1) or 1,
             commodity_description=request.POST.get('commodity_description', ''),
+
+            # Tracking
+            vehicle_number=request.POST.get('vehicle_number', ''),
+            driver_name=request.POST.get('driver_name', ''),
+            driver_phone=request.POST.get('driver_phone', ''),
             
             # Special requirements
             is_hazmat=request.POST.get('is_hazmat') == 'on',
@@ -314,7 +495,7 @@ def shipment_create(request):
             shipment=shipment,
             status='Shipment Created',
             location=shipment.origin_city,
-            notes='Shipment created in system',
+            notes=f'Shipment created in system. Driver: {shipment.driver_name or "Not assigned"} | Vehicle: {shipment.vehicle_number or "Not assigned"}',
             created_by=request.user
         )
         
@@ -376,6 +557,11 @@ def shipment_edit(request, pk):
         shipment.total_volume = request.POST.get('total_volume', 0) or 0
         shipment.number_of_pieces = request.POST.get('number_of_pieces', 1) or 1
         shipment.commodity_description = request.POST.get('commodity_description', '')
+
+        # Tracking
+        shipment.vehicle_number = request.POST.get('vehicle_number', '')
+        shipment.driver_name = request.POST.get('driver_name', '')
+        shipment.driver_phone = request.POST.get('driver_phone', '')
         
         # Special requirements
         shipment.is_hazmat = request.POST.get('is_hazmat') == 'on'
