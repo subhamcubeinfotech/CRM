@@ -137,6 +137,105 @@ class Order(TenantAwareModel):
         """Calculate gross profit (Revenue - Cost - Freight Cost)"""
         return self.total_revenue - self.total_cost - self.freight_cost
 
+    @property
+    def live_status_info(self):
+        """
+        Returns a dict with 'status' and 'label' representing the most advanced 
+        live status from associated shipments, or the order status if no shipments.
+        """
+        shipments = self.shipments.all()
+        if not shipments.exists():
+            return {
+                'status': self.status,
+                'label': self.get_status_display(),
+                'source': 'order'
+            }
+        
+        # Shipment status ranking (higher is more advanced)
+        ranking = {
+            'pending': 10,
+            'dispatched': 20,
+            'in_transit': 30,
+            'delivered': 40,
+            'approved': 50,
+            'invoiced': 60,
+            'paid': 70,
+            'rejected': 0,
+        }
+        
+        # Find shipment with highest rank
+        best_shipment = None
+        max_rank = -1
+        
+        for s in shipments:
+            rank = ranking.get(s.status, 0)
+            if rank > max_rank:
+                max_rank = rank
+                best_shipment = s
+        
+        if best_shipment:
+            return {
+                'status': best_shipment.status,
+                'label': best_shipment.get_status_display(),
+                'source': 'shipment'
+            }
+        
+        return {
+            'status': self.status,
+            'label': self.get_status_display(),
+            'source': 'order'
+        }
+
+    @property
+    def live_status(self):
+        return self.live_status_info['label']
+
+    @property
+    def live_status_code(self):
+        return self.live_status_info['status']
+
+    @property
+    def live_status_class(self):
+        """Returns the appropriate Bootstrap color class for the live status badge"""
+        code = self.live_status_code
+        mapping = {
+            'draft': 'secondary',
+            'pending': 'warning',
+            'confirmed': 'primary',
+            'dispatched': 'info',
+            'in_transit': 'primary',
+            'delivered': 'success',
+            'approved': 'info',
+            'invoiced': 'warning',
+            'paid': 'success',
+            'closed': 'success',
+            'rejected': 'danger',
+            'cancelled': 'danger',
+        }
+        return mapping.get(code, 'secondary')
+
+class OrderEvent(models.Model):
+    EVENT_TYPES = (
+        ('order_created', 'Order Created'),
+        ('shipment_created', 'Shipment Created'),
+        ('status_updated', 'Status Updated'),
+        ('payment_status_updated', 'Payment Status Updated'),
+        ('note_added', 'Note Added'),
+        ('document_added', 'Document Added'),
+    )
+
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='events')
+    event_type = models.CharField(max_length=50, choices=EVENT_TYPES)
+    description = models.TextField()
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.order.order_number} - {self.get_event_type_display()} - {self.created_at}"
+
 class ManifestItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='manifest_items')
     material = models.CharField(max_length=200)

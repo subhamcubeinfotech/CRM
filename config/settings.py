@@ -250,4 +250,9 @@ DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER)
 
 # Map Configuration
 MAP_GEOCODING_API_URL = os.environ.get('MAP_GEOCODING_API_URL', 'https://nominatim.openstreetmap.org/search')
+MAP_REVERSE_GEOCODING_API_URL = os.environ.get('MAP_REVERSE_GEOCODING_API_URL', 'https://nominatim.openstreetmap.org/reverse')
 MAP_TILE_SERVER_URL = os.environ.get('MAP_TILE_SERVER_URL', 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png')
+
+# Site Configuration for Emails
+SITE_DOMAIN = os.environ.get('SITE_DOMAIN', '127.0.0.1:8000')
+SITE_PROTOCOL = os.environ.get('SITE_PROTOCOL', 'http')

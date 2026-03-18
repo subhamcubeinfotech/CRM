@@ -169,7 +169,12 @@
                                              data-name="{{ loc.name }}">
                                             <div class="d-flex justify-content-between align-items-start mb-2">
                                                 <h6 class="mb-0 fw-bold">{{ loc.name }}</h6>
-                                                <span class="badge bg-light text-muted small border">{{ loc.code }}</span>
+                                                <div class="d-flex gap-2 align-items-center">
+                                                    {% if loc.is_warehouse %}
+                                                    <span class="badge bg-info-subtle text-info border border-info-subtle small">Warehouse</span>
+                                                    {% endif %}
+                                                    <span class="badge bg-light text-muted small border">{{ loc.code }}</span>
+                                                </div>
                                             </div>
                                             <p class="small text-muted mb-2">
                                                 <i class="fas fa-map-marker-alt me-2"></i>{{ loc.full_address }}
@@ -271,6 +276,7 @@
         margin: 10px;
         font-family: inherit;
     }
+
 </style>
 {% endblock %}
 
@@ -301,14 +307,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
         async function geocodeAddress(address, city, country) {
             // Try 1: Full Address
-            let response = await fetch(`{{ MAP_GEOCODING_API_URL|safe }}?format=json&q=${encodeURIComponent(address)}`);
+            let response = await fetch(`{{ MAP_GEOCODING_API_URL|safe }}?format=json&q=${encodeURIComponent(address)}&limit=1`);
             let data = await response.json();
             
-            // Try 2: City, Country only (Fallback)
+            // Try 2: City, Country
             if (!data || data.length === 0) {
-                console.warn(`Fallback for: ${address}`);
+                console.warn(`Fallback 1 for: ${address}`);
                 const fallbackQuery = `${city}, ${country}`;
-                response = await fetch(`{{ MAP_GEOCODING_API_URL|safe }}?format=json&q=${encodeURIComponent(fallbackQuery)}`);
+                response = await fetch(`{{ MAP_GEOCODING_API_URL|safe }}?format=json&q=${encodeURIComponent(fallbackQuery)}&limit=1`);
+                data = await response.json();
+            }
+
+            // Try 3: City Only (Most robust for specific city names)
+            if (!data || data.length === 0 || (data[0].type === 'administrative' && data[0].importance < 0.5)) {
+                console.warn(`Fallback 2 for: ${address}`);
+                response = await fetch(`{{ MAP_GEOCODING_API_URL|safe }}?format=json&q=${encodeURIComponent(city)}&limit=1`);
                 data = await response.json();
             }
             return data;
@@ -329,19 +342,32 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     const gMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
                     marker.bindPopup(`
-                        <strong>${name}</strong><br>
-                        <small class="d-block mb-2">${data[0].display_name}</small>
-                        <a href="${gMapsUrl}" target="_blank" class="btn btn-primary btn-sm text-white w-100">Open Google Maps</a>
+                        <div class="p-1 text-center">
+                            <div class="mb-1">
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle small mb-1">Main Office</span>
+                                <h6 class="mb-1 fw-bold">${name}</h6>
+                            </div>
+                            <small class="d-block mb-3 text-muted">${address}</small>
+                            <hr class="my-2 opacity-10">
+                            <a href="${gMapsUrl}" target="_blank" class="btn btn-primary btn-sm text-white w-100 py-1 rounded-pill">
+                                <i class="fab fa-google me-1"></i>Open in Google Maps
+                            </a>
+                        </div>
                     `);
                     markers.push({marker, card});
                     bounds.extend([lat, lon]);
 
-                    map.fitBounds(bounds, {padding: [50, 50], maxZoom: 15});
+                    // Smart centering/zoom
+                    if (markers.length === 1) {
+                        map.setView([lat, lon], 15);
+                    } else {
+                        map.fitBounds(bounds, {padding: [50, 50], maxZoom: 15});
+                    }
 
                     card.addEventListener('click', () => {
                         locationCards.forEach(c => c.classList.remove('active'));
                         card.classList.add('active');
-                        map.setView([lat, lon], 15);
+                        map.setView([lat, lon], 16, { animate: true });
                         marker.openPopup();
                     });
                 }

@@ -103,7 +103,7 @@ def company_detail(request, pk):
         Q(supplier=company) | Q(receiver=company)
     ).order_by('-created_at')[:20]
 
-    # Construct locations list (Company address + Warehouses)
+    # Construct locations list (Only Company primary address as per user request)
     locations = []
     if company.address_line1:
         locations.append({
@@ -113,20 +113,9 @@ def company_detail(request, pk):
             'city': company.city,
             'state': company.state,
             'country': company.country,
+            'is_warehouse': False,
             'phone': company.phone,
             'email': company.email
-        })
-    
-    for wh in company.warehouses.filter(is_active=True):
-        locations.append({
-            'name': wh.name,
-            'code': wh.code,
-            'full_address': wh.full_address,
-            'city': wh.city,
-            'state': wh.state,
-            'country': wh.country,
-            'phone': wh.phone,
-            'email': wh.email
         })
 
     context = {

@@ -69,6 +69,7 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
         context['manifest_items'] = self.object.manifest_items.all()
         context['shipments'] = self.object.shipments.all()
         context['invoices'] = self.object.invoices.all()
+        context['events'] = self.object.events.all()
         
         # Context for Edit Offcanvas
         user_tenant = self.request.user.tenant

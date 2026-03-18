@@ -71,7 +71,7 @@
                     <h5 class="card-title mb-0"><i class="fas fa-chart-line me-2 text-primary"></i>Revenue Trend (Last 6 Months)</h5>
                 </div>
                 <div class="card-body">
-                    <canvas id="revenueChart" height="250"></canvas>
+                    <canvas id="revenueChart" height="250" data-labels='{{ revenue_labels|safe }}' data-values='{{ revenue_data|safe }}'></canvas>
                 </div>
             </div>
         </div>
@@ -81,7 +81,7 @@
                     <h5 class="card-title mb-0"><i class="fas fa-chart-pie me-2 text-primary"></i>Shipment Status</h5>
                 </div>
                 <div class="card-body">
-                    <canvas id="statusChart" height="250"></canvas>
+                    <canvas id="statusChart" height="250" data-labels='{{ status_labels|safe }}' data-values='{{ status_data|safe }}'></canvas>
                 </div>
             </div>
         </div>
@@ -162,14 +162,15 @@
 {% block extra_js %}
 <script>
     // Revenue Chart
-    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+    const revenueCanvas = document.getElementById('revenueChart');
+    const revenueCtx = revenueCanvas.getContext('2d');
     new Chart(revenueCtx, {
         type: 'line',
         data: {
-            labels: {{ revenue_labels|safe }},
+            labels: JSON.parse(revenueCanvas.dataset.labels),
             datasets: [{
                 label: 'Revenue ($)',
-                data: {{ revenue_data|safe }},
+                data: JSON.parse(revenueCanvas.dataset.values),
                 borderColor: '#667eea',
                 backgroundColor: 'rgba(102, 126, 234, 0.1)',
                 borderWidth: 3,
@@ -204,14 +205,15 @@
     });
     
     // Status Chart
-    const statusCtx = document.getElementById('statusChart').getContext('2d');
+    const statusCanvas = document.getElementById('statusChart');
+    const statusCtx = statusCanvas.getContext('2d');
     new Chart(statusCtx, {
         type: 'doughnut',
         data: {
-            labels: {{ status_labels|safe }},
+            labels: JSON.parse(statusCanvas.dataset.labels),
             datasets: [{
-                data: {{ status_data|safe }},
-                backgroundColor: ['#667eea', '#28a745', '#ffc107', '#17a2b8'],
+                data: JSON.parse(statusCanvas.dataset.values),
+                backgroundColor: ['#667eea', '#fd7e14', '#ffc107', '#28a745', '#6f42c1', '#17a2b8', '#20c997', '#dc3545'],
                 borderWidth: 0
             }]
         },

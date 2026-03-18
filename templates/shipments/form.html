@@ -193,6 +193,27 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Tracking -->
+                <div class="card mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0"><i class="fas fa-location-dot me-2 text-primary"></i>Tracking Setup</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Vehicle Number</label>
+                            <input type="text" name="vehicle_number" class="form-control" value="{{ shipment.vehicle_number|default:'' }}" placeholder="e.g. RJ14-GA-1020">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Driver Name</label>
+                            <input type="text" name="driver_name" class="form-control" value="{{ shipment.driver_name|default:'' }}" placeholder="Driver / operator name">
+                        </div>
+                        <div class="mb-0">
+                            <label class="form-label">Driver Phone</label>
+                            <input type="text" name="driver_phone" class="form-control" value="{{ shipment.driver_phone|default:'' }}" placeholder="Phone for tracking coordination">
+                        </div>
+                    </div>
+                </div>
                 
                 <!-- Special Requirements -->
                 <div class="card mb-4">
