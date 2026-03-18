@@ -242,7 +242,7 @@
                                 <tbody>
                                     {% for item in manifest_items %}
                                     <tr>
-                                        <td class="ps-3"><a href="#" class="text-primary fw-600 text-decoration-none">{{ item.material }}</a></td>
+                                        <td class="ps-3"><a href="{% url 'materials:material_lookup' %}?name={{ item.material|urlencode }}" class="text-primary fw-600 text-decoration-none">{{ item.material }}</a></td>
                                         <td>${{ item.buy_price|floatformat:2 }} / {{ item.buy_price_unit|default:"lb" }}</td>
                                         <td>${{ item.sell_price|floatformat:2 }} / {{ item.sell_price_unit|default:"lb" }}</td>
                                         <td>
