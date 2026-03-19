@@ -31,6 +31,8 @@ class Company(TenantAwareModel):
     phone = models.CharField(max_length=20, blank=True)
     email = models.EmailField(blank=True)
     website = models.URLField(blank=True)
+    description = models.TextField(blank=True)
+    logo = models.ImageField(upload_to='company_logos/', blank=True, null=True)
     
     # Financial fields
     payment_terms = models.IntegerField(default=30, help_text='Payment terms in days')

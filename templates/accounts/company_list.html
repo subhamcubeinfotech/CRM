@@ -54,8 +54,12 @@
                         <tr>
                             <td class="ps-4">
                                 <div class="d-flex align-items-center">
-                                    <div class="avatar-sm me-3 bg-primary bg-opacity-10 text-primary rounded d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                                        <i class="fas fa-building"></i>
+                                    <div class="avatar-sm me-3 bg-primary bg-opacity-10 text-primary rounded d-flex align-items-center justify-content-center overflow-hidden" style="width: 40px; height: 40px;">
+                                        {% if company.logo %}
+                                            <img src="{{ company.logo.url }}" alt="{{ company.name }} logo" style="width: 100%; height: 100%; object-fit: cover;">
+                                        {% else %}
+                                            <i class="fas fa-building"></i>
+                                        {% endif %}
                                     </div>
                                     <div>
                                         <a href="{% url 'accounts:company_detail' company.pk %}" class="fw-bold text-decoration-none text-dark">
