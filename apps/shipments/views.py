@@ -85,6 +85,18 @@ def dashboard(request):
     today = timezone.now().date()
     month_start = today.replace(day=1)
     last_6_months = today - timedelta(days=180)
+    selected_chart_month = request.GET.get('chart_month', today.strftime('%Y-%m'))
+
+    try:
+        chart_month_start = datetime.strptime(f"{selected_chart_month}-01", "%Y-%m-%d").date()
+    except ValueError:
+        chart_month_start = month_start
+        selected_chart_month = chart_month_start.strftime('%Y-%m')
+
+    if chart_month_start.month == 12:
+        chart_month_end = chart_month_start.replace(year=chart_month_start.year + 1, month=1)
+    else:
+        chart_month_end = chart_month_start.replace(month=chart_month_start.month + 1)
     
     # Base queryset filtered by user's company
     base_qs = filter_by_user_company(Shipment.objects.all(), request.user)
@@ -138,7 +150,10 @@ def dashboard(request):
         revenue_data.append(float(month_revenue))
     
     # Shipment status distribution - dynamic for all choices
-    status_counts = base_qs.values('status').annotate(count=Count('id'))
+    status_counts = base_qs.filter(
+        created_at__date__gte=chart_month_start,
+        created_at__date__lt=chart_month_end,
+    ).values('status').annotate(count=Count('id'))
     status_counts_dict = {item['status']: item['count'] for item in status_counts}
     
     status_data = []
@@ -148,7 +163,10 @@ def dashboard(request):
         status_labels.append(label)
 
     # Order status distribution
-    order_status_counts = order_qs.values('status').annotate(count=Count('id'))
+    order_status_counts = order_qs.filter(
+        created_at__date__gte=chart_month_start,
+        created_at__date__lt=chart_month_end,
+    ).values('status').annotate(count=Count('id'))
     order_status_counts_dict = {item['status']: item['count'] for item in order_status_counts}
 
     order_status_data = []
@@ -159,6 +177,18 @@ def dashboard(request):
     
     # Recent shipments
     recent_shipments = base_qs.select_related('customer').order_by('-created_at')[:10]
+
+    chart_month_options = []
+    option_month = today.replace(day=1)
+    for _ in range(12):
+        chart_month_options.append({
+            'value': option_month.strftime('%Y-%m'),
+            'label': option_month.strftime('%B %Y'),
+        })
+        if option_month.month == 1:
+            option_month = option_month.replace(year=option_month.year - 1, month=12)
+        else:
+            option_month = option_month.replace(month=option_month.month - 1)
     
     context = {
         # Stats
@@ -175,6 +205,8 @@ def dashboard(request):
         'status_labels': json.dumps(status_labels),
         'order_status_data': json.dumps(order_status_data),
         'order_status_labels': json.dumps(order_status_labels),
+        'selected_chart_month': selected_chart_month,
+        'chart_month_options': chart_month_options,
         
         # Recent shipments
         'recent_shipments': recent_shipments,

@@ -64,6 +64,16 @@
     </div>
     
     <!-- Charts Row -->
+    <div class="d-flex justify-content-end align-items-center mb-3">
+        <form method="get" class="d-flex align-items-center gap-2">
+            <label for="chart-month" class="small text-muted fw-semibold mb-0">Month</label>
+            <select id="chart-month" name="chart_month" class="form-select form-select-sm" onchange="this.form.submit()">
+                {% for option in chart_month_options %}
+                <option value="{{ option.value }}" {% if option.value == selected_chart_month %}selected{% endif %}>{{ option.label }}</option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
     <div class="row mb-4">
         <div class="col-lg-6 mb-3">
             <div class="card h-100">
