@@ -2,11 +2,75 @@
 
 {% block title %}Directory - FreightPro{% endblock %}
 
+{% block extra_css %}
+<style>
+    .directory-map-card {
+        display: none;
+    }
+
+    .directory-map-card.is-visible {
+        display: block;
+    }
+
+    .directory-map-card.is-fullscreen {
+        position: fixed;
+        inset: 16px;
+        z-index: 2000;
+        margin: 0 !important;
+    }
+
+    .directory-map-card.is-fullscreen .card-body {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .directory-map {
+        height: 520px;
+        border-radius: 14px;
+    }
+
+    .directory-map-card.is-fullscreen .directory-map {
+        height: calc(100vh - 110px);
+        flex: 1;
+    }
+
+    .company-map-toggle.btn-primary {
+        box-shadow: 0 10px 24px rgba(37, 99, 235, 0.18);
+    }
+
+    .company-map-popup-name {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #2563eb;
+        margin-bottom: 4px;
+    }
+
+    .company-map-popup-address {
+        font-size: 0.92rem;
+        color: #4b5563;
+        line-height: 1.45;
+    }
+
+    .company-map-status {
+        font-size: 0.92rem;
+        color: #6b7280;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h2"><i class="fas fa-address-book me-2 text-primary"></i>Company Directory</h1>
-        <a href="{% url 'accounts:company_create' %}" class="btn btn-primary"><i class="fas fa-plus me-1"></i>Add Company</a>
+        <div class="d-flex align-items-center gap-2">
+            {% if request.user.role == 'admin' %}
+            <button type="button" class="btn btn-outline-primary company-map-toggle" id="company-map-toggle" title="Show company locations">
+                <i class="fas fa-location-dot"></i>
+            </button>
+            {% endif %}
+            <a href="{% url 'accounts:company_create' %}" class="btn btn-primary"><i class="fas fa-plus me-1"></i>Add Company</a>
+        </div>
     </div>
 
     <!-- Filters -->
@@ -33,6 +97,28 @@
             </form>
         </div>
     </div>
+
+    {% if request.user.role == 'admin' %}
+    <div class="card mb-4 shadow-sm border-0 directory-map-card" id="company-map-card">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h5 class="mb-1">Company Locations</h5>
+                    <div class="company-map-status" id="company-map-status">Click markers to view company address.</div>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="company-map-fullscreen">
+                        <i class="fas fa-expand me-1"></i>Full Screen
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="company-map-close">
+                        <i class="fas fa-times me-1"></i>Close Map
+                    </button>
+                </div>
+            </div>
+            <div id="company-directory-map" class="directory-map"></div>
+        </div>
+    </div>
+    {% endif %}
 
     <!-- Company List -->
     <div class="card shadow-sm border-0">
@@ -135,4 +221,225 @@
         {% endif %}
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const companies = [
+            {% for company in companies %}
+            {
+                name: "{{ company.name|escapejs }}",
+                address: "{{ company.full_address|default:''|escapejs }}",
+                city: "{{ company.city|default:''|escapejs }}",
+                state: "{{ company.state|default:''|escapejs }}",
+                country: "{{ company.country|default:''|escapejs }}",
+                location: "{{ company.city|default:''|escapejs }}{% if company.state %}, {{ company.state|escapejs }}{% endif %}{% if company.country %}, {{ company.country|escapejs }}{% endif %}",
+                companyType: "{{ company.get_company_type_display|escapejs }}"
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ].filter(company => company.address.trim() || company.location.trim());
+
+        const mapCard = document.getElementById('company-map-card');
+        const toggleButton = document.getElementById('company-map-toggle');
+        const closeButton = document.getElementById('company-map-close');
+        const fullscreenButton = document.getElementById('company-map-fullscreen');
+        const statusText = document.getElementById('company-map-status');
+
+        if (!mapCard || !toggleButton) {
+            return;
+        }
+
+        const cityCoordinateFallbacks = {
+            'mohali|punjab|india': { lat: 30.7046, lng: 76.7179 },
+            'mohali|punjab|usa': { lat: 30.7046, lng: 76.7179 },
+            'bangana|himachal|india': { lat: 31.1908, lng: 76.3176 },
+            'panchkula|haryana|india': { lat: 30.6942, lng: 76.8606 },
+            'frankfort|in|us': { lat: 40.2795, lng: -86.5100 },
+            'frankfort|indiana|us': { lat: 40.2795, lng: -86.5100 },
+            'frankfort|in|usa': { lat: 40.2795, lng: -86.5100 },
+            'frankfort|indiana|usa': { lat: 40.2795, lng: -86.5100 },
+        };
+
+        function normalizePart(value) {
+            return (value || '').trim().toLowerCase();
+        }
+
+        function getFallbackCoordinates(company) {
+            const key = [
+                normalizePart(company.city),
+                normalizePart(company.state),
+                normalizePart(company.country),
+            ].join('|');
+
+            return cityCoordinateFallbacks[key] || null;
+        }
+
+        let companyMap = null;
+        let markersLayer = null;
+        let mapLoaded = false;
+
+        function refreshMapLayout() {
+            if (!companyMap) return;
+            setTimeout(() => {
+                companyMap.invalidateSize();
+                if (markersLayer && markersLayer.getLayers().length) {
+                    companyMap.fitBounds(markersLayer.getBounds().pad(0.2));
+                }
+            }, 150);
+        }
+
+        function setStatus(message) {
+            if (statusText) {
+                statusText.textContent = message;
+            }
+        }
+
+        function uniqueQueries(values) {
+            return [...new Set(values.map(value => value.trim()).filter(Boolean))];
+        }
+
+        function getAddressQueries(company) {
+            const cityState = [company.city, company.state].filter(Boolean).join(', ');
+            const cityCountry = [company.city, company.country].filter(Boolean).join(', ');
+            const stateCountry = [company.state, company.country].filter(Boolean).join(', ');
+
+            return uniqueQueries([
+                company.address,
+                [company.city, company.state, company.country].filter(Boolean).join(', '),
+                cityState,
+                cityCountry,
+                stateCountry,
+                company.city,
+                company.location,
+            ]);
+        }
+
+        async function geocodeCompany(company) {
+            const queries = getAddressQueries(company);
+            for (const query of queries) {
+                try {
+                    const url = `${'{{ MAP_GEOCODING_API_URL|safe }}'}?format=json&limit=1&q=${encodeURIComponent(query)}`;
+                    const response = await fetch(url, {
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+
+                    if (!response.ok) {
+                        continue;
+                    }
+
+                    const data = await response.json();
+                    if (!data.length) {
+                        continue;
+                    }
+
+                    return {
+                        ...company,
+                        lat: parseFloat(data[0].lat),
+                        lng: parseFloat(data[0].lon),
+                    };
+                } catch (error) {
+                    // Browser geocoding may fail in dev due network/CORS limits; use fallback below.
+                }
+            }
+
+            const fallback = getFallbackCoordinates(company);
+            if (fallback) {
+                return {
+                    ...company,
+                    lat: fallback.lat,
+                    lng: fallback.lng,
+                };
+            }
+
+            return null;
+        }
+
+        async function loadCompanyMap() {
+            if (mapLoaded) {
+                companyMap.invalidateSize();
+                return;
+            }
+
+            setStatus('Loading company locations on map...');
+
+            companyMap = L.map('company-directory-map', {
+                zoomControl: true,
+            });
+
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                maxZoom: 19,
+                attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+            }).addTo(companyMap);
+
+            markersLayer = L.featureGroup().addTo(companyMap);
+
+            const settled = await Promise.allSettled(companies.map(geocodeCompany));
+            const mappedCompanies = settled
+                .filter(result => result.status === 'fulfilled' && result.value)
+                .map(result => result.value);
+
+            if (!mappedCompanies.length) {
+                setStatus('No company locations could be mapped.');
+                companyMap.setView([20.5937, 78.9629], 4);
+                mapLoaded = true;
+                return;
+            }
+
+            mappedCompanies.forEach(company => {
+                const marker = L.marker([company.lat, company.lng]).addTo(markersLayer);
+                const popupHtml = `
+                    <div class="company-map-popup">
+                        <div class="company-map-popup-name">${company.name}</div>
+                        <div class="company-map-popup-address">${company.address || company.location}</div>
+                    </div>
+                `;
+
+                marker.bindPopup(popupHtml, { closeButton: false, offset: [0, -8] });
+                marker.on('mouseover', function () {
+                    this.openPopup();
+                });
+                marker.on('mouseout', function () {
+                    this.closePopup();
+                });
+            });
+
+            companyMap.fitBounds(markersLayer.getBounds().pad(0.2));
+            setStatus(`${mappedCompanies.length} company locations loaded.`);
+            mapLoaded = true;
+            refreshMapLayout();
+        }
+
+        toggleButton?.addEventListener('click', async function () {
+            mapCard.classList.add('is-visible');
+            toggleButton.classList.remove('btn-outline-primary');
+            toggleButton.classList.add('btn-primary');
+            await loadCompanyMap();
+            mapCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            refreshMapLayout();
+        });
+
+        closeButton?.addEventListener('click', function () {
+            mapCard.classList.remove('is-visible');
+            mapCard.classList.remove('is-fullscreen');
+            toggleButton.classList.add('btn-outline-primary');
+            toggleButton.classList.remove('btn-primary');
+            if (fullscreenButton) {
+                fullscreenButton.innerHTML = '<i class="fas fa-expand me-1"></i>Full Screen';
+            }
+        });
+
+        fullscreenButton?.addEventListener('click', function () {
+            const isFullscreen = mapCard.classList.toggle('is-fullscreen');
+            fullscreenButton.innerHTML = isFullscreen
+                ? '<i class="fas fa-compress me-1"></i>Exit Full Screen'
+                : '<i class="fas fa-expand me-1"></i>Full Screen';
+            refreshMapLayout();
+        });
+
+        window.addEventListener('resize', refreshMapLayout);
+    });
+</script>
 {% endblock %}
