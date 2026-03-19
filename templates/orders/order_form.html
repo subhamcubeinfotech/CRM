@@ -218,7 +218,8 @@
                                     {% for item in inventory_items %}
                                     {% if item.quantity > 0 %}
                                     <option value="{{ item.id }}" data-max="{{ item.quantity }}"
-                                        data-unit="{{ item.unit_of_measure }}" data-name="{{ item.product_name }}">
+                                        data-unit="{{ item.unit_of_measure }}" data-name="{{ item.product_name }}"
+                                        data-company-id="{{ item.warehouse.company_id|default:'' }}">
                                         {{ item.product_name }} - {{ item.display_stock }}
                                     </option>
                                     {% endif %}
@@ -477,6 +478,64 @@
         select.classList.toggle('has-value', !!select.value);
     }
 
+    function filterMaterialOptions() {
+        const supplierSelect = document.getElementById('supplier-select');
+        const selectedSupplierId = supplierSelect?.value || '';
+        const materialSelects = document.querySelectorAll('.material-select');
+
+        materialSelects.forEach((materialSelect) => {
+            let hasVisibleOption = false;
+            let noMaterialOption = [...materialSelect.options].find((option) => option.dataset.placeholder === 'no-material');
+            const placeholderOption = materialSelect.options[0];
+
+            [...materialSelect.options].forEach((option, index) => {
+                if (index === 0) {
+                    option.text = 'Select material';
+                    option.hidden = false;
+                    option.style.display = '';
+                    return;
+                }
+
+                if (option.dataset.placeholder === 'no-material') {
+                    return;
+                }
+
+                const optionCompanyId = option.dataset.companyId || '';
+                const shouldShow = !selectedSupplierId || optionCompanyId === selectedSupplierId;
+                option.hidden = !shouldShow;
+                option.style.display = shouldShow ? '' : 'none';
+                if (shouldShow) {
+                    hasVisibleOption = true;
+                }
+            });
+
+            if (materialSelect.value) {
+                const selectedOption = materialSelect.selectedOptions[0];
+                if (selectedOption && selectedOption.hidden) {
+                    materialSelect.value = '';
+                }
+            }
+
+            if (selectedSupplierId && !hasVisibleOption) {
+                if (!noMaterialOption) {
+                    noMaterialOption = new Option('No materials found', '');
+                    noMaterialOption.dataset.placeholder = 'no-material';
+                    materialSelect.add(noMaterialOption);
+                }
+                noMaterialOption.hidden = false;
+                noMaterialOption.style.display = '';
+                placeholderOption.text = 'Select a material';
+                materialSelect.value = '';
+            } else if (noMaterialOption) {
+                noMaterialOption.hidden = true;
+                noMaterialOption.style.display = 'none';
+                placeholderOption.text = 'Select a material';
+            }
+
+            materialSelect.disabled = false;
+        });
+    }
+
     function syncLocationLockState(locationSelectId, partySelectId) {
         const locationSelect = document.getElementById(locationSelectId);
         const partySelect = document.getElementById(partySelectId);
@@ -508,6 +567,7 @@
     document.getElementById('assign-supplier-mine')?.addEventListener('click', function (e) {
         e.preventDefault();
         assignMyCompany('supplier-select', this.dataset.companyId, "{{ user.company.name|default:'My Company' }}", this.dataset.address);
+        filterMaterialOptions();
     });
 
     document.getElementById('assign-receiver-mine')?.addEventListener('click', function (e) {
@@ -798,6 +858,8 @@
     syncLocationSelectState('dest-location-select');
     syncLocationLockState('source-location-select', 'supplier-select');
     syncLocationLockState('dest-location-select', 'receiver-select');
+    filterMaterialOptions();
+    document.getElementById('supplier-select')?.addEventListener('change', filterMaterialOptions);
 
     // Run initial profit calculation
     recalcProfit();
@@ -829,6 +891,7 @@
 
         container.appendChild(newItem);
         setupInventoryValidation(newItem);
+        filterMaterialOptions();
     });
 
     // Event delegation for removal
