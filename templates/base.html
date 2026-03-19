@@ -586,6 +586,88 @@
             text-decoration: none;
         }
 
+        .freight-booking-modal .modal-dialog {
+            max-width: 520px;
+        }
+
+        .freight-booking-modal .modal-content {
+            border: none;
+            border-radius: 22px;
+            overflow: hidden;
+            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.2);
+        }
+
+        .freight-booking-modal .modal-header {
+            padding: 22px 28px 16px;
+            border-bottom: 1px solid #edf1f7;
+            align-items: center;
+        }
+
+        .freight-booking-modal .modal-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #263244;
+        }
+
+        .freight-booking-modal .btn-close {
+            border: 1px solid #2f67d8;
+            border-radius: 10px;
+            padding: 0.9rem;
+            opacity: 1;
+        }
+
+        .freight-booking-modal .modal-body {
+            padding: 22px 28px 28px;
+        }
+
+        .freight-booking-copy {
+            color: #5f6b7a;
+            font-size: 0.98rem;
+            line-height: 1.55;
+            margin-bottom: 18px;
+        }
+
+        .freight-booking-modal label {
+            font-weight: 700;
+            color: #4b5563;
+            margin-bottom: 8px;
+        }
+
+        .freight-booking-modal .form-control {
+            border-radius: 10px;
+            min-height: 44px;
+            padding: 10px 14px;
+        }
+
+        .freight-search-btn {
+            width: 100%;
+            border-radius: 10px;
+            min-height: 44px;
+            font-weight: 600;
+            font-size: 1.05rem;
+        }
+
+        .freight-booking-card {
+            margin-top: 18px;
+            border: 1px solid #edf1f7;
+            border-radius: 16px;
+            padding: 18px;
+            background: #fff;
+            text-align: center;
+        }
+
+        .freight-booking-card h4 {
+            font-size: 1.1rem;
+            margin: 0 0 6px 0;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .freight-booking-card p {
+            margin: 0;
+            color: #6b7280;
+        }
+
         @media (max-width: 576px) {
             .help-drawer {
                 top: 56px;
@@ -726,7 +808,7 @@
                 <span class="global-floating-tooltip">Help</span>
                 <i class="fas fa-question"></i>
             </a>
-            <a href="{% url 'shipments:shipment_list' %}" class="global-floating-action-btn shipment" aria-label="Book Freight">
+            <a href="#" class="global-floating-action-btn shipment" aria-label="Book Freight" data-bs-toggle="modal" data-bs-target="#bookFreightModal">
                 <span class="global-floating-tooltip">Book Freight</span>
                 <i class="fas fa-truck"></i>
             </a>
@@ -873,6 +955,44 @@
                             <a href="#" class="help-ticket-cancel" data-bs-dismiss="modal">Cancel</a>
                         </div>
                     </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade freight-booking-modal" id="bookFreightModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Book Freight</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="mb-4">
+                            <label for="freightPickupAddress">Pickup Address <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="freightPickupAddress" placeholder="Insert Pickup Address">
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="freightDeliveryAddress">Delivery Address <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="freightDeliveryAddress" placeholder="Insert Delivery Address">
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="freightPickupDateTime">Pickup Date and Time <span class="text-danger">*</span></label>
+                            <input type="datetime-local" class="form-control" id="freightPickupDateTime">
+                        </div>
+
+                        <button type="button" class="btn btn-primary freight-search-btn">
+                            <i class="fas fa-search me-2"></i>Search
+                        </button>
+                    </form>
+
+                    <div class="freight-booking-card">
+                        <h4>Don't Wait for Freight</h4>
+                        <p>Complete the details above to start your freight search flow.</p>
+                    </div>
                 </div>
             </div>
         </div>
