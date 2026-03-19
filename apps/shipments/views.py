@@ -19,6 +19,7 @@ from urllib.request import Request, urlopen
 from .models import Shipment, Container, ShipmentMilestone, Document
 from apps.accounts.models import Company, CustomUser
 from apps.invoicing.models import Invoice
+from apps.orders.models import Order
 from apps.accounts.utils import filter_by_user_company, check_company_access
 import logging
 
@@ -88,6 +89,7 @@ def dashboard(request):
     # Base queryset filtered by user's company
     base_qs = filter_by_user_company(Shipment.objects.all(), request.user)
     invoice_qs = filter_by_user_company(Invoice.objects.all(), request.user)
+    order_qs = filter_by_user_company(Order.objects.all(), request.user, company_field='receiver')
     
     # Stat cards
     active_shipments = base_qs.filter(
@@ -144,6 +146,16 @@ def dashboard(request):
     for code, label in Shipment.STATUS_CHOICES:
         status_data.append(status_counts_dict.get(code, 0))
         status_labels.append(label)
+
+    # Order status distribution
+    order_status_counts = order_qs.values('status').annotate(count=Count('id'))
+    order_status_counts_dict = {item['status']: item['count'] for item in order_status_counts}
+
+    order_status_data = []
+    order_status_labels = []
+    for code, label in Order.STATUS_CHOICES:
+        order_status_data.append(order_status_counts_dict.get(code, 0))
+        order_status_labels.append(label)
     
     # Recent shipments
     recent_shipments = base_qs.select_related('customer').order_by('-created_at')[:10]
@@ -161,6 +173,8 @@ def dashboard(request):
         'revenue_data': json.dumps(revenue_data),
         'status_data': json.dumps(status_data),
         'status_labels': json.dumps(status_labels),
+        'order_status_data': json.dumps(order_status_data),
+        'order_status_labels': json.dumps(order_status_labels),
         
         # Recent shipments
         'recent_shipments': recent_shipments,

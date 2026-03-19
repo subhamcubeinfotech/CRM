@@ -65,7 +65,7 @@
     
     <!-- Charts Row -->
     <div class="row mb-4">
-        <div class="col-md-8 mb-3">
+        <div class="col-lg-6 mb-3">
             <div class="card h-100">
                 <div class="card-header bg-white">
                     <h5 class="card-title mb-0"><i class="fas fa-chart-line me-2 text-primary"></i>Revenue Trend (Last 6 Months)</h5>
@@ -75,13 +75,23 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-4 mb-3">
+        <div class="col-lg-3 col-md-6 mb-3">
             <div class="card h-100">
                 <div class="card-header bg-white">
                     <h5 class="card-title mb-0"><i class="fas fa-chart-pie me-2 text-primary"></i>Shipment Status</h5>
                 </div>
                 <div class="card-body">
                     <canvas id="statusChart" height="250" data-labels='{{ status_labels|safe }}' data-values='{{ status_data|safe }}'></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0"><i class="fas fa-clipboard-list me-2 text-primary"></i>Order Status</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="orderStatusChart" height="250" data-labels='{{ order_status_labels|safe }}' data-values='{{ order_status_data|safe }}'></canvas>
                 </div>
             </div>
         </div>
@@ -214,6 +224,35 @@
             datasets: [{
                 data: JSON.parse(statusCanvas.dataset.values),
                 backgroundColor: ['#667eea', '#fd7e14', '#ffc107', '#28a745', '#6f42c1', '#17a2b8', '#20c997', '#dc3545'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 15,
+                        usePointStyle: true
+                    }
+                }
+            },
+            cutout: '65%'
+        }
+    });
+
+    // Order Status Chart
+    const orderStatusCanvas = document.getElementById('orderStatusChart');
+    const orderStatusCtx = orderStatusCanvas.getContext('2d');
+    new Chart(orderStatusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: JSON.parse(orderStatusCanvas.dataset.labels),
+            datasets: [{
+                data: JSON.parse(orderStatusCanvas.dataset.values),
+                backgroundColor: ['#6c757d', '#0d6efd', '#ffc107', '#28a745', '#20c997', '#dc3545'],
                 borderWidth: 0
             }]
         },
