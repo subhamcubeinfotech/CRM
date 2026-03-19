@@ -257,7 +257,8 @@
                                     <select name="buy_price_unit[]"
                                         class="form-select form-select-sm rounded-start-0 border-start-0">
                                         <option>per lbs</option>
-                                        <option>per item</option>
+                                        <option>per kg</option>
+                                        <option>per pcs</option>
                                     </select>
                                 </div>
                             </div>
@@ -276,7 +277,8 @@
                                     <select name="sell_price_unit[]"
                                         class="form-select form-select-sm rounded-start-0 border-start-0">
                                         <option>per lbs</option>
-                                        <option>per item</option>
+                                        <option>per kg</option>
+                                        <option>per pcs</option>
                                     </select>
                                 </div>
                             </div>
@@ -744,8 +746,44 @@
         input.addEventListener('input', validate);
     }
 
+    function syncManifestUnits(container, baseUnit) {
+        const unitDisplay = container.querySelector('.unit-display');
+        const buyUnit = container.querySelector('[name="buy_price_unit[]"]');
+        const sellUnit = container.querySelector('[name="sell_price_unit[]"]');
+        if (!unitDisplay || !buyUnit || !sellUnit || !baseUnit) return;
+
+        const normalized = String(baseUnit).toLowerCase();
+        const priceUnit = `per ${normalized}`;
+
+        unitDisplay.value = normalized;
+        buyUnit.value = priceUnit;
+        sellUnit.value = priceUnit;
+    }
+
+    function setupManifestUnitSync(container) {
+        const unitDisplay = container.querySelector('.unit-display');
+        const buyUnit = container.querySelector('[name="buy_price_unit[]"]');
+        const sellUnit = container.querySelector('[name="sell_price_unit[]"]');
+        if (!unitDisplay || !buyUnit || !sellUnit) return;
+
+        unitDisplay.addEventListener('change', function() {
+            syncManifestUnits(container, this.value);
+        });
+
+        buyUnit.addEventListener('change', function() {
+            syncManifestUnits(container, this.value.replace(/^per\s+/i, ''));
+        });
+
+        sellUnit.addEventListener('change', function() {
+            syncManifestUnits(container, this.value.replace(/^per\s+/i, ''));
+        });
+    }
+
     // Initialize for existing items
-    document.querySelectorAll('.manifest-item').forEach(item => setupInventoryValidation(item));
+    document.querySelectorAll('.manifest-item').forEach(item => {
+        setupInventoryValidation(item);
+        setupManifestUnitSync(item);
+    });
 
     function filterLocations(partySelectId, locationSelectId) {
         const partySelect = document.getElementById(partySelectId);
@@ -848,6 +886,8 @@
 
         container.appendChild(newItem);
         setupInventoryValidation(newItem);
+        setupManifestUnitSync(newItem);
+        syncManifestUnits(newItem, 'lbs');
         filterMaterialOptions();
     });
 
