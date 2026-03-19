@@ -102,10 +102,6 @@
                     <input type="text" name="so_number" class="form-control" placeholder="Insert a number">
                 </div>
 
-                <div class="mb-4">
-                    <label class="form-label fw-bold small text-uppercase">Expected Pickup Date</label>
-                    <input type="date" name="expected_pickup_date" id="expected_pickup_date" class="form-control">
-                </div>
             </div>
 
             <div class="col-md-6">
@@ -159,10 +155,6 @@
                     <input type="text" name="po_number" class="form-control" placeholder="Insert a number">
                 </div>
 
-                <div class="mb-4">
-                    <label class="form-label fw-bold small text-uppercase">Expected Delivery Date</label>
-                    <input type="date" name="expected_delivery_date" id="expected_delivery_date" class="form-control">
-                </div>
             </div>
         </div>
 
@@ -749,42 +741,6 @@
 
         select.addEventListener('change', validate);
         input.addEventListener('input', validate);
-    }
-
-    // ── Smart Date Logic ─────────────────────────────────────────
-    const pickupInput = document.getElementById('expected_pickup_date');
-    const deliveryInput = document.getElementById('expected_delivery_date');
-
-    if (pickupInput && deliveryInput) {
-        // Set min date for pickup to today
-        const today = new Date().toISOString().split('T')[0];
-        pickupInput.min = today;
-
-        // Prevent interaction if pickup is empty
-        const checkSequence = function(e) {
-            if (!pickupInput.value) {
-                alert("Please select Expected Pickup Date first!");
-                this.blur();
-                e.preventDefault();
-            }
-        };
-
-        deliveryInput.addEventListener('mousedown', checkSequence);
-        deliveryInput.addEventListener('keydown', checkSequence);
-
-        pickupInput.addEventListener('change', function() {
-            deliveryInput.min = this.value;
-            if (deliveryInput.value && deliveryInput.value < this.value) {
-                deliveryInput.value = this.value;
-            }
-        });
-
-        deliveryInput.addEventListener('change', function() {
-            if (pickupInput.value && this.value < pickupInput.value) {
-                alert("Delivery Date cannot be earlier than Pickup Date!");
-                this.value = pickupInput.value;
-            }
-        });
     }
 
     // Initialize for existing items

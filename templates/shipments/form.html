@@ -184,12 +184,12 @@
                     </div>
                     <div class="card-body">
                         <div class="mb-3">
-                            <label class="form-label">Pickup Date</label>
-                            <input type="date" name="pickup_date" class="form-control" value="{% if is_create %}{{ order.expected_pickup_date|date:'Y-m-d' }}{% else %}{{ shipment.pickup_date|date:'Y-m-d' }}{% endif %}">
+                            <label class="form-label">Pickup Date <span class="text-danger">*</span></label>
+                            <input type="date" name="pickup_date" id="pickup_date" class="form-control" value="{% if not is_create %}{{ shipment.pickup_date|date:'Y-m-d' }}{% endif %}" required>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Estimated Delivery Date</label>
-                            <input type="date" name="estimated_delivery_date" class="form-control" value="{% if is_create %}{{ order.expected_delivery_date|date:'Y-m-d' }}{% else %}{{ shipment.estimated_delivery_date|date:'Y-m-d' }}{% endif %}">
+                            <label class="form-label">Estimated Delivery Date <span class="text-danger">*</span></label>
+                            <input type="date" name="estimated_delivery_date" id="estimated_delivery_date" class="form-control" value="{% if not is_create %}{{ shipment.estimated_delivery_date|date:'Y-m-d' }}{% endif %}" required>
                         </div>
                     </div>
                 </div>
@@ -329,5 +329,43 @@
             }, false);
         });
     })();
+
+    // Match order form date validation behavior
+    const pickupInput = document.getElementById('pickup_date');
+    const deliveryInput = document.getElementById('estimated_delivery_date');
+
+    if (pickupInput && deliveryInput) {
+        const today = new Date().toISOString().split('T')[0];
+        pickupInput.min = today;
+
+        const checkSequence = function(event) {
+            if (!pickupInput.value) {
+                alert('Please select Pickup Date first!');
+                this.blur();
+                event.preventDefault();
+            }
+        };
+
+        deliveryInput.addEventListener('mousedown', checkSequence);
+        deliveryInput.addEventListener('keydown', checkSequence);
+
+        pickupInput.addEventListener('change', function() {
+            deliveryInput.min = this.value;
+            if (deliveryInput.value && deliveryInput.value < this.value) {
+                deliveryInput.value = this.value;
+            }
+        });
+
+        deliveryInput.addEventListener('change', function() {
+            if (pickupInput.value && this.value < pickupInput.value) {
+                alert('Estimated Delivery Date cannot be earlier than Pickup Date!');
+                this.value = pickupInput.value;
+            }
+        });
+
+        if (pickupInput.value) {
+            deliveryInput.min = pickupInput.value;
+        }
+    }
 </script>
 {% endblock %}
