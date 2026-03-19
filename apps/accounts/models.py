@@ -26,6 +26,8 @@ class Company(TenantAwareModel):
     state = models.CharField(max_length=100, blank=True)
     postal_code = models.CharField(max_length=20, blank=True)
     country = models.CharField(max_length=100, blank=True, default='USA')
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
     
     # Contact fields
     phone = models.CharField(max_length=20, blank=True)

@@ -231,6 +231,8 @@
             {
                 name: "{{ company.name|escapejs }}",
                 address: "{{ company.full_address|default:''|escapejs }}",
+                latitude: {{ company.latitude|default:'null' }},
+                longitude: {{ company.longitude|default:'null' }},
                 city: "{{ company.city|default:''|escapejs }}",
                 state: "{{ company.state|default:''|escapejs }}",
                 country: "{{ company.country|default:''|escapejs }}",
@@ -248,31 +250,6 @@
 
         if (!mapCard || !toggleButton) {
             return;
-        }
-
-        const cityCoordinateFallbacks = {
-            'mohali|punjab|india': { lat: 30.7046, lng: 76.7179 },
-            'mohali|punjab|usa': { lat: 30.7046, lng: 76.7179 },
-            'bangana|himachal|india': { lat: 31.1908, lng: 76.3176 },
-            'panchkula|haryana|india': { lat: 30.6942, lng: 76.8606 },
-            'frankfort|in|us': { lat: 40.2795, lng: -86.5100 },
-            'frankfort|indiana|us': { lat: 40.2795, lng: -86.5100 },
-            'frankfort|in|usa': { lat: 40.2795, lng: -86.5100 },
-            'frankfort|indiana|usa': { lat: 40.2795, lng: -86.5100 },
-        };
-
-        function normalizePart(value) {
-            return (value || '').trim().toLowerCase();
-        }
-
-        function getFallbackCoordinates(company) {
-            const key = [
-                normalizePart(company.city),
-                normalizePart(company.state),
-                normalizePart(company.country),
-            ].join('|');
-
-            return cityCoordinateFallbacks[key] || null;
         }
 
         let companyMap = null;
@@ -295,71 +272,9 @@
             }
         }
 
-        function uniqueQueries(values) {
-            return [...new Set(values.map(value => value.trim()).filter(Boolean))];
-        }
-
-        function getAddressQueries(company) {
-            const cityState = [company.city, company.state].filter(Boolean).join(', ');
-            const cityCountry = [company.city, company.country].filter(Boolean).join(', ');
-            const stateCountry = [company.state, company.country].filter(Boolean).join(', ');
-
-            return uniqueQueries([
-                company.address,
-                [company.city, company.state, company.country].filter(Boolean).join(', '),
-                cityState,
-                cityCountry,
-                stateCountry,
-                company.city,
-                company.location,
-            ]);
-        }
-
-        async function geocodeCompany(company) {
-            const queries = getAddressQueries(company);
-            for (const query of queries) {
-                try {
-                    const url = `${'{{ MAP_GEOCODING_API_URL|safe }}'}?format=json&limit=1&q=${encodeURIComponent(query)}`;
-                    const response = await fetch(url, {
-                        headers: {
-                            'Accept': 'application/json'
-                        }
-                    });
-
-                    if (!response.ok) {
-                        continue;
-                    }
-
-                    const data = await response.json();
-                    if (!data.length) {
-                        continue;
-                    }
-
-                    return {
-                        ...company,
-                        lat: parseFloat(data[0].lat),
-                        lng: parseFloat(data[0].lon),
-                    };
-                } catch (error) {
-                    // Browser geocoding may fail in dev due network/CORS limits; use fallback below.
-                }
-            }
-
-            const fallback = getFallbackCoordinates(company);
-            if (fallback) {
-                return {
-                    ...company,
-                    lat: fallback.lat,
-                    lng: fallback.lng,
-                };
-            }
-
-            return null;
-        }
-
         async function loadCompanyMap() {
             if (mapLoaded) {
-                companyMap.invalidateSize();
+                refreshMapLayout();
                 return;
             }
 
@@ -376,10 +291,12 @@
 
             markersLayer = L.featureGroup().addTo(companyMap);
 
-            const settled = await Promise.allSettled(companies.map(geocodeCompany));
-            const mappedCompanies = settled
-                .filter(result => result.status === 'fulfilled' && result.value)
-                .map(result => result.value);
+            const mappedCompanies = companies.filter(company =>
+                typeof company.latitude === 'number' &&
+                !Number.isNaN(company.latitude) &&
+                typeof company.longitude === 'number' &&
+                !Number.isNaN(company.longitude)
+            );
 
             if (!mappedCompanies.length) {
                 setStatus('No company locations could be mapped.');
@@ -389,7 +306,7 @@
             }
 
             mappedCompanies.forEach(company => {
-                const marker = L.marker([company.lat, company.lng]).addTo(markersLayer);
+                const marker = L.marker([company.latitude, company.longitude]).addTo(markersLayer);
                 const popupHtml = `
                     <div class="company-map-popup">
                         <div class="company-map-popup-name">${company.name}</div>

@@ -11,6 +11,7 @@ from django.core.mail import EmailMessage
 from django.conf import settings
 from .models import Company
 from .forms import CompanyForm
+from .geocoding import geocode_company
 from .utils import filter_by_user_company, check_company_access
 from django.db.models import Q
 import logging
@@ -44,6 +45,10 @@ def company_list(request):
     paginator = Paginator(companies, 25)
     page = request.GET.get('page')
     companies = paginator.get_page(page)
+    if request.user.role == 'admin':
+        for company in companies:
+            if company.full_address and (company.latitude is None or company.longitude is None):
+                geocode_company(company, save=True)
     context = {
         'companies': companies,
         'company_type': company_type,
@@ -138,7 +143,8 @@ def company_edit(request, pk):
     if request.method == 'POST':
         form = CompanyForm(request.POST, request.FILES, instance=company, user=request.user)
         if form.is_valid():
-            form.save()
+            company = form.save()
+            geocode_company(company, save=True)
             logger.info(f'Company updated: {company.name} (ID: {pk}) by {request.user}')
             return redirect('accounts:company_detail', pk=pk)
         else:
@@ -177,6 +183,7 @@ def company_create(request):
             if hasattr(request.user, 'tenant'):
                 company.tenant = request.user.tenant
             company.save()
+            geocode_company(company, save=True)
             
             # Create a default warehouse location if address is provided
             if company.address_line1 or company.city:
