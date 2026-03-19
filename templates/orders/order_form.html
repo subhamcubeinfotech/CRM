@@ -2,6 +2,43 @@
 
 {% block title %}New Order - FreightPro{% endblock %}
 
+{% block extra_css %}
+<style>
+    #source-location-select,
+    #dest-location-select {
+        background-color: #dbe4f0;
+        border-color: #c7d3e3;
+        color: #4b6788;
+    }
+
+    #source-location-select:focus,
+    #dest-location-select:focus {
+        background-color: #dbe4f0;
+        border-color: #b8c7da;
+        box-shadow: none;
+    }
+
+    #source-location-select.has-value,
+    #dest-location-select.has-value {
+        background-color: #ffffff;
+        border-color: var(--bs-border-color, #dee2e6);
+        color: var(--bs-body-color, #212529);
+    }
+
+    #source-location-select.has-value:focus,
+    #dest-location-select.has-value:focus {
+        background-color: #ffffff;
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    }
+
+    #source-location-select.location-select-locked,
+    #dest-location-select.location-select-locked {
+        cursor: not-allowed;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
@@ -434,6 +471,22 @@
 </div>
 
 <script>
+    function syncLocationSelectState(selectId) {
+        const select = document.getElementById(selectId);
+        if (!select) return;
+        select.classList.toggle('has-value', !!select.value);
+    }
+
+    function syncLocationLockState(locationSelectId, partySelectId) {
+        const locationSelect = document.getElementById(locationSelectId);
+        const partySelect = document.getElementById(partySelectId);
+        if (!locationSelect || !partySelect) return;
+
+        const isLocked = !partySelect.value;
+        locationSelect.classList.toggle('location-select-locked', isLocked);
+        locationSelect.title = isLocked ? 'Select supplier/receiver first' : '';
+    }
+
     // Quick Assignment Links
     function assignMyCompany(selectId, companyId, companyName, companyAddress) {
         const select = document.getElementById(selectId);
@@ -492,6 +545,7 @@
         }
         
         locationSelect.value = virtualValue;
+        syncLocationSelectState(selectId);
     }
 
     document.getElementById('assign-source-my-location')?.addEventListener('click', function (e) {
@@ -726,14 +780,24 @@
             } else {
                 locationSelect.value = "";
             }
+
+            syncLocationSelectState(locationSelectId);
+            syncLocationLockState(locationSelectId, partySelectId);
         }
 
         partySelect.addEventListener('change', updateFilter);
+        locationSelect.addEventListener('change', function () {
+            syncLocationSelectState(locationSelectId);
+        });
         updateFilter();
     }
 
     filterLocations('supplier-select', 'source-location-select');
     filterLocations('receiver-select', 'dest-location-select');
+    syncLocationSelectState('source-location-select');
+    syncLocationSelectState('dest-location-select');
+    syncLocationLockState('source-location-select', 'supplier-select');
+    syncLocationLockState('dest-location-select', 'receiver-select');
 
     // Run initial profit calculation
     recalcProfit();
