@@ -269,8 +269,8 @@
                                 </select>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label">Pickup Number</label>
-                                <input type="text" name="pickup_number_ui" class="form-control" placeholder="Insert a Number">
+                                <label class="form-label">Pickup Number <span class="text-danger">*</span></label>
+                                <input type="text" name="pickup_number_ui" class="form-control" placeholder="Insert a Number" required>
                             </div>
                         </div>
 
@@ -285,8 +285,8 @@
                                 </div>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label">Pickup Date</label>
-                                <input type="date" name="pickup_date" id="pickup_date" class="form-control" value="{% if not is_create %}{{ shipment.pickup_date|date:'Y-m-d' }}{% endif %}">
+                                <label class="form-label">Pickup Date <span class="text-danger">*</span></label>
+                                <input type="date" name="pickup_date" id="pickup_date" class="form-control" value="{% if not is_create %}{{ shipment.pickup_date|date:'Y-m-d' }}{% endif %}" required>
                             </div>
                         </div>
 
@@ -309,18 +309,18 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <div class="d-flex justify-content-between align-items-center">
-                                    <label class="form-label mb-1">Delivery Contact</label>
+                                    <label class="form-label mb-1">Delivery Contact <span class="text-danger">*</span></label>
                                     <button class="btn btn-sm btn-outline-primary contact-drawer-trigger" type="button" data-bs-toggle="offcanvas" data-bs-target="#contactDrawer" data-contact-select-target="shipment-delivery-contact-select">
                                         <i class="fas fa-plus"></i> Add
                                     </button>
                                 </div>
-                                <select name="delivery_contact_ui" id="shipment-delivery-contact-select" class="form-select">
+                                <select name="delivery_contact_ui" id="shipment-delivery-contact-select" class="form-select" required>
                                     <option value="">Select a Contact</option>
                                 </select>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label">Delivery Number</label>
-                                <input type="text" name="delivery_number_ui" class="form-control" placeholder="Insert a Number">
+                                <label class="form-label">Delivery Number <span class="text-danger">*</span></label>
+                                <input type="text" name="delivery_number_ui" class="form-control" placeholder="Insert a Number" required>
                             </div>
                         </div>
 
@@ -335,8 +335,8 @@
                                 </div>
                             </div>
                             <div class="col-md-6 mb-0">
-                                <label class="form-label">Delivery Date</label>
-                                <input type="date" name="estimated_delivery_date" id="estimated_delivery_date" class="form-control" value="{% if not is_create %}{{ shipment.estimated_delivery_date|date:'Y-m-d' }}{% endif %}">
+                                <label class="form-label">Delivery Date <span class="text-danger">*</span></label>
+                                <input type="date" name="estimated_delivery_date" id="estimated_delivery_date" class="form-control" value="{% if not is_create %}{{ shipment.estimated_delivery_date|date:'Y-m-d' }}{% endif %}" required>
                             </div>
                         </div>
                     </div>
