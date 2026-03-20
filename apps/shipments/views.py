@@ -19,7 +19,9 @@ from urllib.request import Request, urlopen
 from .models import Shipment, Container, ShipmentMilestone, Document
 from apps.accounts.models import Company, CustomUser
 from apps.invoicing.models import Invoice
-from apps.orders.models import Order
+from apps.orders.models import Order, PackagingType
+from apps.inventory.models import Warehouse, InventoryItem
+from apps.orders.models import Tag, ShippingTerm
 from apps.accounts.utils import filter_by_user_company, check_company_access
 import logging
 
@@ -469,6 +471,7 @@ def shipment_create(request):
         return redirect('orders:order_list')
 
     order = get_object_or_404(Order, pk=order_id)
+    user_tenant = request.user.tenant
 
     if request.method == 'POST':
         # Get form data
@@ -549,16 +552,30 @@ def shipment_create(request):
         messages.success(request, f'Shipment {shipment.shipment_number} created successfully!')
         return redirect('shipments:shipment_detail', pk=shipment.pk)
     
-    # Get companies for dropdowns
-    customers = Company.objects.filter(company_type='customer', is_active=True)
-    carriers = Company.objects.filter(company_type='carrier', is_active=True)
-    all_companies = Company.objects.filter(is_active=True)
+    # Match Order create dropdown sources exactly so the supplier list is identical.
+    all_companies = Company.plain_objects.all().order_by('name')
+    suppliers = all_companies
+    customers = all_companies.filter(company_type='customer')
+    carriers = all_companies.filter(company_type='carrier')
+    warehouses = Warehouse.plain_objects.filter(tenant=user_tenant).order_by('name')
+    inventory_items = InventoryItem.plain_objects.all()
+    tags = Tag.plain_objects.filter(tenant=user_tenant).order_by('name')
+    shipping_terms = ShippingTerm.plain_objects.filter(tenant=user_tenant).order_by('name')
+    representatives = CustomUser.objects.filter(tenant=user_tenant, is_active=True).order_by('first_name', 'username')
+    packaging_types = PackagingType.objects.all().order_by('name')
     
     context = {
         'order': order,
+        'suppliers': suppliers,
         'customers': customers,
         'carriers': carriers,
         'all_companies': all_companies,
+        'warehouses': warehouses,
+        'inventory_items': inventory_items,
+        'tags': tags,
+        'shipping_terms': shipping_terms,
+        'representatives': representatives,
+        'packaging_types': packaging_types,
         'shipment_types': Shipment.SHIPMENT_TYPE_CHOICES,
         'default_pieces': int(order.total_pieces) if order.total_pieces else 1,
         'default_weight': order.total_manifest_weight if order.total_manifest_weight else 0,

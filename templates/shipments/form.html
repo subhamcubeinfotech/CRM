@@ -4,6 +4,79 @@
 
 {% block content %}
 <div class="container-fluid">
+    <style>
+        .ui-chip {
+            background: #fff;
+            border: 1px solid #dee2e6;
+            color: #495057;
+        }
+        .btn-check:checked + .ui-chip {
+            background: #0d6efd;
+            border-color: #0d6efd;
+            color: #fff;
+        }
+        .btn-check:focus + .ui-chip,
+        .ui-chip:focus {
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+        }
+        #shipment-pickup-location-select,
+        #shipment-destination-location-select {
+            background-color: #dbe4f0;
+            border-color: #c7d3e3;
+            color: #4b6788;
+        }
+        #shipment-pickup-location-select:focus,
+        #shipment-destination-location-select:focus {
+            background-color: #dbe4f0;
+            border-color: #b8c7da;
+            box-shadow: none;
+        }
+        #shipment-pickup-location-select.has-value,
+        #shipment-destination-location-select.has-value {
+            background-color: #ffffff;
+            border-color: var(--bs-border-color, #dee2e6);
+            color: var(--bs-body-color, #212529);
+        }
+        #shipment-pickup-location-select.has-value:focus,
+        #shipment-destination-location-select.has-value:focus {
+            background-color: #ffffff;
+            border-color: #86b7fe;
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+        }
+        .contact-drawer.offcanvas {
+            width: min(100vw, 520px);
+        }
+        .contact-drawer .offcanvas-header {
+            border-bottom: 1px solid #dee2e6;
+            padding: 1.25rem 1.5rem;
+        }
+        .contact-drawer .offcanvas-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #41536a;
+        }
+        .contact-drawer .drawer-close-btn {
+            width: 38px;
+            height: 38px;
+            border: 1px solid #0d6efd;
+            border-radius: 10px;
+            color: #0d6efd;
+            background: #fff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            line-height: 1;
+        }
+        .contact-drawer .offcanvas-body {
+            padding: 1rem 1.5rem 1.5rem;
+        }
+        .contact-drawer .drawer-submit-wrap {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid #e9ecef;
+            background: #f8f9fb;
+        }
+    </style>
     <!-- Header -->
     <div class="mb-4">
         <nav aria-label="breadcrumb">
@@ -18,11 +91,15 @@
     
     <form method="post" class="needs-validation" novalidate>
         {% csrf_token %}
+        {% if order %}
+        <input type="hidden" name="order_id" value="{{ order.pk }}">
+        {% endif %}
         
         <div class="row">
             <!-- Left Column -->
             <div class="col-lg-8">
                 <!-- Basic Information -->
+                {% if not is_create %}
                 <div class="card mb-4">
                     <div class="card-header bg-white">
                         <h5 class="card-title mb-0"><i class="fas fa-info-circle me-2 text-primary"></i>Basic Information</h5>
@@ -48,6 +125,7 @@
                                 </select>
                             </div>
                         </div>
+                        {% if not is_create %}
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Shipper</label>
@@ -68,6 +146,7 @@
                                 </select>
                             </div>
                         </div>
+                        {% endif %}
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Shipment Type</label>
@@ -84,7 +163,305 @@
                         </div>
                     </div>
                 </div>
+                {% endif %}
                 
+                {% if is_create %}
+                <div class="card mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0"><i class="fas fa-route me-2 text-primary"></i>Pickup & Delivery</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <label class="form-label mb-1">Supplier <span class="text-danger">*</span></label>
+                                    <button class="btn btn-sm btn-outline-primary" type="button">
+                                        <i class="fas fa-plus"></i> Add
+                                    </button>
+                                </div>
+                                <select name="shipper" id="shipment-supplier-select" class="form-select" required>
+                                    <option value="">Select a Company</option>
+                                    {% for supplier in suppliers %}
+                                    <option value="{{ supplier.id }}" data-address="{{ supplier.full_address }}">{{ supplier.name }}</option>
+                                    {% endfor %}
+                                </select>
+                                {% if user.company %}
+                                <div class="form-text">
+                                    <a href="#" id="assign-shipment-supplier-mine" class="text-decoration-none" data-company-id="{{ user.company_id }}" data-address="{{ user.company.full_address }}">Click to assign to your company.</a>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <label class="form-label mb-1">Pickup Location <span class="text-danger">*</span></label>
+                                    <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#locationDrawer">
+                                        <i class="fas fa-plus"></i> Add
+                                    </button>
+                                </div>
+                                <select name="pickup_location_ui" id="shipment-pickup-location-select" class="form-select" required>
+                                    <option value="">Select a Location</option>
+                                    {% if user.company %}
+                                    <option value="temp_addr_{{ user.company.full_address }}" data-company-id="{{ user.company.id }}">
+                                        {{ user.company.full_address }} (Your Address)
+                                    </option>
+                                    {% endif %}
+                                    {% for warehouse in warehouses %}
+                                    <option value="{{ warehouse.id }}" data-company-id="{{ warehouse.company_id }}" data-address="{{ warehouse.address }}" data-city="{{ warehouse.city }}" data-state="{{ warehouse.state }}" data-postal-code="{{ warehouse.postal_code }}" data-country="{{ warehouse.country }}">
+                                        {{ warehouse.display_name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <label class="form-label mb-1">Pickup Contact</label>
+                                    <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#contactDrawer">
+                                        <i class="fas fa-plus"></i> Add
+                                    </button>
+                                </div>
+                                <select name="pickup_contact_ui" class="form-select">
+                                    <option value="">Select a Contact</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Pickup Number</label>
+                                <input type="text" name="pickup_number_ui" class="form-control" placeholder="Insert a Number">
+                            </div>
+                        </div>
+
+                        <div class="row align-items-end">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Pickup Appointment</label>
+                                <div class="d-flex gap-2 flex-wrap">
+                                    <input type="radio" class="btn-check" name="pickup_appointment_ui" id="pickup_fcfs" value="fcfs">
+                                    <label class="btn ui-chip rounded-pill px-3" for="pickup_fcfs">FCFS</label>
+                                    <input type="radio" class="btn-check" name="pickup_appointment_ui" id="pickup_required" value="required">
+                                    <label class="btn ui-chip rounded-pill px-3" for="pickup_required">Required</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Pickup Date</label>
+                                <input type="date" name="pickup_date" id="pickup_date" class="form-control" value="{% if not is_create %}{{ shipment.pickup_date|date:'Y-m-d' }}{% endif %}">
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <label class="form-label mb-1">Destination Location <span class="text-danger">*</span></label>
+                                    <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#locationDrawer">
+                                        <i class="fas fa-plus"></i> Add
+                                    </button>
+                                </div>
+                                <select name="destination_location_ui" id="shipment-destination-location-select" class="form-select" required>
+                                    <option value="">Select a Location</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <label class="form-label mb-1">Delivery Contact</label>
+                                    <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#contactDrawer">
+                                        <i class="fas fa-plus"></i> Add
+                                    </button>
+                                </div>
+                                <select name="delivery_contact_ui" class="form-select">
+                                    <option value="">Select a Contact</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Delivery Number</label>
+                                <input type="text" name="delivery_number_ui" class="form-control" placeholder="Insert a Number">
+                            </div>
+                        </div>
+
+                        <div class="row align-items-end">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Delivery Appointment</label>
+                                <div class="d-flex gap-2 flex-wrap">
+                                    <input type="radio" class="btn-check" name="delivery_appointment_ui" id="delivery_fcfs" value="fcfs">
+                                    <label class="btn ui-chip rounded-pill px-3" for="delivery_fcfs">FCFS</label>
+                                    <input type="radio" class="btn-check" name="delivery_appointment_ui" id="delivery_required" value="required">
+                                    <label class="btn ui-chip rounded-pill px-3" for="delivery_required">Required</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-0">
+                                <label class="form-label">Delivery Date</label>
+                                <input type="date" name="estimated_delivery_date" id="estimated_delivery_date" class="form-control" value="{% if not is_create %}{{ shipment.estimated_delivery_date|date:'Y-m-d' }}{% endif %}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0"><i class="fas fa-tags me-2 text-primary"></i>Commercial</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Tags</label>
+                            <select name="tags_ui" class="form-select" multiple>
+                                {% if tags %}
+                                    {% for tag in tags %}
+                                    <option value="{{ tag.pk }}">{{ tag.name }}</option>
+                                    {% endfor %}
+                                {% else %}
+                                    <option value="" disabled>Select tags</option>
+                                {% endif %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Shipping Terms <span class="text-danger">*</span></label>
+                            <select name="shipping_terms_ui" class="form-select">
+                                <option value="">Select a Shipping Term</option>
+                                {% if shipping_terms %}
+                                    {% for term in shipping_terms %}
+                                    <option value="{{ term.pk }}">{{ term.name }}</option>
+                                    {% endfor %}
+                                {% endif %}
+                            </select>
+                            <div class="form-text text-danger d-none" id="shippingTermsHelp">Shipping Terms is a required field</div>
+                        </div>
+
+                        <div class="mb-0">
+                            <label class="form-label">Representatives <span class="text-danger">*</span></label>
+                            <select name="representative_ui" id="shipment-rep-select" class="form-select" required>
+                                <option value="">Select individual</option>
+                                <option value="{{ user.id }}" selected>{{ user.get_full_name|default:user.username }}</option>
+                            </select>
+                            <div class="form-text">
+                                <a href="#" id="assign-shipment-rep-me" class="text-decoration-none" data-user-id="{{ user.id }}">Click to assign to yourself.</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0"><i class="fas fa-boxes me-2 text-primary"></i>Items</h5>
+                        <button class="btn btn-outline-primary btn-sm" type="button" id="addShipmentItemBtn">
+                            <i class="fas fa-plus me-1"></i> Add Item
+                        </button>
+                    </div>
+                    <div class="card-body" id="shipmentItemsRoot">
+                        <div class="shipment-item border rounded-3 p-3 mb-3" data-index="0">
+                            <div class="row align-items-end g-3">
+                                <div class="col-md-12">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <label class="form-label mb-1">Material <span class="text-danger">*</span></label>
+                                        <div class="d-flex gap-2">
+                                            <button class="btn btn-sm btn-outline-primary" type="button" title="Add Material">
+                                                <i class="fas fa-plus"></i> Add
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger d-none remove-shipment-item-btn" type="button" title="Remove Item">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="input-group">
+                                        <select name="items_ui[0][material]" class="form-select shipment-material-select">
+                                            <option value="">Select a material</option>
+                                            {% for item in inventory_items %}
+                                            {% if item.quantity > 0 %}
+                                            <option value="{{ item.id }}"
+                                                data-max="{{ item.quantity }}"
+                                                data-unit="{{ item.unit_of_measure }}"
+                                                data-name="{{ item.product_name }}"
+                                                data-company-id="{{ item.warehouse.company_id|default:'' }}">
+                                                {{ item.product_name }} - {{ item.display_stock }}
+                                            </option>
+                                            {% endif %}
+                                            {% endfor %}
+                                        </select>
+                                        <button class="btn btn-outline-secondary" type="button" title="Search">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label">Weight / Qty <span class="text-danger">*</span></label>
+                                    <div class="row g-0">
+                                        <div class="col-8">
+                                            <input type="number" name="items_ui[0][weight]" class="form-control rounded-end-0" placeholder="Qty" step="0.01">
+                                        </div>
+                                        <div class="col-4">
+                                            <select name="items_ui[0][weight_unit]" class="form-select rounded-start-0 border-start-0">
+                                                <option value="lbs" selected>lbs</option>
+                                                <option value="kg">kg</option>
+                                                <option value="pcs">pcs</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label">Packaging</label>
+                                    <select name="items_ui[0][packaging]" class="form-select">
+                                        <option value="">Select packaging type</option>
+                                        {% for ptype in packaging_types %}
+                                        <option value="{{ ptype.name }}">{{ ptype.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="form-check mt-2">
+                                        <input class="form-check-input" type="checkbox" value="1" id="palletized_0" name="items_ui[0][palletized]">
+                                        <label class="form-check-label" for="palletized_0">Is the packaging palletized?</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Pieces</label>
+                                    <input type="number" name="items_ui[0][pieces]" class="form-control" placeholder="Insert">
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label">Buy Price <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" name="items_ui[0][buy_price]" class="form-control" placeholder="Type a Buy Price" step="0.0001">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Unit</label>
+                                    <select name="items_ui[0][buy_unit]" class="form-select">
+                                        <option value="per lbs" selected>per lbs</option>
+                                        <option value="per kg">per kg</option>
+                                        <option value="per pcs">per pcs</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label">Sell Price <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" name="items_ui[0][sell_price]" class="form-control" placeholder="Type a Sell Price" step="0.0001">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Unit</label>
+                                    <select name="items_ui[0][sell_unit]" class="form-select">
+                                        <option value="per lbs" selected>per lbs</option>
+                                        <option value="per kg">per kg</option>
+                                        <option value="per pcs">per pcs</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if not is_create %}
                 <!-- Origin -->
                 <div class="card mb-4">
                     <div class="card-header bg-white">
@@ -115,7 +492,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Destination -->
                 <div class="card mb-4">
                     <div class="card-header bg-white">
@@ -146,6 +523,20 @@
                         </div>
                     </div>
                 </div>
+                {% endif %}
+
+                {% if is_create %}
+                <input type="hidden" name="origin_address" id="shipment-origin-address-hidden">
+                <input type="hidden" name="origin_city" id="shipment-origin-city-hidden">
+                <input type="hidden" name="origin_state" id="shipment-origin-state-hidden">
+                <input type="hidden" name="origin_postal_code" id="shipment-origin-postal-code-hidden">
+                <input type="hidden" name="origin_country" id="shipment-origin-country-hidden" value="USA">
+                <input type="hidden" name="destination_address" id="shipment-destination-address-hidden">
+                <input type="hidden" name="destination_city" id="shipment-destination-city-hidden">
+                <input type="hidden" name="destination_state" id="shipment-destination-state-hidden">
+                <input type="hidden" name="destination_postal_code" id="shipment-destination-postal-code-hidden">
+                <input type="hidden" name="destination_country" id="shipment-destination-country-hidden" value="USA">
+                {% endif %}
                 
                 <!-- Cargo Details -->
                 <div class="card mb-4">
@@ -177,6 +568,7 @@
             
             <!-- Right Column -->
             <div class="col-lg-4">
+                {% if not is_create %}
                 <!-- Schedule -->
                 <div class="card mb-4">
                     <div class="card-header bg-white">
@@ -193,6 +585,7 @@
                         </div>
                     </div>
                 </div>
+                {% endif %}
 
                 <!-- Tracking -->
                 <div class="card mb-4">
@@ -293,10 +686,260 @@
         </div>
     </form>
 </div>
+
+<div class="offcanvas offcanvas-end contact-drawer" tabindex="-1" id="contactDrawer" aria-labelledby="contactDrawerLabel">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="contactDrawerLabel">Add Contact</h5>
+        <button type="button" class="drawer-close-btn" data-bs-dismiss="offcanvas" aria-label="Close">&times;</button>
+    </div>
+    <div class="offcanvas-body">
+        <form id="contactDrawerForm">
+            <div class="mb-3">
+                <label class="form-label">Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" placeholder="Full name">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Email <span class="text-danger">*</span></label>
+                <input type="email" class="form-control" placeholder="Insert an email">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Mobile number</label>
+                <input type="text" class="form-control" placeholder="(000) 000-0000">
+            </div>
+            <div class="row">
+                <div class="col-8">
+                    <label class="form-label">Office Number</label>
+                    <input type="text" class="form-control" placeholder="(000) 000-0000">
+                </div>
+                <div class="col-4">
+                    <label class="form-label">Extension</label>
+                    <input type="text" class="form-control" placeholder="00000">
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="drawer-submit-wrap">
+        <button type="button" class="btn btn-primary px-4">Submit</button>
+    </div>
+</div>
+
+<div class="offcanvas offcanvas-end contact-drawer" tabindex="-1" id="locationDrawer" aria-labelledby="locationDrawerLabel">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="locationDrawerLabel">Add New Location</h5>
+        <button type="button" class="drawer-close-btn" data-bs-dismiss="offcanvas" aria-label="Close">&times;</button>
+    </div>
+    <div class="offcanvas-body">
+        <form id="locationDrawerForm">
+            <div class="mb-3">
+                <label class="form-label">Address <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" placeholder="Start typing to search for a business or address">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Location Name</label>
+                <input type="text" class="form-control" placeholder="Name for this location">
+                <div class="form-text">Optional name to help identify this location</div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Phone Number</label>
+                <input type="text" class="form-control" placeholder="(000) 000-0000">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Shipping Requirements</label>
+                <input type="text" class="form-control" placeholder="Insert Scales, Packing list, etc.">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Default Delivery Appointment</label>
+                <div class="d-flex gap-2 flex-wrap">
+                    <input type="radio" class="btn-check" name="location_delivery_appointment" id="location_delivery_fcfs" value="fcfs">
+                    <label class="btn ui-chip rounded-pill px-3" for="location_delivery_fcfs">FCFS</label>
+                    <input type="radio" class="btn-check" name="location_delivery_appointment" id="location_delivery_required" value="required">
+                    <label class="btn ui-chip rounded-pill px-3" for="location_delivery_required">Required</label>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Default Pickup Appointment</label>
+                <div class="d-flex gap-2 flex-wrap">
+                    <input type="radio" class="btn-check" name="location_pickup_appointment" id="location_pickup_fcfs" value="fcfs">
+                    <label class="btn ui-chip rounded-pill px-3" for="location_pickup_fcfs">FCFS</label>
+                    <input type="radio" class="btn-check" name="location_pickup_appointment" id="location_pickup_required" value="required">
+                    <label class="btn ui-chip rounded-pill px-3" for="location_pickup_required">Required</label>
+                </div>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="" id="locationRemitTo">
+                <label class="form-check-label fw-semibold" for="locationRemitTo">Remit To</label>
+            </div>
+            <div class="form-text">
+                Note: a company can only have one remittance location at a time, so adding a new remittance location will unset any previously set one
+            </div>
+        </form>
+    </div>
+    <div class="drawer-submit-wrap">
+        <button type="button" class="btn btn-primary px-4">Submit</button>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
+    function assignMyCompany(selectId, companyId, companyName, companyAddress) {
+        const select = document.getElementById(selectId);
+        if (!select || !companyId) return;
+
+        let option = [...select.options].find(o => o.value == companyId);
+        if (!option) {
+            option = new Option(companyName + ' (Your Company)', companyId);
+            option.dataset.address = companyAddress || '';
+            select.add(option);
+        }
+
+        select.value = companyId;
+        select.dispatchEvent(new Event('change'));
+    }
+
+    function filterShipmentLocations(companySelectId, locationSelectId) {
+        const companySelect = document.getElementById(companySelectId);
+        const locationSelect = document.getElementById(locationSelectId);
+        if (!companySelect || !locationSelect) return;
+
+        const selectedCompanyId = companySelect.value || '';
+        [...locationSelect.options].forEach((option, index) => {
+            if (index === 0) {
+                option.hidden = false;
+                option.style.display = '';
+                return;
+            }
+
+            const optionCompanyId = option.dataset.companyId || '';
+            const shouldShow = !!selectedCompanyId && optionCompanyId === selectedCompanyId;
+            option.hidden = !shouldShow;
+            option.style.display = shouldShow ? '' : 'none';
+        });
+
+        if (locationSelect.value) {
+            const selectedOption = locationSelect.selectedOptions[0];
+            if (selectedOption && selectedOption.hidden) {
+                locationSelect.value = '';
+            }
+        }
+    }
+
+    function ensureCompanyAddressOption(locationSelectId, companySelectId) {
+        const companySelect = document.getElementById(companySelectId);
+        const locationSelect = document.getElementById(locationSelectId);
+        if (!companySelect || !locationSelect) return;
+
+        const selectedOption = companySelect.selectedOptions[0];
+        const address = selectedOption?.dataset.address || '';
+        const companyId = companySelect.value || '';
+        if (!address || !companyId) return;
+
+        const virtualValue = 'temp_addr_' + address;
+        let option = [...locationSelect.options].find(o => o.value === virtualValue);
+        if (!option) {
+            option = new Option(address, virtualValue);
+            option.dataset.companyId = companyId;
+            option.dataset.address = address;
+
+            const parts = address.split(',');
+            option.dataset.city = (parts[1] || '').trim();
+            const statePostal = (parts[2] || '').trim().split(/\s+/);
+            option.dataset.state = statePostal[0] || '';
+            option.dataset.postalCode = statePostal.slice(1).join(' ');
+            option.dataset.country = (parts[3] || 'USA').trim();
+            locationSelect.add(option);
+        }
+    }
+
+    function syncShipmentAddressFields(locationSelectId, fieldPrefix) {
+        const locationSelect = document.getElementById(locationSelectId);
+        if (!locationSelect) return;
+
+        const selectedOption = locationSelect.selectedOptions[0];
+        const addressInput = document.getElementById(`shipment-${fieldPrefix}-address-hidden`);
+        const cityInput = document.getElementById(`shipment-${fieldPrefix}-city-hidden`);
+        const stateInput = document.getElementById(`shipment-${fieldPrefix}-state-hidden`);
+        const postalCodeInput = document.getElementById(`shipment-${fieldPrefix}-postal-code-hidden`);
+        const countryInput = document.getElementById(`shipment-${fieldPrefix}-country-hidden`);
+
+        if (!selectedOption || !selectedOption.value) {
+            if (addressInput) addressInput.value = '';
+            if (cityInput) cityInput.value = '';
+            if (stateInput) stateInput.value = '';
+            if (postalCodeInput) postalCodeInput.value = '';
+            if (countryInput) countryInput.value = 'USA';
+            return;
+        }
+
+        if (addressInput) addressInput.value = selectedOption.dataset.address || selectedOption.text || '';
+        if (cityInput) cityInput.value = selectedOption.dataset.city || '';
+        if (stateInput) stateInput.value = selectedOption.dataset.state || '';
+        if (postalCodeInput) postalCodeInput.value = selectedOption.dataset.postalCode || '';
+        if (countryInput) countryInput.value = selectedOption.dataset.country || 'USA';
+    }
+
+    function syncShipmentLocationSelectState(selectId) {
+        const select = document.getElementById(selectId);
+        if (!select) return;
+        select.classList.toggle('has-value', !!select.value);
+    }
+
+    function filterShipmentMaterialOptions() {
+        const supplierSelect = document.getElementById('shipment-supplier-select');
+        const selectedSupplierId = supplierSelect?.value || '';
+        const materialSelects = document.querySelectorAll('.shipment-material-select');
+
+        materialSelects.forEach((materialSelect) => {
+            let hasVisibleOption = false;
+            let noMaterialOption = [...materialSelect.options].find((option) => option.dataset.placeholder === 'no-material');
+            const placeholderOption = materialSelect.options[0];
+
+            [...materialSelect.options].forEach((option, index) => {
+                if (index === 0) {
+                    option.text = 'Select a material';
+                    option.hidden = false;
+                    option.style.display = '';
+                    return;
+                }
+
+                if (option.dataset.placeholder === 'no-material') {
+                    return;
+                }
+
+                const optionCompanyId = option.dataset.companyId || '';
+                const shouldShow = !selectedSupplierId || optionCompanyId === selectedSupplierId;
+                option.hidden = !shouldShow;
+                option.style.display = shouldShow ? '' : 'none';
+                if (shouldShow) {
+                    hasVisibleOption = true;
+                }
+            });
+
+            if (materialSelect.value) {
+                const selectedOption = materialSelect.selectedOptions[0];
+                if (selectedOption && selectedOption.hidden) {
+                    materialSelect.value = '';
+                }
+            }
+
+            if (selectedSupplierId && !hasVisibleOption) {
+                if (!noMaterialOption) {
+                    noMaterialOption = new Option('No materials found', '');
+                    noMaterialOption.dataset.placeholder = 'no-material';
+                    materialSelect.add(noMaterialOption);
+                }
+                noMaterialOption.hidden = false;
+                noMaterialOption.style.display = '';
+                placeholderOption.text = 'Select a material';
+                materialSelect.value = '';
+            } else if (noMaterialOption) {
+                noMaterialOption.hidden = true;
+                noMaterialOption.style.display = 'none';
+                placeholderOption.text = 'Select a material';
+            }
+        });
+    }
+
     // Real-time profit calculation
     function calculateProfit() {
         const cost = parseFloat(document.getElementById('costInput').value) || 0;
@@ -367,5 +1010,120 @@
             deliveryInput.min = pickupInput.value;
         }
     }
+
+    const shipmentSupplierSelect = document.getElementById('shipment-supplier-select');
+    const shipmentPickupSelect = document.getElementById('shipment-pickup-location-select');
+    const shipmentDestinationSelect = document.getElementById('shipment-destination-location-select');
+
+    shipmentSupplierSelect?.addEventListener('change', function() {
+        ensureCompanyAddressOption('shipment-pickup-location-select', 'shipment-supplier-select');
+        filterShipmentLocations('shipment-supplier-select', 'shipment-pickup-location-select');
+        filterShipmentMaterialOptions();
+
+        const selectedOption = this.selectedOptions[0];
+        const addressValue = selectedOption?.dataset.address ? 'temp_addr_' + selectedOption.dataset.address : '';
+        if (addressValue) {
+            shipmentPickupSelect.value = addressValue;
+        }
+
+        syncShipmentAddressFields('shipment-pickup-location-select', 'origin');
+    });
+
+    shipmentPickupSelect?.addEventListener('change', function() {
+        syncShipmentLocationSelectState('shipment-pickup-location-select');
+        syncShipmentAddressFields('shipment-pickup-location-select', 'origin');
+    });
+
+    shipmentDestinationSelect?.addEventListener('change', function() {
+        syncShipmentLocationSelectState('shipment-destination-location-select');
+        syncShipmentAddressFields('shipment-destination-location-select', 'destination');
+    });
+
+    document.getElementById('assign-shipment-supplier-mine')?.addEventListener('click', function(event) {
+        event.preventDefault();
+        assignMyCompany('shipment-supplier-select', this.dataset.companyId, "{{ user.company.name|default:'My Company' }}", this.dataset.address);
+    });
+
+    document.getElementById('assign-shipment-rep-me')?.addEventListener('click', function(event) {
+        event.preventDefault();
+        const repSelect = document.getElementById('shipment-rep-select');
+        if (repSelect) {
+            repSelect.value = this.dataset.userId;
+        }
+    });
+
+    filterShipmentLocations('shipment-supplier-select', 'shipment-pickup-location-select');
+    filterShipmentMaterialOptions();
+    if (shipmentDestinationSelect) {
+        shipmentDestinationSelect.value = '';
+    }
+    syncShipmentLocationSelectState('shipment-pickup-location-select');
+    syncShipmentLocationSelectState('shipment-destination-location-select');
+    syncShipmentAddressFields('shipment-pickup-location-select', 'origin');
+    syncShipmentAddressFields('shipment-destination-location-select', 'destination');
+
+    // Shipment Items (UI-only)
+    (function() {
+        const addBtn = document.getElementById('addShipmentItemBtn');
+        const root = document.getElementById('shipmentItemsRoot');
+        if (!addBtn || !root) return;
+
+        const template = root.querySelector('.shipment-item');
+        if (!template) return;
+
+        const updateNames = function(container, newIndex) {
+            container.setAttribute('data-index', String(newIndex));
+            container.querySelectorAll('[name]').forEach(function(el) {
+                const name = el.getAttribute('name') || '';
+                const updated = name.replace(/items_ui\\[\\d+\\]/g, 'items_ui[' + newIndex + ']');
+                el.setAttribute('name', updated);
+            });
+            container.querySelectorAll('label[for]').forEach(function(label) {
+                const current = label.getAttribute('for') || '';
+                const updated = current.replace(/_(\\d+)$/, '_' + newIndex);
+                label.setAttribute('for', updated);
+            });
+            container.querySelectorAll('[id]').forEach(function(el) {
+                const current = el.getAttribute('id') || '';
+                const updated = current.replace(/_(\\d+)$/, '_' + newIndex);
+                el.setAttribute('id', updated);
+            });
+        };
+
+        const wireRemove = function(container) {
+            const btn = container.querySelector('.remove-shipment-item-btn');
+            if (!btn) return;
+            btn.classList.remove('d-none');
+            btn.addEventListener('click', function() {
+                container.remove();
+            });
+        };
+
+        addBtn.addEventListener('click', function() {
+            const newIndex = root.querySelectorAll('.shipment-item').length;
+            const clone = template.cloneNode(true);
+
+            clone.querySelectorAll('input, textarea').forEach(function(el) {
+                if (el.type === 'checkbox' || el.type === 'radio') {
+                    el.checked = false;
+                } else {
+                    el.value = '';
+                }
+            });
+            clone.querySelectorAll('select').forEach(function(el) {
+                el.selectedIndex = 0;
+            });
+
+            updateNames(clone, newIndex);
+            wireRemove(clone);
+            root.appendChild(clone);
+            filterShipmentMaterialOptions();
+        });
+
+        // First item is not removable; future ones are.
+        root.querySelectorAll('.shipment-item').forEach(function(container, idx) {
+            if (idx > 0) wireRemove(container);
+        });
+    })();
 </script>
 {% endblock %}
