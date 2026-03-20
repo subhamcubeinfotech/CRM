@@ -106,13 +106,12 @@
             <!-- Left Column -->
             <div class="col-lg-8">
                 <!-- Basic Information -->
-                {% if not is_create %}
                 <div class="card mb-4">
                     <div class="card-header bg-white">
                         <h5 class="card-title mb-0"><i class="fas fa-info-circle me-2 text-primary"></i>Basic Information</h5>
                     </div>
                     <div class="card-body">
-                        <div class="row">
+                        <div class="row d-none">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Customer <span class="text-danger">*</span></label>
                                 <select name="customer" class="form-select" required>
@@ -132,8 +131,7 @@
                                 </select>
                             </div>
                         </div>
-                        {% if not is_create %}
-                        <div class="row">
+                        <div class="row d-none">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Shipper</label>
                                 <select name="shipper" class="form-select">
@@ -153,7 +151,6 @@
                                 </select>
                             </div>
                         </div>
-                        {% endif %}
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Shipment Type</label>
@@ -170,7 +167,6 @@
                         </div>
                     </div>
                 </div>
-                {% endif %}
                 
                 {% if is_create %}
                 <div class="card mb-4">
@@ -243,15 +239,24 @@
                                 <select name="pickup_location_ui" id="shipment-pickup-location-select" class="form-select" required>
                                     <option value="">Select a Location</option>
                                     {% if user.company %}
-                                    <option value="temp_addr_{{ user.company.full_address }}" data-company-id="{{ user.company.id }}">
+                                    <option value="temp_addr_{{ user.company.full_address }}" 
+                                        {% if not is_create and shipment.origin_address == user.company.full_address %}selected{% endif %}
+                                        data-company-id="{{ user.company.id }}">
                                         {{ user.company.full_address }} (Your Address)
                                     </option>
                                     {% endif %}
                                     {% for warehouse in warehouses %}
-                                    <option value="{{ warehouse.id }}" data-company-id="{{ warehouse.company_id }}" data-address="{{ warehouse.address }}" data-city="{{ warehouse.city }}" data-state="{{ warehouse.state }}" data-postal-code="{{ warehouse.postal_code }}" data-country="{{ warehouse.country }}">
+                                    <option value="{{ warehouse.id }}" 
+                                        {% if not is_create and shipment.pickup_location_id == warehouse.id %}selected{% endif %}
+                                        data-company-id="{{ warehouse.company_id }}" data-address="{{ warehouse.address }}" data-city="{{ warehouse.city }}" data-state="{{ warehouse.state }}" data-postal-code="{{ warehouse.postal_code }}" data-country="{{ warehouse.country }}">
                                         {{ warehouse.display_name }}
                                     </option>
                                     {% endfor %}
+                                    {% if not is_create and not shipment.pickup_location and shipment.origin_address and shipment.origin_address != user.company.full_address %}
+                                    <option value="temp_addr_{{ shipment.origin_address }}" selected data-address="{{ shipment.origin_address }}" data-city="{{ shipment.origin_city }}" data-state="{{ shipment.origin_state }}" data-postal-code="{{ shipment.origin_postal_code }}" data-country="{{ shipment.origin_country }}">
+                                        {{ shipment.origin_address }}
+                                    </option>
+                                    {% endif %}
                                 </select>
                             </div>
                         </div>
@@ -266,11 +271,14 @@
                                 </div>
                                 <select name="pickup_contact_ui" id="shipment-pickup-contact-select" class="form-select">
                                     <option value="">Select a Contact</option>
+                                    {% if not is_create and shipment.pickup_contact %}
+                                    <option value="{{ shipment.pickup_contact }}" selected>{{ shipment.pickup_contact }}</option>
+                                    {% endif %}
                                 </select>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Pickup Number <span class="text-danger">*</span></label>
-                                <input type="text" name="pickup_number_ui" class="form-control" placeholder="Insert a Number" required>
+                                <input type="text" name="pickup_number_ui" class="form-control" placeholder="Insert a Number" required value="{% if not is_create %}{{ shipment.pickup_number|default:"" }}{% endif %}">
                             </div>
                         </div>
 
@@ -278,9 +286,9 @@
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Pickup Appointment</label>
                                 <div class="d-flex gap-2 flex-wrap">
-                                    <input type="radio" class="btn-check" name="pickup_appointment_ui" id="pickup_fcfs" value="fcfs">
+                                    <input type="radio" class="btn-check" name="pickup_appointment_ui" id="pickup_fcfs" value="fcfs" {% if is_create or shipment.pickup_appointment_type == "fcfs" %}checked{% endif %}>
                                     <label class="btn ui-chip rounded-pill px-3" for="pickup_fcfs">FCFS</label>
-                                    <input type="radio" class="btn-check" name="pickup_appointment_ui" id="pickup_required" value="required">
+                                    <input type="radio" class="btn-check" name="pickup_appointment_ui" id="pickup_required" value="required" {% if not is_create and shipment.pickup_appointment_type == "required" %}checked{% endif %}>
                                     <label class="btn ui-chip rounded-pill px-3" for="pickup_required">Required</label>
                                 </div>
                             </div>
@@ -302,6 +310,18 @@
                                 </div>
                                 <select name="destination_location_ui" id="shipment-destination-location-select" class="form-select" required>
                                     <option value="">Select a Location</option>
+                                    {% for warehouse in warehouses %}
+                                    <option value="{{ warehouse.id }}"
+                                        {% if not is_create and shipment.destination_location_id == warehouse.id %}selected{% endif %}
+                                        data-address="{{ warehouse.address }}" data-city="{{ warehouse.city }}" data-state="{{ warehouse.state }}" data-postal-code="{{ warehouse.postal_code }}" data-country="{{ warehouse.country }}">
+                                        {{ warehouse.display_name }}
+                                    </option>
+                                    {% endfor %}
+                                    {% if not is_create and not shipment.destination_location and shipment.destination_address %}
+                                    <option value="temp_addr_{{ shipment.destination_address }}" selected data-address="{{ shipment.destination_address }}" data-city="{{ shipment.destination_city }}" data-state="{{ shipment.destination_state }}" data-postal-code="{{ shipment.destination_postal_code }}" data-country="{{ shipment.destination_country }}">
+                                        {{ shipment.destination_address }}
+                                    </option>
+                                    {% endif %}
                                 </select>
                             </div>
                         </div>
@@ -316,11 +336,14 @@
                                 </div>
                                 <select name="delivery_contact_ui" id="shipment-delivery-contact-select" class="form-select" required>
                                     <option value="">Select a Contact</option>
+                                    {% if not is_create and shipment.delivery_contact %}
+                                    <option value="{{ shipment.delivery_contact }}" selected>{{ shipment.delivery_contact }}</option>
+                                    {% endif %}
                                 </select>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Delivery Number <span class="text-danger">*</span></label>
-                                <input type="text" name="delivery_number_ui" class="form-control" placeholder="Insert a Number" required>
+                                <input type="text" name="delivery_number_ui" class="form-control" placeholder="Insert a Number" required value="{% if not is_create %}{{ shipment.delivery_number|default:"" }}{% endif %}">
                             </div>
                         </div>
 
@@ -328,9 +351,9 @@
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Delivery Appointment</label>
                                 <div class="d-flex gap-2 flex-wrap">
-                                    <input type="radio" class="btn-check" name="delivery_appointment_ui" id="delivery_fcfs" value="fcfs">
+                                    <input type="radio" class="btn-check" name="delivery_appointment_ui" id="delivery_fcfs" value="fcfs" {% if is_create or shipment.delivery_appointment_type == "fcfs" %}checked{% endif %}>
                                     <label class="btn ui-chip rounded-pill px-3" for="delivery_fcfs">FCFS</label>
-                                    <input type="radio" class="btn-check" name="delivery_appointment_ui" id="delivery_required" value="required">
+                                    <input type="radio" class="btn-check" name="delivery_appointment_ui" id="delivery_required" value="required" {% if not is_create and shipment.delivery_appointment_type == "required" %}checked{% endif %}>
                                     <label class="btn ui-chip rounded-pill px-3" for="delivery_required">Required</label>
                                 </div>
                             </div>

@@ -129,7 +129,7 @@ def dashboard(request):
     delivered_shipments = base_qs.filter(status='delivered')
     total_delivered = delivered_shipments.count()
     on_time_delivered = delivered_shipments.filter(
-        actual_delivery_date__lte=models.F('estimated_delivery_date')
+        actual_delivery_date__lte=F('estimated_delivery_date')
     ).count()
     on_time_rate = (on_time_delivered / total_delivered * 100) if total_delivered > 0 else 0
     
@@ -492,6 +492,10 @@ def shipment_create(request):
         shipper_id = request.POST.get('shipper') or order.supplier_id  # Default to order supplier
         consignee_id = request.POST.get('consignee')
         
+        # Handle locations
+        pickup_loc_id = request.POST.get('pickup_location_ui')
+        dest_loc_id = request.POST.get('destination_location_ui')
+
         # Create shipment
         shipment = Shipment(
             order=order,
@@ -500,21 +504,30 @@ def shipment_create(request):
             shipper_id=shipper_id or None,
             consignee_id=consignee_id or None,
             shipment_type=request.POST.get('shipment_type', 'road'),
+            tracking_number=request.POST.get('tracking_number', ''),
             status='pending',
             
             # Origin
+            pickup_location_id=pickup_loc_id if pickup_loc_id and not pickup_loc_id.startswith('temp_') else None,
             origin_address=request.POST.get('origin_address', ''),
             origin_city=request.POST.get('origin_city', ''),
             origin_state=request.POST.get('origin_state', ''),
             origin_country=request.POST.get('origin_country', 'USA'),
             origin_postal_code=request.POST.get('origin_postal_code', ''),
+            pickup_contact=request.POST.get('pickup_contact_ui', ''),
+            pickup_number=request.POST.get('pickup_number_ui', ''),
+            pickup_appointment_type=request.POST.get('pickup_appointment_ui', 'fcfs'),
             
             # Destination
+            destination_location_id=dest_loc_id if dest_loc_id and not dest_loc_id.startswith('temp_') else None,
             destination_address=request.POST.get('destination_address', ''),
             destination_city=request.POST.get('destination_city', ''),
             destination_state=request.POST.get('destination_state', ''),
             destination_country=request.POST.get('destination_country', 'USA'),
             destination_postal_code=request.POST.get('destination_postal_code', ''),
+            delivery_contact=request.POST.get('delivery_contact_ui', ''),
+            delivery_number=request.POST.get('delivery_number_ui', ''),
+            delivery_appointment_type=request.POST.get('delivery_appointment_ui', 'fcfs'),
             
             # Schedule
             pickup_date=request.POST.get('pickup_date') or None,
@@ -617,6 +630,20 @@ def shipment_edit(request, pk):
         shipment.shipper_id = request.POST.get('shipper') or None
         shipment.consignee_id = request.POST.get('consignee') or None
         shipment.shipment_type = request.POST.get('shipment_type', 'road')
+        shipment.tracking_number = request.POST.get('tracking_number', '')
+
+        # Handle locations
+        pickup_loc_id = request.POST.get('pickup_location_ui')
+        if pickup_loc_id and not pickup_loc_id.startswith('temp_'):
+            shipment.pickup_location_id = pickup_loc_id
+        else:
+            shipment.pickup_location = None
+            
+        dest_loc_id = request.POST.get('destination_location_ui')
+        if dest_loc_id and not dest_loc_id.startswith('temp_'):
+            shipment.destination_location_id = dest_loc_id
+        else:
+            shipment.destination_location = None
         
         # Origin
         shipment.origin_address = request.POST.get('origin_address', '')
@@ -624,6 +651,9 @@ def shipment_edit(request, pk):
         shipment.origin_state = request.POST.get('origin_state', '')
         shipment.origin_country = request.POST.get('origin_country', 'USA')
         shipment.origin_postal_code = request.POST.get('origin_postal_code', '')
+        shipment.pickup_contact = request.POST.get('pickup_contact_ui', '')
+        shipment.pickup_number = request.POST.get('pickup_number_ui', '')
+        shipment.pickup_appointment_type = request.POST.get('pickup_appointment_ui', 'fcfs')
         
         # Destination
         shipment.destination_address = request.POST.get('destination_address', '')
@@ -631,6 +661,9 @@ def shipment_edit(request, pk):
         shipment.destination_state = request.POST.get('destination_state', '')
         shipment.destination_country = request.POST.get('destination_country', 'USA')
         shipment.destination_postal_code = request.POST.get('destination_postal_code', '')
+        shipment.delivery_contact = request.POST.get('delivery_contact_ui', '')
+        shipment.delivery_number = request.POST.get('delivery_number_ui', '')
+        shipment.delivery_appointment_type = request.POST.get('delivery_appointment_ui', 'fcfs')
         
         # Schedule
         shipment.pickup_date = request.POST.get('pickup_date') or None
@@ -1563,5 +1596,3 @@ def update_status(request, pk):
     return redirect('shipments:shipment_detail', pk=pk)
 
 
-# Import models at the end to avoid circular imports
-from django.db import models
