@@ -464,16 +464,46 @@ def shipment_create(request):
     """Create new shipment - must be linked to an order"""
     from apps.orders.models import Order
 
-    # Enforce order linkage: require order_id in GET or POST
+    def _first_item_payload(post_data):
+        material_value = post_data.get('items_ui[0][material]', '')
+        material_name = material_value
+        if material_value and str(material_value).isdigit():
+            inventory_item = InventoryItem.plain_objects.filter(pk=material_value).first()
+            if inventory_item:
+                material_name = inventory_item.product_name
+        return {
+            'material_name': material_name,
+            'net_weight': post_data.get('items_ui[0][weight]', 0) or 0,
+            'net_weight_unit': post_data.get('items_ui[0][weight_unit]', 'lbs') or 'lbs',
+            'gross_weight': post_data.get('items_ui[0][gross_weight]', 0) or 0,
+            'gross_weight_unit': post_data.get('items_ui[0][gross_unit]', 'lbs') or 'lbs',
+            'tare_weight': post_data.get('items_ui[0][tare_weight]', 0) or 0,
+            'tare_weight_unit': post_data.get('items_ui[0][tare_unit]', 'lbs') or 'lbs',
+            'packaging_type': post_data.get('items_ui[0][packaging]', ''),
+            'is_packaging_palletized': post_data.get('items_ui[0][palletized]') in ('1', 'true', 'True', 'on'),
+            'buy_price': post_data.get('items_ui[0][buy_price]', 0) or 0,
+            'buy_price_unit': post_data.get('items_ui[0][buy_unit]', 'per lbs') or 'per lbs',
+            'sell_price': post_data.get('items_ui[0][sell_price]', 0) or 0,
+            'sell_price_unit': post_data.get('items_ui[0][sell_unit]', 'per lbs') or 'per lbs',
+            'number_of_pieces': post_data.get('items_ui[0][pieces]', 1) or 1,
+        }
+
+    order_qs = Order.objects.select_related('supplier', 'receiver').all().order_by('-created_at')
+    if request.user.role == 'customer' and request.user.company:
+        order_qs = order_qs.filter(Q(receiver=request.user.company) | Q(created_by=request.user))
+    else:
+        order_qs = filter_by_user_company(order_qs, request.user, company_field='receiver')
+
     order_id = request.GET.get('order_id') or request.POST.get('order_id')
     if not order_id:
-        messages.error(request, 'Shipments must be created from within an Order.')
+        messages.error(request, 'Please select an order before creating a shipment.')
         return redirect('orders:order_list')
 
-    order = get_object_or_404(Order, pk=order_id)
+    order = get_object_or_404(order_qs, pk=order_id)
     user_tenant = request.user.tenant
 
     if request.method == 'POST':
+        item_data = _first_item_payload(request.POST)
         # Get form data
         customer_id = request.POST.get('customer') or order.receiver_id  # Default to order receiver
         carrier_id = request.POST.get('carrier')
@@ -509,10 +539,23 @@ def shipment_create(request):
             estimated_delivery_date=request.POST.get('estimated_delivery_date') or None,
             
             # Cargo
-            total_weight=request.POST.get('total_weight', 0) or 0,
+            total_weight=request.POST.get('total_weight', item_data['net_weight']) or item_data['net_weight'],
             total_volume=request.POST.get('total_volume', 0) or 0,
-            number_of_pieces=request.POST.get('number_of_pieces', 1) or 1,
+            number_of_pieces=item_data['number_of_pieces'],
             commodity_description=request.POST.get('commodity_description', ''),
+            material_name=item_data['material_name'],
+            net_weight=item_data['net_weight'],
+            net_weight_unit=item_data['net_weight_unit'],
+            gross_weight=item_data['gross_weight'],
+            gross_weight_unit=item_data['gross_weight_unit'],
+            tare_weight=item_data['tare_weight'],
+            tare_weight_unit=item_data['tare_weight_unit'],
+            packaging_type=item_data['packaging_type'],
+            is_packaging_palletized=item_data['is_packaging_palletized'],
+            buy_price=item_data['buy_price'],
+            buy_price_unit=item_data['buy_price_unit'],
+            sell_price=item_data['sell_price'],
+            sell_price_unit=item_data['sell_price_unit'],
 
             # Tracking
             vehicle_number=request.POST.get('vehicle_number', ''),
@@ -566,6 +609,8 @@ def shipment_create(request):
     
     context = {
         'order': order,
+        'orders': order_qs,
+        'selected_order_id': str(order.pk),
         'suppliers': suppliers,
         'customers': customers,
         'carriers': carriers,
@@ -588,8 +633,33 @@ def shipment_create(request):
 def shipment_edit(request, pk):
     """Edit existing shipment"""
     shipment = get_object_or_404(Shipment, pk=pk)
+
+    def _first_item_payload(post_data):
+        material_value = post_data.get('items_ui[0][material]', '')
+        material_name = material_value
+        if material_value and str(material_value).isdigit():
+            inventory_item = InventoryItem.plain_objects.filter(pk=material_value).first()
+            if inventory_item:
+                material_name = inventory_item.product_name
+        return {
+            'material_name': material_name,
+            'net_weight': post_data.get('items_ui[0][weight]', 0) or 0,
+            'net_weight_unit': post_data.get('items_ui[0][weight_unit]', 'lbs') or 'lbs',
+            'gross_weight': post_data.get('items_ui[0][gross_weight]', 0) or 0,
+            'gross_weight_unit': post_data.get('items_ui[0][gross_unit]', 'lbs') or 'lbs',
+            'tare_weight': post_data.get('items_ui[0][tare_weight]', 0) or 0,
+            'tare_weight_unit': post_data.get('items_ui[0][tare_unit]', 'lbs') or 'lbs',
+            'packaging_type': post_data.get('items_ui[0][packaging]', ''),
+            'is_packaging_palletized': post_data.get('items_ui[0][palletized]') in ('1', 'true', 'True', 'on'),
+            'buy_price': post_data.get('items_ui[0][buy_price]', 0) or 0,
+            'buy_price_unit': post_data.get('items_ui[0][buy_unit]', 'per lbs') or 'per lbs',
+            'sell_price': post_data.get('items_ui[0][sell_price]', 0) or 0,
+            'sell_price_unit': post_data.get('items_ui[0][sell_unit]', 'per lbs') or 'per lbs',
+            'number_of_pieces': post_data.get('items_ui[0][pieces]', 1) or 1,
+        }
     
     if request.method == 'POST':
+        item_data = _first_item_payload(request.POST)
         # Update shipment
         shipment.customer_id = request.POST.get('customer')
         shipment.carrier_id = request.POST.get('carrier') or None
@@ -616,10 +686,23 @@ def shipment_edit(request, pk):
         shipment.estimated_delivery_date = request.POST.get('estimated_delivery_date') or None
         
         # Cargo
-        shipment.total_weight = request.POST.get('total_weight', 0) or 0
+        shipment.total_weight = request.POST.get('total_weight', item_data['net_weight']) or item_data['net_weight']
         shipment.total_volume = request.POST.get('total_volume', 0) or 0
-        shipment.number_of_pieces = request.POST.get('number_of_pieces', 1) or 1
+        shipment.number_of_pieces = item_data['number_of_pieces']
         shipment.commodity_description = request.POST.get('commodity_description', '')
+        shipment.material_name = item_data['material_name']
+        shipment.net_weight = item_data['net_weight']
+        shipment.net_weight_unit = item_data['net_weight_unit']
+        shipment.gross_weight = item_data['gross_weight']
+        shipment.gross_weight_unit = item_data['gross_weight_unit']
+        shipment.tare_weight = item_data['tare_weight']
+        shipment.tare_weight_unit = item_data['tare_weight_unit']
+        shipment.packaging_type = item_data['packaging_type']
+        shipment.is_packaging_palletized = item_data['is_packaging_palletized']
+        shipment.buy_price = item_data['buy_price']
+        shipment.buy_price_unit = item_data['buy_price_unit']
+        shipment.sell_price = item_data['sell_price']
+        shipment.sell_price_unit = item_data['sell_price_unit']
 
         # Tracking
         shipment.vehicle_number = request.POST.get('vehicle_number', '')
