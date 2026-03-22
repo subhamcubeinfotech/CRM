@@ -2,6 +2,44 @@
 
 {% block title %}New Order - FreightPro{% endblock %}
 
+{% block extra_css %}
+<style>
+    #source-location-select,
+    #dest-location-select {
+        background-color: #dbe4f0;
+        border-color: #c7d3e3;
+        color: #4b6788;
+    }
+
+    #source-location-select:focus,
+    #dest-location-select:focus {
+        background-color: #dbe4f0;
+        border-color: #b8c7da;
+        box-shadow: none;
+    }
+
+    #source-location-select.has-value,
+    #dest-location-select.has-value {
+        background-color: #ffffff;
+        border-color: var(--bs-border-color, #dee2e6);
+        color: var(--bs-body-color, #212529);
+    }
+
+    #source-location-select.has-value:focus,
+    #dest-location-select.has-value:focus {
+        background-color: #ffffff;
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    }
+
+    #source-location-select.location-select-locked,
+    #dest-location-select.location-select-locked {
+        cursor: not-allowed;
+    }
+
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
@@ -65,10 +103,6 @@
                     <input type="text" name="so_number" class="form-control" placeholder="Insert a number">
                 </div>
 
-                <div class="mb-4">
-                    <label class="form-label fw-bold small text-uppercase">Expected Pickup Date</label>
-                    <input type="date" name="expected_pickup_date" id="expected_pickup_date" class="form-control">
-                </div>
             </div>
 
             <div class="col-md-6">
@@ -122,10 +156,6 @@
                     <input type="text" name="po_number" class="form-control" placeholder="Insert a number">
                 </div>
 
-                <div class="mb-4">
-                    <label class="form-label fw-bold small text-uppercase">Expected Delivery Date</label>
-                    <input type="date" name="expected_delivery_date" id="expected_delivery_date" class="form-control">
-                </div>
             </div>
         </div>
 
@@ -181,7 +211,8 @@
                                     {% for item in inventory_items %}
                                     {% if item.quantity > 0 %}
                                     <option value="{{ item.id }}" data-max="{{ item.quantity }}"
-                                        data-unit="{{ item.unit_of_measure }}" data-name="{{ item.product_name }}">
+                                        data-unit="{{ item.unit_of_measure }}" data-name="{{ item.product_name }}"
+                                        data-company-id="{{ item.warehouse.company_id|default:'' }}">
                                         {{ item.product_name }} - {{ item.display_stock }}
                                     </option>
                                     {% endif %}
@@ -226,7 +257,8 @@
                                     <select name="buy_price_unit[]"
                                         class="form-select form-select-sm rounded-start-0 border-start-0">
                                         <option>per lbs</option>
-                                        <option>per item</option>
+                                        <option>per kg</option>
+                                        <option>per pcs</option>
                                     </select>
                                 </div>
                             </div>
@@ -245,7 +277,8 @@
                                     <select name="sell_price_unit[]"
                                         class="form-select form-select-sm rounded-start-0 border-start-0">
                                         <option>per lbs</option>
-                                        <option>per item</option>
+                                        <option>per kg</option>
+                                        <option>per pcs</option>
                                     </select>
                                 </div>
                             </div>
@@ -434,6 +467,80 @@
 </div>
 
 <script>
+    function syncLocationSelectState(selectId) {
+        const select = document.getElementById(selectId);
+        if (!select) return;
+        select.classList.toggle('has-value', !!select.value);
+    }
+
+    function filterMaterialOptions() {
+        const supplierSelect = document.getElementById('supplier-select');
+        const selectedSupplierId = supplierSelect?.value || '';
+        const materialSelects = document.querySelectorAll('.material-select');
+
+        materialSelects.forEach((materialSelect) => {
+            let hasVisibleOption = false;
+            let noMaterialOption = [...materialSelect.options].find((option) => option.dataset.placeholder === 'no-material');
+            const placeholderOption = materialSelect.options[0];
+
+            [...materialSelect.options].forEach((option, index) => {
+                if (index === 0) {
+                    option.text = 'Select material';
+                    option.hidden = false;
+                    option.style.display = '';
+                    return;
+                }
+
+                if (option.dataset.placeholder === 'no-material') {
+                    return;
+                }
+
+                const optionCompanyId = option.dataset.companyId || '';
+                const shouldShow = !selectedSupplierId || optionCompanyId === selectedSupplierId;
+                option.hidden = !shouldShow;
+                option.style.display = shouldShow ? '' : 'none';
+                if (shouldShow) {
+                    hasVisibleOption = true;
+                }
+            });
+
+            if (materialSelect.value) {
+                const selectedOption = materialSelect.selectedOptions[0];
+                if (selectedOption && selectedOption.hidden) {
+                    materialSelect.value = '';
+                }
+            }
+
+            if (selectedSupplierId && !hasVisibleOption) {
+                if (!noMaterialOption) {
+                    noMaterialOption = new Option('No materials found', '');
+                    noMaterialOption.dataset.placeholder = 'no-material';
+                    materialSelect.add(noMaterialOption);
+                }
+                noMaterialOption.hidden = false;
+                noMaterialOption.style.display = '';
+                placeholderOption.text = 'Select a material';
+                materialSelect.value = '';
+            } else if (noMaterialOption) {
+                noMaterialOption.hidden = true;
+                noMaterialOption.style.display = 'none';
+                placeholderOption.text = 'Select a material';
+            }
+
+            materialSelect.disabled = false;
+        });
+    }
+
+    function syncLocationLockState(locationSelectId, partySelectId) {
+        const locationSelect = document.getElementById(locationSelectId);
+        const partySelect = document.getElementById(partySelectId);
+        if (!locationSelect || !partySelect) return;
+
+        const isLocked = !partySelect.value;
+        locationSelect.classList.toggle('location-select-locked', isLocked);
+        locationSelect.title = isLocked ? 'Select supplier/receiver first' : '';
+    }
+
     // Quick Assignment Links
     function assignMyCompany(selectId, companyId, companyName, companyAddress) {
         const select = document.getElementById(selectId);
@@ -455,6 +562,7 @@
     document.getElementById('assign-supplier-mine')?.addEventListener('click', function (e) {
         e.preventDefault();
         assignMyCompany('supplier-select', this.dataset.companyId, "{{ user.company.name|default:'My Company' }}", this.dataset.address);
+        filterMaterialOptions();
     });
 
     document.getElementById('assign-receiver-mine')?.addEventListener('click', function (e) {
@@ -492,6 +600,7 @@
         }
         
         locationSelect.value = virtualValue;
+        syncLocationSelectState(selectId);
     }
 
     document.getElementById('assign-source-my-location')?.addEventListener('click', function (e) {
@@ -637,44 +746,44 @@
         input.addEventListener('input', validate);
     }
 
-    // ── Smart Date Logic ─────────────────────────────────────────
-    const pickupInput = document.getElementById('expected_pickup_date');
-    const deliveryInput = document.getElementById('expected_delivery_date');
+    function syncManifestUnits(container, baseUnit) {
+        const unitDisplay = container.querySelector('.unit-display');
+        const buyUnit = container.querySelector('[name="buy_price_unit[]"]');
+        const sellUnit = container.querySelector('[name="sell_price_unit[]"]');
+        if (!unitDisplay || !buyUnit || !sellUnit || !baseUnit) return;
 
-    if (pickupInput && deliveryInput) {
-        // Set min date for pickup to today
-        const today = new Date().toISOString().split('T')[0];
-        pickupInput.min = today;
+        const normalized = String(baseUnit).toLowerCase();
+        const priceUnit = `per ${normalized}`;
 
-        // Prevent interaction if pickup is empty
-        const checkSequence = function(e) {
-            if (!pickupInput.value) {
-                alert("Please select Expected Pickup Date first!");
-                this.blur();
-                e.preventDefault();
-            }
-        };
+        unitDisplay.value = normalized;
+        buyUnit.value = priceUnit;
+        sellUnit.value = priceUnit;
+    }
 
-        deliveryInput.addEventListener('mousedown', checkSequence);
-        deliveryInput.addEventListener('keydown', checkSequence);
+    function setupManifestUnitSync(container) {
+        const unitDisplay = container.querySelector('.unit-display');
+        const buyUnit = container.querySelector('[name="buy_price_unit[]"]');
+        const sellUnit = container.querySelector('[name="sell_price_unit[]"]');
+        if (!unitDisplay || !buyUnit || !sellUnit) return;
 
-        pickupInput.addEventListener('change', function() {
-            deliveryInput.min = this.value;
-            if (deliveryInput.value && deliveryInput.value < this.value) {
-                deliveryInput.value = this.value;
-            }
+        unitDisplay.addEventListener('change', function() {
+            syncManifestUnits(container, this.value);
         });
 
-        deliveryInput.addEventListener('change', function() {
-            if (pickupInput.value && this.value < pickupInput.value) {
-                alert("Delivery Date cannot be earlier than Pickup Date!");
-                this.value = pickupInput.value;
-            }
+        buyUnit.addEventListener('change', function() {
+            syncManifestUnits(container, this.value.replace(/^per\s+/i, ''));
+        });
+
+        sellUnit.addEventListener('change', function() {
+            syncManifestUnits(container, this.value.replace(/^per\s+/i, ''));
         });
     }
 
     // Initialize for existing items
-    document.querySelectorAll('.manifest-item').forEach(item => setupInventoryValidation(item));
+    document.querySelectorAll('.manifest-item').forEach(item => {
+        setupInventoryValidation(item);
+        setupManifestUnitSync(item);
+    });
 
     function filterLocations(partySelectId, locationSelectId) {
         const partySelect = document.getElementById(partySelectId);
@@ -726,14 +835,26 @@
             } else {
                 locationSelect.value = "";
             }
+
+            syncLocationSelectState(locationSelectId);
+            syncLocationLockState(locationSelectId, partySelectId);
         }
 
         partySelect.addEventListener('change', updateFilter);
+        locationSelect.addEventListener('change', function () {
+            syncLocationSelectState(locationSelectId);
+        });
         updateFilter();
     }
 
     filterLocations('supplier-select', 'source-location-select');
     filterLocations('receiver-select', 'dest-location-select');
+    syncLocationSelectState('source-location-select');
+    syncLocationSelectState('dest-location-select');
+    syncLocationLockState('source-location-select', 'supplier-select');
+    syncLocationLockState('dest-location-select', 'receiver-select');
+    filterMaterialOptions();
+    document.getElementById('supplier-select')?.addEventListener('change', filterMaterialOptions);
 
     // Run initial profit calculation
     recalcProfit();
@@ -765,6 +886,9 @@
 
         container.appendChild(newItem);
         setupInventoryValidation(newItem);
+        setupManifestUnitSync(newItem);
+        syncManifestUnits(newItem, 'lbs');
+        filterMaterialOptions();
     });
 
     // Event delegation for removal

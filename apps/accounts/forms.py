@@ -17,6 +17,7 @@ class CompanyForm(forms.ModelForm):
         fields = [
             'name', 'company_type', 'tax_id',
             'phone', 'email', 'website',
+            'description', 'logo',
             'address_line1', 'address_line2', 'city', 'state', 'postal_code', 'country',
             'payment_terms', 'credit_limit', 'is_active'
         ]
@@ -27,6 +28,8 @@ class CompanyForm(forms.ModelForm):
             'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Phone Number'}),
             'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Email Address'}),
             'website': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'Website URL'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Brief description of this company', 'rows': 4}),
+            'logo': forms.ClearableFileInput(attrs={'class': 'form-control'}),
             'address_line1': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Address Line 1'}),
             'address_line2': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Address Line 2'}),
             'city': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'City'}),

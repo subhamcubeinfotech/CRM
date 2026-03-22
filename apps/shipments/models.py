@@ -60,6 +60,24 @@ class Shipment(TenantAwareModel):
     destination_postal_code = models.CharField(max_length=20, blank=True)
     destination_latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     destination_longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+
+    APPOINTMENT_CHOICES = [
+        ('fcfs', 'FCFS'),
+        ('required', 'Required'),
+    ]
+
+    # Pickup details
+    pickup_location = models.ForeignKey('inventory.Warehouse', on_delete=models.SET_NULL, null=True, blank=True, related_name='pickup_shipments')
+    pickup_contact = models.CharField(max_length=255, blank=True)
+    pickup_number = models.CharField(max_length=50, blank=True)
+    pickup_appointment_type = models.CharField(max_length=20, choices=APPOINTMENT_CHOICES, default='fcfs')
+    
+    # Delivery details
+    destination_location = models.ForeignKey('inventory.Warehouse', on_delete=models.SET_NULL, null=True, blank=True, related_name='delivery_shipments')
+    delivery_contact = models.CharField(max_length=255, blank=True)
+    delivery_number = models.CharField(max_length=50, blank=True)
+    delivery_appointment_type = models.CharField(max_length=20, choices=APPOINTMENT_CHOICES, default='fcfs')
+
     
     # Current location (for tracking)
     current_latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
