@@ -19,6 +19,9 @@ from urllib.request import Request, urlopen
 from .models import Shipment, Container, ShipmentMilestone, Document
 from apps.accounts.models import Company, CustomUser
 from apps.invoicing.models import Invoice
+from apps.orders.models import Order, PackagingType
+from apps.inventory.models import Warehouse, InventoryItem
+from apps.orders.models import Tag, ShippingTerm
 from apps.accounts.utils import filter_by_user_company, check_company_access
 import logging
 
@@ -84,10 +87,23 @@ def dashboard(request):
     today = timezone.now().date()
     month_start = today.replace(day=1)
     last_6_months = today - timedelta(days=180)
+    selected_chart_month = request.GET.get('chart_month', today.strftime('%Y-%m'))
+
+    try:
+        chart_month_start = datetime.strptime(f"{selected_chart_month}-01", "%Y-%m-%d").date()
+    except ValueError:
+        chart_month_start = month_start
+        selected_chart_month = chart_month_start.strftime('%Y-%m')
+
+    if chart_month_start.month == 12:
+        chart_month_end = chart_month_start.replace(year=chart_month_start.year + 1, month=1)
+    else:
+        chart_month_end = chart_month_start.replace(month=chart_month_start.month + 1)
     
     # Base queryset filtered by user's company
     base_qs = filter_by_user_company(Shipment.objects.all(), request.user)
     invoice_qs = filter_by_user_company(Invoice.objects.all(), request.user)
+    order_qs = filter_by_user_company(Order.objects.all(), request.user, company_field='receiver')
     
     # Stat cards
     active_shipments = base_qs.filter(
@@ -113,7 +129,7 @@ def dashboard(request):
     delivered_shipments = base_qs.filter(status='delivered')
     total_delivered = delivered_shipments.count()
     on_time_delivered = delivered_shipments.filter(
-        actual_delivery_date__lte=models.F('estimated_delivery_date')
+        actual_delivery_date__lte=F('estimated_delivery_date')
     ).count()
     on_time_rate = (on_time_delivered / total_delivered * 100) if total_delivered > 0 else 0
     
@@ -136,7 +152,10 @@ def dashboard(request):
         revenue_data.append(float(month_revenue))
     
     # Shipment status distribution - dynamic for all choices
-    status_counts = base_qs.values('status').annotate(count=Count('id'))
+    status_counts = base_qs.filter(
+        created_at__date__gte=chart_month_start,
+        created_at__date__lt=chart_month_end,
+    ).values('status').annotate(count=Count('id'))
     status_counts_dict = {item['status']: item['count'] for item in status_counts}
     
     status_data = []
@@ -144,9 +163,34 @@ def dashboard(request):
     for code, label in Shipment.STATUS_CHOICES:
         status_data.append(status_counts_dict.get(code, 0))
         status_labels.append(label)
+
+    # Order status distribution
+    order_status_counts = order_qs.filter(
+        created_at__date__gte=chart_month_start,
+        created_at__date__lt=chart_month_end,
+    ).values('status').annotate(count=Count('id'))
+    order_status_counts_dict = {item['status']: item['count'] for item in order_status_counts}
+
+    order_status_data = []
+    order_status_labels = []
+    for code, label in Order.STATUS_CHOICES:
+        order_status_data.append(order_status_counts_dict.get(code, 0))
+        order_status_labels.append(label)
     
     # Recent shipments
     recent_shipments = base_qs.select_related('customer').order_by('-created_at')[:10]
+
+    chart_month_options = []
+    option_month = today.replace(day=1)
+    for _ in range(12):
+        chart_month_options.append({
+            'value': option_month.strftime('%Y-%m'),
+            'label': option_month.strftime('%B %Y'),
+        })
+        if option_month.month == 1:
+            option_month = option_month.replace(year=option_month.year - 1, month=12)
+        else:
+            option_month = option_month.replace(month=option_month.month - 1)
     
     context = {
         # Stats
@@ -161,6 +205,10 @@ def dashboard(request):
         'revenue_data': json.dumps(revenue_data),
         'status_data': json.dumps(status_data),
         'status_labels': json.dumps(status_labels),
+        'order_status_data': json.dumps(order_status_data),
+        'order_status_labels': json.dumps(order_status_labels),
+        'selected_chart_month': selected_chart_month,
+        'chart_month_options': chart_month_options,
         
         # Recent shipments
         'recent_shipments': recent_shipments,
@@ -416,21 +464,38 @@ def shipment_create(request):
     """Create new shipment - must be linked to an order"""
     from apps.orders.models import Order
 
-    # Enforce order linkage: require order_id in GET or POST
+    def _first_item_payload(post_data):
+        return {
+            'weight': post_data.get('items_ui[0][weight]', 0) or 0,
+            'number_of_pieces': post_data.get('items_ui[0][pieces]', 1) or 1,
+        }
+
+    order_qs = Order.objects.select_related('supplier', 'receiver').all().order_by('-created_at')
+    if request.user.role == 'customer' and request.user.company:
+        order_qs = order_qs.filter(Q(receiver=request.user.company) | Q(created_by=request.user))
+    else:
+        order_qs = filter_by_user_company(order_qs, request.user, company_field='receiver')
+
     order_id = request.GET.get('order_id') or request.POST.get('order_id')
     if not order_id:
-        messages.error(request, 'Shipments must be created from within an Order.')
+        messages.error(request, 'Please select an order before creating a shipment.')
         return redirect('orders:order_list')
 
-    order = get_object_or_404(Order, pk=order_id)
+    order = get_object_or_404(order_qs, pk=order_id)
+    user_tenant = request.user.tenant
 
     if request.method == 'POST':
+        item_data = _first_item_payload(request.POST)
         # Get form data
         customer_id = request.POST.get('customer') or order.receiver_id  # Default to order receiver
         carrier_id = request.POST.get('carrier')
         shipper_id = request.POST.get('shipper') or order.supplier_id  # Default to order supplier
         consignee_id = request.POST.get('consignee')
         
+        # Handle locations
+        pickup_loc_id = request.POST.get('pickup_location_ui')
+        dest_loc_id = request.POST.get('destination_location_ui')
+
         # Create shipment
         shipment = Shipment(
             order=order,
@@ -439,30 +504,39 @@ def shipment_create(request):
             shipper_id=shipper_id or None,
             consignee_id=consignee_id or None,
             shipment_type=request.POST.get('shipment_type', 'road'),
+            tracking_number=request.POST.get('tracking_number', ''),
             status='pending',
             
             # Origin
+            pickup_location_id=pickup_loc_id if pickup_loc_id and not pickup_loc_id.startswith('temp_') else None,
             origin_address=request.POST.get('origin_address', ''),
             origin_city=request.POST.get('origin_city', ''),
             origin_state=request.POST.get('origin_state', ''),
             origin_country=request.POST.get('origin_country', 'USA'),
             origin_postal_code=request.POST.get('origin_postal_code', ''),
+            pickup_contact=request.POST.get('pickup_contact_ui', ''),
+            pickup_number=request.POST.get('pickup_number_ui', ''),
+            pickup_appointment_type=request.POST.get('pickup_appointment_ui', 'fcfs'),
             
             # Destination
+            destination_location_id=dest_loc_id if dest_loc_id and not dest_loc_id.startswith('temp_') else None,
             destination_address=request.POST.get('destination_address', ''),
             destination_city=request.POST.get('destination_city', ''),
             destination_state=request.POST.get('destination_state', ''),
             destination_country=request.POST.get('destination_country', 'USA'),
             destination_postal_code=request.POST.get('destination_postal_code', ''),
+            delivery_contact=request.POST.get('delivery_contact_ui', ''),
+            delivery_number=request.POST.get('delivery_number_ui', ''),
+            delivery_appointment_type=request.POST.get('delivery_appointment_ui', 'fcfs'),
             
             # Schedule
             pickup_date=request.POST.get('pickup_date') or None,
             estimated_delivery_date=request.POST.get('estimated_delivery_date') or None,
             
             # Cargo
-            total_weight=request.POST.get('total_weight', 0) or 0,
+            total_weight=request.POST.get('total_weight', item_data['weight']) or item_data['weight'],
             total_volume=request.POST.get('total_volume', 0) or 0,
-            number_of_pieces=request.POST.get('number_of_pieces', 1) or 1,
+            number_of_pieces=item_data['number_of_pieces'],
             commodity_description=request.POST.get('commodity_description', ''),
 
             # Tracking
@@ -503,16 +577,32 @@ def shipment_create(request):
         messages.success(request, f'Shipment {shipment.shipment_number} created successfully!')
         return redirect('shipments:shipment_detail', pk=shipment.pk)
     
-    # Get companies for dropdowns
-    customers = Company.objects.filter(company_type='customer', is_active=True)
-    carriers = Company.objects.filter(company_type='carrier', is_active=True)
-    all_companies = Company.objects.filter(is_active=True)
+    # Match Order create dropdown sources exactly so the supplier list is identical.
+    all_companies = Company.plain_objects.all().order_by('name')
+    suppliers = all_companies
+    customers = all_companies.filter(company_type='customer')
+    carriers = all_companies.filter(company_type='carrier')
+    warehouses = Warehouse.plain_objects.filter(tenant=user_tenant).order_by('name')
+    inventory_items = InventoryItem.plain_objects.all()
+    tags = Tag.plain_objects.filter(tenant=user_tenant).order_by('name')
+    shipping_terms = ShippingTerm.plain_objects.filter(tenant=user_tenant).order_by('name')
+    representatives = CustomUser.objects.filter(tenant=user_tenant, is_active=True).order_by('first_name', 'username')
+    packaging_types = PackagingType.objects.all().order_by('name')
     
     context = {
         'order': order,
+        'orders': order_qs,
+        'selected_order_id': str(order.pk),
+        'suppliers': suppliers,
         'customers': customers,
         'carriers': carriers,
         'all_companies': all_companies,
+        'warehouses': warehouses,
+        'inventory_items': inventory_items,
+        'tags': tags,
+        'shipping_terms': shipping_terms,
+        'representatives': representatives,
+        'packaging_types': packaging_types,
         'shipment_types': Shipment.SHIPMENT_TYPE_CHOICES,
         'default_pieces': int(order.total_pieces) if order.total_pieces else 1,
         'default_weight': order.total_manifest_weight if order.total_manifest_weight else 0,
@@ -525,14 +615,35 @@ def shipment_create(request):
 def shipment_edit(request, pk):
     """Edit existing shipment"""
     shipment = get_object_or_404(Shipment, pk=pk)
+
+    def _first_item_payload(post_data):
+        return {
+            'weight': post_data.get('items_ui[0][weight]', 0) or 0,
+            'number_of_pieces': post_data.get('items_ui[0][pieces]', 1) or 1,
+        }
     
     if request.method == 'POST':
+        item_data = _first_item_payload(request.POST)
         # Update shipment
         shipment.customer_id = request.POST.get('customer')
         shipment.carrier_id = request.POST.get('carrier') or None
         shipment.shipper_id = request.POST.get('shipper') or None
         shipment.consignee_id = request.POST.get('consignee') or None
         shipment.shipment_type = request.POST.get('shipment_type', 'road')
+        shipment.tracking_number = request.POST.get('tracking_number', '')
+
+        # Handle locations
+        pickup_loc_id = request.POST.get('pickup_location_ui')
+        if pickup_loc_id and not pickup_loc_id.startswith('temp_'):
+            shipment.pickup_location_id = pickup_loc_id
+        else:
+            shipment.pickup_location = None
+            
+        dest_loc_id = request.POST.get('destination_location_ui')
+        if dest_loc_id and not dest_loc_id.startswith('temp_'):
+            shipment.destination_location_id = dest_loc_id
+        else:
+            shipment.destination_location = None
         
         # Origin
         shipment.origin_address = request.POST.get('origin_address', '')
@@ -540,6 +651,9 @@ def shipment_edit(request, pk):
         shipment.origin_state = request.POST.get('origin_state', '')
         shipment.origin_country = request.POST.get('origin_country', 'USA')
         shipment.origin_postal_code = request.POST.get('origin_postal_code', '')
+        shipment.pickup_contact = request.POST.get('pickup_contact_ui', '')
+        shipment.pickup_number = request.POST.get('pickup_number_ui', '')
+        shipment.pickup_appointment_type = request.POST.get('pickup_appointment_ui', 'fcfs')
         
         # Destination
         shipment.destination_address = request.POST.get('destination_address', '')
@@ -547,15 +661,18 @@ def shipment_edit(request, pk):
         shipment.destination_state = request.POST.get('destination_state', '')
         shipment.destination_country = request.POST.get('destination_country', 'USA')
         shipment.destination_postal_code = request.POST.get('destination_postal_code', '')
+        shipment.delivery_contact = request.POST.get('delivery_contact_ui', '')
+        shipment.delivery_number = request.POST.get('delivery_number_ui', '')
+        shipment.delivery_appointment_type = request.POST.get('delivery_appointment_ui', 'fcfs')
         
         # Schedule
         shipment.pickup_date = request.POST.get('pickup_date') or None
         shipment.estimated_delivery_date = request.POST.get('estimated_delivery_date') or None
         
         # Cargo
-        shipment.total_weight = request.POST.get('total_weight', 0) or 0
+        shipment.total_weight = request.POST.get('total_weight', item_data['weight']) or item_data['weight']
         shipment.total_volume = request.POST.get('total_volume', 0) or 0
-        shipment.number_of_pieces = request.POST.get('number_of_pieces', 1) or 1
+        shipment.number_of_pieces = item_data['number_of_pieces']
         shipment.commodity_description = request.POST.get('commodity_description', '')
 
         # Tracking
@@ -1479,5 +1596,3 @@ def update_status(request, pk):
     return redirect('shipments:shipment_detail', pk=pk)
 
 
-# Import models at the end to avoid circular imports
-from django.db import models

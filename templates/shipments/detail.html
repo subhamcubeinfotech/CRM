@@ -317,9 +317,21 @@
             </div>
             <div class="col-md-5">
                 <div class="party-label mb-1">Receiver</div>
-                <div class="party-name">{{ shipment.consignee.name|default:shipment.customer.name }}</div>
-                {% if shipment.consignee %}
+                <div class="party-name">
+                    {% if shipment.consignee %}
+                        {{ shipment.consignee.name }}
+                    {% elif shipment.order and shipment.order.receiver %}
+                        {{ shipment.order.receiver.name }}
+                    {% else %}
+                        {{ shipment.customer.name }}
+                    {% endif %}
+                </div>
+                {% if shipment.destination_address %}
+                <div class="party-detail"><i class="fas fa-map-marker-alt text-primary me-1"></i>{{ shipment.destination_address }}{% if shipment.destination_city or shipment.destination_state or shipment.destination_postal_code or shipment.destination_country %}, {{ shipment.destination_city }}{% if shipment.destination_state %}, {{ shipment.destination_state }}{% endif %}{% if shipment.destination_postal_code %} {{ shipment.destination_postal_code }}{% endif %}{% if shipment.destination_country %}, {{ shipment.destination_country }}{% endif %}{% endif %}</div>
+                {% elif shipment.consignee %}
                 <div class="party-detail"><i class="fas fa-map-marker-alt text-primary me-1"></i>{{ shipment.consignee.full_address }}</div>
+                {% elif shipment.order and shipment.order.receiver %}
+                <div class="party-detail"><i class="fas fa-map-marker-alt text-primary me-1"></i>{{ shipment.order.receiver.full_address }}</div>
                 {% endif %}
                 <div class="party-detail mt-1"><i class="fas fa-handshake me-1 text-muted"></i>FOB Destination</div>
                 {% if shipment.estimated_delivery_date %}<div class="party-detail"><i class="fas fa-calendar me-1 text-muted"></i>{{ shipment.estimated_delivery_date|date:"l, M j" }}</div>{% endif %}

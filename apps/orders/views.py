@@ -278,11 +278,8 @@ def order_create(request):
     
     user_company = request.user.company
     
-    # Show all active companies (multitenancy handled by model manager usually, but being explicit)
-    # Include both tenant-specific and global companies (where tenant is null)
-    company_qs = Company.plain_objects.filter(is_active=True)
-    if request.user.tenant:
-        company_qs = company_qs.filter(Q(tenant=request.user.tenant) | Q(tenant__isnull=True))
+    # Show all companies in supplier/receiver dropdowns
+    company_qs = Company.plain_objects.all()
     
     suppliers = company_qs
     receivers = company_qs

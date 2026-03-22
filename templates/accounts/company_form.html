@@ -12,7 +12,7 @@
 
 <div class="card shadow-sm mb-4">
     <div class="card-body">
-        <form method="post" action="">
+        <form method="post" action="" enctype="multipart/form-data">
             {% csrf_token %}
             
             {% if form.non_field_errors %}
@@ -140,6 +140,33 @@
                     {{ form.country }}
                     {% if form.country.errors %}
                         <div class="text-danger small mt-1">{{ form.country.errors }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <h5 class="border-bottom pb-2 text-primary">Company Profile</h5>
+                </div>
+
+                <div class="col-md-12 mb-3">
+                    <label for="{{ form.description.id_for_label }}" class="form-label">About</label>
+                    {{ form.description }}
+                    {% if form.description.errors %}
+                        <div class="text-danger small mt-1">{{ form.description.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-12 mb-3">
+                    <label for="{{ form.logo.id_for_label }}" class="form-label">Logo</label>
+                    {{ form.logo }}
+                    {% if form.logo.errors %}
+                        <div class="text-danger small mt-1">{{ form.logo.errors }}</div>
+                    {% endif %}
+                    {% if is_edit and company.logo %}
+                        <div class="mt-2">
+                            <img src="{{ company.logo.url }}" alt="{{ company.name }} logo" style="max-height: 72px; border-radius: 8px;">
+                        </div>
                     {% endif %}
                 </div>
             </div>

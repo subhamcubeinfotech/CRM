@@ -288,6 +288,397 @@
                 font-size: 1.5rem;
             }
         }
+
+        .global-floating-action-stack {
+            position: fixed;
+            right: 24px;
+            bottom: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 10px;
+            z-index: 1040;
+        }
+
+        .global-floating-icon-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .global-floating-action-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            box-shadow: 0 10px 24px rgba(37, 99, 235, 0.18);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            position: relative;
+            font-size: 1.15rem;
+        }
+
+        .global-floating-action-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .global-floating-action-btn.help {
+            background: #315efb;
+            color: #fff;
+        }
+
+        .global-floating-action-btn.shipment {
+            background: #3b82f6;
+            color: #fff;
+        }
+
+        .global-floating-tooltip {
+            position: absolute;
+            left: 50%;
+            bottom: calc(100% + 12px);
+            transform: translateX(-50%);
+            background: #364152;
+            color: #fff;
+            border-radius: 8px;
+            padding: 9px 14px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.18s ease, visibility 0.18s ease;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18);
+            min-width: max-content;
+            text-align: center;
+        }
+
+        .global-floating-action-btn:hover .global-floating-tooltip,
+        .global-floating-action-btn:focus .global-floating-tooltip {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .help-drawer {
+            width: 430px !important;
+            top: 170px;
+            right: 46px;
+            bottom: auto;
+            height: 735px !important;
+            max-height: calc(100vh - 195px);
+            border: none;
+            border-radius: 28px;
+            overflow: hidden;
+            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.25);
+        }
+
+        .help-drawer .offcanvas-header {
+            background: linear-gradient(180deg, #3268d6 0%, #4375d1 100%);
+            color: #fff;
+            align-items: flex-start;
+            padding: 28px 24px 22px;
+            display: block;
+        }
+
+        .help-drawer .btn-close {
+            filter: invert(1) grayscale(100%) brightness(200%);
+            opacity: 0.9;
+            position: absolute;
+            top: 22px;
+            right: 22px;
+        }
+
+        .help-drawer-brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 70px;
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+        }
+
+        .help-drawer-greeting {
+            font-size: 1.25rem;
+            font-weight: 700;
+            line-height: 1.35;
+            margin: 0;
+        }
+
+        .help-drawer-body {
+            background: #f7f9fd;
+            padding: 18px 18px 12px;
+        }
+
+        .help-card {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+            padding: 18px 18px;
+            margin-bottom: 14px;
+            border: 1px solid #edf1f7;
+        }
+
+        .help-card h6 {
+            margin: 0 0 6px 0;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .help-card p {
+            margin: 0;
+            color: #6b7280;
+            font-size: 0.95rem;
+        }
+
+        .help-card-link {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            text-decoration: none;
+            color: inherit;
+            gap: 14px;
+        }
+
+        .help-card-link:hover {
+            color: inherit;
+        }
+
+        .help-mini-actions {
+            display: grid;
+            gap: 12px;
+            margin-top: 14px;
+        }
+
+        .help-mini-action {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            text-decoration: none;
+            color: #1f2937;
+            font-size: 0.98rem;
+        }
+
+        .help-mini-action:hover {
+            color: #1d4ed8;
+        }
+
+        .help-chip {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: #eef4ff;
+            color: #2f67d8;
+            font-size: 0.82rem;
+            margin-bottom: 12px;
+        }
+
+        .help-news-date {
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 8px;
+        }
+
+        .help-drawer .offcanvas-bottom-nav {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            border-top: 1px solid #e5e7eb;
+            background: #fff;
+            padding: 10px 8px 12px;
+        }
+
+        .help-drawer .offcanvas-bottom-nav-item {
+            text-align: center;
+            color: #6b7280;
+            font-size: 0.85rem;
+            text-decoration: none;
+        }
+
+        .help-drawer .offcanvas-bottom-nav-item i {
+            display: block;
+            font-size: 1.1rem;
+            margin-bottom: 6px;
+        }
+
+        .help-drawer .offcanvas-bottom-nav-item.active {
+            color: #2563eb;
+            font-weight: 600;
+        }
+
+        .help-ticket-modal .modal-dialog {
+            max-width: 420px;
+        }
+
+        .help-ticket-modal .modal-content {
+            border: none;
+            border-radius: 22px;
+            overflow: hidden;
+            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.2);
+        }
+
+        .help-ticket-modal .modal-header {
+            padding: 18px 20px;
+            border-bottom: 1px solid #edf1f7;
+        }
+
+        .help-ticket-modal .modal-body {
+            padding: 20px;
+        }
+
+        .help-ticket-modal .modal-title {
+            font-weight: 700;
+            font-size: 1.05rem;
+        }
+
+        .help-ticket-note {
+            color: #667085;
+            font-size: 0.95rem;
+            margin-bottom: 16px;
+        }
+
+        .help-ticket-modal label {
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .help-ticket-modal .form-control {
+            border-radius: 12px;
+            padding: 12px 14px;
+        }
+
+        .help-ticket-modal .form-control[readonly] {
+            background: #eef2f7;
+            color: #5f6b7a;
+            border-color: #d7dee8;
+            cursor: not-allowed;
+        }
+
+        .help-ticket-modal .form-control[readonly]:focus {
+            background: #eef2f7;
+            color: #5f6b7a;
+            border-color: #d7dee8;
+            box-shadow: none;
+        }
+
+        .help-ticket-modal .form-text {
+            color: #667085;
+            font-size: 0.92rem;
+        }
+
+        .help-ticket-actions {
+            text-align: center;
+            padding-top: 6px;
+        }
+
+        .help-ticket-submit {
+            min-width: 170px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+        .help-ticket-cancel {
+            display: inline-block;
+            margin-top: 12px;
+            color: #6b7280;
+            text-decoration: none;
+        }
+
+        .freight-booking-modal .modal-dialog {
+            max-width: 520px;
+        }
+
+        .freight-booking-modal .modal-content {
+            border: none;
+            border-radius: 22px;
+            overflow: hidden;
+            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.2);
+        }
+
+        .freight-booking-modal .modal-header {
+            padding: 22px 28px 16px;
+            border-bottom: 1px solid #edf1f7;
+            align-items: center;
+        }
+
+        .freight-booking-modal .modal-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #263244;
+        }
+
+        .freight-booking-modal .btn-close {
+            border: 1px solid #2f67d8;
+            border-radius: 10px;
+            padding: 0.9rem;
+            opacity: 1;
+        }
+
+        .freight-booking-modal .modal-body {
+            padding: 22px 28px 28px;
+        }
+
+        .freight-booking-copy {
+            color: #5f6b7a;
+            font-size: 0.98rem;
+            line-height: 1.55;
+            margin-bottom: 18px;
+        }
+
+        .freight-booking-modal label {
+            font-weight: 700;
+            color: #4b5563;
+            margin-bottom: 8px;
+        }
+
+        .freight-booking-modal .form-control {
+            border-radius: 10px;
+            min-height: 44px;
+            padding: 10px 14px;
+        }
+
+        .freight-search-btn {
+            width: 100%;
+            border-radius: 10px;
+            min-height: 44px;
+            font-weight: 600;
+            font-size: 1.05rem;
+        }
+
+        .freight-booking-card {
+            margin-top: 18px;
+            border: 1px solid #edf1f7;
+            border-radius: 16px;
+            padding: 18px;
+            background: #fff;
+            text-align: center;
+        }
+
+        .freight-booking-card h4 {
+            font-size: 1.1rem;
+            margin: 0 0 6px 0;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .freight-booking-card p {
+            margin: 0;
+            color: #6b7280;
+        }
+
+        @media (max-width: 576px) {
+            .help-drawer {
+                top: 56px;
+                right: 10px;
+                bottom: 10px;
+                height: auto !important;
+                max-height: calc(100vh - 66px);
+                width: calc(100vw - 20px) !important;
+                border-radius: 22px;
+            }
+        }
     </style>
 
     {% block extra_css %}{% endblock %}
@@ -411,6 +802,202 @@
         </div>
     </div>
 
+    <div class="global-floating-action-stack">
+        <div class="global-floating-icon-row">
+            <a href="#" class="global-floating-action-btn help" aria-label="Help" data-bs-toggle="offcanvas" data-bs-target="#globalHelpDrawer">
+                <span class="global-floating-tooltip">Help</span>
+                <i class="fas fa-question"></i>
+            </a>
+            <a href="#" class="global-floating-action-btn shipment" aria-label="Book Freight" data-bs-toggle="modal" data-bs-target="#bookFreightModal">
+                <span class="global-floating-tooltip">Book Freight</span>
+                <i class="fas fa-truck"></i>
+            </a>
+        </div>
+    </div>
+
+    <div class="offcanvas offcanvas-end help-drawer" tabindex="-1" id="globalHelpDrawer" aria-labelledby="globalHelpDrawerLabel">
+        <div class="offcanvas-header">
+            <div>
+                <div class="help-drawer-brand" id="globalHelpDrawerLabel">
+                    <i class="fas fa-shipping-fast"></i>
+                    <span>FreightPro</span>
+                </div>
+                <p class="help-drawer-greeting">Hi Sahil 👋<br>Let's win together!</p>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body help-drawer-body">
+            <div class="help-card">
+                <a href="mailto:subham32032@gmail.com" class="help-card-link">
+                    <div>
+                        <h6>Send us a message</h6>
+                        <p>We'll be back online later today</p>
+                    </div>
+                    <i class="fas fa-paper-plane text-primary"></i>
+                </a>
+            </div>
+
+            <div class="help-card">
+                <h6>Create a ticket</h6>
+                <div class="help-mini-actions">
+                    <a href="#" class="help-mini-action" data-bs-toggle="modal" data-bs-target="#suggestionTicketModal">
+                        <span>Make a suggestion</span>
+                        <i class="far fa-lightbulb text-primary"></i>
+                    </a>
+                    <a href="#" class="help-mini-action" data-bs-toggle="modal" data-bs-target="#bugTicketModal">
+                        <span>Report a bug</span>
+                        <i class="fas fa-bug text-primary"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="help-card">
+                <div class="help-chip">Product update</div>
+                <div class="help-news-date">March 5, 2026</div>
+                <a href="#" class="help-card-link">
+                    <div>
+                        <h6>Support for Colorants and Additives</h6>
+                    </div>
+                    <i class="fas fa-chevron-right text-primary"></i>
+                </a>
+            </div>
+        </div>
+        <div class="offcanvas-bottom-nav">
+            <a href="{% url 'dashboard' %}" class="offcanvas-bottom-nav-item">
+                <i class="fas fa-house"></i>
+                <span>Home</span>
+            </a>
+            <a href="mailto:subham32032@gmail.com" class="offcanvas-bottom-nav-item">
+                <i class="far fa-message"></i>
+                <span>Messages</span>
+            </a>
+            <a href="#" class="offcanvas-bottom-nav-item active">
+                <i class="far fa-circle-question"></i>
+                <span>Help</span>
+            </a>
+            <a href="{% url 'dashboard' %}" class="offcanvas-bottom-nav-item">
+                <i class="far fa-bell"></i>
+                <span>News</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="modal fade help-ticket-modal" id="suggestionTicketModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="btn btn-link text-dark p-0 border-0" data-bs-dismiss="modal" aria-label="Back">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <h5 class="modal-title mx-auto">Make a suggestion</h5>
+                    <button type="button" class="btn-close ms-0" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="help-ticket-note">Asterisks (*) indicate required fields.</div>
+                    <form class="help-ticket-form" data-ticket-type="suggestion">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="suggestionNotifyEmail">Get notified by email<span class="text-danger">*</span></label>
+                            <input type="email" class="form-control" id="suggestionNotifyEmail" name="notify_email" value="subham32032@gmail.com" readonly required>
+                            <div class="form-text">Replies and ticket updates will be sent to this email</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="suggestionTitle">Title<span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="suggestionTitle" name="title" placeholder="Enter text here..." required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="suggestionDescription">Detailed Description<span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="suggestionDescription" name="description" rows="5" placeholder="Enter text here..." required></textarea>
+                        </div>
+                        <div class="help-ticket-actions">
+                            <button type="submit" class="btn btn-primary help-ticket-submit">Create ticket <i class="fas fa-ticket-alt ms-2"></i></button>
+                            <a href="#" class="help-ticket-cancel" data-bs-dismiss="modal">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade help-ticket-modal" id="bugTicketModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="btn btn-link text-dark p-0 border-0" data-bs-dismiss="modal" aria-label="Back">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <h5 class="modal-title mx-auto">Report a bug</h5>
+                    <button type="button" class="btn-close ms-0" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="help-ticket-note">Asterisks (*) indicate required fields.</div>
+                    <form class="help-ticket-form" data-ticket-type="bug">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="bugNotifyEmail">Get notified by email<span class="text-danger">*</span></label>
+                            <input type="email" class="form-control" id="bugNotifyEmail" name="notify_email" value="subham32032@gmail.com" readonly required>
+                            <div class="form-text">Replies and ticket updates will be sent to this email</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="bugTitle">Title<span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="bugTitle" name="title" placeholder="Enter text here..." required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="bugDescription">Description<span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="bugDescription" name="description" rows="4" placeholder="Enter text here..." required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="bugSteps">Steps to Reproduce<span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="bugSteps" name="steps" rows="4" placeholder="Enter text here..." required></textarea>
+                        </div>
+                        <div class="help-ticket-actions">
+                            <button type="submit" class="btn btn-primary help-ticket-submit">Create ticket <i class="fas fa-ticket-alt ms-2"></i></button>
+                            <a href="#" class="help-ticket-cancel" data-bs-dismiss="modal">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade freight-booking-modal" id="bookFreightModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Book Freight</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="mb-4">
+                            <label for="freightPickupAddress">Pickup Address <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="freightPickupAddress" placeholder="Insert Pickup Address">
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="freightDeliveryAddress">Delivery Address <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="freightDeliveryAddress" placeholder="Insert Delivery Address">
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="freightPickupDateTime">Pickup Date and Time <span class="text-danger">*</span></label>
+                            <input type="datetime-local" class="form-control" id="freightPickupDateTime">
+                        </div>
+
+                        <button type="button" class="btn btn-primary freight-search-btn">
+                            <i class="fas fa-search me-2"></i>Search
+                        </button>
+                    </form>
+
+                    <div class="freight-booking-card">
+                        <h4>Don't Wait for Freight</h4>
+                        <p>Complete the details above to start your freight search flow.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
@@ -424,6 +1011,65 @@
                     bsAlert.close();
                 });
             }, 5000);
+
+            function getCsrfToken() {
+                const cookieValue = document.cookie
+                    .split('; ')
+                    .find(row => row.startsWith('csrftoken='))
+                    ?.split('=')[1];
+                return cookieValue || '';
+            }
+
+            document.querySelectorAll('.help-ticket-form').forEach(function(form) {
+                form.addEventListener('submit', async function(event) {
+                    event.preventDefault();
+
+                    if (!form.checkValidity()) {
+                        form.reportValidity();
+                        return;
+                    }
+
+                    const submitButton = form.querySelector('button[type="submit"]');
+                    const originalText = submitButton.innerHTML;
+                    submitButton.disabled = true;
+                    submitButton.innerHTML = 'Sending...';
+
+                    const formData = new FormData(form);
+                    formData.append('ticket_type', form.dataset.ticketType);
+
+                    try {
+                        const response = await fetch("{% url 'accounts:ajax_help_ticket' %}", {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRFToken': getCsrfToken(),
+                                'X-Requested-With': 'XMLHttpRequest',
+                            },
+                            body: formData,
+                        });
+
+                        const data = await response.json();
+
+                        if (!response.ok || !data.success) {
+                            throw new Error(data.message || 'Failed to create ticket.');
+                        }
+
+                        alert('Ticket created successfully. Email sent to subham32032@gmail.com');
+                        const modalElement = form.closest('.modal');
+                        const modalInstance = bootstrap.Modal.getInstance(modalElement);
+                        modalInstance?.hide();
+                        form.reset();
+                        const emailField = form.querySelector('input[name="notify_email"]');
+                        if (emailField) {
+                            emailField.value = "subham32032@gmail.com";
+                        }
+                    } catch (error) {
+                        alert(error.message || 'Failed to create ticket.');
+                    } finally {
+                        submitButton.disabled = false;
+                        submitButton.innerHTML = originalText;
+                    }
+                });
+            });
         });
     </script>
 

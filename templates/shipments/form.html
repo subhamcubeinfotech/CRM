@@ -4,6 +4,89 @@
 
 {% block content %}
 <div class="container-fluid">
+    <style>
+        .ui-chip {
+            background: #fff;
+            border: 1px solid #dee2e6;
+            color: #495057;
+        }
+        .btn-check:checked + .ui-chip {
+            background: #0d6efd;
+            border-color: #0d6efd;
+            color: #fff;
+        }
+        .btn-check:focus + .ui-chip,
+        .ui-chip:focus {
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+        }
+        #shipment-pickup-location-select,
+        #shipment-destination-location-select {
+            background-color: #dbe4f0;
+            border-color: #c7d3e3;
+            color: #4b6788;
+        }
+        #shipment-pickup-location-select:focus,
+        #shipment-destination-location-select:focus {
+            background-color: #dbe4f0;
+            border-color: #b8c7da;
+            box-shadow: none;
+        }
+        #shipment-pickup-location-select.has-value,
+        #shipment-destination-location-select.has-value {
+            background-color: #ffffff;
+            border-color: var(--bs-border-color, #dee2e6);
+            color: var(--bs-body-color, #212529);
+        }
+        #shipment-pickup-location-select.has-value:focus,
+        #shipment-destination-location-select.has-value:focus {
+            background-color: #ffffff;
+            border-color: #86b7fe;
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+        }
+        .locked-field {
+            background-color: #eef3fb !important;
+            border-color: #d5dfef !important;
+            color: #51627a !important;
+            pointer-events: none;
+        }
+        .locked-action {
+            opacity: 0.45;
+            pointer-events: none;
+        }
+        .contact-drawer.offcanvas {
+            width: min(100vw, 520px);
+        }
+        .contact-drawer .offcanvas-header {
+            border-bottom: 1px solid #dee2e6;
+            padding: 1.25rem 1.5rem;
+        }
+        .contact-drawer .offcanvas-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #41536a;
+        }
+        .contact-drawer .drawer-close-btn {
+            width: 38px;
+            height: 38px;
+            border: 1px solid #0d6efd;
+            border-radius: 10px;
+            color: #0d6efd;
+            background: #fff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            line-height: 1;
+        }
+        .contact-drawer .offcanvas-body {
+            padding: 1rem 1.5rem 1.5rem;
+        }
+        .contact-drawer .drawer-submit-wrap {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid #e9ecef;
+            background: #f8f9fb;
+        }
+    </style>
     <!-- Header -->
     <div class="mb-4">
         <nav aria-label="breadcrumb">
@@ -28,7 +111,7 @@
                         <h5 class="card-title mb-0"><i class="fas fa-info-circle me-2 text-primary"></i>Basic Information</h5>
                     </div>
                     <div class="card-body">
-                        <div class="row">
+                        <div class="row d-none">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Customer <span class="text-danger">*</span></label>
                                 <select name="customer" class="form-select" required>
@@ -48,7 +131,7 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="row">
+                        <div class="row d-none">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Shipper</label>
                                 <select name="shipper" class="form-select">
@@ -85,6 +168,362 @@
                     </div>
                 </div>
                 
+                {% if is_create %}
+                <div class="card mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0"><i class="fas fa-route me-2 text-primary"></i>Pickup & Delivery</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label mb-1">Order</label>
+                                <select name="order_id" id="shipment-order-select" class="form-select" required>
+                                    <option value="">Select a Order</option>
+                                    {% for current_order in orders %}
+                                    <option value="{{ current_order.pk }}"
+                                        data-supplier-id="{{ current_order.supplier_id }}"
+                                        data-supplier-address="{{ current_order.supplier.full_address }}"
+                                        data-source-location-id="{{ current_order.source_location_id|default:'' }}"
+                                        data-source-location-label="{% if current_order.source_location %}{{ current_order.source_location.display_name }}{% else %}{{ current_order.supplier.full_address }}{% endif %}"
+                                        data-source-address="{% if current_order.source_location %}{{ current_order.source_location.address }}{% else %}{{ current_order.supplier.address_line1 }}{% endif %}"
+                                        data-source-city="{% if current_order.source_location %}{{ current_order.source_location.city }}{% else %}{{ current_order.supplier.city }}{% endif %}"
+                                        data-source-state="{% if current_order.source_location %}{{ current_order.source_location.state }}{% else %}{{ current_order.supplier.state }}{% endif %}"
+                                        data-source-postal-code="{% if current_order.source_location %}{{ current_order.source_location.postal_code }}{% else %}{{ current_order.supplier.postal_code }}{% endif %}"
+                                        data-source-country="{% if current_order.source_location %}{{ current_order.source_location.country }}{% else %}{{ current_order.supplier.country|default:'USA' }}{% endif %}"
+                                        data-destination-location-id="{{ current_order.destination_location_id|default:'' }}"
+                                        data-destination-location-label="{% if current_order.destination_location %}{{ current_order.destination_location.display_name }}{% else %}{{ current_order.receiver.full_address }}{% endif %}"
+                                        data-destination-address="{% if current_order.destination_location %}{{ current_order.destination_location.address }}{% else %}{{ current_order.receiver.address_line1 }}{% endif %}"
+                                        data-destination-city="{% if current_order.destination_location %}{{ current_order.destination_location.city }}{% else %}{{ current_order.receiver.city }}{% endif %}"
+                                        data-destination-state="{% if current_order.destination_location %}{{ current_order.destination_location.state }}{% else %}{{ current_order.receiver.state }}{% endif %}"
+                                        data-destination-postal-code="{% if current_order.destination_location %}{{ current_order.destination_location.postal_code }}{% else %}{{ current_order.receiver.postal_code }}{% endif %}"
+                                        data-destination-country="{% if current_order.destination_location %}{{ current_order.destination_location.country }}{% else %}{{ current_order.receiver.country|default:'USA' }}{% endif %}"
+                                        {% if selected_order_id == current_order.pk|stringformat:'s' %}selected{% endif %}>
+                                        {{ current_order.order_number }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <label class="form-label mb-1">Supplier <span class="text-danger">*</span></label>
+                                    <button class="btn btn-sm btn-outline-primary" type="button" id="shipment-supplier-add-btn">
+                                        <i class="fas fa-plus"></i> Add
+                                    </button>
+                                </div>
+                                <input type="hidden" name="shipper" id="shipment-supplier-hidden">
+                                <select id="shipment-supplier-select" class="form-select" required>
+                                    <option value="">Select a Company</option>
+                                    {% for supplier in suppliers %}
+                                    <option value="{{ supplier.id }}" data-address="{{ supplier.full_address }}">{{ supplier.name }}</option>
+                                    {% endfor %}
+                                </select>
+                                {% if user.company %}
+                                <div class="form-text">
+                                    <a href="#" id="assign-shipment-supplier-mine" class="text-decoration-none" data-company-id="{{ user.company_id }}" data-address="{{ user.company.full_address }}">Click to assign to your company.</a>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <label class="form-label mb-1">Pickup Location <span class="text-danger">*</span></label>
+                                    <button class="btn btn-sm btn-outline-primary location-drawer-trigger" type="button" id="shipment-pickup-location-add-btn" data-bs-toggle="offcanvas" data-bs-target="#locationDrawer" data-location-select-target="shipment-pickup-location-select">
+                                        <i class="fas fa-plus"></i> Add
+                                    </button>
+                                </div>
+                                <select name="pickup_location_ui" id="shipment-pickup-location-select" class="form-select" required>
+                                    <option value="">Select a Location</option>
+                                    {% if user.company %}
+                                    <option value="temp_addr_{{ user.company.full_address }}" 
+                                        {% if not is_create and shipment.origin_address == user.company.full_address %}selected{% endif %}
+                                        data-company-id="{{ user.company.id }}">
+                                        {{ user.company.full_address }} (Your Address)
+                                    </option>
+                                    {% endif %}
+                                    {% for warehouse in warehouses %}
+                                    <option value="{{ warehouse.id }}" 
+                                        {% if not is_create and shipment.pickup_location_id == warehouse.id %}selected{% endif %}
+                                        data-company-id="{{ warehouse.company_id }}" data-address="{{ warehouse.address }}" data-city="{{ warehouse.city }}" data-state="{{ warehouse.state }}" data-postal-code="{{ warehouse.postal_code }}" data-country="{{ warehouse.country }}">
+                                        {{ warehouse.display_name }}
+                                    </option>
+                                    {% endfor %}
+                                    {% if not is_create and not shipment.pickup_location and shipment.origin_address and shipment.origin_address != user.company.full_address %}
+                                    <option value="temp_addr_{{ shipment.origin_address }}" selected data-address="{{ shipment.origin_address }}" data-city="{{ shipment.origin_city }}" data-state="{{ shipment.origin_state }}" data-postal-code="{{ shipment.origin_postal_code }}" data-country="{{ shipment.origin_country }}">
+                                        {{ shipment.origin_address }}
+                                    </option>
+                                    {% endif %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <label class="form-label mb-1">Pickup Contact</label>
+                                    <button class="btn btn-sm btn-outline-primary contact-drawer-trigger" type="button" data-bs-toggle="offcanvas" data-bs-target="#contactDrawer" data-contact-select-target="shipment-pickup-contact-select">
+                                        <i class="fas fa-plus"></i> Add
+                                    </button>
+                                </div>
+                                <select name="pickup_contact_ui" id="shipment-pickup-contact-select" class="form-select">
+                                    <option value="">Select a Contact</option>
+                                    {% if not is_create and shipment.pickup_contact %}
+                                    <option value="{{ shipment.pickup_contact }}" selected>{{ shipment.pickup_contact }}</option>
+                                    {% endif %}
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Pickup Number <span class="text-danger">*</span></label>
+                                <input type="text" name="pickup_number_ui" class="form-control" placeholder="Insert a Number" required value="{% if not is_create %}{{ shipment.pickup_number|default:"" }}{% endif %}">
+                            </div>
+                        </div>
+
+                        <div class="row align-items-end">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Pickup Appointment</label>
+                                <div class="d-flex gap-2 flex-wrap">
+                                    <input type="radio" class="btn-check" name="pickup_appointment_ui" id="pickup_fcfs" value="fcfs" {% if is_create or shipment.pickup_appointment_type == "fcfs" %}checked{% endif %}>
+                                    <label class="btn ui-chip rounded-pill px-3" for="pickup_fcfs">FCFS</label>
+                                    <input type="radio" class="btn-check" name="pickup_appointment_ui" id="pickup_required" value="required" {% if not is_create and shipment.pickup_appointment_type == "required" %}checked{% endif %}>
+                                    <label class="btn ui-chip rounded-pill px-3" for="pickup_required">Required</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Pickup Date <span class="text-danger">*</span></label>
+                                <input type="date" name="pickup_date" id="pickup_date" class="form-control" value="{% if not is_create %}{{ shipment.pickup_date|date:'Y-m-d' }}{% endif %}" required>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <label class="form-label mb-1">Destination Location <span class="text-danger">*</span></label>
+                                    <button class="btn btn-sm btn-outline-primary location-drawer-trigger" type="button" data-bs-toggle="offcanvas" data-bs-target="#locationDrawer" data-location-select-target="shipment-destination-location-select">
+                                        <i class="fas fa-plus"></i> Add
+                                    </button>
+                                </div>
+                                <select name="destination_location_ui" id="shipment-destination-location-select" class="form-select" required>
+                                    <option value="">Select a Location</option>
+                                    {% for warehouse in warehouses %}
+                                    <option value="{{ warehouse.id }}"
+                                        {% if not is_create and shipment.destination_location_id == warehouse.id %}selected{% endif %}
+                                        data-address="{{ warehouse.address }}" data-city="{{ warehouse.city }}" data-state="{{ warehouse.state }}" data-postal-code="{{ warehouse.postal_code }}" data-country="{{ warehouse.country }}">
+                                        {{ warehouse.display_name }}
+                                    </option>
+                                    {% endfor %}
+                                    {% if not is_create and not shipment.destination_location and shipment.destination_address %}
+                                    <option value="temp_addr_{{ shipment.destination_address }}" selected data-address="{{ shipment.destination_address }}" data-city="{{ shipment.destination_city }}" data-state="{{ shipment.destination_state }}" data-postal-code="{{ shipment.destination_postal_code }}" data-country="{{ shipment.destination_country }}">
+                                        {{ shipment.destination_address }}
+                                    </option>
+                                    {% endif %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <label class="form-label mb-1">Delivery Contact <span class="text-danger">*</span></label>
+                                    <button class="btn btn-sm btn-outline-primary contact-drawer-trigger" type="button" data-bs-toggle="offcanvas" data-bs-target="#contactDrawer" data-contact-select-target="shipment-delivery-contact-select">
+                                        <i class="fas fa-plus"></i> Add
+                                    </button>
+                                </div>
+                                <select name="delivery_contact_ui" id="shipment-delivery-contact-select" class="form-select" required>
+                                    <option value="">Select a Contact</option>
+                                    {% if not is_create and shipment.delivery_contact %}
+                                    <option value="{{ shipment.delivery_contact }}" selected>{{ shipment.delivery_contact }}</option>
+                                    {% endif %}
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Delivery Number <span class="text-danger">*</span></label>
+                                <input type="text" name="delivery_number_ui" class="form-control" placeholder="Insert a Number" required value="{% if not is_create %}{{ shipment.delivery_number|default:"" }}{% endif %}">
+                            </div>
+                        </div>
+
+                        <div class="row align-items-end">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Delivery Appointment</label>
+                                <div class="d-flex gap-2 flex-wrap">
+                                    <input type="radio" class="btn-check" name="delivery_appointment_ui" id="delivery_fcfs" value="fcfs" {% if is_create or shipment.delivery_appointment_type == "fcfs" %}checked{% endif %}>
+                                    <label class="btn ui-chip rounded-pill px-3" for="delivery_fcfs">FCFS</label>
+                                    <input type="radio" class="btn-check" name="delivery_appointment_ui" id="delivery_required" value="required" {% if not is_create and shipment.delivery_appointment_type == "required" %}checked{% endif %}>
+                                    <label class="btn ui-chip rounded-pill px-3" for="delivery_required">Required</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-0">
+                                <label class="form-label">Delivery Date <span class="text-danger">*</span></label>
+                                <input type="date" name="estimated_delivery_date" id="estimated_delivery_date" class="form-control" value="{% if not is_create %}{{ shipment.estimated_delivery_date|date:'Y-m-d' }}{% endif %}" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0"><i class="fas fa-tags me-2 text-primary"></i>Commercial</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Tags</label>
+                            <select name="tags_ui" class="form-select" multiple>
+                                {% if tags %}
+                                    {% for tag in tags %}
+                                    <option value="{{ tag.pk }}">{{ tag.name }}</option>
+                                    {% endfor %}
+                                {% else %}
+                                    <option value="" disabled>Select tags</option>
+                                {% endif %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Shipping Terms <span class="text-danger">*</span></label>
+                            <select name="shipping_terms_ui" class="form-select">
+                                <option value="">Select a Shipping Term</option>
+                                {% if shipping_terms %}
+                                    {% for term in shipping_terms %}
+                                    <option value="{{ term.pk }}">{{ term.name }}</option>
+                                    {% endfor %}
+                                {% endif %}
+                            </select>
+                            <div class="form-text text-danger d-none" id="shippingTermsHelp">Shipping Terms is a required field</div>
+                        </div>
+
+                        <div class="mb-0">
+                            <label class="form-label">Representatives <span class="text-danger">*</span></label>
+                            <select name="representative_ui" id="shipment-rep-select" class="form-select" required>
+                                <option value="">Select individual</option>
+                                <option value="{{ user.id }}" selected>{{ user.get_full_name|default:user.username }}</option>
+                            </select>
+                            <div class="form-text">
+                                <a href="#" id="assign-shipment-rep-me" class="text-decoration-none" data-user-id="{{ user.id }}">Click to assign to yourself.</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0"><i class="fas fa-boxes me-2 text-primary"></i>Items</h5>
+                        <button class="btn btn-outline-primary btn-sm" type="button" id="addShipmentItemBtn">
+                            <i class="fas fa-plus me-1"></i> Add Item
+                        </button>
+                    </div>
+                    <div class="card-body" id="shipmentItemsRoot">
+                        <div class="shipment-item border rounded-3 p-3 mb-3" data-index="0">
+                            <div class="row align-items-end g-3">
+                                <div class="col-md-12">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <label class="form-label mb-1">Material <span class="text-danger">*</span></label>
+                                        <div class="d-flex gap-2">
+                                            <button class="btn btn-sm btn-outline-primary" type="button" title="Add Material">
+                                                <i class="fas fa-plus"></i> Add
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger d-none remove-shipment-item-btn" type="button" title="Remove Item">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="input-group">
+                                        <select name="items_ui[0][material]" class="form-select shipment-material-select">
+                                            <option value="">Select a material</option>
+                                            {% for item in inventory_items %}
+                                            {% if item.quantity > 0 %}
+                                            <option value="{{ item.id }}"
+                                                data-max="{{ item.quantity }}"
+                                                data-unit="{{ item.unit_of_measure }}"
+                                                data-name="{{ item.product_name }}"
+                                                data-company-id="{{ item.warehouse.company_id|default:'' }}">
+                                                {{ item.product_name }} - {{ item.display_stock }}
+                                            </option>
+                                            {% endif %}
+                                            {% endfor %}
+                                        </select>
+                                        <button class="btn btn-outline-secondary" type="button" title="Search">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label">Weight / Qty <span class="text-danger">*</span></label>
+                                    <div class="row g-0">
+                                        <div class="col-8">
+                                            <input type="number" name="items_ui[0][weight]" class="form-control rounded-end-0" placeholder="Qty" step="0.01">
+                                        </div>
+                                        <div class="col-4">
+                                            <select name="items_ui[0][weight_unit]" class="form-select rounded-start-0 border-start-0">
+                                                <option value="lbs" selected>lbs</option>
+                                                <option value="kg">kg</option>
+                                                <option value="pcs">pcs</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label">Packaging</label>
+                                    <select name="items_ui[0][packaging]" class="form-select">
+                                        <option value="">Select packaging type</option>
+                                        {% for ptype in packaging_types %}
+                                        <option value="{{ ptype.name }}">{{ ptype.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="form-check mt-2">
+                                        <input class="form-check-input" type="checkbox" value="1" id="palletized_0" name="items_ui[0][palletized]">
+                                        <label class="form-check-label" for="palletized_0">Is the packaging palletized?</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Pieces</label>
+                                    <input type="number" name="items_ui[0][pieces]" class="form-control" placeholder="Insert">
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label">Buy Price <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" name="items_ui[0][buy_price]" class="form-control" placeholder="Type a Buy Price" step="0.0001">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Unit</label>
+                                    <select name="items_ui[0][buy_unit]" class="form-select">
+                                        <option value="per lbs" selected>per lbs</option>
+                                        <option value="per kg">per kg</option>
+                                        <option value="per pcs">per pcs</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label">Sell Price <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" name="items_ui[0][sell_price]" class="form-control" placeholder="Type a Sell Price" step="0.0001">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Unit</label>
+                                    <select name="items_ui[0][sell_unit]" class="form-select">
+                                        <option value="per lbs" selected>per lbs</option>
+                                        <option value="per kg">per kg</option>
+                                        <option value="per pcs">per pcs</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if not is_create %}
                 <!-- Origin -->
                 <div class="card mb-4">
                     <div class="card-header bg-white">
@@ -115,7 +554,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Destination -->
                 <div class="card mb-4">
                     <div class="card-header bg-white">
@@ -146,6 +585,20 @@
                         </div>
                     </div>
                 </div>
+                {% endif %}
+
+                {% if is_create %}
+                <input type="hidden" name="origin_address" id="shipment-origin-address-hidden">
+                <input type="hidden" name="origin_city" id="shipment-origin-city-hidden">
+                <input type="hidden" name="origin_state" id="shipment-origin-state-hidden">
+                <input type="hidden" name="origin_postal_code" id="shipment-origin-postal-code-hidden">
+                <input type="hidden" name="origin_country" id="shipment-origin-country-hidden" value="USA">
+                <input type="hidden" name="destination_address" id="shipment-destination-address-hidden">
+                <input type="hidden" name="destination_city" id="shipment-destination-city-hidden">
+                <input type="hidden" name="destination_state" id="shipment-destination-state-hidden">
+                <input type="hidden" name="destination_postal_code" id="shipment-destination-postal-code-hidden">
+                <input type="hidden" name="destination_country" id="shipment-destination-country-hidden" value="USA">
+                {% endif %}
                 
                 <!-- Cargo Details -->
                 <div class="card mb-4">
@@ -177,6 +630,7 @@
             
             <!-- Right Column -->
             <div class="col-lg-4">
+                {% if not is_create %}
                 <!-- Schedule -->
                 <div class="card mb-4">
                     <div class="card-header bg-white">
@@ -184,15 +638,16 @@
                     </div>
                     <div class="card-body">
                         <div class="mb-3">
-                            <label class="form-label">Pickup Date</label>
-                            <input type="date" name="pickup_date" class="form-control" value="{% if is_create %}{{ order.expected_pickup_date|date:'Y-m-d' }}{% else %}{{ shipment.pickup_date|date:'Y-m-d' }}{% endif %}">
+                            <label class="form-label">Pickup Date <span class="text-danger">*</span></label>
+                            <input type="date" name="pickup_date" id="pickup_date" class="form-control" value="{% if not is_create %}{{ shipment.pickup_date|date:'Y-m-d' }}{% endif %}" required>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Estimated Delivery Date</label>
-                            <input type="date" name="estimated_delivery_date" class="form-control" value="{% if is_create %}{{ order.expected_delivery_date|date:'Y-m-d' }}{% else %}{{ shipment.estimated_delivery_date|date:'Y-m-d' }}{% endif %}">
+                            <label class="form-label">Estimated Delivery Date <span class="text-danger">*</span></label>
+                            <input type="date" name="estimated_delivery_date" id="estimated_delivery_date" class="form-control" value="{% if not is_create %}{{ shipment.estimated_delivery_date|date:'Y-m-d' }}{% endif %}" required>
                         </div>
                     </div>
                 </div>
+                {% endif %}
 
                 <!-- Tracking -->
                 <div class="card mb-4">
@@ -293,10 +748,260 @@
         </div>
     </form>
 </div>
+
+<div class="offcanvas offcanvas-end contact-drawer" tabindex="-1" id="contactDrawer" aria-labelledby="contactDrawerLabel">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="contactDrawerLabel">Add Contact</h5>
+        <button type="button" class="drawer-close-btn" data-bs-dismiss="offcanvas" aria-label="Close">&times;</button>
+    </div>
+    <div class="offcanvas-body">
+        <form id="contactDrawerForm">
+            <div class="mb-3">
+                <label class="form-label">Name <span class="text-danger">*</span></label>
+                <input type="text" id="contactDrawerName" class="form-control" placeholder="Full name">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Email <span class="text-danger">*</span></label>
+                <input type="email" id="contactDrawerEmail" class="form-control" placeholder="Insert an email">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Mobile number</label>
+                <input type="text" id="contactDrawerMobile" class="form-control" placeholder="(000) 000-0000">
+            </div>
+            <div class="row">
+                <div class="col-8">
+                    <label class="form-label">Office Number</label>
+                    <input type="text" id="contactDrawerOffice" class="form-control" placeholder="(000) 000-0000">
+                </div>
+                <div class="col-4">
+                    <label class="form-label">Extension</label>
+                    <input type="text" id="contactDrawerExtension" class="form-control" placeholder="00000">
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="drawer-submit-wrap">
+        <button type="button" id="contactDrawerSubmit" class="btn btn-primary px-4">Submit</button>
+    </div>
+</div>
+
+<div class="offcanvas offcanvas-end contact-drawer" tabindex="-1" id="locationDrawer" aria-labelledby="locationDrawerLabel">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="locationDrawerLabel">Add New Location</h5>
+        <button type="button" class="drawer-close-btn" data-bs-dismiss="offcanvas" aria-label="Close">&times;</button>
+    </div>
+    <div class="offcanvas-body">
+        <form id="locationDrawerForm">
+            <div class="mb-3">
+                <label class="form-label">Address <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="locationDrawerAddress" placeholder="Start typing to search for a business or address">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Location Name</label>
+                <input type="text" class="form-control" id="locationDrawerName" placeholder="Name for this location">
+                <div class="form-text">Optional name to help identify this location</div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Phone Number</label>
+                <input type="text" class="form-control" id="locationDrawerPhone" placeholder="(000) 000-0000">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Shipping Requirements</label>
+                <input type="text" class="form-control" id="locationDrawerRequirements" placeholder="Insert Scales, Packing list, etc.">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Default Delivery Appointment</label>
+                <div class="d-flex gap-2 flex-wrap">
+                    <input type="radio" class="btn-check" name="location_delivery_appointment" id="location_delivery_fcfs" value="fcfs">
+                    <label class="btn ui-chip rounded-pill px-3" for="location_delivery_fcfs">FCFS</label>
+                    <input type="radio" class="btn-check" name="location_delivery_appointment" id="location_delivery_required" value="required">
+                    <label class="btn ui-chip rounded-pill px-3" for="location_delivery_required">Required</label>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Default Pickup Appointment</label>
+                <div class="d-flex gap-2 flex-wrap">
+                    <input type="radio" class="btn-check" name="location_pickup_appointment" id="location_pickup_fcfs" value="fcfs">
+                    <label class="btn ui-chip rounded-pill px-3" for="location_pickup_fcfs">FCFS</label>
+                    <input type="radio" class="btn-check" name="location_pickup_appointment" id="location_pickup_required" value="required">
+                    <label class="btn ui-chip rounded-pill px-3" for="location_pickup_required">Required</label>
+                </div>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="" id="locationRemitTo">
+                <label class="form-check-label fw-semibold" for="locationRemitTo">Remit To</label>
+            </div>
+            <div class="form-text">
+                Note: a company can only have one remittance location at a time, so adding a new remittance location will unset any previously set one
+            </div>
+        </form>
+    </div>
+    <div class="drawer-submit-wrap">
+        <button type="button" class="btn btn-primary px-4" id="locationDrawerSubmit">Submit</button>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
+    function assignMyCompany(selectId, companyId, companyName, companyAddress) {
+        const select = document.getElementById(selectId);
+        if (!select || !companyId) return;
+
+        let option = [...select.options].find(o => o.value == companyId);
+        if (!option) {
+            option = new Option(companyName + ' (Your Company)', companyId);
+            option.dataset.address = companyAddress || '';
+            select.add(option);
+        }
+
+        select.value = companyId;
+        select.dispatchEvent(new Event('change'));
+    }
+
+    function filterShipmentLocations(companySelectId, locationSelectId) {
+        const companySelect = document.getElementById(companySelectId);
+        const locationSelect = document.getElementById(locationSelectId);
+        if (!companySelect || !locationSelect) return;
+
+        const selectedCompanyId = companySelect.value || '';
+        [...locationSelect.options].forEach((option, index) => {
+            if (index === 0) {
+                option.hidden = false;
+                option.style.display = '';
+                return;
+            }
+
+            const optionCompanyId = option.dataset.companyId || '';
+            const shouldShow = !!selectedCompanyId && optionCompanyId === selectedCompanyId;
+            option.hidden = !shouldShow;
+            option.style.display = shouldShow ? '' : 'none';
+        });
+
+        if (locationSelect.value) {
+            const selectedOption = locationSelect.selectedOptions[0];
+            if (selectedOption && selectedOption.hidden) {
+                locationSelect.value = '';
+            }
+        }
+    }
+
+    function ensureCompanyAddressOption(locationSelectId, companySelectId) {
+        const companySelect = document.getElementById(companySelectId);
+        const locationSelect = document.getElementById(locationSelectId);
+        if (!companySelect || !locationSelect) return;
+
+        const selectedOption = companySelect.selectedOptions[0];
+        const address = selectedOption?.dataset.address || '';
+        const companyId = companySelect.value || '';
+        if (!address || !companyId) return;
+
+        const virtualValue = 'temp_addr_' + address;
+        let option = [...locationSelect.options].find(o => o.value === virtualValue);
+        if (!option) {
+            option = new Option(address, virtualValue);
+            option.dataset.companyId = companyId;
+            option.dataset.address = address;
+
+            const parts = address.split(',');
+            option.dataset.city = (parts[1] || '').trim();
+            const statePostal = (parts[2] || '').trim().split(/\s+/);
+            option.dataset.state = statePostal[0] || '';
+            option.dataset.postalCode = statePostal.slice(1).join(' ');
+            option.dataset.country = (parts[3] || 'USA').trim();
+            locationSelect.add(option);
+        }
+    }
+
+    function syncShipmentAddressFields(locationSelectId, fieldPrefix) {
+        const locationSelect = document.getElementById(locationSelectId);
+        if (!locationSelect) return;
+
+        const selectedOption = locationSelect.selectedOptions[0];
+        const addressInput = document.getElementById(`shipment-${fieldPrefix}-address-hidden`);
+        const cityInput = document.getElementById(`shipment-${fieldPrefix}-city-hidden`);
+        const stateInput = document.getElementById(`shipment-${fieldPrefix}-state-hidden`);
+        const postalCodeInput = document.getElementById(`shipment-${fieldPrefix}-postal-code-hidden`);
+        const countryInput = document.getElementById(`shipment-${fieldPrefix}-country-hidden`);
+
+        if (!selectedOption || !selectedOption.value) {
+            if (addressInput) addressInput.value = '';
+            if (cityInput) cityInput.value = '';
+            if (stateInput) stateInput.value = '';
+            if (postalCodeInput) postalCodeInput.value = '';
+            if (countryInput) countryInput.value = 'USA';
+            return;
+        }
+
+        if (addressInput) addressInput.value = selectedOption.dataset.address || selectedOption.text || '';
+        if (cityInput) cityInput.value = selectedOption.dataset.city || '';
+        if (stateInput) stateInput.value = selectedOption.dataset.state || '';
+        if (postalCodeInput) postalCodeInput.value = selectedOption.dataset.postalCode || '';
+        if (countryInput) countryInput.value = selectedOption.dataset.country || 'USA';
+    }
+
+    function syncShipmentLocationSelectState(selectId) {
+        const select = document.getElementById(selectId);
+        if (!select) return;
+        select.classList.toggle('has-value', !!select.value);
+    }
+
+    function filterShipmentMaterialOptions() {
+        const supplierSelect = document.getElementById('shipment-supplier-select');
+        const selectedSupplierId = supplierSelect?.value || '';
+        const materialSelects = document.querySelectorAll('.shipment-material-select');
+
+        materialSelects.forEach((materialSelect) => {
+            let hasVisibleOption = false;
+            let noMaterialOption = [...materialSelect.options].find((option) => option.dataset.placeholder === 'no-material');
+            const placeholderOption = materialSelect.options[0];
+
+            [...materialSelect.options].forEach((option, index) => {
+                if (index === 0) {
+                    option.text = 'Select a material';
+                    option.hidden = false;
+                    option.style.display = '';
+                    return;
+                }
+
+                if (option.dataset.placeholder === 'no-material') {
+                    return;
+                }
+
+                const optionCompanyId = option.dataset.companyId || '';
+                const shouldShow = !selectedSupplierId || optionCompanyId === selectedSupplierId;
+                option.hidden = !shouldShow;
+                option.style.display = shouldShow ? '' : 'none';
+                if (shouldShow) {
+                    hasVisibleOption = true;
+                }
+            });
+
+            if (materialSelect.value) {
+                const selectedOption = materialSelect.selectedOptions[0];
+                if (selectedOption && selectedOption.hidden) {
+                    materialSelect.value = '';
+                }
+            }
+
+            if (selectedSupplierId && !hasVisibleOption) {
+                if (!noMaterialOption) {
+                    noMaterialOption = new Option('No materials found', '');
+                    noMaterialOption.dataset.placeholder = 'no-material';
+                    materialSelect.add(noMaterialOption);
+                }
+                noMaterialOption.hidden = false;
+                noMaterialOption.style.display = '';
+                placeholderOption.text = 'Select a material';
+                materialSelect.value = '';
+            } else if (noMaterialOption) {
+                noMaterialOption.hidden = true;
+                noMaterialOption.style.display = 'none';
+                placeholderOption.text = 'Select a material';
+            }
+        });
+    }
+
     // Real-time profit calculation
     function calculateProfit() {
         const cost = parseFloat(document.getElementById('costInput').value) || 0;
@@ -327,6 +1032,445 @@
                 }
                 form.classList.add('was-validated');
             }, false);
+        });
+    })();
+
+    // Match order form date validation behavior
+    const pickupInput = document.getElementById('pickup_date');
+    const deliveryInput = document.getElementById('estimated_delivery_date');
+
+    if (pickupInput && deliveryInput) {
+        const today = new Date().toISOString().split('T')[0];
+        pickupInput.min = today;
+
+        const checkSequence = function(event) {
+            if (!pickupInput.value) {
+                alert('Please select Pickup Date first!');
+                this.blur();
+                event.preventDefault();
+            }
+        };
+
+        deliveryInput.addEventListener('mousedown', checkSequence);
+        deliveryInput.addEventListener('keydown', checkSequence);
+
+        pickupInput.addEventListener('change', function() {
+            deliveryInput.min = this.value;
+            if (deliveryInput.value && deliveryInput.value < this.value) {
+                deliveryInput.value = this.value;
+            }
+        });
+
+        deliveryInput.addEventListener('change', function() {
+            if (pickupInput.value && this.value < pickupInput.value) {
+                alert('Estimated Delivery Date cannot be earlier than Pickup Date!');
+                this.value = pickupInput.value;
+            }
+        });
+
+        if (pickupInput.value) {
+            deliveryInput.min = pickupInput.value;
+        }
+    }
+
+    const shipmentOrderSelect = document.getElementById('shipment-order-select');
+    const shipmentSupplierSelect = document.getElementById('shipment-supplier-select');
+    const shipmentSupplierHidden = document.getElementById('shipment-supplier-hidden');
+    const shipmentPickupSelect = document.getElementById('shipment-pickup-location-select');
+    const shipmentDestinationSelect = document.getElementById('shipment-destination-location-select');
+    const contactDrawerElement = document.getElementById('contactDrawer');
+    const contactDrawerSubmit = document.getElementById('contactDrawerSubmit');
+    const locationDrawerElement = document.getElementById('locationDrawer');
+    const locationDrawerSubmit = document.getElementById('locationDrawerSubmit');
+    const assignShipmentSupplierMine = document.getElementById('assign-shipment-supplier-mine');
+    let activeLocationSelectId = '';
+    let activeContactSelectId = '';
+
+    function toggleShipmentFieldLock(select, shouldLock) {
+        if (!select) return;
+        select.disabled = shouldLock;
+        select.classList.toggle('locked-field', shouldLock);
+    }
+
+    function toggleShipmentActionLock(element, shouldLock) {
+        if (!element) return;
+        element.classList.toggle('locked-action', shouldLock);
+        if ('disabled' in element) {
+            element.disabled = shouldLock;
+        }
+        if (shouldLock) {
+            element.setAttribute('aria-disabled', 'true');
+        } else {
+            element.removeAttribute('aria-disabled');
+        }
+    }
+
+    function ensureShipmentOrderLocationOption(locationSelect, optionConfig) {
+        if (!locationSelect || !optionConfig.value) return '';
+
+        let option = [...locationSelect.options].find((existingOption) => existingOption.value === optionConfig.value);
+        if (!option) {
+            option = new Option(optionConfig.label || optionConfig.address || 'Selected Order Location', optionConfig.value);
+            locationSelect.add(option);
+        }
+
+        option.dataset.companyId = optionConfig.companyId || '';
+        option.dataset.address = optionConfig.address || '';
+        option.dataset.city = optionConfig.city || '';
+        option.dataset.state = optionConfig.state || '';
+        option.dataset.postalCode = optionConfig.postalCode || '';
+        option.dataset.country = optionConfig.country || 'USA';
+        option.text = optionConfig.label || optionConfig.address || option.text;
+        option.hidden = false;
+        option.style.display = '';
+        return option.value;
+    }
+
+    function applyOrderDefaultsToShipment() {
+        const selectedOrderOption = shipmentOrderSelect?.selectedOptions?.[0];
+        const hasSelectedOrder = !!selectedOrderOption?.value;
+
+        if (!hasSelectedOrder) {
+            if (shipmentSupplierSelect) {
+                shipmentSupplierSelect.value = '';
+            }
+            if (shipmentSupplierHidden) {
+                shipmentSupplierHidden.value = '';
+            }
+            if (shipmentPickupSelect) {
+                shipmentPickupSelect.value = '';
+            }
+            if (shipmentDestinationSelect) {
+                shipmentDestinationSelect.value = '';
+            }
+
+            toggleShipmentFieldLock(shipmentSupplierSelect, false);
+            toggleShipmentFieldLock(shipmentPickupSelect, false);
+            toggleShipmentFieldLock(shipmentDestinationSelect, false);
+            toggleShipmentActionLock(assignShipmentSupplierMine, false);
+            syncShipmentLocationSelectState('shipment-pickup-location-select');
+            syncShipmentLocationSelectState('shipment-destination-location-select');
+            syncShipmentAddressFields('shipment-pickup-location-select', 'origin');
+            syncShipmentAddressFields('shipment-destination-location-select', 'destination');
+            filterShipmentLocations('shipment-supplier-select', 'shipment-pickup-location-select');
+            filterShipmentMaterialOptions();
+            return;
+        }
+
+        const supplierId = selectedOrderOption.dataset.supplierId || '';
+        const supplierAddress = selectedOrderOption.dataset.supplierAddress || '';
+        const sourceLocationId = selectedOrderOption.dataset.sourceLocationId || '';
+        const sourceLabel = selectedOrderOption.dataset.sourceLocationLabel || '';
+        const sourceAddress = selectedOrderOption.dataset.sourceAddress || supplierAddress;
+        const sourceCity = selectedOrderOption.dataset.sourceCity || '';
+        const sourceState = selectedOrderOption.dataset.sourceState || '';
+        const sourcePostalCode = selectedOrderOption.dataset.sourcePostalCode || '';
+        const sourceCountry = selectedOrderOption.dataset.sourceCountry || 'USA';
+        const destinationLocationId = selectedOrderOption.dataset.destinationLocationId || '';
+        const destinationLabel = selectedOrderOption.dataset.destinationLocationLabel || '';
+        const destinationAddress = selectedOrderOption.dataset.destinationAddress || '';
+        const destinationCity = selectedOrderOption.dataset.destinationCity || '';
+        const destinationState = selectedOrderOption.dataset.destinationState || '';
+        const destinationPostalCode = selectedOrderOption.dataset.destinationPostalCode || '';
+        const destinationCountry = selectedOrderOption.dataset.destinationCountry || 'USA';
+
+        if (shipmentSupplierSelect) {
+            shipmentSupplierSelect.value = supplierId;
+        }
+        if (shipmentSupplierHidden) {
+            shipmentSupplierHidden.value = supplierId;
+        }
+
+        ensureCompanyAddressOption('shipment-pickup-location-select', 'shipment-supplier-select');
+        filterShipmentLocations('shipment-supplier-select', 'shipment-pickup-location-select');
+        filterShipmentMaterialOptions();
+
+        let pickupValue = '';
+        const matchingLocationOption = sourceLocationId
+            ? [...shipmentPickupSelect.options].find((option) => option.value === sourceLocationId)
+            : null;
+
+        if (matchingLocationOption) {
+            matchingLocationOption.hidden = false;
+            matchingLocationOption.style.display = '';
+            pickupValue = matchingLocationOption.value;
+        } else if (sourceAddress) {
+            pickupValue = ensureShipmentOrderLocationOption(shipmentPickupSelect, {
+                value: sourceLocationId || `temp_addr_${sourceAddress}`,
+                label: sourceLabel || sourceAddress,
+                address: sourceAddress,
+                city: sourceCity,
+                state: sourceState,
+                postalCode: sourcePostalCode,
+                country: sourceCountry,
+                companyId: supplierId,
+            });
+        }
+
+        shipmentPickupSelect.value = pickupValue;
+        syncShipmentLocationSelectState('shipment-pickup-location-select');
+        syncShipmentAddressFields('shipment-pickup-location-select', 'origin');
+
+        let destinationValue = '';
+        const matchingDestinationOption = destinationLocationId
+            ? [...shipmentDestinationSelect.options].find((option) => option.value === destinationLocationId)
+            : null;
+
+        if (matchingDestinationOption) {
+            matchingDestinationOption.hidden = false;
+            matchingDestinationOption.style.display = '';
+            destinationValue = matchingDestinationOption.value;
+        } else if (destinationAddress) {
+            destinationValue = ensureShipmentOrderLocationOption(shipmentDestinationSelect, {
+                value: destinationLocationId || `temp_addr_${destinationAddress}`,
+                label: destinationLabel || destinationAddress,
+                address: destinationAddress,
+                city: destinationCity,
+                state: destinationState,
+                postalCode: destinationPostalCode,
+                country: destinationCountry,
+                companyId: '',
+            });
+        }
+
+        shipmentDestinationSelect.value = destinationValue;
+        syncShipmentLocationSelectState('shipment-destination-location-select');
+        syncShipmentAddressFields('shipment-destination-location-select', 'destination');
+
+        toggleShipmentFieldLock(shipmentSupplierSelect, true);
+        toggleShipmentFieldLock(shipmentPickupSelect, true);
+        toggleShipmentFieldLock(shipmentDestinationSelect, true);
+        toggleShipmentActionLock(assignShipmentSupplierMine, true);
+    }
+
+    shipmentSupplierSelect?.addEventListener('change', function() {
+        if (shipmentSupplierHidden) {
+            shipmentSupplierHidden.value = this.value || '';
+        }
+        ensureCompanyAddressOption('shipment-pickup-location-select', 'shipment-supplier-select');
+        filterShipmentLocations('shipment-supplier-select', 'shipment-pickup-location-select');
+        filterShipmentMaterialOptions();
+
+        const selectedOption = this.selectedOptions[0];
+        const addressValue = selectedOption?.dataset.address ? 'temp_addr_' + selectedOption.dataset.address : '';
+        if (addressValue) {
+            shipmentPickupSelect.value = addressValue;
+        }
+
+        syncShipmentAddressFields('shipment-pickup-location-select', 'origin');
+    });
+
+    shipmentOrderSelect?.addEventListener('change', function() {
+        applyOrderDefaultsToShipment();
+    });
+
+    shipmentPickupSelect?.addEventListener('change', function() {
+        syncShipmentLocationSelectState('shipment-pickup-location-select');
+        syncShipmentAddressFields('shipment-pickup-location-select', 'origin');
+    });
+
+    shipmentDestinationSelect?.addEventListener('change', function() {
+        syncShipmentLocationSelectState('shipment-destination-location-select');
+        syncShipmentAddressFields('shipment-destination-location-select', 'destination');
+    });
+
+    document.getElementById('assign-shipment-supplier-mine')?.addEventListener('click', function(event) {
+        event.preventDefault();
+        assignMyCompany('shipment-supplier-select', this.dataset.companyId, "{{ user.company.name|default:'My Company' }}", this.dataset.address);
+    });
+
+    document.getElementById('assign-shipment-rep-me')?.addEventListener('click', function(event) {
+        event.preventDefault();
+        const repSelect = document.getElementById('shipment-rep-select');
+        if (repSelect) {
+            repSelect.value = this.dataset.userId;
+        }
+    });
+
+    document.querySelectorAll('.location-drawer-trigger').forEach(function(button) {
+        button.addEventListener('click', function() {
+            activeLocationSelectId = this.dataset.locationSelectTarget || '';
+        });
+    });
+
+    document.querySelectorAll('.contact-drawer-trigger').forEach(function(button) {
+        button.addEventListener('click', function() {
+            activeContactSelectId = this.dataset.contactSelectTarget || '';
+        });
+    });
+
+    contactDrawerSubmit?.addEventListener('click', function() {
+        const contactSelect = activeContactSelectId ? document.getElementById(activeContactSelectId) : null;
+        const nameInput = document.getElementById('contactDrawerName');
+        const emailInput = document.getElementById('contactDrawerEmail');
+        const mobileInput = document.getElementById('contactDrawerMobile');
+        const officeInput = document.getElementById('contactDrawerOffice');
+        const extensionInput = document.getElementById('contactDrawerExtension');
+        const fullName = nameInput?.value.trim() || '';
+        const email = emailInput?.value.trim() || '';
+        const mobile = mobileInput?.value.trim() || '';
+        const office = officeInput?.value.trim() || '';
+        const extension = extensionInput?.value.trim() || '';
+
+        if (!contactSelect) return;
+        if (!fullName) {
+            nameInput?.focus();
+            return;
+        }
+        if (!email) {
+            emailInput?.focus();
+            return;
+        }
+
+        const optionValue = `temp_contact_${Date.now()}`;
+        const optionLabel = mobile ? `${fullName} (${mobile})` : fullName;
+        const option = new Option(optionLabel, optionValue, true, true);
+        option.dataset.name = fullName;
+        option.dataset.email = email;
+        option.dataset.mobile = mobile;
+        option.dataset.office = office;
+        option.dataset.extension = extension;
+        contactSelect.add(option);
+        contactSelect.value = optionValue;
+
+        if (contactDrawerElement && window.bootstrap?.Offcanvas) {
+            const offcanvas = bootstrap.Offcanvas.getOrCreateInstance(contactDrawerElement);
+            offcanvas.hide();
+        }
+
+        document.getElementById('contactDrawerForm')?.reset();
+    });
+
+    locationDrawerSubmit?.addEventListener('click', function() {
+        const locationSelect = activeLocationSelectId ? document.getElementById(activeLocationSelectId) : null;
+        const addressInput = document.getElementById('locationDrawerAddress');
+        const nameInput = document.getElementById('locationDrawerName');
+        const address = addressInput?.value.trim() || '';
+        const locationName = nameInput?.value.trim() || '';
+
+        if (!locationSelect) return;
+        if (!address) {
+            addressInput?.focus();
+            return;
+        }
+
+        const parts = address.split(',');
+        const city = (parts[1] || '').trim();
+        const statePostal = (parts[2] || '').trim().split(/\s+/);
+        const state = statePostal[0] || '';
+        const postalCode = statePostal.slice(1).join(' ');
+        const country = (parts[3] || 'USA').trim();
+        const optionLabel = locationName || address;
+        const optionValue = 'temp_addr_' + address;
+        const companyId = shipmentSupplierSelect?.value || '';
+
+        let option = [...locationSelect.options].find(o => o.value === optionValue);
+        if (!option) {
+            option = new Option(optionLabel, optionValue);
+            locationSelect.add(option);
+        }
+
+        option.dataset.companyId = companyId;
+        option.dataset.address = address;
+        option.dataset.city = city;
+        option.dataset.state = state;
+        option.dataset.postalCode = postalCode;
+        option.dataset.country = country;
+        option.text = optionLabel;
+
+        option.hidden = false;
+        option.style.display = '';
+        locationSelect.value = optionValue;
+        syncShipmentLocationSelectState(activeLocationSelectId);
+
+        if (activeLocationSelectId === 'shipment-pickup-location-select') {
+            syncShipmentAddressFields(activeLocationSelectId, 'origin');
+        } else if (activeLocationSelectId === 'shipment-destination-location-select') {
+            syncShipmentAddressFields(activeLocationSelectId, 'destination');
+        }
+
+        if (locationDrawerElement && window.bootstrap?.Offcanvas) {
+            const offcanvas = bootstrap.Offcanvas.getOrCreateInstance(locationDrawerElement);
+            offcanvas.hide();
+        }
+
+        document.getElementById('locationDrawerForm')?.reset();
+    });
+
+    applyOrderDefaultsToShipment();
+    if (!shipmentOrderSelect?.value) {
+        filterShipmentLocations('shipment-supplier-select', 'shipment-pickup-location-select');
+        filterShipmentMaterialOptions();
+    }
+    if (shipmentDestinationSelect && !shipmentOrderSelect?.value) {
+        shipmentDestinationSelect.value = '';
+    }
+    syncShipmentLocationSelectState('shipment-pickup-location-select');
+    syncShipmentLocationSelectState('shipment-destination-location-select');
+    syncShipmentAddressFields('shipment-pickup-location-select', 'origin');
+    syncShipmentAddressFields('shipment-destination-location-select', 'destination');
+
+    // Shipment Items (UI-only)
+    (function() {
+        const addBtn = document.getElementById('addShipmentItemBtn');
+        const root = document.getElementById('shipmentItemsRoot');
+        if (!addBtn || !root) return;
+
+        const template = root.querySelector('.shipment-item');
+        if (!template) return;
+
+        const updateNames = function(container, newIndex) {
+            container.setAttribute('data-index', String(newIndex));
+            container.querySelectorAll('[name]').forEach(function(el) {
+                const name = el.getAttribute('name') || '';
+                const updated = name.replace(/items_ui\\[\\d+\\]/g, 'items_ui[' + newIndex + ']');
+                el.setAttribute('name', updated);
+            });
+            container.querySelectorAll('label[for]').forEach(function(label) {
+                const current = label.getAttribute('for') || '';
+                const updated = current.replace(/_(\\d+)$/, '_' + newIndex);
+                label.setAttribute('for', updated);
+            });
+            container.querySelectorAll('[id]').forEach(function(el) {
+                const current = el.getAttribute('id') || '';
+                const updated = current.replace(/_(\\d+)$/, '_' + newIndex);
+                el.setAttribute('id', updated);
+            });
+        };
+
+        const wireRemove = function(container) {
+            const btn = container.querySelector('.remove-shipment-item-btn');
+            if (!btn) return;
+            btn.classList.remove('d-none');
+            btn.addEventListener('click', function() {
+                container.remove();
+            });
+        };
+
+        addBtn.addEventListener('click', function() {
+            const newIndex = root.querySelectorAll('.shipment-item').length;
+            const clone = template.cloneNode(true);
+
+            clone.querySelectorAll('input, textarea').forEach(function(el) {
+                if (el.type === 'checkbox' || el.type === 'radio') {
+                    el.checked = false;
+                } else {
+                    el.value = '';
+                }
+            });
+            clone.querySelectorAll('select').forEach(function(el) {
+                el.selectedIndex = 0;
+            });
+
+            updateNames(clone, newIndex);
+            wireRemove(clone);
+            root.appendChild(clone);
+            filterShipmentMaterialOptions();
+        });
+
+        // First item is not removable; future ones are.
+        root.querySelectorAll('.shipment-item').forEach(function(container, idx) {
+            if (idx > 0) wireRemove(container);
         });
     })();
 </script>
