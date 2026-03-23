@@ -210,7 +210,7 @@
                             <div class="fw-bold text-dark d-block">#{{ order.order_number }}</div>
                             <span class="text-muted small">PO: {{ order.po_number|default:"N/A" }}</span>
                             <div class="mt-1">
-                                <span class="status-badge bg-{{ order.live_status_class }}-subtle text-{{ order.live_status_class }} border border-{{ order.live_status_class }}-subtle me-1" style="font-size: 0.65rem; padding: 0.2rem 0.5rem;">{{ order.live_status }}</span>
+                                <span class="status-badge bg-{{ order.simple_status_class }}-subtle text-{{ order.simple_status_class }} border border-{{ order.simple_status_class }}-subtle me-1" style="font-size: 0.65rem; padding: 0.2rem 0.5rem;">{{ order.simple_status_label }}</span>
                             </div>
                         </td>
                         <td>
@@ -249,7 +249,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="6" class="text-center py-5">
+                        <td colspan="8" class="text-center py-5">
                             <div class="my-3">
                                 <i class="fas fa-box-open fa-3x text-light mb-3"></i>
                                 <h5 class="text-muted">No orders found in your portfolio</h5>
