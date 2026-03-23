@@ -133,10 +133,10 @@
                 </div>
                 <div class="ms-3 status-dropdown dropdown">
                     <button id="orderStatusBtn" 
-                            class="btn dropdown-toggle status-btn-{{ order.live_status_class }}" 
+                            class="btn dropdown-toggle status-btn-{{ order.simple_status_class }}" 
                             type="button" 
                             data-bs-toggle="dropdown">
-                        {{ order.live_status }}
+                        {{ order.simple_status_label }}
                     </button>
                     <div class="dropdown-menu">
                         <form action="{% url 'orders:order_update_status' order.pk %}" method="POST">

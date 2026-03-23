@@ -214,6 +214,20 @@ class Order(TenantAwareModel):
         }
         return mapping.get(code, 'secondary')
 
+    @property
+    def simple_status_label(self):
+        """Returns 'Complete' for delivered/closed, 'Open' otherwise"""
+        if self.status in ['delivered', 'closed']:
+            return 'Complete'
+        return 'Open'
+
+    @property
+    def simple_status_class(self):
+        """Returns success for Complete, primary for Open"""
+        if self.status in ['delivered', 'closed']:
+            return 'success'
+        return 'primary'
+
 class OrderEvent(models.Model):
     EVENT_TYPES = (
         ('order_created', 'Order Created'),
