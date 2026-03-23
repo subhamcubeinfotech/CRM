@@ -29,7 +29,7 @@
                     <div class="stat-label">Monthly Revenue</div>
                     <div class="stat-value">${{ monthly_revenue|floatformat:0|intcomma }}</div>
                     <small class="text-success">
-                        <i class="fas fa-arrow-up me-1"></i>This month
+                        <i class="fas fa-calendar-alt me-1"></i>Selected period
                     </small>
                 </div>
             </div>
@@ -59,15 +59,41 @@
     </div>
     
     <!-- Charts Row -->
-    <div class="d-flex justify-content-end align-items-center mb-3">
-        <form method="get" class="d-flex align-items-center gap-2">
-            <label for="chart-month" class="small text-muted fw-semibold mb-0">Month</label>
-            <select id="chart-month" name="chart_month" class="form-select form-select-sm" onchange="this.form.submit()">
-                {% for option in chart_month_options %}
-                <option value="{{ option.value }}" {% if option.value == selected_chart_month %}selected{% endif %}>{{ option.label }}</option>
-                {% endfor %}
-            </select>
-        </form>
+    <!-- Charts Row Filters -->
+    <div class="card mb-4 border-0 shadow-sm bg-light">
+        <div class="card-body py-2">
+            <form method="get" id="dashboard-filter-form" class="row g-2 align-items-center">
+                <div class="col-auto">
+                    <label for="date_range" class="small text-muted fw-bold text-uppercase mb-0">Filter by Date</label>
+                </div>
+                <div class="col-auto">
+                    <select id="date_range" name="date_range" class="form-select form-select-sm" onchange="handleDateRangeChange(this.value)">
+                        <option value="last_7_days" {% if date_range == 'last_7_days' %}selected{% endif %}>Last 7 Days</option>
+                        <option value="last_30_days" {% if date_range == 'last_30_days' %}selected{% endif %}>Last 30 Days</option>
+                        <option value="this_month" {% if date_range == 'this_month' %}selected{% endif %}>This Month</option>
+                        <option value="last_month" {% if date_range == 'last_month' %}selected{% endif %}>Last Month</option>
+                        <option value="custom" {% if date_range == 'custom' %}selected{% endif %}>Custom Range</option>
+                    </select>
+                </div>
+                
+                <div id="custom-date-inputs" class="col-auto d-flex align-items-center gap-2" style="display: {% if date_range == 'custom' %}flex{% else %}none{% endif %} !important;">
+                    <input type="date" name="start_date" id="start_date" class="form-control form-control-sm" value="{{ start_date|default:'' }}">
+                    <span class="text-muted small">to</span>
+                    <input type="date" name="end_date" id="end_date" class="form-control form-control-sm" value="{{ end_date|default:'' }}">
+                </div>
+
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-primary btn-sm px-3">
+                        <i class="fas fa-filter me-1 small"></i>Apply
+                    </button>
+                    {% if date_range != 'this_month' or start_date or end_date %}
+                        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary btn-sm ms-1" title="Reset Filters">
+                            <i class="fas fa-sync-alt"></i>
+                        </a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
     </div>
     <div class="row mb-4">
         <div class="col-lg-6 mb-3">
@@ -176,6 +202,17 @@
 
 {% block extra_js %}
 <script>
+    function handleDateRangeChange(value) {
+        const customInputs = document.getElementById('custom-date-inputs');
+        if (value === 'custom') {
+            customInputs.style.setProperty('display', 'flex', 'important');
+        } else {
+            customInputs.style.setProperty('display', 'none', 'important');
+            // Auto-submit for non-custom ranges
+            document.getElementById('dashboard-filter-form').submit();
+        }
+    }
+
     // Revenue Chart
     const revenueCanvas = document.getElementById('revenueChart');
     const revenueCtx = revenueCanvas.getContext('2d');

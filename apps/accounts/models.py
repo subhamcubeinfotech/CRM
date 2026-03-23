@@ -120,5 +120,3 @@ class SignupOTP(models.Model):
 
     def __str__(self):
         return f"OTP for {self.email} - {self.otp}"
-
-# from .models_subscription import Subscription
