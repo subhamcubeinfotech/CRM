@@ -286,7 +286,7 @@
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Pickup Appointment</label>
                                 <div class="d-flex gap-2 flex-wrap">
-                                    <input type="radio" class="btn-check" name="pickup_appointment_ui" id="pickup_fcfs" value="fcfs" {% if is_create or shipment.pickup_appointment_type == "fcfs" %}checked{% endif %}>
+                                    <input type="radio" class="btn-check" name="pickup_appointment_ui" id="pickup_fcfs" value="fcfs" {% if not is_create and shipment.pickup_appointment_type == "fcfs" %}checked{% endif %}>
                                     <label class="btn ui-chip rounded-pill px-3" for="pickup_fcfs">FCFS</label>
                                     <input type="radio" class="btn-check" name="pickup_appointment_ui" id="pickup_required" value="required" {% if not is_create and shipment.pickup_appointment_type == "required" %}checked{% endif %}>
                                     <label class="btn ui-chip rounded-pill px-3" for="pickup_required">Required</label>
@@ -351,7 +351,7 @@
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Delivery Appointment</label>
                                 <div class="d-flex gap-2 flex-wrap">
-                                    <input type="radio" class="btn-check" name="delivery_appointment_ui" id="delivery_fcfs" value="fcfs" {% if is_create or shipment.delivery_appointment_type == "fcfs" %}checked{% endif %}>
+                                    <input type="radio" class="btn-check" name="delivery_appointment_ui" id="delivery_fcfs" value="fcfs" {% if not is_create and shipment.delivery_appointment_type == "fcfs" %}checked{% endif %}>
                                     <label class="btn ui-chip rounded-pill px-3" for="delivery_fcfs">FCFS</label>
                                     <input type="radio" class="btn-check" name="delivery_appointment_ui" id="delivery_required" value="required" {% if not is_create and shipment.delivery_appointment_type == "required" %}checked{% endif %}>
                                     <label class="btn ui-chip rounded-pill px-3" for="delivery_required">Required</label>
