@@ -1166,7 +1166,7 @@
         let pickupValue = '';
         const matchingLocationOption = sourceLocationId
             ? [...shipmentPickupSelect.options].find((option) => option.value === sourceLocationId)
-            : null;
+            : [...shipmentPickupSelect.options].find((option) => !option.value.startsWith('temp_') && option.dataset.address === sourceAddress);
 
         if (matchingLocationOption) {
             matchingLocationOption.hidden = false;
@@ -1174,7 +1174,7 @@
             pickupValue = matchingLocationOption.value;
         } else if (sourceAddress) {
             pickupValue = ensureShipmentOrderLocationOption(shipmentPickupSelect, {
-                value: sourceLocationId || `temp_addr_${sourceAddress}`,
+                value: `temp_addr_${sourceAddress}`,
                 label: sourceLabel || sourceAddress,
                 address: sourceAddress,
                 city: sourceCity,
@@ -1192,7 +1192,7 @@
         let destinationValue = '';
         const matchingDestinationOption = destinationLocationId
             ? [...shipmentDestinationSelect.options].find((option) => option.value === destinationLocationId)
-            : null;
+            : [...shipmentDestinationSelect.options].find((option) => !option.value.startsWith('temp_') && option.dataset.address === destinationAddress);
 
         if (matchingDestinationOption) {
             matchingDestinationOption.hidden = false;
@@ -1200,7 +1200,7 @@
             destinationValue = matchingDestinationOption.value;
         } else if (destinationAddress) {
             destinationValue = ensureShipmentOrderLocationOption(shipmentDestinationSelect, {
-                value: destinationLocationId || `temp_addr_${destinationAddress}`,
+                value: `temp_addr_${destinationAddress}`,
                 label: destinationLabel || destinationAddress,
                 address: destinationAddress,
                 city: destinationCity,
@@ -1230,9 +1230,27 @@
         filterShipmentMaterialOptions();
 
         const selectedOption = this.selectedOptions[0];
-        const addressValue = selectedOption?.dataset.address ? 'temp_addr_' + selectedOption.dataset.address : '';
-        if (addressValue) {
-            shipmentPickupSelect.value = addressValue;
+        const supplierAddress = selectedOption?.dataset.address || '';
+        const supplierId = this.value || '';
+        
+        let targetValue = '';
+        if (supplierAddress && supplierId) {
+            // Try to find a warehouse matching this company and address
+            const matchingWarehouse = [...shipmentPickupSelect.options].find(opt => 
+                !opt.value.startsWith('temp_') && 
+                opt.dataset.companyId === supplierId && 
+                opt.dataset.address === supplierAddress
+            );
+            
+            if (matchingWarehouse) {
+                targetValue = matchingWarehouse.value;
+            } else {
+                targetValue = 'temp_addr_' + supplierAddress;
+            }
+        }
+
+        if (targetValue) {
+            shipmentPickupSelect.value = targetValue;
         }
 
         syncShipmentAddressFields('shipment-pickup-location-select', 'origin');

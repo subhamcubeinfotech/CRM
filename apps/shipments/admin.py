@@ -44,7 +44,7 @@ class ShipmentAdmin(admin.ModelAdmin):
     
     fieldsets = (
         ('Identification', {
-            'fields': ('shipment_number', 'tracking_number', 'booking_number')
+            'fields': ('shipment_number', 'order', 'tracking_number', 'booking_number')
         }),
         ('Parties', {
             'fields': ('customer', 'carrier', 'shipper', 'consignee')
@@ -52,11 +52,21 @@ class ShipmentAdmin(admin.ModelAdmin):
         ('Shipment Details', {
             'fields': ('shipment_type', 'status')
         }),
+        ('Pickup Details', {
+            'fields': (
+                'pickup_location', 'pickup_contact', 'pickup_number', 'pickup_appointment_type'
+            )
+        }),
         ('Origin', {
             'fields': (
                 'origin_address', 'origin_city', 'origin_state', 
                 'origin_country', 'origin_postal_code',
                 'origin_latitude', 'origin_longitude'
+            )
+        }),
+        ('Delivery Details', {
+            'fields': (
+                'delivery_contact', 'delivery_number', 'delivery_appointment_type'
             )
         }),
         ('Destination', {
