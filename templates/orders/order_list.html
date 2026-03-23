@@ -36,38 +36,51 @@
         box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
     }
     .table thead th {
-        background-color: #f8f9fc;
-        border-bottom: 1px solid #e3e6f0;
-        color: #4e73df;
+        background-color: #f8f9fa;
+        border-bottom: 2px solid #edf2f9;
+        color: #495057;
         font-weight: 700;
         text-transform: uppercase;
         font-size: 0.75rem;
-        letter-spacing: 0.05em;
+        letter-spacing: .08em;
         padding: 1.25rem 1rem;
     }
     .table tbody td {
         padding: 1.25rem 1rem;
         vertical-align: middle;
-        border-bottom: 1px solid #f1f3f9;
+        border-bottom: 1px solid #edf2f9;
+        color: #212529;
         font-size: 0.875rem;
     }
-    .table tr:last-child td { border-bottom: none; }
-    .status-badge {
-        padding: 0.5em 1em;
-        font-weight: 600;
-        border-radius: 8px;
-        font-size: 0.75rem;
+    .table tr:hover {
+        background-color: #f9fbfd;
     }
-    .badge-draft { background: #e2e8f0; color: #475569; }
-    .badge-confirmed { background: #dcfce7; color: #166534; }
-    .badge-in_transit { background: #dbeafe; color: #1e40af; }
-    .badge-delivered { background: #fef9c3; color: #854d0e; }
-    .badge-closed { background: #f1f5f9; color: #64748b; }
-    
-    .pay-paid { color: #166534; background: rgba(22, 101, 52, 0.1); }
-    .pay-pending { color: #991b1b; background: rgba(153, 27, 27, 0.1); }
-    .pay-partial { color: #854d0e; background: rgba(133, 77, 14, 0.1); }
-    .pay-overdue { color: #ffffff; background: #ef4444; }
+    .status-badge-premium {
+        padding: 0.25rem 0.75rem;
+        font-weight: 600;
+        border-radius: 6px;
+        font-size: 0.7rem;
+        border: 1px solid transparent;
+        display: inline-block;
+    }
+    .badge-open-premium {
+        background-color: #e6f7ff;
+        color: #096dd9;
+        border-color: #91d5ff;
+    }
+    .badge-complete-premium {
+        background-color: #f6ffed;
+        color: #389e0d;
+        border-color: #b7eb8f;
+    }
+    .id-link {
+        color: #4e73df;
+        font-weight: 700;
+        text-decoration: none;
+    }
+    .id-link:hover {
+        text-decoration: underline;
+    }
 
     .search-group .form-control {
         border-radius: 12px;
@@ -193,63 +206,77 @@
             <table class="table table-hover" id="ordersTable">
                 <thead>
                     <tr>
-                        <th class="ps-4">Order / PO #</th>
+                        <th class="ps-4">ID</th>
+                        <th>Status</th>
+                        <th>PO Number</th>
+                        <th>SO Number</th>
+                        <th>Create Date</th>
+                        <th>Supplier</th>
                         <th>Pickup</th>
                         <th>Receiver</th>
                         <th>Destination</th>
-                        <th class="text-center">Total Weight</th>
-                        <th>SO Number</th>
-                        <th class="text-end">Total Revenue</th>
-                        <th class="text-end pe-4">Total Cost</th>
+                        <th class="text-center">Weight</th>
+                        <th class="text-end">Revenue</th>
+                        <th class="text-end">Cost</th>
+                        <th class="text-end pe-4">Margin</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for order in orders %}
                     <tr onclick="window.location='{% url 'orders:order_detail' order.pk %}'" style="cursor: pointer;">
                         <td class="ps-4">
-                            <div class="fw-bold text-dark d-block">#{{ order.order_number }}</div>
-                            <span class="text-muted small">PO: {{ order.po_number|default:"N/A" }}</span>
-                            <div class="mt-1">
-                                <span class="status-badge bg-{{ order.live_status_class }}-subtle text-{{ order.live_status_class }} border border-{{ order.live_status_class }}-subtle me-1" style="font-size: 0.65rem; padding: 0.2rem 0.5rem;">{{ order.live_status }}</span>
-                            </div>
+                            <a href="{% url 'orders:order_detail' order.pk %}" class="id-link">
+                                {{ order.order_number }}
+                            </a>
                         </td>
                         <td>
-                            <div class="text-dark">{{ order.supplier.city }}, {{ order.supplier.state }}</div>
-                            <div class="text-muted small">{{ order.supplier.name|truncatechars:15 }}</div>
+                            <span class="status-badge-premium badge-{% if order.simple_status_label == 'Open' %}open{% else %}complete{% endif %}-premium">
+                                {{ order.simple_status_label }}
+                            </span>
                         </td>
-                        <td>
-                            <div class="text-dark fw-medium">{{ order.receiver.name|truncatechars:20 }}</div>
-                            <span class="status-badge pay-{{ order.payment_status }}" style="font-size: 0.65rem; padding: 0.2rem 0.5rem;">{{ order.get_payment_status_display }}</span>
+                        <td class="text-muted small">
+                            {{ order.po_number|default:"-" }}
                         </td>
-                        <td>
-                            <div class="text-dark">{{ order.receiver.city }}, {{ order.receiver.state }}</div>
+                        <td class="text-muted small">
+                            {{ order.so_number|default:"-" }}
                         </td>
-                        <td class="text-center" style="min-width: 150px;">
-                            <div class="d-flex justify-content-between mb-1 small">
-                                <span class="fw-bold">{{ order.weight_progress_percentage }}%</span>
-                                <span class="text-muted">{{ order.shipped_weight|intcomma }} lbs</span>
-                            </div>
-                            <div class="progress rounded-pill" style="height: 6px; background-color: #f1f3f9;">
+                        <td class="text-muted small">
+                            {{ order.created_at|date:"m/d/Y" }}
+                        </td>
+                        <td class="fw-medium small">
+                            {{ order.supplier.name|truncatechars:20 }}
+                        </td>
+                        <td class="text-muted small">
+                            {{ order.supplier.city }}, {{ order.supplier.state }}
+                        </td>
+                        <td class="fw-medium small">
+                            {{ order.receiver.name|truncatechars:20 }}
+                        </td>
+                        <td class="text-muted small">
+                            {{ order.receiver.city }}, {{ order.receiver.state }}
+                        </td>
+                        <td class="text-center">
+                            <div class="small fw-bold mb-1">{{ order.weight_progress_percentage }}%</div>
+                            <div class="progress rounded-pill" style="height: 4px; background-color: #f1f3f9; width: 40px; margin: 0 auto;">
                                 <div class="progress-bar rounded-pill {% if order.weight_progress_percentage > 90 %}bg-success{% elif order.weight_progress_percentage > 50 %}bg-info{% else %}bg-primary{% endif %}" 
                                      role="progressbar" style="width: {{ order.weight_progress_percentage }}%"></div>
                             </div>
                         </td>
-                        <td>
-                            <div class="text-dark">{{ order.so_number|default:"-" }}</div>
+                        <td class="text-end fw-bold small">
+                            ${{ order.total_revenue|floatformat:2|intcomma }}
                         </td>
-                        <td class="text-end">
-                            <div class="fw-bold text-dark">${{ order.total_revenue|floatformat:2|intcomma }}</div>
+                        <td class="text-end fw-bold small">
+                            ${{ order.total_cost|floatformat:2|intcomma }}
                         </td>
                         <td class="text-end pe-4">
-                            <div class="fw-bold text-dark">${{ order.total_cost|floatformat:2|intcomma }}</div>
-                            <div class="small {% if order.gross_profit > 0 %}text-success{% else %}text-danger{% endif %}">
-                                {% if order.gross_profit > 0 %}+{% endif %}${{ order.gross_profit|floatformat:2|intcomma }}
+                            <div class="fw-bold small {% if order.gross_profit > 0 %}text-success{% else %}text-danger{% endif %}">
+                                ${{ order.gross_profit|floatformat:2|intcomma }}
                             </div>
                         </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="6" class="text-center py-5">
+                        <td colspan="13" class="text-center py-5">
                             <div class="my-3">
                                 <i class="fas fa-box-open fa-3x text-light mb-3"></i>
                                 <h5 class="text-muted">No orders found in your portfolio</h5>

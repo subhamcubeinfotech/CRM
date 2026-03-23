@@ -23,13 +23,13 @@ def log_order_events(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=Shipment)
 def log_shipment_events(sender, instance, created, **kwargs):
-    if created:
+    if created and instance.order:
         OrderEvent.objects.create(
             order=instance.order,
             event_type='shipment_created',
             description=f"Shipment #{instance.shipment_number} was created for this order."
         )
-    else:
+    elif instance.order:
         # Check if status has changed (simulated for now, 
         # normally you'd use a tracker or compare with DB)
         # For simplicity in this environment, we'll log it if it's not a new creation
