@@ -277,6 +277,12 @@ def order_create(request):
     logger.info(f'New order creation page accessed by {request.user}')
     
     user_company = request.user.company
+    assign_company = user_company
+    if not assign_company and request.user.tenant_id:
+        assign_company = Company.plain_objects.filter(
+            tenant=request.user.tenant,
+            is_active=True,
+        ).order_by('name').first()
     
     # Show all companies in supplier/receiver dropdowns
     company_qs = Company.plain_objects.all()
@@ -301,6 +307,7 @@ def order_create(request):
         'receivers': receivers,
         'warehouses': warehouses,
         'inventory_items': inventory_items,
+        'assign_company': assign_company,
         # Show both tenant-specific and global terms/tags
         'shipping_terms': ShippingTerm.plain_objects.filter(Q(tenant=request.user.tenant) | Q(tenant__isnull=True)),
         'tags': Tag.plain_objects.filter(Q(tenant=request.user.tenant) | Q(tenant__isnull=True)),

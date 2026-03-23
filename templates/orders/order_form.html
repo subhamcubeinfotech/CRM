@@ -68,9 +68,9 @@
                                 class="fas fa-plus"></i> Add</a>
                     </div>
                     <div style="min-height: 21px;">
-                        {% if user.company %}
+                        {% if assign_company %}
                         <a href="#" id="assign-supplier-mine" class="small text-decoration-none mt-1 d-inline-block"
-                            data-company-id="{{ user.company_id }}" data-address="{{ user.company.full_address }}">Click to assign to your company.</a>
+                            data-company-id="{{ assign_company.id }}" data-address="{{ assign_company.full_address }}">Click to assign to your company.</a>
                         {% endif %}
                     </div>
                 </div>
@@ -82,9 +82,9 @@
                         <select name="source_location" id="source-location-select"
                             class="form-select border-primary-subtle" required>
                             <option value="">Select location</option>
-                            {% if user.company %}
-                            <option value="temp_addr_{{ user.company.full_address }}" data-company-id="{{ user.company.id }}">
-                                {{ user.company.full_address }} (Your Address)
+                            {% if assign_company %}
+                            <option value="temp_addr_{{ assign_company.full_address }}" data-company-id="{{ assign_company.id }}">
+                                {{ assign_company.full_address }} (Your Address)
                             </option>
                             {% endif %}
                             {% for warehouse in warehouses %}
@@ -121,9 +121,9 @@
                                 class="fas fa-plus"></i> Add</a>
                     </div>
                     <div style="min-height: 21px;">
-                        {% if user.company %}
+                        {% if assign_company %}
                         <a href="#" id="assign-receiver-mine" class="small text-decoration-none mt-1 d-inline-block"
-                            data-company-id="{{ user.company_id }}" data-address="{{ user.company.full_address }}">Click to assign to your company.</a>
+                            data-company-id="{{ assign_company.id }}" data-address="{{ assign_company.full_address }}">Click to assign to your company.</a>
                         {% endif %}
                     </div>
                 </div>
@@ -135,9 +135,9 @@
                         <select name="destination_location" id="dest-location-select"
                             class="form-select border-primary-subtle" required>
                             <option value="">Select location</option>
-                            {% if user.company %}
-                            <option value="temp_addr_{{ user.company.full_address }}" data-company-id="{{ user.company.id }}">
-                                {{ user.company.full_address }} (Your Address)
+                            {% if assign_company %}
+                            <option value="temp_addr_{{ assign_company.full_address }}" data-company-id="{{ assign_company.id }}">
+                                {{ assign_company.full_address }} (Your Address)
                             </option>
                             {% endif %}
                             {% for warehouse in warehouses %}
@@ -561,13 +561,13 @@
 
     document.getElementById('assign-supplier-mine')?.addEventListener('click', function (e) {
         e.preventDefault();
-        assignMyCompany('supplier-select', this.dataset.companyId, "{{ user.company.name|default:'My Company' }}", this.dataset.address);
+        assignMyCompany('supplier-select', this.dataset.companyId, "{{ assign_company.name|default:'My Company' }}", this.dataset.address);
         filterMaterialOptions();
     });
 
     document.getElementById('assign-receiver-mine')?.addEventListener('click', function (e) {
         e.preventDefault();
-        assignMyCompany('receiver-select', this.dataset.companyId, "{{ user.company.name|default:'My Company' }}", this.dataset.address);
+        assignMyCompany('receiver-select', this.dataset.companyId, "{{ assign_company.name|default:'My Company' }}", this.dataset.address);
     });
 
     document.getElementById('assign-rep-me')?.addEventListener('click', function (e) {
@@ -814,7 +814,7 @@
                     return;
                 }
 
-                if (optCompanyId === companyId || (!optCompanyId && companyId === "{{ user.company_id }}")) {
+                if (optCompanyId === companyId || (!optCompanyId && companyId === "{{ assign_company.id|default:'' }}")) {
                     opt.style.display = '';
                     foundWarehouse = true;
                     if (!firstVisibleWarehouse) firstVisibleWarehouse = opt.value;
