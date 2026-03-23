@@ -210,12 +210,7 @@
 
                         <div class="row">
                             <div class="col-md-12 mb-3">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <label class="form-label mb-1">Supplier <span class="text-danger">*</span></label>
-                                    <button class="btn btn-sm btn-outline-primary" type="button" id="shipment-supplier-add-btn">
-                                        <i class="fas fa-plus"></i> Add
-                                    </button>
-                                </div>
+                                <label class="form-label mb-1">Supplier <span class="text-danger">*</span></label>
                                 <input type="hidden" name="shipper" id="shipment-supplier-hidden" value="{{ shipment.shipper_id|default:'' }}">
                                 <select id="shipment-supplier-select" class="form-select" required>
                                     <option value="">Select a Company</option>
@@ -290,7 +285,7 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <div class="d-flex justify-content-between align-items-center">
-                                    <label class="form-label mb-1">Pickup Name</label>
+                                    <label class="form-label mb-1">Pickup Contact</label>
                                     <button class="btn btn-sm btn-outline-primary contact-drawer-trigger" type="button" data-bs-toggle="offcanvas" data-bs-target="#contactDrawer" data-contact-select-target="shipment-pickup-contact-select">
                                         <i class="fas fa-plus"></i> Add
                                     </button>
@@ -383,7 +378,7 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <div class="d-flex justify-content-between align-items-center">
-                                    <label class="form-label mb-1">Delivery Name <span class="text-danger">*</span></label>
+                                    <label class="form-label mb-1">Delivery Contact <span class="text-danger">*</span></label>
                                     <button class="btn btn-sm btn-outline-primary contact-drawer-trigger" type="button" data-bs-toggle="offcanvas" data-bs-target="#contactDrawer" data-contact-select-target="shipment-delivery-contact-select">
                                         <i class="fas fa-plus"></i> Add
                                     </button>
