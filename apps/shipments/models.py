@@ -69,12 +69,14 @@ class Shipment(TenantAwareModel):
     # Pickup details
     pickup_location = models.ForeignKey('inventory.Warehouse', on_delete=models.SET_NULL, null=True, blank=True, related_name='pickup_shipments')
     pickup_contact = models.CharField(max_length=255, blank=True)
+    pickup_email = models.EmailField(max_length=254, blank=True)
     pickup_number = models.CharField(max_length=50, blank=True)
     pickup_appointment_type = models.CharField(max_length=20, choices=APPOINTMENT_CHOICES, default='fcfs')
     
     # Delivery details
     destination_location = models.ForeignKey('inventory.Warehouse', on_delete=models.SET_NULL, null=True, blank=True, related_name='delivery_shipments')
     delivery_contact = models.CharField(max_length=255, blank=True)
+    delivery_email = models.EmailField(max_length=254, blank=True)
     delivery_number = models.CharField(max_length=50, blank=True)
     delivery_appointment_type = models.CharField(max_length=20, choices=APPOINTMENT_CHOICES, default='fcfs')
 
@@ -113,6 +115,11 @@ class Shipment(TenantAwareModel):
     # Notes
     special_instructions = models.TextField(blank=True)
     internal_notes = models.TextField(blank=True)
+    
+    # Commercial details
+    shipping_terms = models.ForeignKey('orders.ShippingTerm', on_delete=models.SET_NULL, null=True, blank=True, related_name='shipments')
+    representative = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='represented_shipments')
+    tags = models.ManyToManyField('orders.Tag', blank=True, related_name='shipments')
     
     # Metadata
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='created_shipments')
@@ -323,3 +330,28 @@ class Document(models.Model):
     
     def __str__(self):
         return f"{self.title} ({self.get_document_type_display()})"
+
+
+class ShipmentItem(models.Model):
+    """Line items for a specific shipment"""
+    shipment = models.ForeignKey(Shipment, on_delete=models.CASCADE, related_name='items')
+    inventory_item = models.ForeignKey('inventory.InventoryItem', on_delete=models.SET_NULL, null=True, blank=True, related_name='shipment_items')
+    material_name = models.CharField(max_length=255)
+    
+    # Quantity/Weight
+    weight = models.DecimalField(max_digits=12, decimal_places=2)
+    weight_unit = models.CharField(max_length=10, default='lbs')
+    packaging = models.CharField(max_length=100, blank=True)
+    is_palletized = models.BooleanField(default=False)
+    pieces = models.IntegerField(default=1, null=True, blank=True)
+    
+    # Financial
+    buy_price = models.DecimalField(max_digits=12, decimal_places=4, default=0)
+    sell_price = models.DecimalField(max_digits=12, decimal_places=4, default=0)
+    price_unit = models.CharField(max_length=20, default='per lbs')
+    
+    class Meta:
+        ordering = ['id']
+        
+    def __str__(self):
+        return f"{self.material_name} ({self.weight} {self.weight_unit})"
