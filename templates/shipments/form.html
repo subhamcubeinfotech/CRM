@@ -290,7 +290,7 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <div class="d-flex justify-content-between align-items-center">
-                                    <label class="form-label mb-1">Pickup Contact</label>
+                                    <label class="form-label mb-1">Pickup Name</label>
                                     <button class="btn btn-sm btn-outline-primary contact-drawer-trigger" type="button" data-bs-toggle="offcanvas" data-bs-target="#contactDrawer" data-contact-select-target="shipment-pickup-contact-select">
                                         <i class="fas fa-plus"></i> Add
                                     </button>
@@ -298,9 +298,14 @@
                                 <select name="pickup_contact_ui" id="shipment-pickup-contact-select" class="form-select">
                                     <option value="">Select a Contact</option>
                                     {% if not is_create and shipment.pickup_contact %}
-                                    <option value="{{ shipment.pickup_contact }}" selected>{{ shipment.pickup_contact }}</option>
+                                    <option value="{{ shipment.pickup_contact }}" selected data-email="{{ shipment.pickup_email }}" data-phone="{{ shipment.pickup_number }}">{{ shipment.pickup_contact }}</option>
                                     {% endif %}
                                 </select>
+                                <div id="pickup-contact-details" class="mt-1 small" style="display: none;">
+                                    <div class="text-primary pickup-contact-email"></div>
+                                    <div class="text-primary pickup-contact-phone"></div>
+                                </div>
+                                <input type="hidden" name="pickup_email_ui" id="shipment-pickup-email-hidden" value="{{ shipment.pickup_email }}">
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Pickup Number <span class="text-danger">*</span></label>
@@ -378,7 +383,7 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <div class="d-flex justify-content-between align-items-center">
-                                    <label class="form-label mb-1">Delivery Contact <span class="text-danger">*</span></label>
+                                    <label class="form-label mb-1">Delivery Name <span class="text-danger">*</span></label>
                                     <button class="btn btn-sm btn-outline-primary contact-drawer-trigger" type="button" data-bs-toggle="offcanvas" data-bs-target="#contactDrawer" data-contact-select-target="shipment-delivery-contact-select">
                                         <i class="fas fa-plus"></i> Add
                                     </button>
@@ -386,9 +391,14 @@
                                 <select name="delivery_contact_ui" id="shipment-delivery-contact-select" class="form-select" required>
                                     <option value="">Select a Contact</option>
                                     {% if not is_create and shipment.delivery_contact %}
-                                    <option value="{{ shipment.delivery_contact }}" selected>{{ shipment.delivery_contact }}</option>
+                                    <option value="{{ shipment.delivery_contact }}" selected data-email="{{ shipment.delivery_email }}" data-phone="{{ shipment.delivery_number }}">{{ shipment.delivery_contact }}</option>
                                     {% endif %}
                                 </select>
+                                <div id="delivery-contact-details" class="mt-1 small" style="display: none;">
+                                    <div class="text-primary delivery-contact-email"></div>
+                                    <div class="text-primary delivery-contact-phone"></div>
+                                </div>
+                                <input type="hidden" name="delivery_email_ui" id="shipment-delivery-email-hidden" value="{{ shipment.delivery_email }}">
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Delivery Number <span class="text-danger">*</span></label>
@@ -1318,16 +1328,18 @@
             return;
         }
 
-        const optionValue = mobile || fullName;
-        const optionLabel = mobile || fullName;
+        const optionValue = fullName; // Use name as value
+        const optionLabel = fullName;
         const option = new Option(optionLabel, optionValue, true, true);
         option.dataset.name = fullName;
         option.dataset.email = email;
+        option.dataset.phone = mobile || office || '';
         option.dataset.mobile = mobile;
         option.dataset.office = office;
         option.dataset.extension = extension;
         contactSelect.add(option);
         contactSelect.value = optionValue;
+        contactSelect.dispatchEvent(new Event('change'));
 
         if (contactDrawerElement && window.bootstrap?.Offcanvas) {
             const offcanvas = bootstrap.Offcanvas.getOrCreateInstance(contactDrawerElement);
@@ -1406,23 +1418,51 @@
     syncShipmentAddressFields('shipment-pickup-location-select', 'origin');
     syncShipmentAddressFields('shipment-destination-location-select', 'destination');
 
-    // Auto-fill phone number when contact is selected
+    // Auto-fill phone and email when contact is selected
     const handleContactChange = (event) => {
-        const select = event.target;
-        const option = select.selectedOptions[0];
+        const select = event.target || event;
+        const option = select.selectedOptions ? select.selectedOptions[0] : null;
         if (!option) return;
 
         const isPickup = select.id === 'shipment-pickup-contact-select';
-        const numberInputId = isPickup ? 'shipment-pickup-number' : 'shipment-delivery-number';
-        const numberInput = document.getElementById(numberInputId);
+        const type = isPickup ? 'pickup' : 'delivery';
         
-        if (numberInput && option.dataset.mobile) {
-            numberInput.value = option.dataset.mobile;
+        const email = option.dataset.email || '';
+        const phone = option.dataset.phone || option.dataset.mobile || '';
+        
+        // Update hidden email field
+        const emailHidden = document.getElementById(`shipment-${type}-email-hidden`);
+        if (emailHidden) emailHidden.value = email;
+
+        // Update number input (which is visible in form)
+        const numberInput = document.querySelector(`[name="${type}_number_ui"]`);
+        if (numberInput && phone) numberInput.value = phone;
+
+        // Update detail display
+        const detailDiv = document.getElementById(`${type}-contact-details`);
+        if (detailDiv) {
+            const emailDiv = detailDiv.querySelector(`.${type}-contact-email`);
+            const phoneDiv = detailDiv.querySelector(`.${type}-contact-phone`);
+            
+            if (email || phone) {
+                detailDiv.style.display = 'block';
+                if (emailDiv) emailDiv.textContent = email;
+                if (phoneDiv) phoneDiv.textContent = phone;
+            } else {
+                detailDiv.style.display = 'none';
+            }
         }
     };
 
-    document.getElementById('shipment-pickup-contact-select')?.addEventListener('change', handleContactChange);
-    document.getElementById('shipment-delivery-contact-select')?.addEventListener('change', handleContactChange);
+    const pickupContactSelect = document.getElementById('shipment-pickup-contact-select');
+    const deliveryContactSelect = document.getElementById('shipment-delivery-contact-select');
+
+    pickupContactSelect?.addEventListener('change', handleContactChange);
+    deliveryContactSelect?.addEventListener('change', handleContactChange);
+
+    // Initial load
+    if (pickupContactSelect && pickupContactSelect.value) handleContactChange(pickupContactSelect);
+    if (deliveryContactSelect && deliveryContactSelect.value) handleContactChange(deliveryContactSelect);
 
     // Shipment Items (UI-only)
     (function() {

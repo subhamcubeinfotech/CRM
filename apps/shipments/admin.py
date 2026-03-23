@@ -2,7 +2,7 @@
 Shipments Admin Configuration
 """
 from django.contrib import admin
-from .models import Shipment, Container, ShipmentMilestone, Document
+from .models import Shipment, Container, ShipmentMilestone, Document, ShipmentItem
 
 
 class ContainerInline(admin.TabularInline):
@@ -20,6 +20,12 @@ class DocumentInline(admin.TabularInline):
     model = Document
     extra = 0
     readonly_fields = ['uploaded_at']
+
+
+class ShipmentItemInline(admin.TabularInline):
+    model = ShipmentItem
+    extra = 0
+    fields = ['inventory_item', 'material_name', 'weight', 'weight_unit', 'packaging', 'pieces', 'sell_price', 'price_unit']
 
 
 @admin.register(Shipment)
@@ -40,7 +46,7 @@ class ShipmentAdmin(admin.ModelAdmin):
         'shipment_number', 'gross_profit', 'profit_margin', 
         'created_at', 'updated_at'
     ]
-    inlines = [ContainerInline, ShipmentMilestoneInline, DocumentInline]
+    inlines = [ShipmentItemInline, ContainerInline, ShipmentMilestoneInline, DocumentInline]
     
     fieldsets = (
         ('Identification', {
@@ -54,7 +60,7 @@ class ShipmentAdmin(admin.ModelAdmin):
         }),
         ('Pickup Details', {
             'fields': (
-                'pickup_location', 'pickup_contact', 'pickup_number', 'pickup_appointment_type'
+                'pickup_location', 'pickup_contact', 'pickup_email', 'pickup_number', 'pickup_appointment_type'
             )
         }),
         ('Origin', {
@@ -66,7 +72,7 @@ class ShipmentAdmin(admin.ModelAdmin):
         }),
         ('Delivery Details', {
             'fields': (
-                'delivery_contact', 'delivery_number', 'delivery_appointment_type'
+                'delivery_contact', 'delivery_email', 'delivery_number', 'delivery_appointment_type'
             )
         }),
         ('Destination', {
@@ -75,6 +81,9 @@ class ShipmentAdmin(admin.ModelAdmin):
                 'destination_country', 'destination_postal_code',
                 'destination_latitude', 'destination_longitude'
             )
+        }),
+        ('Commercial', {
+            'fields': ('shipping_terms', 'representative', 'tags')
         }),
         ('Current Location', {
             'fields': ('current_latitude', 'current_longitude'),
