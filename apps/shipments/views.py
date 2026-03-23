@@ -341,12 +341,17 @@ def shipment_list(request):
 def shipment_detail(request, pk):
     """Shipment detail view with tracking map"""
     # Filter by tenant first to avoid 404s for shipments in other tenants
-    shipment_queryset = Shipment.objects.select_related('customer', 'carrier', 'shipper', 'consignee')
+    shipment_queryset = Shipment.objects.select_related('customer', 'carrier', 'shipper', 'consignee', 'order', 'created_by')
     if request.user.tenant:
         shipment_queryset = shipment_queryset.filter(tenant=request.user.tenant)
     
     shipment = get_object_or_404(shipment_queryset, pk=pk)
-    check_company_access(shipment.customer, request.user)
+    if shipment.created_by_id == request.user.id or (
+        shipment.order_id and getattr(shipment.order, 'created_by_id', None) == request.user.id
+    ):
+        pass
+    else:
+        check_company_access(shipment.customer, request.user)
     
     # Get milestones
     milestones = shipment.milestones.all()
