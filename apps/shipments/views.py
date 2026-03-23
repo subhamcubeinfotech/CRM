@@ -538,7 +538,7 @@ def shipment_create(request):
             origin_postal_code=request.POST.get('origin_postal_code', ''),
             pickup_contact=request.POST.get('pickup_contact_ui', ''),
             pickup_number=request.POST.get('pickup_number_ui', ''),
-            pickup_appointment_type=request.POST.get('pickup_appointment_ui', 'fcfs'),
+            pickup_appointment_type=request.POST.get('pickup_appointment_ui', ''),
             
             # Destination
             destination_location_id=dest_loc_id if dest_loc_id and not dest_loc_id.startswith('temp_') else None,
@@ -549,7 +549,7 @@ def shipment_create(request):
             destination_postal_code=request.POST.get('destination_postal_code', ''),
             delivery_contact=request.POST.get('delivery_contact_ui', ''),
             delivery_number=request.POST.get('delivery_number_ui', ''),
-            delivery_appointment_type=request.POST.get('delivery_appointment_ui', 'fcfs'),
+            delivery_appointment_type=request.POST.get('delivery_appointment_ui', ''),
             
             # Schedule
             pickup_date=request.POST.get('pickup_date') or None,
@@ -698,7 +698,7 @@ def shipment_edit(request, pk):
         shipment.origin_postal_code = request.POST.get('origin_postal_code', '')
         shipment.pickup_contact = request.POST.get('pickup_contact_ui', '')
         shipment.pickup_number = request.POST.get('pickup_number_ui', '')
-        shipment.pickup_appointment_type = request.POST.get('pickup_appointment_ui', 'fcfs')
+        shipment.pickup_appointment_type = request.POST.get('pickup_appointment_ui', '')
         
         # Destination
         shipment.destination_address = request.POST.get('destination_address', '')
@@ -708,7 +708,7 @@ def shipment_edit(request, pk):
         shipment.destination_postal_code = request.POST.get('destination_postal_code', '')
         shipment.delivery_contact = request.POST.get('delivery_contact_ui', '')
         shipment.delivery_number = request.POST.get('delivery_number_ui', '')
-        shipment.delivery_appointment_type = request.POST.get('delivery_appointment_ui', 'fcfs')
+        shipment.delivery_appointment_type = request.POST.get('delivery_appointment_ui', '')
         
         # Schedule
         shipment.pickup_date = request.POST.get('pickup_date') or None
