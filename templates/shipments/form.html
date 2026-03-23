@@ -154,9 +154,10 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Shipment Type</label>
-                                <select name="shipment_type" class="form-select">
+                                <select name="shipment_type" class="form-select" required>
+                                    <option value="">Select Type</option>
                                     {% for code, label in shipment_types %}
-                                    <option value="{{ code }}" {% if shipment and shipment.shipment_type == code %}selected{% elif not shipment and code == 'road' %}selected{% endif %}>{{ label }}</option>
+                                    <option value="{{ code }}" {% if shipment and shipment.shipment_type == code %}selected{% endif %}>{{ label }}</option>
                                     {% endfor %}
                                 </select>
                             </div>
@@ -510,7 +511,7 @@
                                             <input type="number" name="items_ui[0][weight]" class="form-control rounded-end-0" placeholder="Qty" step="0.01" required>
                                         </div>
                                         <div class="col-4">
-                                            <select name="items_ui[0][weight_unit]" class="form-select rounded-start-0 border-start-0">
+                                            <select name="items_ui[0][weight_unit]" class="form-select rounded-start-0 border-start-0 weight-unit-select">
                                                 <option value="lbs" selected>lbs</option>
                                                 <option value="kg">kg</option>
                                                 <option value="pcs">pcs</option>
@@ -537,32 +538,23 @@
                                     <input type="number" name="items_ui[0][pieces]" class="form-control" placeholder="Insert">
                                 </div>
 
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <label class="form-label">Buy Price <span class="text-danger">*</span></label>
                                     <div class="input-group">
                                         <span class="input-group-text">$</span>
-                                        <input type="number" name="items_ui[0][buy_price]" class="form-control" placeholder="Type a Buy Price" step="0.0001" required>
+                                        <input type="number" name="items_ui[0][buy_price]" class="form-control" placeholder="Buy Price" step="0.0001" required>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Unit</label>
-                                    <select name="items_ui[0][buy_unit]" class="form-select">
-                                        <option value="per lbs" selected>per lbs</option>
-                                        <option value="per kg">per kg</option>
-                                        <option value="per pcs">per pcs</option>
-                                    </select>
-                                </div>
-
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <label class="form-label">Sell Price <span class="text-danger">*</span></label>
                                     <div class="input-group">
                                         <span class="input-group-text">$</span>
-                                        <input type="number" name="items_ui[0][sell_price]" class="form-control" placeholder="Type a Sell Price" step="0.0001" required>
+                                        <input type="number" name="items_ui[0][sell_price]" class="form-control" placeholder="Sell Price" step="0.0001" required>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <label class="form-label">Unit</label>
-                                    <select name="items_ui[0][sell_unit]" class="form-select">
+                                    <select name="items_ui[0][buy_unit]" class="form-select price-unit-select">
                                         <option value="per lbs" selected>per lbs</option>
                                         <option value="per kg">per kg</option>
                                         <option value="per pcs">per pcs</option>
@@ -1478,6 +1470,17 @@
         // First item is not removable; future ones are.
         root.querySelectorAll('.shipment-item').forEach(function(container, idx) {
             if (idx > 0) wireRemove(container);
+        });
+
+        // Sync weight unit to price unit
+        root.addEventListener('change', function(e) {
+            if (e.target.classList.contains('weight-unit-select')) {
+                const itemContainer = e.target.closest('.shipment-item');
+                const priceUnitSelect = itemContainer.querySelector('.price-unit-select');
+                if (priceUnitSelect) {
+                    priceUnitSelect.value = 'per ' + e.target.value;
+                }
+            }
         });
     })();
 </script>
