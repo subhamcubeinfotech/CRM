@@ -134,19 +134,19 @@
                         <div class="row d-none">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Shipper</label>
-                                <select name="shipper" class="form-select">
+                                <select class="form-select">
                                     <option value="">Same as Customer</option>
                                     {% for company in all_companies %}
-                                    <option value="{{ company.pk }}" {% if shipment and shipment.shipper_id == company.pk %}selected{% endif %}>{{ company.name }}</option>
+                                    <option value="{{ company.pk }}" {% if not is_create and shipment.shipper_id == company.pk %}selected{% elif is_create and order.supplier_id == company.pk %}selected{% endif %}>{{ company.name }}</option>
                                     {% endfor %}
                                 </select>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Consignee</label>
-                                <select name="consignee" class="form-select">
+                                <select class="form-select">
                                     <option value="">Not Specified</option>
                                     {% for company in all_companies %}
-                                    <option value="{{ company.pk }}" {% if shipment and shipment.consignee_id == company.pk %}selected{% endif %}>{{ company.name }}</option>
+                                    <option value="{{ company.pk }}" {% if not is_create and shipment.consignee_id == company.pk %}selected{% elif is_create and order.receiver_id == company.pk %}selected{% endif %}>{{ company.name }}</option>
                                     {% endfor %}
                                 </select>
                             </div>
@@ -168,12 +168,13 @@
                     </div>
                 </div>
                 
-                {% if is_create %}
+
                 <div class="card mb-4">
                     <div class="card-header bg-white">
                         <h5 class="card-title mb-0"><i class="fas fa-route me-2 text-primary"></i>Pickup & Delivery</h5>
                     </div>
                     <div class="card-body">
+                        {% if is_create %}
                         <div class="row">
                             <div class="col-md-12 mb-3">
                                 <label class="form-label mb-1">Order</label>
@@ -204,6 +205,7 @@
                                 </select>
                             </div>
                         </div>
+                        {% endif %}
 
                         <div class="row">
                             <div class="col-md-12 mb-3">
@@ -213,11 +215,11 @@
                                         <i class="fas fa-plus"></i> Add
                                     </button>
                                 </div>
-                                <input type="hidden" name="shipper" id="shipment-supplier-hidden">
+                                <input type="hidden" name="shipper" id="shipment-supplier-hidden" value="{{ shipment.shipper_id|default:'' }}">
                                 <select id="shipment-supplier-select" class="form-select" required>
                                     <option value="">Select a Company</option>
                                     {% for supplier in suppliers %}
-                                    <option value="{{ supplier.id }}" data-address="{{ supplier.full_address }}">{{ supplier.name }}</option>
+                                    <option value="{{ supplier.id }}" {% if not is_create and shipment.shipper_id == supplier.id %}selected{% elif is_create and order.supplier_id == supplier.id %}selected{% endif %} data-address="{{ supplier.full_address }}">{{ supplier.name }}</option>
                                     {% endfor %}
                                 </select>
                                 {% if user.company %}
@@ -260,6 +262,29 @@
                                 </select>
                             </div>
                         </div>
+
+                        {% if not is_create %}
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label">Pickup Address</label>
+                                <input type="text" name="origin_address" class="form-control" value="{{ shipment.origin_address|default:'' }}">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">City</label>
+                                <input type="text" name="origin_city" class="form-control" value="{{ shipment.origin_city|default:'' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">State</label>
+                                <input type="text" name="origin_state" class="form-control" value="{{ shipment.origin_state|default:'' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Zip</label>
+                                <input type="text" name="origin_postal_code" class="form-control" value="{{ shipment.origin_postal_code|default:'' }}">
+                            </div>
+                        </div>
+                        {% endif %}
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
@@ -326,6 +351,29 @@
                             </div>
                         </div>
 
+                        {% if not is_create %}
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label">Delivery Address</label>
+                                <input type="text" name="destination_address" class="form-control" value="{{ shipment.destination_address|default:'' }}">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">City</label>
+                                <input type="text" name="destination_city" class="form-control" value="{{ shipment.destination_city|default:'' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">State</label>
+                                <input type="text" name="destination_state" class="form-control" value="{{ shipment.destination_state|default:'' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Zip</label>
+                                <input type="text" name="destination_postal_code" class="form-control" value="{{ shipment.destination_postal_code|default:'' }}">
+                            </div>
+                        </div>
+                        {% endif %}
+
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <div class="d-flex justify-content-between align-items-center">
@@ -365,6 +413,7 @@
                     </div>
                 </div>
 
+
                 <div class="card mb-4">
                     <div class="card-header bg-white">
                         <h5 class="card-title mb-0"><i class="fas fa-tags me-2 text-primary"></i>Commercial</h5>
@@ -375,7 +424,7 @@
                             <select name="tags_ui" class="form-select" multiple>
                                 {% if tags %}
                                     {% for tag in tags %}
-                                    <option value="{{ tag.pk }}">{{ tag.name }}</option>
+                                    <option value="{{ tag.pk }}" {% if not is_create %}{% if tag in shipment.order.tags.all %}selected{% endif %}{% elif is_create %}{% if tag in order.tags.all %}selected{% endif %}{% endif %}>{{ tag.name }}</option>
                                     {% endfor %}
                                 {% else %}
                                     <option value="" disabled>Select tags</option>
@@ -389,7 +438,7 @@
                                 <option value="">Select a Shipping Term</option>
                                 {% if shipping_terms %}
                                     {% for term in shipping_terms %}
-                                    <option value="{{ term.pk }}">{{ term.name }}</option>
+                                    <option value="{{ term.pk }}" {% if not is_create %}{% if shipment.order.shipping_terms_id == term.pk %}selected{% endif %}{% elif is_create %}{% if order.shipping_terms_id == term.pk %}selected{% endif %}{% endif %}>{{ term.name }}</option>
                                     {% endfor %}
                                 {% endif %}
                             </select>
@@ -400,7 +449,9 @@
                             <label class="form-label">Representatives <span class="text-danger">*</span></label>
                             <select name="representative_ui" id="shipment-rep-select" class="form-select" required>
                                 <option value="">Select individual</option>
-                                <option value="{{ user.id }}" selected>{{ user.get_full_name|default:user.username }}</option>
+                                {% for rep in representatives %}
+                                <option value="{{ rep.id }}" {% if not is_create %}{% if shipment.order.representative_id == rep.id %}selected{% endif %}{% elif is_create %}{% if order.representative_id == rep.id %}selected{% endif %}{% endif %}>{{ rep.get_full_name|default:rep.username }}</option>
+                                {% endfor %}
                             </select>
                             <div class="form-text">
                                 <a href="#" id="assign-shipment-rep-me" class="text-decoration-none" data-user-id="{{ user.id }}">Click to assign to yourself.</a>
@@ -521,76 +572,14 @@
                         </div>
                     </div>
                 </div>
-                {% endif %}
-                
-                {% if not is_create %}
-                <!-- Origin -->
-                <div class="card mb-4">
-                    <div class="card-header bg-white">
-                        <h5 class="card-title mb-0"><i class="fas fa-map-marker-alt me-2 text-success"></i>Origin</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label class="form-label">Address</label>
-                            <input type="text" name="origin_address" class="form-control" value="{{ shipment.origin_address|default:'' }}">
-                        </div>
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">City</label>
-                                <input type="text" name="origin_city" class="form-control" value="{{ shipment.origin_city|default:'' }}">
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">State</label>
-                                <input type="text" name="origin_state" class="form-control" value="{{ shipment.origin_state|default:'' }}">
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Postal Code</label>
-                                <input type="text" name="origin_postal_code" class="form-control" value="{{ shipment.origin_postal_code|default:'' }}">
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Country</label>
-                            <input type="text" name="origin_country" class="form-control" value="{{ shipment.origin_country|default:'USA' }}">
-                        </div>
-                    </div>
-                </div>
 
-                <!-- Destination -->
-                <div class="card mb-4">
-                    <div class="card-header bg-white">
-                        <h5 class="card-title mb-0"><i class="fas fa-map-marker-alt me-2 text-danger"></i>Destination</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label class="form-label">Address</label>
-                            <input type="text" name="destination_address" class="form-control" value="{{ shipment.destination_address|default:'' }}">
-                        </div>
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">City</label>
-                                <input type="text" name="destination_city" class="form-control" value="{{ shipment.destination_city|default:'' }}">
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">State</label>
-                                <input type="text" name="destination_state" class="form-control" value="{{ shipment.destination_state|default:'' }}">
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Postal Code</label>
-                                <input type="text" name="destination_postal_code" class="form-control" value="{{ shipment.destination_postal_code|default:'' }}">
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Country</label>
-                            <input type="text" name="destination_country" class="form-control" value="{{ shipment.destination_country|default:'USA' }}">
-                        </div>
-                    </div>
-                </div>
-                {% endif %}
+                
+
 
                 {% if is_create %}
                 <input type="hidden" name="origin_address" id="shipment-origin-address-hidden">
                 <input type="hidden" name="origin_city" id="shipment-origin-city-hidden">
-                <input type="hidden" name="origin_state" id="shipment-origin-state-hidden">
+                <input type="hidden" name="origin_state" id="shipment-origin-state-hidden" value="{{ shipment.origin_state|default:'' }}">
                 <input type="hidden" name="origin_postal_code" id="shipment-origin-postal-code-hidden">
                 <input type="hidden" name="origin_country" id="shipment-origin-country-hidden" value="USA">
                 <input type="hidden" name="destination_address" id="shipment-destination-address-hidden">
@@ -1322,8 +1311,8 @@
             return;
         }
 
-        const optionValue = `temp_contact_${Date.now()}`;
-        const optionLabel = mobile ? `${fullName} (${mobile})` : fullName;
+        const optionValue = mobile || fullName;
+        const optionLabel = mobile || fullName;
         const option = new Option(optionLabel, optionValue, true, true);
         option.dataset.name = fullName;
         option.dataset.email = email;
@@ -1409,6 +1398,24 @@
     syncShipmentLocationSelectState('shipment-destination-location-select');
     syncShipmentAddressFields('shipment-pickup-location-select', 'origin');
     syncShipmentAddressFields('shipment-destination-location-select', 'destination');
+
+    // Auto-fill phone number when contact is selected
+    const handleContactChange = (event) => {
+        const select = event.target;
+        const option = select.selectedOptions[0];
+        if (!option) return;
+
+        const isPickup = select.id === 'shipment-pickup-contact-select';
+        const numberInputId = isPickup ? 'shipment-pickup-number' : 'shipment-delivery-number';
+        const numberInput = document.getElementById(numberInputId);
+        
+        if (numberInput && option.dataset.mobile) {
+            numberInput.value = option.dataset.mobile;
+        }
+    };
+
+    document.getElementById('shipment-pickup-contact-select')?.addEventListener('change', handleContactChange);
+    document.getElementById('shipment-delivery-contact-select')?.addEventListener('change', handleContactChange);
 
     // Shipment Items (UI-only)
     (function() {

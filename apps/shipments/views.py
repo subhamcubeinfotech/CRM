@@ -3,6 +3,7 @@ Shipments Views - Main views for shipment management
 """
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 from django.contrib import messages
 from django.conf import settings
 from django.core.paginator import Paginator
@@ -563,6 +564,16 @@ def shipment_create(request):
             tenant=request.user.tenant,  # Add tenant assignment
         )
         shipment.save()
+
+        # Update associated order commercial details
+        if order:
+            order.shipping_terms_id = request.POST.get('shipping_terms_ui') or None
+            order.representative_id = request.POST.get('representative_ui') or None
+            order.save()
+            
+            # Update tags
+            tag_ids = request.POST.getlist('tags_ui')
+            order.tags.set(tag_ids)
         
         # Create initial milestone
         ShipmentMilestone.objects.create(
@@ -598,6 +609,7 @@ def shipment_create(request):
         'carriers': carriers,
         'all_companies': all_companies,
         'warehouses': warehouses,
+        'contacts': contacts,
         'inventory_items': inventory_items,
         'tags': tags,
         'shipping_terms': shipping_terms,
@@ -699,21 +711,46 @@ def shipment_edit(request, pk):
             shipment.actual_delivery_date = timezone.now().date()
             
         shipment.save()
+
+        # Update associated order commercial details
+        if shipment.order:
+            shipment.order.shipping_terms_id = request.POST.get('shipping_terms_ui') or None
+            shipment.order.representative_id = request.POST.get('representative_ui') or None
+            shipment.order.save()
+            
+            # Update tags
+            tag_ids = request.POST.getlist('tags_ui')
+            shipment.order.tags.set(tag_ids)
         
         logger.info(f'Shipment updated: {shipment.shipment_number} by {request.user}')
         messages.success(request, f'Shipment {shipment.shipment_number} updated successfully!')
         return redirect('shipments:shipment_detail', pk=shipment.pk)
     
-    # Get companies for dropdowns
-    customers = Company.objects.filter(company_type='customer', is_active=True)
-    carriers = Company.objects.filter(company_type='carrier', is_active=True)
-    all_companies = Company.objects.filter(is_active=True)
+    # Get data for dropdowns
+    user_tenant = request.user.tenant
+    all_companies = Company.plain_objects.all().order_by('name')
+    suppliers = all_companies
+    customers = all_companies.filter(company_type='customer')
+    carriers = all_companies.filter(company_type='carrier')
+    warehouses = Warehouse.plain_objects.filter(tenant=user_tenant).order_by('name')
+    inventory_items = InventoryItem.plain_objects.all()
+    tags = Tag.plain_objects.filter(tenant=user_tenant).order_by('name')
+    shipping_terms = ShippingTerm.plain_objects.filter(tenant=user_tenant).order_by('name')
+    representatives = CustomUser.objects.filter(tenant=user_tenant, is_active=True).order_by('first_name', 'username')
+    packaging_types = PackagingType.objects.all().order_by('name')
     
     context = {
         'shipment': shipment,
         'customers': customers,
         'carriers': carriers,
+        'suppliers': suppliers,
         'all_companies': all_companies,
+        'warehouses': warehouses,
+        'inventory_items': inventory_items,
+        'tags': tags,
+        'shipping_terms': shipping_terms,
+        'representatives': representatives,
+        'packaging_types': packaging_types,
         'shipment_types': Shipment.SHIPMENT_TYPE_CHOICES,
         'is_create': False,
     }
@@ -1594,5 +1631,8 @@ def update_status(request, pk):
             logger.warning(f'Invalid status update attempted on shipment {pk} by {request.user}: {new_status}')
             messages.error(request, 'Invalid status.')
     return redirect('shipments:shipment_detail', pk=pk)
+
+
+
 
 
