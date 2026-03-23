@@ -609,7 +609,6 @@ def shipment_create(request):
         'carriers': carriers,
         'all_companies': all_companies,
         'warehouses': warehouses,
-        'contacts': contacts,
         'inventory_items': inventory_items,
         'tags': tags,
         'shipping_terms': shipping_terms,
