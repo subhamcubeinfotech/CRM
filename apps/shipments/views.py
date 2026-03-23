@@ -582,9 +582,22 @@ def shipment_create(request):
             
             # Metadata
             created_by=request.user,
-            tenant=request.user.tenant,  # Add tenant assignment
+            tenant=request.user.tenant,
         )
         shipment.save()
+
+        # DEBUG PRINTS FOR SHIPMENT CREATION
+        print("\n" + "="*50)
+        print(" NEW SHIPMENT CREATED ")
+        print(f" Order ID: {shipment.order_id}")
+        print(f" Supplier (Shipper): {shipment.shipper}")
+        print(f" Pickup Location: {shipment.pickup_location}")
+        print(f" Pickup Contact: {shipment.pickup_contact}")
+        print(f" Pickup Number: {shipment.pickup_number}")
+        print(f" Pickup Date: {shipment.pickup_date}")
+        print(f" Pickup Appointment: {shipment.pickup_appointment_type}")
+        print("="*50 + "\n")
+
 
         # Update associated order commercial details
         if order:
@@ -616,8 +629,8 @@ def shipment_create(request):
     carriers = all_companies.filter(company_type='carrier')
     warehouses = Warehouse.plain_objects.filter(tenant=user_tenant).order_by('name')
     inventory_items = InventoryItem.plain_objects.all()
-    tags = Tag.plain_objects.filter(tenant=user_tenant).order_by('name')
-    shipping_terms = ShippingTerm.plain_objects.filter(tenant=user_tenant).order_by('name')
+    tags = Tag.plain_objects.filter(Q(tenant=user_tenant) | Q(tenant__isnull=True)).order_by('name')
+    shipping_terms = ShippingTerm.plain_objects.filter(Q(tenant=user_tenant) | Q(tenant__isnull=True)).order_by('name')
     representatives = CustomUser.objects.filter(tenant=user_tenant, is_active=True).order_by('first_name', 'username')
     packaging_types = PackagingType.objects.all().order_by('name')
     
@@ -732,6 +745,19 @@ def shipment_edit(request, pk):
             
         shipment.save()
 
+        # DEBUG PRINTS FOR SHIPMENT UPDATE
+        print("\n" + "="*50)
+        print(" SHIPMENT UPDATED ")
+        print(f" Shipment ID: {shipment.pk}")
+        print(f" Order ID: {shipment.order_id}")
+        print(f" Supplier (Shipper): {shipment.shipper}")
+        print(f" Pickup Location: {shipment.pickup_location}")
+        print(f" Pickup Contact: {shipment.pickup_contact}")
+        print(f" Pickup Number: {shipment.pickup_number}")
+        print(f" Pickup Date: {shipment.pickup_date}")
+        print(f" Pickup Appointment: {shipment.pickup_appointment_type}")
+        print("="*50 + "\n")
+
         # Update associated order commercial details
         if shipment.order:
             shipment.order.shipping_terms_id = request.POST.get('shipping_terms_ui') or None
@@ -754,8 +780,8 @@ def shipment_edit(request, pk):
     carriers = all_companies.filter(company_type='carrier')
     warehouses = Warehouse.plain_objects.filter(tenant=user_tenant).order_by('name')
     inventory_items = InventoryItem.plain_objects.all()
-    tags = Tag.plain_objects.filter(tenant=user_tenant).order_by('name')
-    shipping_terms = ShippingTerm.plain_objects.filter(tenant=user_tenant).order_by('name')
+    tags = Tag.plain_objects.filter(Q(tenant=user_tenant) | Q(tenant__isnull=True)).order_by('name')
+    shipping_terms = ShippingTerm.plain_objects.filter(Q(tenant=user_tenant) | Q(tenant__isnull=True)).order_by('name')
     representatives = CustomUser.objects.filter(tenant=user_tenant, is_active=True).order_by('first_name', 'username')
     packaging_types = PackagingType.objects.all().order_by('name')
     
