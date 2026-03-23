@@ -17,7 +17,7 @@ import json
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
-from .models import Shipment, Container, ShipmentMilestone, Document
+from .models import Shipment, Container, ShipmentMilestone, Document, ShipmentItem
 from apps.accounts.models import Company, CustomUser
 from apps.invoicing.models import Invoice
 from apps.orders.models import Order, PackagingType
@@ -78,6 +78,39 @@ def _reverse_geocode_location(latitude, longitude):
     except Exception as exc:
         logger.debug(f"Reverse geocoding failed for {latitude}, {longitude}: {exc}")
         return fallback
+
+
+def _parse_items_from_post(post_data):
+    """Parse multiple line items from the shipment form POST data"""
+    items = []
+    indices = set()
+    for key in post_data.keys():
+        if key.startswith('items_ui['):
+            try:
+                index = int(key.split('[')[1].split(']')[0])
+                indices.add(index)
+            except (IndexError, ValueError):
+                continue
+    
+    for i in sorted(list(indices)):
+        weight_val = post_data.get(f'items_ui[{i}][weight]', '0') or '0'
+        pieces_val = post_data.get(f'items_ui[{i}][pieces]', '0') or '0'
+        buy_val = post_data.get(f'items_ui[{i}][buy_price]', '0') or '0'
+        sell_val = post_data.get(f'items_ui[{i}][sell_price]', '0') or '0'
+        
+        item = {
+            'material_id': post_data.get(f'items_ui[{i}][material]'),
+            'weight': float(weight_val),
+            'weight_unit': post_data.get(f'items_ui[{i}][unit]', 'lbs'),
+            'packaging': post_data.get(f'items_ui[{i}][packaging]', ''),
+            'is_palletized': post_data.get(f'items_ui[{i}][palletized]') == 'on',
+            'pieces': int(pieces_val) if pieces_val else 1,
+            'buy_price': float(buy_val),
+            'sell_price': float(sell_val),
+            'price_unit': post_data.get(f'items_ui[{i}][price_unit]', 'per lbs'),
+        }
+        items.append(item)
+    return items
 
 
 
@@ -507,7 +540,6 @@ def shipment_create(request):
     user_tenant = request.user.tenant
 
     if request.method == 'POST':
-        item_data = _first_item_payload(request.POST)
         # Get form data
         customer_id = request.POST.get('customer') or order.receiver_id  # Default to order receiver
         carrier_id = request.POST.get('carrier')
@@ -537,8 +569,9 @@ def shipment_create(request):
             origin_country=request.POST.get('origin_country', 'USA'),
             origin_postal_code=request.POST.get('origin_postal_code', ''),
             pickup_contact=request.POST.get('pickup_contact_ui', ''),
+            pickup_email=request.POST.get('pickup_email_ui', ''),
             pickup_number=request.POST.get('pickup_number_ui', ''),
-            pickup_appointment_type=request.POST.get('pickup_appointment_ui', 'fcfs'),
+            pickup_appointment_type=request.POST.get('pickup_appointment_ui', ''),
             
             # Destination
             destination_location_id=dest_loc_id if dest_loc_id and not dest_loc_id.startswith('temp_') else None,
@@ -548,18 +581,23 @@ def shipment_create(request):
             destination_country=request.POST.get('destination_country', 'USA'),
             destination_postal_code=request.POST.get('destination_postal_code', ''),
             delivery_contact=request.POST.get('delivery_contact_ui', ''),
+            delivery_email=request.POST.get('delivery_email_ui', ''),
             delivery_number=request.POST.get('delivery_number_ui', ''),
-            delivery_appointment_type=request.POST.get('delivery_appointment_ui', 'fcfs'),
+            delivery_appointment_type=request.POST.get('delivery_appointment_ui', ''),
             
             # Schedule
             pickup_date=request.POST.get('pickup_date') or None,
             estimated_delivery_date=request.POST.get('estimated_delivery_date') or None,
             
             # Cargo
-            total_weight=request.POST.get('total_weight', item_data['weight']) or item_data['weight'],
+            total_weight=request.POST.get('total_weight', 0) or 0,
             total_volume=request.POST.get('total_volume', 0) or 0,
-            number_of_pieces=item_data['number_of_pieces'],
+            number_of_pieces=request.POST.get('number_of_pieces', 1) or 1,
             commodity_description=request.POST.get('commodity_description', ''),
+
+            # Commercial
+            shipping_terms_id=request.POST.get('shipping_terms_ui') or None,
+            representative_id=request.POST.get('representative_ui') or None,
 
             # Tracking
             vehicle_number=request.POST.get('vehicle_number', ''),
@@ -582,9 +620,48 @@ def shipment_create(request):
             
             # Metadata
             created_by=request.user,
-            tenant=request.user.tenant,  # Add tenant assignment
+            tenant=request.user.tenant,
         )
         shipment.save()
+
+        # Save tags
+        tag_ids = request.POST.getlist('tags_ui')
+        if tag_ids:
+            shipment.tags.set(tag_ids)
+
+        # Save items
+        items_data = _parse_items_from_post(request.POST)
+        for item_data in items_data:
+            inv_item = None
+            if item_data['material_id'] and str(item_data['material_id']).isdigit():
+                inv_item = InventoryItem.objects.filter(pk=item_data['material_id']).first()
+            
+            ShipmentItem.objects.create(
+                shipment=shipment,
+                inventory_item=inv_item,
+                material_name=inv_item.product_name if inv_item else item_data['material_id'] or "Unknown Material",
+                weight=item_data['weight'],
+                weight_unit=item_data['weight_unit'],
+                packaging=item_data['packaging'],
+                is_palletized=item_data['is_palletized'],
+                pieces=item_data['pieces'],
+                buy_price=item_data['buy_price'],
+                sell_price=item_data['sell_price'],
+                price_unit=item_data['price_unit'],
+            )
+
+        # DEBUG PRINTS FOR SHIPMENT CREATION
+        print("\n" + "="*50)
+        print(" NEW SHIPMENT CREATED ")
+        print(f" Order ID: {shipment.order_id}")
+        print(f" Supplier (Shipper): {shipment.shipper}")
+        print(f" Pickup Location: {shipment.pickup_location}")
+        print(f" Pickup Contact: {shipment.pickup_contact}")
+        print(f" Pickup Number: {shipment.pickup_number}")
+        print(f" Pickup Date: {shipment.pickup_date}")
+        print(f" Pickup Appointment: {shipment.pickup_appointment_type}")
+        print("="*50 + "\n")
+
 
         # Update associated order commercial details
         if order:
@@ -616,8 +693,8 @@ def shipment_create(request):
     carriers = all_companies.filter(company_type='carrier')
     warehouses = Warehouse.plain_objects.filter(tenant=user_tenant).order_by('name')
     inventory_items = InventoryItem.plain_objects.all()
-    tags = Tag.plain_objects.filter(tenant=user_tenant).order_by('name')
-    shipping_terms = ShippingTerm.plain_objects.filter(tenant=user_tenant).order_by('name')
+    tags = Tag.plain_objects.filter(Q(tenant=user_tenant) | Q(tenant__isnull=True)).order_by('name')
+    shipping_terms = ShippingTerm.plain_objects.filter(Q(tenant=user_tenant) | Q(tenant__isnull=True)).order_by('name')
     representatives = CustomUser.objects.filter(tenant=user_tenant, is_active=True).order_by('first_name', 'username')
     packaging_types = PackagingType.objects.all().order_by('name')
     
@@ -655,7 +732,6 @@ def shipment_edit(request, pk):
         }
     
     if request.method == 'POST':
-        item_data = _first_item_payload(request.POST)
         # Update shipment
         shipment.customer_id = request.POST.get('customer')
         shipment.carrier_id = request.POST.get('carrier') or None
@@ -684,8 +760,9 @@ def shipment_edit(request, pk):
         shipment.origin_country = request.POST.get('origin_country', 'USA')
         shipment.origin_postal_code = request.POST.get('origin_postal_code', '')
         shipment.pickup_contact = request.POST.get('pickup_contact_ui', '')
+        shipment.pickup_email = request.POST.get('pickup_email_ui', '')
         shipment.pickup_number = request.POST.get('pickup_number_ui', '')
-        shipment.pickup_appointment_type = request.POST.get('pickup_appointment_ui', 'fcfs')
+        shipment.pickup_appointment_type = request.POST.get('pickup_appointment_ui', '')
         
         # Destination
         shipment.destination_address = request.POST.get('destination_address', '')
@@ -694,17 +771,18 @@ def shipment_edit(request, pk):
         shipment.destination_country = request.POST.get('destination_country', 'USA')
         shipment.destination_postal_code = request.POST.get('destination_postal_code', '')
         shipment.delivery_contact = request.POST.get('delivery_contact_ui', '')
+        shipment.delivery_email = request.POST.get('delivery_email_ui', '')
         shipment.delivery_number = request.POST.get('delivery_number_ui', '')
-        shipment.delivery_appointment_type = request.POST.get('delivery_appointment_ui', 'fcfs')
+        shipment.delivery_appointment_type = request.POST.get('delivery_appointment_ui', '')
         
         # Schedule
         shipment.pickup_date = request.POST.get('pickup_date') or None
         shipment.estimated_delivery_date = request.POST.get('estimated_delivery_date') or None
         
         # Cargo
-        shipment.total_weight = request.POST.get('total_weight', item_data['weight']) or item_data['weight']
+        shipment.total_weight = request.POST.get('total_weight', 0) or 0
         shipment.total_volume = request.POST.get('total_volume', 0) or 0
-        shipment.number_of_pieces = item_data['number_of_pieces']
+        shipment.number_of_pieces = request.POST.get('number_of_pieces', 1) or 1
         shipment.commodity_description = request.POST.get('commodity_description', '')
 
         # Tracking
@@ -716,6 +794,10 @@ def shipment_edit(request, pk):
         shipment.is_hazmat = request.POST.get('is_hazmat') == 'on'
         shipment.is_temperature_controlled = request.POST.get('is_temperature_controlled') == 'on'
         shipment.requires_insurance = request.POST.get('requires_insurance') == 'on'
+        
+        # Commercial
+        shipment.shipping_terms_id = request.POST.get('shipping_terms_ui') or None
+        shipment.representative_id = request.POST.get('representative_ui') or None
         
         # Financial
         shipment.quoted_amount = request.POST.get('quoted_amount', 0) or 0
@@ -732,15 +814,42 @@ def shipment_edit(request, pk):
             
         shipment.save()
 
+        # Update tags
+        tag_ids = request.POST.getlist('tags_ui')
+        if tag_ids:
+            shipment.tags.set(tag_ids)
+
+        # Sync items
+        shipment.items.all().delete()
+        items_data = _parse_items_from_post(request.POST)
+        for item_data in items_data:
+            inv_item = None
+            if item_data['material_id'] and str(item_data['material_id']).isdigit():
+                inv_item = InventoryItem.objects.filter(pk=item_data['material_id']).first()
+            
+            ShipmentItem.objects.create(
+                shipment=shipment,
+                inventory_item=inv_item,
+                material_name=inv_item.product_name if inv_item else item_data['material_id'] or "Unknown Material",
+                weight=item_data['weight'],
+                weight_unit=item_data['weight_unit'],
+                packaging=item_data['packaging'],
+                is_palletized=item_data['is_palletized'],
+                pieces=item_data['pieces'],
+                buy_price=item_data['buy_price'],
+                sell_price=item_data['sell_price'],
+                price_unit=item_data['price_unit'],
+            )
+
         # Update associated order commercial details
         if shipment.order:
             shipment.order.shipping_terms_id = request.POST.get('shipping_terms_ui') or None
             shipment.order.representative_id = request.POST.get('representative_ui') or None
             shipment.order.save()
             
-            # Update tags
-            tag_ids = request.POST.getlist('tags_ui')
-            shipment.order.tags.set(tag_ids)
+            # Update order tags
+            if tag_ids:
+                shipment.order.tags.set(tag_ids)
         
         logger.info(f'Shipment updated: {shipment.shipment_number} by {request.user}')
         messages.success(request, f'Shipment {shipment.shipment_number} updated successfully!')
@@ -754,8 +863,8 @@ def shipment_edit(request, pk):
     carriers = all_companies.filter(company_type='carrier')
     warehouses = Warehouse.plain_objects.filter(tenant=user_tenant).order_by('name')
     inventory_items = InventoryItem.plain_objects.all()
-    tags = Tag.plain_objects.filter(tenant=user_tenant).order_by('name')
-    shipping_terms = ShippingTerm.plain_objects.filter(tenant=user_tenant).order_by('name')
+    tags = Tag.plain_objects.filter(Q(tenant=user_tenant) | Q(tenant__isnull=True)).order_by('name')
+    shipping_terms = ShippingTerm.plain_objects.filter(Q(tenant=user_tenant) | Q(tenant__isnull=True)).order_by('name')
     representatives = CustomUser.objects.filter(tenant=user_tenant, is_active=True).order_by('first_name', 'username')
     packaging_types = PackagingType.objects.all().order_by('name')
     
