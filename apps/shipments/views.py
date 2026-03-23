@@ -275,7 +275,7 @@ def dashboard(request):
 def shipment_list(request):
     """List all shipments with filters"""
     shipments = filter_by_user_company(
-        Shipment.objects.select_related('customer').all(), request.user
+        Shipment.objects.select_related('customer', 'shipper', 'consignee', 'order').all(), request.user
     )
     
     # Search
