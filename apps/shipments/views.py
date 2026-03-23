@@ -3,6 +3,7 @@ Shipments Views - Main views for shipment management
 """
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 from django.contrib import messages
 from django.conf import settings
 from django.core.paginator import Paginator
@@ -83,22 +84,40 @@ def _reverse_geocode_location(latitude, longitude):
 @login_required
 def dashboard(request):
     """Main dashboard view"""
-    # Get date ranges
+    # Get date filters
     today = timezone.now().date()
-    month_start = today.replace(day=1)
-    last_6_months = today - timedelta(days=180)
-    selected_chart_month = request.GET.get('chart_month', today.strftime('%Y-%m'))
+    date_range = request.GET.get('date_range', 'this_month')
+    start_date_str = request.GET.get('start_date')
+    end_date_str = request.GET.get('end_date')
 
-    try:
-        chart_month_start = datetime.strptime(f"{selected_chart_month}-01", "%Y-%m-%d").date()
-    except ValueError:
-        chart_month_start = month_start
-        selected_chart_month = chart_month_start.strftime('%Y-%m')
+    # Default range (this month)
+    chart_start_date = today.replace(day=1)
+    chart_end_date = today + timedelta(days=1)
 
-    if chart_month_start.month == 12:
-        chart_month_end = chart_month_start.replace(year=chart_month_start.year + 1, month=1)
-    else:
-        chart_month_end = chart_month_start.replace(month=chart_month_start.month + 1)
+    if date_range == 'last_7_days':
+        chart_start_date = today - timedelta(days=7)
+        chart_end_date = today + timedelta(days=1)
+    elif date_range == 'last_30_days':
+        chart_start_date = today - timedelta(days=30)
+        chart_end_date = today + timedelta(days=1)
+    elif date_range == 'last_month':
+        # Get first and last day of previous month
+        last_month_end = today.replace(day=1) - timedelta(days=1)
+        chart_start_date = last_month_end.replace(day=1)
+        chart_end_date = last_month_end + timedelta(days=1)
+    elif date_range == 'this_month':
+        chart_start_date = today.replace(day=1)
+        chart_end_date = today + timedelta(days=1)
+    elif date_range == 'custom' and start_date_str and end_date_str:
+        try:
+            chart_start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+            # Include the end day fully
+            chart_end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date() + timedelta(days=1)
+        except (ValueError, TypeError):
+            pass
+
+    # For legacy templates that still use selected_chart_month
+    selected_chart_month = chart_start_date.strftime('%Y-%m')
     
     # Base queryset filtered by user's company
     base_qs = filter_by_user_company(Shipment.objects.all(), request.user)
@@ -113,8 +132,8 @@ def dashboard(request):
     monthly_revenue = base_qs.filter(
         status='delivered'
     ).filter(
-        Q(actual_delivery_date__gte=month_start) | 
-        Q(actual_delivery_date__isnull=True, estimated_delivery_date__gte=month_start)
+        Q(actual_delivery_date__gte=chart_start_date, actual_delivery_date__lt=chart_end_date) | 
+        Q(actual_delivery_date__isnull=True, estimated_delivery_date__gte=chart_start_date, estimated_delivery_date__lt=chart_end_date)
     ).aggregate(total=Sum('revenue'))['total'] or 0
     
     pending_invoices = invoice_qs.filter(
@@ -153,8 +172,8 @@ def dashboard(request):
     
     # Shipment status distribution - dynamic for all choices
     status_counts = base_qs.filter(
-        created_at__date__gte=chart_month_start,
-        created_at__date__lt=chart_month_end,
+        created_at__date__gte=chart_start_date,
+        created_at__date__lt=chart_end_date,
     ).values('status').annotate(count=Count('id'))
     status_counts_dict = {item['status']: item['count'] for item in status_counts}
     
@@ -166,8 +185,8 @@ def dashboard(request):
 
     # Order status distribution
     order_status_counts = order_qs.filter(
-        created_at__date__gte=chart_month_start,
-        created_at__date__lt=chart_month_end,
+        created_at__date__gte=chart_start_date,
+        created_at__date__lt=chart_end_date,
     ).values('status').annotate(count=Count('id'))
     order_status_counts_dict = {item['status']: item['count'] for item in order_status_counts}
 
@@ -208,6 +227,9 @@ def dashboard(request):
         'order_status_data': json.dumps(order_status_data),
         'order_status_labels': json.dumps(order_status_labels),
         'selected_chart_month': selected_chart_month,
+        'date_range': date_range,
+        'start_date': start_date_str,
+        'end_date': end_date_str,
         'chart_month_options': chart_month_options,
         
         # Recent shipments
@@ -563,6 +585,16 @@ def shipment_create(request):
             tenant=request.user.tenant,  # Add tenant assignment
         )
         shipment.save()
+
+        # Update associated order commercial details
+        if order:
+            order.shipping_terms_id = request.POST.get('shipping_terms_ui') or None
+            order.representative_id = request.POST.get('representative_ui') or None
+            order.save()
+            
+            # Update tags
+            tag_ids = request.POST.getlist('tags_ui')
+            order.tags.set(tag_ids)
         
         # Create initial milestone
         ShipmentMilestone.objects.create(
@@ -699,21 +731,46 @@ def shipment_edit(request, pk):
             shipment.actual_delivery_date = timezone.now().date()
             
         shipment.save()
+
+        # Update associated order commercial details
+        if shipment.order:
+            shipment.order.shipping_terms_id = request.POST.get('shipping_terms_ui') or None
+            shipment.order.representative_id = request.POST.get('representative_ui') or None
+            shipment.order.save()
+            
+            # Update tags
+            tag_ids = request.POST.getlist('tags_ui')
+            shipment.order.tags.set(tag_ids)
         
         logger.info(f'Shipment updated: {shipment.shipment_number} by {request.user}')
         messages.success(request, f'Shipment {shipment.shipment_number} updated successfully!')
         return redirect('shipments:shipment_detail', pk=shipment.pk)
     
-    # Get companies for dropdowns
-    customers = Company.objects.filter(company_type='customer', is_active=True)
-    carriers = Company.objects.filter(company_type='carrier', is_active=True)
-    all_companies = Company.objects.filter(is_active=True)
+    # Get data for dropdowns
+    user_tenant = request.user.tenant
+    all_companies = Company.plain_objects.all().order_by('name')
+    suppliers = all_companies
+    customers = all_companies.filter(company_type='customer')
+    carriers = all_companies.filter(company_type='carrier')
+    warehouses = Warehouse.plain_objects.filter(tenant=user_tenant).order_by('name')
+    inventory_items = InventoryItem.plain_objects.all()
+    tags = Tag.plain_objects.filter(tenant=user_tenant).order_by('name')
+    shipping_terms = ShippingTerm.plain_objects.filter(tenant=user_tenant).order_by('name')
+    representatives = CustomUser.objects.filter(tenant=user_tenant, is_active=True).order_by('first_name', 'username')
+    packaging_types = PackagingType.objects.all().order_by('name')
     
     context = {
         'shipment': shipment,
         'customers': customers,
         'carriers': carriers,
+        'suppliers': suppliers,
         'all_companies': all_companies,
+        'warehouses': warehouses,
+        'inventory_items': inventory_items,
+        'tags': tags,
+        'shipping_terms': shipping_terms,
+        'representatives': representatives,
+        'packaging_types': packaging_types,
         'shipment_types': Shipment.SHIPMENT_TYPE_CHOICES,
         'is_create': False,
     }
@@ -1594,5 +1651,8 @@ def update_status(request, pk):
             logger.warning(f'Invalid status update attempted on shipment {pk} by {request.user}: {new_status}')
             messages.error(request, 'Invalid status.')
     return redirect('shipments:shipment_detail', pk=pk)
+
+
+
 
 
