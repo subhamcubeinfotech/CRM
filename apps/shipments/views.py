@@ -84,22 +84,40 @@ def _reverse_geocode_location(latitude, longitude):
 @login_required
 def dashboard(request):
     """Main dashboard view"""
-    # Get date ranges
+    # Get date filters
     today = timezone.now().date()
-    month_start = today.replace(day=1)
-    last_6_months = today - timedelta(days=180)
-    selected_chart_month = request.GET.get('chart_month', today.strftime('%Y-%m'))
+    date_range = request.GET.get('date_range', 'this_month')
+    start_date_str = request.GET.get('start_date')
+    end_date_str = request.GET.get('end_date')
 
-    try:
-        chart_month_start = datetime.strptime(f"{selected_chart_month}-01", "%Y-%m-%d").date()
-    except ValueError:
-        chart_month_start = month_start
-        selected_chart_month = chart_month_start.strftime('%Y-%m')
+    # Default range (this month)
+    chart_start_date = today.replace(day=1)
+    chart_end_date = today + timedelta(days=1)
 
-    if chart_month_start.month == 12:
-        chart_month_end = chart_month_start.replace(year=chart_month_start.year + 1, month=1)
-    else:
-        chart_month_end = chart_month_start.replace(month=chart_month_start.month + 1)
+    if date_range == 'last_7_days':
+        chart_start_date = today - timedelta(days=7)
+        chart_end_date = today + timedelta(days=1)
+    elif date_range == 'last_30_days':
+        chart_start_date = today - timedelta(days=30)
+        chart_end_date = today + timedelta(days=1)
+    elif date_range == 'last_month':
+        # Get first and last day of previous month
+        last_month_end = today.replace(day=1) - timedelta(days=1)
+        chart_start_date = last_month_end.replace(day=1)
+        chart_end_date = last_month_end + timedelta(days=1)
+    elif date_range == 'this_month':
+        chart_start_date = today.replace(day=1)
+        chart_end_date = today + timedelta(days=1)
+    elif date_range == 'custom' and start_date_str and end_date_str:
+        try:
+            chart_start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+            # Include the end day fully
+            chart_end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date() + timedelta(days=1)
+        except (ValueError, TypeError):
+            pass
+
+    # For legacy templates that still use selected_chart_month
+    selected_chart_month = chart_start_date.strftime('%Y-%m')
     
     # Base queryset filtered by user's company
     base_qs = filter_by_user_company(Shipment.objects.all(), request.user)
@@ -114,8 +132,8 @@ def dashboard(request):
     monthly_revenue = base_qs.filter(
         status='delivered'
     ).filter(
-        Q(actual_delivery_date__gte=month_start) | 
-        Q(actual_delivery_date__isnull=True, estimated_delivery_date__gte=month_start)
+        Q(actual_delivery_date__gte=chart_start_date, actual_delivery_date__lt=chart_end_date) | 
+        Q(actual_delivery_date__isnull=True, estimated_delivery_date__gte=chart_start_date, estimated_delivery_date__lt=chart_end_date)
     ).aggregate(total=Sum('revenue'))['total'] or 0
     
     pending_invoices = invoice_qs.filter(
@@ -154,8 +172,8 @@ def dashboard(request):
     
     # Shipment status distribution - dynamic for all choices
     status_counts = base_qs.filter(
-        created_at__date__gte=chart_month_start,
-        created_at__date__lt=chart_month_end,
+        created_at__date__gte=chart_start_date,
+        created_at__date__lt=chart_end_date,
     ).values('status').annotate(count=Count('id'))
     status_counts_dict = {item['status']: item['count'] for item in status_counts}
     
@@ -167,8 +185,8 @@ def dashboard(request):
 
     # Order status distribution
     order_status_counts = order_qs.filter(
-        created_at__date__gte=chart_month_start,
-        created_at__date__lt=chart_month_end,
+        created_at__date__gte=chart_start_date,
+        created_at__date__lt=chart_end_date,
     ).values('status').annotate(count=Count('id'))
     order_status_counts_dict = {item['status']: item['count'] for item in order_status_counts}
 
@@ -209,6 +227,9 @@ def dashboard(request):
         'order_status_data': json.dumps(order_status_data),
         'order_status_labels': json.dumps(order_status_labels),
         'selected_chart_month': selected_chart_month,
+        'date_range': date_range,
+        'start_date': start_date_str,
+        'end_date': end_date_str,
         'chart_month_options': chart_month_options,
         
         # Recent shipments
