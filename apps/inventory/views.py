@@ -194,10 +194,15 @@ def inventory_item_add_general(request):
         form = InventoryItemForm(initial=initial)
         form.fields['warehouse'].queryset = warehouses
     
+    from apps.accounts.models import Company
+    company = request.user.company
+    if not company and request.user.tenant:
+        company = Company.objects.filter(tenant=request.user.tenant).first()
+        
     context = {
         'form': form,
         'title': 'Add New Item',
-        'company': request.user.company,
+        'company': company,
     }
     return render(request, 'inventory/item_form.html', context)
 
@@ -218,9 +223,15 @@ def inventory_item_add(request, pk):
         # Pre-fill warehouse
         form = InventoryItemForm(initial={'warehouse': warehouse})
     
+    from apps.accounts.models import Company
+    company = warehouse.company or request.user.company
+    if not company and request.user.tenant:
+        company = Company.objects.filter(tenant=request.user.tenant).first()
+        
     context = {
         'form': form,
         'warehouse': warehouse,
+        'company': company,
         'title': f'Add Item to {warehouse.name}',
     }
     return render(request, 'inventory/item_form.html', context)
@@ -241,9 +252,15 @@ def inventory_item_edit(request, pk):
     else:
         form = InventoryItemForm(instance=item)
     
+    from apps.accounts.models import Company
+    company = warehouse.company or request.user.company
+    if not company and request.user.tenant:
+        company = Company.objects.filter(tenant=request.user.tenant).first()
+        
     context = {
         'form': form,
         'warehouse': warehouse,
+        'company': company,
         'item': item,
         'title': f'Edit {item.product_name}',
     }
