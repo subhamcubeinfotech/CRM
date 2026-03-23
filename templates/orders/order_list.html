@@ -208,8 +208,8 @@
                     <tr>
                         <th class="ps-4">ID</th>
                         <th>Status</th>
-                        <th>Pickup No.</th>
-                        <th>Delivery No.</th>
+                        <th>PO Number</th>
+                        <th>SO Number</th>
                         <th>Create Date</th>
                         <th>Supplier</th>
                         <th>Pickup</th>
@@ -235,10 +235,10 @@
                             </span>
                         </td>
                         <td class="text-muted small">
-                            {{ order.shipments.first.pickup_number|default:"-" }}
+                            {{ order.po_number|default:"-" }}
                         </td>
                         <td class="text-muted small">
-                            {{ order.shipments.first.delivery_number|default:"-" }}
+                            {{ order.so_number|default:"-" }}
                         </td>
                         <td class="text-muted small">
                             {{ order.created_at|date:"m/d/Y" }}
