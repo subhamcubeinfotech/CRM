@@ -296,10 +296,6 @@
                                     <option value="{{ shipment.pickup_contact }}" selected data-email="{{ shipment.pickup_email }}" data-phone="{{ shipment.pickup_number }}">{{ shipment.pickup_contact }}</option>
                                     {% endif %}
                                 </select>
-                                <div id="pickup-contact-details" class="mt-1 small" style="display: none;">
-                                    <div class="text-primary pickup-contact-email"></div>
-                                    <div class="text-primary pickup-contact-phone"></div>
-                                </div>
                                 <input type="hidden" name="pickup_email_ui" id="shipment-pickup-email-hidden" value="{{ shipment.pickup_email }}">
                             </div>
                             <div class="col-md-6 mb-3">
@@ -389,10 +385,6 @@
                                     <option value="{{ shipment.delivery_contact }}" selected data-email="{{ shipment.delivery_email }}" data-phone="{{ shipment.delivery_number }}">{{ shipment.delivery_contact }}</option>
                                     {% endif %}
                                 </select>
-                                <div id="delivery-contact-details" class="mt-1 small" style="display: none;">
-                                    <div class="text-primary delivery-contact-email"></div>
-                                    <div class="text-primary delivery-contact-phone"></div>
-                                </div>
                                 <input type="hidden" name="delivery_email_ui" id="shipment-delivery-email-hidden" value="{{ shipment.delivery_email }}">
                             </div>
                             <div class="col-md-6 mb-3">
@@ -1662,20 +1654,7 @@
         const numberInput = document.querySelector(`[name="${type}_number_ui"]`);
         if (numberInput && phone) numberInput.value = phone;
 
-        // Update detail display
-        const detailDiv = document.getElementById(`${type}-contact-details`);
-        if (detailDiv) {
-            const emailDiv = detailDiv.querySelector(`.${type}-contact-email`);
-            const phoneDiv = detailDiv.querySelector(`.${type}-contact-phone`);
-            
-            if (email || phone) {
-                detailDiv.style.display = 'block';
-                if (emailDiv) emailDiv.textContent = email;
-                if (phoneDiv) phoneDiv.textContent = phone;
-            } else {
-                detailDiv.style.display = 'none';
-            }
-        }
+        /* Removed detail display logic */
     };
 
     const pickupContactSelect = document.getElementById('shipment-pickup-contact-select');

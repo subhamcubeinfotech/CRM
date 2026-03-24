@@ -372,39 +372,60 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {% if shipment.order %}
-                                        {% for item in shipment.order.manifest_items.all %}
-                                        <tr>
-                                            <td class="py-3 px-2">
-                                                <div class="fw-bold">
-                                                <a href="{% url 'materials:material_lookup' %}?name={{ item.material|urlencode }}" class="text-primary text-decoration-none">
-                                                    {{ item.material }}
-                                                </a>
-                                                </div>
-                                            </td>
-                                            <td>${{ item.buy_price|floatformat:3 }} / {{ item.buy_price_unit }}</td>
-                                            <td>${{ item.sell_price|floatformat:2 }} / {{ item.sell_price_unit }}</td>
-                                            <td>
-                                                {% if item.weight_unit == "pcs" %}
-                                                -
-                                                {% else %}
-                                                {{ item.weight|floatformat:0 }} {{ item.weight_unit }}
-                                                {% endif %}
-                                            </td>
-                                            <td>
-                                                {% if item.weight_unit == "pcs" %}
-                                                {{ item.weight|floatformat:0 }} pcs
-                                                {% else %}
-                                                -
-                                                {% endif %}
-                                            </td>
-                                            <td>{{ item.packaging|default:"-" }}</td>
-                                        </tr>
-                                        {% empty %}
-                                        <tr>
-                                            <td colspan="6" class="text-muted text-center py-3">No manifest items</td>
-                                        </tr>
-                                        {% endfor %}
+                                        {% if shipment.items.exists %}
+                                            {% for item in shipment.items.all %}
+                                            <tr>
+                                                <td class="py-3 px-2">
+                                                    <div class="fw-bold">
+                                                        <a href="{% url 'materials:material_lookup' %}?name={{ item.material_name|urlencode }}" class="text-primary text-decoration-none">
+                                                            {{ item.material_name }}
+                                                        </a>
+                                                    </div>
+                                                </td>
+                                                <td>${{ item.buy_price|floatformat:4 }} / {{ item.price_unit }}</td>
+                                                <td>${{ item.sell_price|floatformat:4 }} / {{ item.price_unit }}</td>
+                                                <td>
+                                                    {{ item.weight|floatformat:2 }} {{ item.weight_unit }}
+                                                </td>
+                                                <td>
+                                                    {{ item.pieces|default:"-" }} pcs
+                                                </td>
+                                                <td>{{ item.packaging|default:"-" }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        {% elif shipment.order %}
+                                            {% for item in shipment.order.manifest_items.all %}
+                                            <tr>
+                                                <td class="py-3 px-2">
+                                                    <div class="fw-bold">
+                                                        <a href="{% url 'materials:material_lookup' %}?name={{ item.material|urlencode }}" class="text-primary text-decoration-none">
+                                                            {{ item.material }}
+                                                        </a>
+                                                    </div>
+                                                </td>
+                                                <td>${{ item.buy_price|floatformat:4 }} / {{ item.buy_price_unit }}</td>
+                                                <td>${{ item.sell_price|floatformat:4 }} / {{ item.sell_price_unit }}</td>
+                                                <td>
+                                                    {% if item.weight_unit == 'pcs' %}
+                                                    -
+                                                    {% else %}
+                                                    {{ item.weight|floatformat:2 }} {{ item.weight_unit }}
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    {% if item.weight_unit == 'pcs' %}
+                                                    {{ item.weight|floatformat:0 }} pcs
+                                                    {% else %}
+                                                    -
+                                                    {% endif %}
+                                                </td>
+                                                <td>{{ item.packaging|default:"-" }}</td>
+                                            </tr>
+                                            {% empty %}
+                                            <tr>
+                                                <td colspan="6" class="text-muted text-center py-3">No manifest items</td>
+                                            </tr>
+                                            {% endfor %}
                                         {% else %}
                                         <tr>
                                             <td colspan="6" class="text-muted text-center py-3">{{ shipment.commodity_description|default:"No manifest items" }}</td>
@@ -504,6 +525,78 @@
                                 <input type="file" name="file" id="upload-file-input" onchange="submitTypedUpload()">
                             </form>
 
+                        </div>
+                    </div>
+
+                    <!-- Logistics -->
+                    <div class="card border-0 shadow-sm mb-4" style="border-radius:14px;">
+                        <div class="card-body">
+                            <h5 class="fw-bold mb-4">Logistics</h5>
+                            <div class="row g-4">
+                                <!-- Pickup -->
+                                <div class="col-md-6 border-end">
+                                    <h6 class="fw-bold small text-uppercase mb-3">
+                                        <span class="text-primary me-2">↑</span>PICKUP
+                                    </h6>
+                                    
+                                    <div class="mb-2 p-3 bg-light rounded-3 border">
+                                        <label class="small fw-bold text-muted text-uppercase d-block mb-1" style="font-size: 0.65rem;">DATE</label>
+                                        <div class="fw-bold text-dark">{{ shipment.pickup_date|date:"Y-m-d"|default:"-" }}</div>
+                                    </div>
+                                    
+                                    <div class="mb-2 p-3 bg-light rounded-3 border">
+                                        <label class="small fw-bold text-muted text-uppercase d-block mb-1" style="font-size: 0.65rem;">NUMBER</label>
+                                        <div class="fw-bold text-dark">{{ shipment.pickup_number|default:"-" }}</div>
+                                    </div>
+                                    
+                                    <div class="mb-2 p-3 bg-light rounded-3 border">
+                                        <label class="small fw-bold text-muted text-uppercase d-block mb-1" style="font-size: 0.65rem;">APPOINTMENT</label>
+                                        <div class="fw-bold text-dark text-capitalize">{{ shipment.get_pickup_appointment_type_display|default:"-" }}</div>
+                                    </div>
+                                    
+                                    <div class="mb-0 p-3 bg-light rounded-3 border position-relative overflow-hidden">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <label class="small fw-bold text-muted text-uppercase mb-0" style="font-size: 0.65rem;">CONTACT</label>
+                                            <a href="#" class="text-primary text-decoration-none" style="font-size: 0.75rem;"><i class="fas fa-plus-circle me-1"></i>Add</a>
+                                        </div>
+                                        <div class="fw-bold text-primary mb-1">{{ shipment.pickup_contact|default:"-" }}</div>
+                                        {% if shipment.pickup_email %}<div class="text-muted" style="font-size: 0.78rem;">{{ shipment.pickup_email }}</div>{% endif %}
+                                        <div class="text-muted" style="font-size: 0.78rem;">{{ shipment.pickup_number|default:"-" }}</div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Delivery -->
+                                <div class="col-md-6">
+                                    <h6 class="fw-bold small text-uppercase mb-3">
+                                        <span class="text-success me-2">↓</span>DELIVERY
+                                    </h6>
+                                    
+                                    <div class="mb-2 p-3 bg-light rounded-3 border">
+                                        <label class="small fw-bold text-muted text-uppercase d-block mb-1" style="font-size: 0.65rem;">DATE</label>
+                                        <div class="fw-bold text-dark">{{ shipment.estimated_delivery_date|date:"Y-m-d"|default:"-" }}</div>
+                                    </div>
+                                    
+                                    <div class="mb-2 p-3 bg-light rounded-3 border">
+                                        <label class="small fw-bold text-muted text-uppercase d-block mb-1" style="font-size: 0.65rem;">NUMBER</label>
+                                        <div class="fw-bold text-dark">{{ shipment.delivery_number|default:"-" }}</div>
+                                    </div>
+                                    
+                                    <div class="mb-2 p-3 bg-light rounded-3 border">
+                                        <label class="small fw-bold text-muted text-uppercase d-block mb-1" style="font-size: 0.65rem;">APPOINTMENT</label>
+                                        <div class="fw-bold text-dark text-capitalize">{{ shipment.get_delivery_appointment_type_display|default:"-" }}</div>
+                                    </div>
+                                    
+                                    <div class="mb-0 p-3 bg-light rounded-3 border position-relative overflow-hidden">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <label class="small fw-bold text-muted text-uppercase mb-0" style="font-size: 0.65rem;">CONTACT</label>
+                                            <a href="#" class="text-primary text-decoration-none" style="font-size: 0.75rem;"><i class="fas fa-plus-circle me-1"></i>Add</a>
+                                        </div>
+                                        <div class="fw-bold text-primary mb-1">{{ shipment.delivery_contact|default:"-" }}</div>
+                                        {% if shipment.delivery_email %}<div class="text-muted" style="font-size: 0.78rem;">{{ shipment.delivery_email }}</div>{% endif %}
+                                        <div class="text-muted" style="font-size: 0.78rem;">{{ shipment.delivery_number|default:"-" }}</div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -1055,10 +1148,14 @@
                             <td>
                                 <select name="item[]" class="form-select form-select-sm border-0 bg-transparent ps-0">
                                     <option value="">Select Item</option>
-                                    {% if shipment.order %}
-                                    {% for item in shipment.order.manifest_items.all %}
-                                    <option value="{{ item.material }}" selected>{{ item.material }}</option>
-                                    {% endfor %}
+                                    {% if shipment.items.exists %}
+                                        {% for item in shipment.items.all %}
+                                        <option value="{{ item.material_name }}" selected>{{ item.material_name }}</option>
+                                        {% endfor %}
+                                    {% elif shipment.order %}
+                                        {% for item in shipment.order.manifest_items.all %}
+                                        <option value="{{ item.material }}" selected>{{ item.material }}</option>
+                                        {% endfor %}
                                     {% endif %}
                                 </select>
                             </td>
