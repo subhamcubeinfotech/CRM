@@ -408,7 +408,7 @@
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
     </div>
     <div class="offcanvas-body p-4">
-        <form action="{% url 'orders:order_edit' order.pk %}" method="POST">
+        <form id="editOrderForm" action="{% url 'orders:order_edit' order.pk %}" method="POST">
             {% csrf_token %} {% with shipments_exist=order.shipments.exists %}
             <!-- Supplier -->
             <div class="mb-4">
@@ -602,12 +602,26 @@
         if (type === 'preview') {
             form.target = '_blank';
         } else {
-            // To trigger download, we shouldn't use _blank necessarily, 
-            // but the backend returns FileResponse as_attachment=True which works fine.
+            // To trigger download
             form.target = '_self'; 
+            // Close offcanvas after a short delay
+            setTimeout(() => {
+                const offcanvasElement = document.getElementById('offcanvasPurchaseOrder');
+                const offcanvas = bootstrap.Offcanvas.getInstance(offcanvasElement);
+                if (offcanvas) offcanvas.hide();
+            }, 500);
         }
         form.submit();
     }
+
+    // Close Edit Order Offcanvas on submit (since it now returns a file)
+    document.getElementById('editOrderForm').addEventListener('submit', function() {
+        setTimeout(() => {
+            const offcanvasElement = document.getElementById('offcanvasEditOrder');
+            const offcanvas = bootstrap.Offcanvas.getInstance(offcanvasElement);
+            if (offcanvas) offcanvas.hide();
+        }, 500);
+    });
 
     document.getElementById('includeDescriptions').addEventListener('change', function() {
         const section = document.getElementById('materialDescriptionsSection');

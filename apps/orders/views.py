@@ -362,7 +362,9 @@ def order_edit(request, pk):
             
         order.save()
         logger.info(f'Order {order.order_number} parameters updated by {request.user}')
-        return redirect('orders:order_detail', pk=order.pk)
+        
+        # ── NEW: Return PDF after saving in Edit Order ────────────────
+        return order_purchase_order_pdf(request, pk)
 
     # For AJAX/Offcanvas pre-fill if needed, but here we just redirect back 
     # since the offcanvas is embedded in the detail page.
