@@ -74,7 +74,7 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
         # Context for Edit Offcanvas
         user_tenant = self.request.user.tenant
         user_company = self.request.user.company
-        
+        assign_company = user_company or Company.objects.filter(tenant=user_tenant).first()
         # Show all active companies (tenant-specific + global)
         all_companies = Company.plain_objects.filter(is_active=True).filter(Q(tenant=user_tenant) | Q(tenant__isnull=True))
         context['suppliers'] = all_companies
@@ -113,6 +113,7 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
             tenant=self.object.tenant,
             quantity__gt=0
         )
+        context['assign_company'] = assign_company
         context['packaging_types'] = PackagingType.objects.all()
         
         return context
@@ -233,7 +234,15 @@ def order_create(request):
                 continue
                 
             material_name = materials[i]
-            qty_to_deduct = float(weights[i]) if i < len(weights) and weights[i] else 0
+            
+            # Robustly parse weight and prices (handle empty strings)
+            raw_weight = weights[i] if i < len(weights) else ""
+            raw_buy = buy_prices[i] if i < len(buy_prices) else ""
+            raw_sell = sell_prices[i] if i < len(sell_prices) else ""
+            
+            qty_to_deduct = float(raw_weight) if raw_weight and str(raw_weight).strip() else 0
+            buy_price_val = raw_buy if raw_buy and str(raw_buy).strip() else 0
+            sell_price_val = raw_sell if raw_sell and str(raw_sell).strip() else 0
             
             # ── NEW: Deduct Stock if material is an ID ────────────────
             try:
@@ -262,15 +271,15 @@ def order_create(request):
                     material=material_name,
                     weight=qty_to_deduct,
                     weight_unit=weight_units[i] if i < len(weight_units) else "lbs",
-                    buy_price=buy_prices[i] if i < len(buy_prices) else 0,
+                    buy_price=buy_price_val,
                     buy_price_unit=buy_price_units[i] if i < len(buy_price_units) else "per lbs",
-                    sell_price=sell_prices[i] if i < len(sell_prices) else 0,
+                    sell_price=sell_price_val,
                     sell_price_unit=sell_price_units[i] if i < len(sell_price_units) else "per lbs",
                     packaging=packagings[i] if i < len(packagings) else "",
                     is_palletized=is_palletized_list[i].lower() == 'true' if i < len(is_palletized_list) else False 
                 )
             except Exception as e:
-                print(f"Error creating manifest item {i}: {e}")
+                logger.error(f"Error creating manifest item {i} ({material_name}): {e}")
                 continue
         
         # ── NEW: Send email notification to supplier ──────────────────
@@ -299,7 +308,7 @@ def order_create(request):
     # ──────────────────────────────────────────────────────────────────
 
     user_company = request.user.company
-    assign_company = user_company
+    assign_company = user_company or Company.objects.filter(tenant=request.user.tenant).first()
     
     # Show all companies in supplier/receiver dropdowns
     company_qs = Company.plain_objects.all()
@@ -723,7 +732,15 @@ def order_add_item(request, pk):
                 continue
                 
             material_name = materials[i]
-            qty_to_deduct = float(weights[i]) if i < len(weights) and weights[i] else 0
+            
+            # Robustly parse weight and prices
+            raw_weight = weights[i] if i < len(weights) else ""
+            raw_buy = buy_prices[i] if i < len(buy_prices) else ""
+            raw_sell = sell_prices[i] if i < len(sell_prices) else ""
+            
+            qty_to_deduct = float(raw_weight) if raw_weight and str(raw_weight).strip() else 0
+            buy_price_val = raw_buy if raw_buy and str(raw_buy).strip() else 0
+            sell_price_val = raw_sell if raw_sell and str(raw_sell).strip() else 0
             
             # Deduct stock if material is an ID
             try:
@@ -746,15 +763,15 @@ def order_add_item(request, pk):
                     material=material_name,
                     weight=qty_to_deduct,
                     weight_unit=weight_units[i] if i < len(weight_units) else "lbs",
-                    buy_price=buy_prices[i] if i < len(buy_prices) else 0,
+                    buy_price=buy_price_val,
                     buy_price_unit=buy_price_units[i] if i < len(buy_price_units) else "per lbs",
-                    sell_price=sell_prices[i] if i < len(sell_prices) else 0,
+                    sell_price=sell_price_val,
                     sell_price_unit=sell_price_units[i] if i < len(sell_price_units) else "per lbs",
                     packaging=packagings[i] if i < len(packagings) else "",
                     is_palletized=is_palletized_list[i].lower() == 'true' if i < len(is_palletized_list) else False 
                 )
             except Exception as e:
-                logger.error(f"Error creating manifest item {i}: {e}")
+                logger.error(f"Error creating manifest item {i} ({material_name}): {e}")
                 continue
                 
         logger.info(f"New manifest items added to Order {order.order_number} by {request.user}")

@@ -414,12 +414,24 @@
             <div class="mb-4">
                 <label class="form-label fw-bold small text-uppercase mb-1">Supplier<span
                         class="text-danger">*</span></label>
-                <select name="supplier" class="form-select bg-light" {% if shipments_exist %}disabled{% endif %}>
-                    {% for comp in suppliers %}
-                    <option value="{{ comp.id }}" {% if order.supplier_id == comp.id %}selected{% endif %}>{{ comp.name }}
-                    </option>
-                    {% endfor %}
-                </select>
+                <div class="input-group">
+                    <select name="supplier" id="supplier-select-edit" class="form-select bg-light" {% if shipments_exist %}disabled{% endif %}>
+                        {% for comp in suppliers %}
+                        <option value="{{ comp.id }}" data-address="{{ comp.full_address }}"
+                            {% if order.supplier_id == comp.id %}selected{% endif %}>{{ comp.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    {% if not shipments_exist %}
+                    <a href="{% url 'accounts:company_create' %}?type=vendor" class="btn btn-outline-primary">+ Add</a>
+                    {% endif %}
+                </div>
+                {% if not shipments_exist and assign_company %}
+                <div class="smaller text-muted mt-1">
+                    <a href="#" id="assign-supplier-mine-edit" class="text-decoration-none"
+                        data-company-id="{{ assign_company.id }}" data-address="{{ assign_company.full_address }}">Click to assign your company.</a>
+                </div>
+                {% endif %}
                 {% if shipments_exist %}
                 <div class="smaller text-muted mt-1">Company cannot be changed for an Order with shipments</div>
                 {% endif %}
@@ -429,9 +441,10 @@
             <div class="mb-4">
                 <label class="form-label fw-bold small text-uppercase mb-1">Source Location<span
                         class="text-danger">*</span></label>
-                <select name="source_location" class="form-select border-primary-subtle">
+                <select name="source_location" id="source-location-select-edit" class="form-select border-primary-subtle">
                     {% for wh in warehouses %}
-                    <option value="{{ wh.id }}" {% if order.source_location_id == wh.id %}selected{% endif %}>{{ wh.display_name }}</option>
+                    <option value="{{ wh.id }}" data-company-id="{{ wh.company_id }}"
+                        {% if order.source_location_id == wh.id %}selected{% endif %}>{{ wh.display_name }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -448,12 +461,24 @@
             <div class="mb-4">
                 <label class="form-label fw-bold small text-uppercase mb-1">Receiver<span
                         class="text-danger">*</span></label>
-                <select name="receiver" class="form-select bg-light" {% if shipments_exist %}disabled{% endif %}>
-                    {% for comp in receivers %}
-                    <option value="{{ comp.id }}" {% if order.receiver_id == comp.id %}selected{% endif %}>{{ comp.name }}
-                    </option>
-                    {% endfor %}
-                </select>
+                <div class="input-group">
+                    <select name="receiver" id="receiver-select-edit" class="form-select bg-light" {% if shipments_exist %}disabled{% endif %}>
+                        {% for comp in receivers %}
+                        <option value="{{ comp.id }}" data-address="{{ comp.full_address }}"
+                            {% if order.receiver_id == comp.id %}selected{% endif %}>{{ comp.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    {% if not shipments_exist %}
+                    <a href="{% url 'accounts:company_create' %}?type=customer" class="btn btn-outline-primary">+ Add</a>
+                    {% endif %}
+                </div>
+                {% if not shipments_exist and assign_company %}
+                <div class="smaller text-muted mt-1">
+                    <a href="#" id="assign-receiver-mine-edit" class="text-decoration-none"
+                        data-company-id="{{ assign_company.id }}" data-address="{{ assign_company.full_address }}">Click to assign your company.</a>
+                </div>
+                {% endif %}
                 {% if shipments_exist %}
                 <div class="smaller text-muted mt-1">Company cannot be changed for an Order with shipments</div>
                 {% endif %}
@@ -463,9 +488,10 @@
             <div class="mb-4">
                 <label class="form-label fw-bold small text-uppercase mb-1">Destination Location<span
                         class="text-danger">*</span></label>
-                <select name="destination_location" class="form-select border-primary-subtle">
+                <select name="destination_location" id="dest-location-select-edit" class="form-select border-primary-subtle">
                     {% for wh in warehouses %}
-                    <option value="{{ wh.id }}" {% if order.destination_location_id == wh.id %}selected{% endif %}>{{ wh.display_name }}</option>
+                    <option value="{{ wh.id }}" data-company-id="{{ wh.company_id }}"
+                        {% if order.destination_location_id == wh.id %}selected{% endif %}>{{ wh.display_name }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -621,6 +647,15 @@
             const offcanvas = bootstrap.Offcanvas.getInstance(offcanvasElement);
             if (offcanvas) offcanvas.hide();
         }, 500);
+    });
+
+    document.getElementById('assign-supplier-mine-edit')?.addEventListener('click', function(e) {
+        e.preventDefault();
+        assignMyCompany('supplier-select-edit', this.dataset.companyId, "{{ assign_company.name|default:'My Company' }}", this.dataset.address);
+    });
+    document.getElementById('assign-receiver-mine-edit')?.addEventListener('click', function(e) {
+        e.preventDefault();
+        assignMyCompany('receiver-select-edit', this.dataset.companyId, "{{ assign_company.name|default:'My Company' }}", this.dataset.address);
     });
 
     document.getElementById('includeDescriptions').addEventListener('change', function() {

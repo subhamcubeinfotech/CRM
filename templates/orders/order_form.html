@@ -56,6 +56,7 @@
                 <div class="mb-4">
                     <label class="form-label fw-bold small text-uppercase">Supplier<span class="text-danger">*</span></label>
                     <div class="input-group">
+                    <div class="input-group">
                         <select name="supplier" id="supplier-select" class="form-select border-primary-subtle" required>
                             <option value="">Select a supplier</option>
                             {% for supplier in suppliers %}
@@ -64,6 +65,8 @@
                                 {{ supplier.name }}</option>
                             {% endfor %}
                          </select>
+                         <a href="{% url 'accounts:company_create' %}?type=vendor" class="btn btn-outline-primary">+ Add</a>
+                    </div>
                     </div>
                     <div style="min-height: 21px;">
                         {% if assign_company %}
@@ -112,6 +115,7 @@
                                 {{ receiver.name }}</option>
                             {% endfor %}
                         </select>
+                        <a href="{% url 'accounts:company_create' %}?type=customer" class="btn btn-outline-primary">+ Add</a>
                     </div>
                     <div style="min-height: 21px;">
                         {% if assign_company %}
