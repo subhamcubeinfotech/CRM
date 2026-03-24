@@ -3,6 +3,9 @@
 {% block title %}Directory - FreightPro{% endblock %}
 
 {% block extra_css %}
+<!-- Leaflet MarkerCluster CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css">
 <style>
     .directory-map-card {
         display: none;
@@ -42,19 +45,90 @@
     .company-map-popup-name {
         font-size: 1rem;
         font-weight: 700;
-        color: #2563eb;
-        margin-bottom: 4px;
+        color: #1e293b;
+        margin-bottom: 2px;
+    }
+
+    .company-map-popup-type {
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+        margin-bottom: 8px;
     }
 
     .company-map-popup-address {
-        font-size: 0.92rem;
-        color: #4b5563;
-        line-height: 1.45;
+        font-size: 0.88rem;
+        color: #64748b;
+        line-height: 1.4;
+        margin-bottom: 12px;
     }
 
-    .company-map-status {
-        font-size: 0.92rem;
-        color: #6b7280;
+    .company-map-popup-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: #2563eb;
+        text-decoration: none;
+        padding: 4px 10px;
+        background: #eff6ff;
+        border: 1px solid #dbeafe;
+        border-radius: 8px;
+        transition: all 0.2s;
+    }
+
+    .company-map-popup-link:hover {
+        background: #dbeafe;
+        color: #1d4ed8;
+        transform: translateY(-1px);
+    }
+
+    /* Custom Marker Styles */
+    .custom-marker {
+        width: 32px;
+        height: 32px;
+        border-radius: 50% 50% 50% 0;
+        background: #2563eb;
+        position: absolute;
+        transform: rotate(-45deg);
+        left: 50%;
+        top: 50%;
+        margin: -16px 0 0 -16px;
+        border: 3px solid #fff;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.2s ease;
+    }
+
+    .custom-marker:hover {
+        transform: rotate(-45deg) scale(1.1);
+        z-index: 1000;
+    }
+
+    .custom-marker::after {
+        content: '';
+        width: 10px;
+        height: 10px;
+        background: rgba(255,255,255,0.9);
+        position: absolute;
+        border-radius: 50%;
+        transform: rotate(45deg);
+    }
+
+    .custom-marker.carrier { background: #f59e0b; }
+    .custom-marker.customer { background: #2563eb; }
+    .custom-marker.vendor { background: #6366f1; }
+
+    /* Legend Overlay support */
+    .legend-color {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        display: inline-block;
     }
 </style>
 {% endblock %}
@@ -107,6 +181,9 @@
                     <div class="company-map-status" id="company-map-status">Click markers to view company address.</div>
                 </div>
                 <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-info" id="company-map-reset" title="Reset view to show all markers">
+                        <i class="fas fa-arrows-rotate me-1"></i>Reset View
+                    </button>
                     <button type="button" class="btn btn-sm btn-outline-primary" id="company-map-fullscreen">
                         <i class="fas fa-expand me-1"></i>Full Screen
                     </button>
@@ -115,7 +192,25 @@
                     </button>
                 </div>
             </div>
-            <div id="company-directory-map" class="directory-map"></div>
+            <div id="company-directory-map" class="directory-map shadow-sm border overflow-hidden"></div>
+            
+            <div class="mt-3 d-flex flex-wrap gap-4 px-2">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="legend-color" style="background: #2563eb; box-shadow: 0 0 0 2px #fff, 0 0 0 3px #2563eb;"></span>
+                    <span class="small fw-semibold text-secondary">Customers</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="legend-color" style="background: #f59e0b; box-shadow: 0 0 0 2px #fff, 0 0 0 3px #f59e0b;"></span>
+                    <span class="small fw-semibold text-secondary">Carriers</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="legend-color" style="background: #6366f1; box-shadow: 0 0 0 2px #fff, 0 0 0 3px #6366f1;"></span>
+                    <span class="small fw-semibold text-secondary">Vendors</span>
+                </div>
+                <div class="ms-auto small text-muted fst-italic">
+                    <i class="fas fa-circle-info me-1"></i> Showing locations with valid coordinates
+                </div>
+            </div>
         </div>
     </div>
     {% endif %}
@@ -224,6 +319,8 @@
 {% endblock %}
 
 {% block extra_js %}
+<!-- Leaflet MarkerCluster JS -->
+<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const companies = [
@@ -237,7 +334,8 @@
                 state: "{{ company.state|default:''|escapejs }}",
                 country: "{{ company.country|default:''|escapejs }}",
                 location: "{{ company.city|default:''|escapejs }}{% if company.state %}, {{ company.state|escapejs }}{% endif %}{% if company.country %}, {{ company.country|escapejs }}{% endif %}",
-                companyType: "{{ company.get_company_type_display|escapejs }}"
+                companyType: "{{ company.get_company_type_display|escapejs }}",
+                detailUrl: "{% url 'accounts:company_detail' company.pk %}"
             }{% if not forloop.last %},{% endif %}
             {% endfor %}
         ].filter(company => company.address.trim() || company.location.trim());
@@ -246,6 +344,7 @@
         const toggleButton = document.getElementById('company-map-toggle');
         const closeButton = document.getElementById('company-map-close');
         const fullscreenButton = document.getElementById('company-map-fullscreen');
+        const resetButton = document.getElementById('company-map-reset');
         const statusText = document.getElementById('company-map-status');
 
         if (!mapCard || !toggleButton) {
@@ -289,7 +388,18 @@
                 attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
             }).addTo(companyMap);
 
-            markersLayer = L.featureGroup().addTo(companyMap);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                maxZoom: 19,
+                attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+            }).addTo(companyMap);
+
+            // Using MarkerClusterGroup to handle overlapping markers (Spiderfying)
+            markersLayer = L.markerClusterGroup({
+                showCoverageOnHover: false,
+                spiderfyOnMaxZoom: true,
+                zoomToBoundsOnClick: true,
+                maxClusterRadius: 40
+            }).addTo(companyMap);
 
             const mappedCompanies = companies.filter(company =>
                 typeof company.latitude === 'number' &&
@@ -306,20 +416,42 @@
             }
 
             mappedCompanies.forEach(company => {
-                const marker = L.marker([company.latitude, company.longitude]).addTo(markersLayer);
+                let markerClass = 'customer';
+                let typeColor = '#2563eb';
+                
+                const typeLower = (company.companyType || '').toLowerCase();
+                if (typeLower.includes('carrier')) {
+                    markerClass = 'carrier';
+                    typeColor = '#f59e0b';
+                } else if (typeLower.includes('vendor')) {
+                    markerClass = 'vendor';
+                    typeColor = '#6366f1';
+                }
+
+                const customIcon = L.divIcon({
+                    className: 'custom-div-icon',
+                    html: `<div class="custom-marker ${markerClass}"></div>`,
+                    iconSize: [30, 30],
+                    iconAnchor: [15, 30],
+                    popupAnchor: [0, -32]
+                });
+
+                const marker = L.marker([company.latitude, company.longitude], { icon: customIcon }).addTo(markersLayer);
+                
                 const popupHtml = `
-                    <div class="company-map-popup">
+                    <div class="company-map-popup px-1">
+                        <div class="company-map-popup-type mb-1" style="color: ${typeColor}">${company.companyType}</div>
                         <div class="company-map-popup-name">${company.name}</div>
-                        <div class="company-map-popup-address">${company.address || company.location}</div>
+                        <div class="company-map-popup-address mt-1">${company.city || ''}${company.state ? ', ' + company.state : ''}</div>
+                        <a href="${company.detailUrl}" class="company-map-popup-link">
+                            View Profile <i class="fas fa-arrow-right"></i>
+                        </a>
                     </div>
                 `;
 
-                marker.bindPopup(popupHtml, { closeButton: false, offset: [0, -8] });
+                marker.bindPopup(popupHtml, { closeButton: false });
                 marker.on('mouseover', function () {
                     this.openPopup();
-                });
-                marker.on('mouseout', function () {
-                    this.closePopup();
                 });
             });
 
@@ -357,6 +489,10 @@
         });
 
         window.addEventListener('resize', refreshMapLayout);
+
+        resetButton?.addEventListener('click', function () {
+            refreshMapLayout();
+        });
     });
 </script>
 {% endblock %}

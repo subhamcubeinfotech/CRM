@@ -143,7 +143,7 @@
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Consignee</label>
-                                <select class="form-select">
+                                <select name="consignee" class="form-select">
                                     <option value="">Not Specified</option>
                                     {% for company in all_companies %}
                                     <option value="{{ company.pk }}" {% if not is_create and shipment.consignee_id == company.pk %}selected{% elif is_create and order.receiver_id == company.pk %}selected{% endif %}>{{ company.name }}</option>
@@ -1599,18 +1599,36 @@
         document.getElementById('locationDrawerForm')?.reset();
     });
 
-    applyOrderDefaultsToShipment();
-    if (!shipmentOrderSelect?.value) {
+    const isCreateMode = {% if is_create %}true{% else %}false{% endif %};
+
+    if (isCreateMode) {
+        applyOrderDefaultsToShipment();
+        if (!shipmentOrderSelect?.value) {
+            filterShipmentLocations('shipment-supplier-select', 'shipment-pickup-location-select');
+            filterShipmentMaterialOptions();
+        }
+        if (shipmentDestinationSelect && !shipmentOrderSelect?.value) {
+            shipmentDestinationSelect.value = '';
+        }
+    } else {
+        // In edit mode, we still want to ensure location filtering is initially set correctly 
+        // based on the EXISTING supplier, but WITHOUT clearing the pre-filled values.
+        ensureCompanyAddressOption('shipment-pickup-location-select', 'shipment-supplier-select');
         filterShipmentLocations('shipment-supplier-select', 'shipment-pickup-location-select');
         filterShipmentMaterialOptions();
-    }
-    if (shipmentDestinationSelect && !shipmentOrderSelect?.value) {
-        shipmentDestinationSelect.value = '';
+        
+        // Ensure the select's value matches the hidden field (supplier)
+        if (shipmentSupplierSelect && shipmentSupplierHidden?.value) {
+            shipmentSupplierSelect.value = shipmentSupplierHidden.value;
+        }
     }
     syncShipmentLocationSelectState('shipment-pickup-location-select');
     syncShipmentLocationSelectState('shipment-destination-location-select');
-    syncShipmentAddressFields('shipment-pickup-location-select', 'origin');
-    syncShipmentAddressFields('shipment-destination-location-select', 'destination');
+    // REMOVED: syncShipmentAddressFields on initial load in Edit mode to avoid overwriting existing address fields
+    if (isCreateMode) {
+        syncShipmentAddressFields('shipment-pickup-location-select', 'origin');
+        syncShipmentAddressFields('shipment-destination-location-select', 'destination');
+    }
 
     // Auto-fill phone and email when contact is selected
     const handleContactChange = (event) => {
