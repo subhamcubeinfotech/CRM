@@ -520,3 +520,171 @@ def send_low_stock_notification(item, request):
         logger.info(f"Low stock notification sent for {item.product_name} to {recipient_email}")
     except Exception as e:
         logger.error(f"Failed to send low stock notification for {item.product_name}: {e}")
+
+@login_required
+def order_purchase_order_pdf(request, pk):
+    """
+    Generate a Purchase Order PDF using ReportLab.
+    Accepts POST data for custom instructions, payment terms, and item descriptions.
+    """
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib import colors
+    from reportlab.lib.units import mm
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, HRFlowable
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.enums import TA_RIGHT, TA_CENTER, TA_LEFT
+    from io import BytesIO
+    from django.http import FileResponse
+
+    order = get_object_or_404(Order, pk=pk)
+    # Check access (similar to OrderDetailView)
+    if order.created_by != request.user:
+        check_company_access(order.receiver, request.user)
+
+    manifest_items = order.manifest_items.all()
+
+    # Get custom data from POST
+    file_name = request.POST.get('file_name', f"{order.order_number}_PO.pdf")
+    po_number_override = request.POST.get('po_number', order.order_number)
+    payment_terms = request.POST.get('payment_terms', 'Net 30')
+    instructions = request.POST.get('instructions', '')
+    include_descriptions = request.POST.get('include_descriptions') == 'on'
+
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        rightMargin=15*mm, leftMargin=15*mm,
+        topMargin=15*mm, bottomMargin=15*mm,
+    )
+
+    styles = getSampleStyleSheet()
+    primary_color = colors.HexColor('#0055aa')
+    light_gray = colors.HexColor('#f8f9fa')
+    border_color = colors.HexColor('#dee2e6')
+
+    # Custom Styles
+    title_style = ParagraphStyle('Title', parent=styles['Heading1'], fontSize=24, textColor=primary_color, fontName='Helvetica-Bold')
+    label_style = ParagraphStyle('Label', parent=styles['Normal'], fontSize=8, textColor=colors.grey, fontName='Helvetica-Bold', textTransform='uppercase')
+    normal_style = ParagraphStyle('Normal2', parent=styles['Normal'], fontSize=10, leading=14)
+    bold_style = ParagraphStyle('Bold', parent=styles['Normal'], fontSize=10, fontName='Helvetica-Bold', leading=14)
+    right_style = ParagraphStyle('Right', parent=styles['Normal'], fontSize=10, alignment=TA_RIGHT)
+    
+    elements = []
+
+    # --- Header ---
+    header_data = [
+        [Paragraph("PURCHASE ORDER", title_style), Paragraph(f"<b>PO #:</b> {po_number_override}<br/><b>Date:</b> {timezone.now().strftime('%Y-%m-%d')}", right_style)]
+    ]
+    header_table = Table(header_data, colWidths=[110*mm, 70*mm])
+    header_table.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'BOTTOM'), ('LEFTPADDING', (0,0), (-1,-1), 0), ('RIGHTPADDING', (0,0), (-1,-1), 0)]))
+    elements.append(header_table)
+    elements.append(Spacer(1, 5*mm))
+    elements.append(HRFlowable(width="100%", thickness=1, color=primary_color))
+    elements.append(Spacer(1, 10*mm))
+
+    # --- Vendor & Delivery Details ---
+    vendor_info = [
+        Paragraph("VENDOR", label_style),
+        Paragraph(order.supplier.name, bold_style),
+        Paragraph(order.supplier.full_address, normal_style),
+    ]
+    
+    ship_to_info = [
+        Paragraph("SHIP TO", label_style),
+        Paragraph(order.receiver.name, bold_style),
+        Paragraph(order.destination_location.display_name if order.destination_location else order.receiver.full_address, normal_style),
+    ]
+    
+    addresses_data = [[vendor_info, ship_to_info]]
+    addresses_table = Table(addresses_data, colWidths=[90*mm, 90*mm])
+    addresses_table.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'TOP'), ('LEFTPADDING', (0,0), (-1,-1), 0)]))
+    elements.append(addresses_table)
+    elements.append(Spacer(1, 10*mm))
+
+    # --- Order Terms ---
+    terms_data = [
+        [Paragraph("PAYMENT TERMS", label_style), Paragraph("SHIPPING METHOD", label_style), Paragraph("EXPECTED DATE", label_style)],
+        [Paragraph(f"{payment_terms} Days", normal_style), Paragraph(order.shipping_terms.name if order.shipping_terms else "Standard", normal_style), Paragraph(order.expected_pickup_date.strftime('%Y-%m-%d') if order.expected_pickup_date else "-", normal_style)]
+    ]
+    terms_table = Table(terms_data, colWidths=[60*mm, 60*mm, 60*mm])
+    terms_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), light_gray),
+        ('GRID', (0,0), (-1,-1), 0.5, border_color),
+        ('PADDING', (0,0), (-1,-1), 6),
+    ]))
+    elements.append(terms_table)
+    elements.append(Spacer(1, 10*mm))
+
+    # --- Item Table ---
+    item_header = [Paragraph("ITEM / MATERIAL", label_style), Paragraph("QTY", label_style), Paragraph("UNIT", label_style), Paragraph("UNIT PRICE", label_style), Paragraph("TOTAL", label_style)]
+    table_data = [item_header]
+    
+    from decimal import Decimal
+    total_amount = Decimal('0')
+    for item in manifest_items:
+        # Get custom description from POST
+        custom_desc = request.POST.get(f'item_desc_{item.id}', '')
+        item_text = f"<b>{item.material}</b>"
+        if include_descriptions and custom_desc:
+            item_text += f"<br/><font size='8' color='grey'>{custom_desc}</font>"
+            
+        row_total = item.weight * item.buy_price
+        total_amount += row_total
+        
+        table_data.append([
+            Paragraph(item_text, normal_style),
+            Paragraph(f"{item.weight:,.2f}", normal_style),
+            Paragraph(item.weight_unit, normal_style),
+            Paragraph(f"${item.buy_price:,.4f}", normal_style),
+            Paragraph(f"${row_total:,.2f}", right_style),
+        ])
+
+    items_table = Table(table_data, colWidths=[80*mm, 25*mm, 20*mm, 30*mm, 25*mm])
+    items_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), primary_color),
+        ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+        ('ALIGN', (0,0), (-1,0), 'CENTER'),
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ('GRID', (0,0), (-1,-1), 0.5, border_color),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('PADDING', (0,0), (-1,-1), 6),
+    ]))
+    elements.append(items_table)
+
+    # --- Totals ---
+    totals_data = [
+        ['', '', '', Paragraph("<b>TOTAL</b>", right_style), Paragraph(f"<b>${total_amount:,.2f}</b>", right_style)]
+    ]
+    totals_table = Table(totals_data, colWidths=[80*mm, 25*mm, 20*mm, 30*mm, 25*mm])
+    totals_table.setStyle(TableStyle([
+        ('ALIGN', (3,0), (4,0), 'RIGHT'),
+        ('GRID', (3,0), (4,0), 0.5, border_color),
+        ('BACKGROUND', (3,0), (4,0), light_gray),
+        ('PADDING', (0,0), (-1,-1), 6),
+    ]))
+    elements.append(totals_table)
+    elements.append(Spacer(1, 10*mm))
+
+    # --- Instructions ---
+    if instructions:
+        elements.append(Paragraph("SPECIAL INSTRUCTIONS", label_style))
+        elements.append(Spacer(1, 2*mm))
+        elements.append(Paragraph(instructions, normal_style))
+        elements.append(Spacer(1, 10*mm))
+
+    # --- Footer ---
+    elements.append(Spacer(1, 20*mm))
+    elements.append(HRFlowable(width="100%", thickness=0.5, color=colors.grey))
+    elements.append(Spacer(1, 2*mm))
+    elements.append(Paragraph("Authorized Signature: ___________________________", normal_style))
+    elements.append(Spacer(1, 5*mm))
+    elements.append(Paragraph("Thank you for your business!", ParagraphStyle('Center', parent=styles['Normal'], alignment=TA_CENTER, textColor=colors.grey)))
+
+    doc.build(elements)
+    buffer.seek(0)
+    
+    if not file_name.endswith('.pdf'):
+        file_name += '.pdf'
+        
+    return FileResponse(buffer, as_attachment=True, filename=file_name)

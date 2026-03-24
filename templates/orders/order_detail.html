@@ -183,7 +183,7 @@
                     <a class="dropdown-item py-2" href="{% url 'orders:order_create' %}?copy_id={{ order.pk }}">
                         <i class="far fa-copy me-2 text-muted"></i>Copy
                     </a>
-                    <a class="dropdown-item py-2" href="#">
+                    <a class="dropdown-item py-2" href="#" data-bs-toggle="offcanvas" data-bs-target="#offcanvasPurchaseOrder">
                         <i class="far fa-file-alt me-2 text-muted"></i>Purchase Order
                     </a>
                 </div>
@@ -529,5 +529,91 @@
         </form>
     </div>
 </div>
+
+
+<!-- Purchase Order Offcanvas -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasPurchaseOrder"
+    style="width: 500px; border-left: none; box-shadow: -10px 0 30px rgba(0,0,0,0.1);">
+    <div class="offcanvas-header border-bottom p-4">
+        <h5 class="offcanvas-title fw-bold">Purchase Order</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body p-4">
+        <form id="poForm" action="{% url 'orders:order_purchase_order_pdf' order.pk %}" method="POST" target="_blank">
+            {% csrf_token %}
+            <!-- File Name -->
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase mb-1">File Name</label>
+                <div class="input-group">
+                    <input type="text" name="file_name" class="form-control" value="{{ order.order_number }}_PO">
+                    <span class="input-group-text bg-light text-muted">.pdf</span>
+                </div>
+            </div>
+
+            <!-- PO Number -->
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase mb-1">Sales/Purchase Order Number</label>
+                <input type="text" name="po_number" class="form-control" value="{{ order.order_number }}">
+            </div>
+
+            <!-- Payment Terms -->
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase mb-1">Payment Terms <span class="text-muted" style="text-transform: none;">Number of days until payment is due</span><span class="text-danger">*</span></label>
+                <input type="number" name="payment_terms" class="form-control" placeholder="Insert a value" required>
+            </div>
+
+            <!-- Instructions -->
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase mb-1">Instructions</label>
+                <textarea name="instructions" class="form-control" rows="2" placeholder="Insert instructions"></textarea>
+            </div>
+
+            <!-- Material Descriptions Toggle -->
+            <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" name="include_descriptions" id="includeDescriptions" checked>
+                <label class="form-check-label small text-muted" for="includeDescriptions">Include Material Descriptions</label>
+            </div>
+
+            <!-- Dynamic Material Descriptions -->
+            <div id="materialDescriptionsSection">
+                {% for item in manifest_items %}
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-muted mb-1">{{ item.material }}</label>
+                    <input type="text" name="item_desc_{{ item.id }}" class="form-control" placeholder="Insert Material Description">
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="mt-5 d-flex gap-2 justify-content-end">
+                <button type="button" class="btn btn-outline-primary px-4 py-2 fw-bold rounded-3 small" onclick="submitPO('preview')">Preview</button>
+                <button type="button" class="btn btn-primary px-4 py-2 fw-bold rounded-3 small" onclick="submitPO('submit')">Submit</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function submitPO(type) {
+        const form = document.getElementById('poForm');
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        if (type === 'preview') {
+            form.target = '_blank';
+        } else {
+            // To trigger download, we shouldn't use _blank necessarily, 
+            // but the backend returns FileResponse as_attachment=True which works fine.
+            form.target = '_self'; 
+        }
+        form.submit();
+    }
+
+    document.getElementById('includeDescriptions').addEventListener('change', function() {
+        const section = document.getElementById('materialDescriptionsSection');
+        section.style.display = this.checked ? 'block' : 'none';
+    });
+</script>
 
 {% endblock %}
