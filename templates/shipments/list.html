@@ -305,8 +305,7 @@
 
             {% for num in shipments.paginator.page_range %}
             {% if shipments.number == num %}
-            <li class="page-item active"><span class="page-link shadow-sm border-0 mx-1" style="border-radius: 8px;">{{
-                    num }}</span></li>
+            <li class="page-item active"><span class="page-link shadow-sm border-0 mx-1" style="border-radius: 8px;">{{ num }}</span></li>
             {% else %}
             <li class="page-item"><a class="page-link shadow-sm border-0 mx-1"
                     href="?page={{ num }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if type_filter %}&type={{ type_filter }}{% endif %}"
