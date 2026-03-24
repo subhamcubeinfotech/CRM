@@ -254,7 +254,7 @@
                         <div class="sub-text">{{ shipment.origin_state|default:shipment.origin_country }}</div>
                     </td>
                     <td>
-                        <div class="location-text">{{ shipment.consignee.name|default:"-" }}</div>
+                        <div class="location-text">{{ shipment.consignee.name|default:shipment.customer.name|default:"-" }}</div>
                     </td>
                     <td>
                         <div class="location-text">{{ shipment.destination_city }}</div>
