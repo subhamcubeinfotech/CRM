@@ -703,6 +703,8 @@ def shipment_create(request):
     representatives = CustomUser.objects.filter(tenant=user_tenant, is_active=True).order_by('first_name', 'username')
     packaging_types = PackagingType.objects.all().order_by('name')
     
+    is_first_shipment = not order.shipments.exists()
+    
     context = {
         'order': order,
         'orders': order_qs,
@@ -721,6 +723,8 @@ def shipment_create(request):
         'default_pieces': int(order.total_pieces) if order.total_pieces else 1,
         'default_weight': order.total_manifest_weight if order.total_manifest_weight else 0,
         'is_create': True,
+        'is_first_shipment': is_first_shipment,
+        'initial_items': order.manifest_items.all() if is_first_shipment else [],
     }
     return render(request, 'shipments/form.html', context)
 
