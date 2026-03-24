@@ -106,6 +106,10 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
             context['team_members'] = get_user_model().objects.filter(pk=self.object.representative.pk)
         else:
             context['team_members'] = get_user_model().objects.none()
+            
+        # Context for Add Item Offcanvas
+        context['inventory_items'] = InventoryItem.plain_objects.all()
+        context['packaging_types'] = PackagingType.objects.all()
         
         return context
 
@@ -688,3 +692,65 @@ def order_purchase_order_pdf(request, pk):
         file_name += '.pdf'
         
     return FileResponse(buffer, as_attachment=True, filename=file_name)
+
+@login_required
+def order_add_item(request, pk):
+    """
+    Adds one or more manifest items to an existing order.
+    Logic mirrored from order_create.
+    """
+    order = get_object_or_404(Order, pk=pk)
+    
+    if request.method == 'POST':
+        materials = request.POST.getlist('material[]')
+        weights = request.POST.getlist('weight[]')
+        weight_units = request.POST.getlist('weight_unit[]')
+        buy_prices = request.POST.getlist('buy_price[]')
+        buy_price_units = request.POST.getlist('buy_price_unit[]')
+        sell_prices = request.POST.getlist('sell_price[]')
+        sell_price_units = request.POST.getlist('sell_price_unit[]')
+        packagings = request.POST.getlist('packaging[]')
+        is_palletized_list = request.POST.getlist('is_palletized_h[]')
+
+        for i in range(len(materials)):
+            if not materials[i]:
+                continue
+                
+            material_name = materials[i]
+            qty_to_deduct = float(weights[i]) if i < len(weights) and weights[i] else 0
+            
+            # Deduct stock if material is an ID
+            try:
+                if materials[i].isdigit():
+                    inv_item = InventoryItem.plain_objects.get(pk=materials[i])
+                    material_name = inv_item.product_name
+                    
+                    if qty_to_deduct > 0:
+                        inv_item.quantity = max(0, inv_item.quantity - int(qty_to_deduct))
+                        inv_item.save()
+                        
+                        if inv_item.quantity <= 10:
+                            send_low_stock_notification(inv_item, request)
+            except Exception as e:
+                logger.warning(f"Stock deduction failed for item {materials[i]}: {e}")
+
+            try:
+                ManifestItem.objects.create(
+                    order=order,
+                    material=material_name,
+                    weight=qty_to_deduct,
+                    weight_unit=weight_units[i] if i < len(weight_units) else "lbs",
+                    buy_price=buy_prices[i] if i < len(buy_prices) else 0,
+                    buy_price_unit=buy_price_units[i] if i < len(buy_price_units) else "per lbs",
+                    sell_price=sell_prices[i] if i < len(sell_prices) else 0,
+                    sell_price_unit=sell_price_units[i] if i < len(sell_price_units) else "per lbs",
+                    packaging=packagings[i] if i < len(packagings) else "",
+                    is_palletized=is_palletized_list[i].lower() == 'true' if i < len(is_palletized_list) else False 
+                )
+            except Exception as e:
+                logger.error(f"Error creating manifest item {i}: {e}")
+                continue
+                
+        logger.info(f"New manifest items added to Order {order.order_number} by {request.user}")
+    
+    return redirect('orders:order_detail', pk=pk)
