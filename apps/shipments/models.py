@@ -341,6 +341,10 @@ class ShipmentItem(models.Model):
     # Quantity/Weight
     weight = models.DecimalField(max_digits=12, decimal_places=2)
     weight_unit = models.CharField(max_length=10, default='lbs')
+    gross_weight = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    gross_weight_unit = models.CharField(max_length=10, default='lbs', blank=True)
+    tare_weight = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    tare_weight_unit = models.CharField(max_length=10, default='lbs', blank=True)
     packaging = models.CharField(max_length=100, blank=True)
     is_palletized = models.BooleanField(default=False)
     pieces = models.IntegerField(default=1, null=True, blank=True)

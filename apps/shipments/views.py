@@ -98,11 +98,17 @@ def _parse_items_from_post(post_data):
         pieces_val = post_data.get(f'items_ui[{i}][pieces]', '0') or '0'
         buy_val = post_data.get(f'items_ui[{i}][buy_price]', '0') or '0'
         sell_val = post_data.get(f'items_ui[{i}][sell_price]', '0') or '0'
+        gross_val = post_data.get(f'items_ui[{i}][gross_weight]', '')
+        tare_val = post_data.get(f'items_ui[{i}][tare_weight]', '')
         
         item = {
             'material_id': post_data.get(f'items_ui[{i}][material]'),
             'weight': float(weight_val),
             'weight_unit': post_data.get(f'items_ui[{i}][unit]', 'lbs'),
+            'gross_weight': float(gross_val) if gross_val else None,
+            'gross_weight_unit': post_data.get(f'items_ui[{i}][gross_unit]', 'lbs'),
+            'tare_weight': float(tare_val) if tare_val else None,
+            'tare_weight_unit': post_data.get(f'items_ui[{i}][tare_unit]', 'lbs'),
             'packaging': post_data.get(f'items_ui[{i}][packaging]', ''),
             'is_palletized': post_data.get(f'items_ui[{i}][palletized]') == 'on',
             'pieces': int(pieces_val) if pieces_val else 1,
@@ -555,8 +561,8 @@ def shipment_create(request):
                 consignee_id = request.POST.get('consignee') or order.receiver_id
                 
                 # Handle locations
-                pickup_loc_id = request.POST.get('pickup_location_ui')
-                dest_loc_id = request.POST.get('destination_location_ui')
+                pickup_loc_id = request.POST.get('pickup_location_ui') or (str(order.source_location_id) if order and order.source_location_id else None)
+                dest_loc_id = request.POST.get('destination_location_ui') or (str(order.destination_location_id) if order and order.destination_location_id else None)
 
                 # Create shipment
                 shipment = Shipment(
@@ -650,6 +656,10 @@ def shipment_create(request):
                         material_name=inv_item.product_name if inv_item else item_data['material_id'] or "Unknown Material",
                         weight=item_data['weight'],
                         weight_unit=item_data['weight_unit'],
+                        gross_weight=item_data['gross_weight'],
+                        gross_weight_unit=item_data['gross_weight_unit'],
+                        tare_weight=item_data['tare_weight'],
+                        tare_weight_unit=item_data['tare_weight_unit'],
                         packaging=item_data['packaging'],
                         is_palletized=item_data['is_palletized'],
                         pieces=item_data['pieces'],
@@ -679,6 +689,9 @@ def shipment_create(request):
 
                 logger.info(f'Shipment created: {shipment.shipment_number} for {shipment.customer} by {request.user}')
                 messages.success(request, f'Shipment {shipment.shipment_number} created successfully!')
+                next_url = request.GET.get('next') or request.POST.get('next')
+                if next_url:
+                    return redirect(next_url)
                 return redirect('shipments:shipment_detail', pk=shipment.pk)
         except Exception as e:
             logger.error(f"Error creating shipment for order {order.order_number}: {e}")

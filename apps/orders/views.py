@@ -107,6 +107,11 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
         else:
             context['team_members'] = get_user_model().objects.none()
             
+        # Context for Add Shipment Offcanvas
+        context['all_tags'] = Tag.plain_objects.filter(Q(tenant=user_tenant) | Q(tenant__isnull=True)).order_by('name')
+        context['all_shipping_terms'] = ShippingTerm.plain_objects.filter(Q(tenant=user_tenant) | Q(tenant__isnull=True)).order_by('name')
+        context['all_representatives'] = get_user_model().objects.filter(tenant=user_tenant, is_active=True).order_by('first_name', 'username')
+            
         # Context for Add Item Offcanvas
         context['inventory_items'] = InventoryItem.plain_objects.filter(
             warehouse__company=self.object.supplier,
