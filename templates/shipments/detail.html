@@ -214,6 +214,46 @@
         font-weight: 700;
         color: #212529;
     }
+
+    .logistics-section-title {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: #1f2937;
+    }
+
+    .logistics-column-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 1rem;
+    }
+
+    .logistics-label {
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: #334155;
+        margin-bottom: 0.35rem;
+    }
+
+    .logistics-field,
+    .logistics-select {
+        border-radius: 8px;
+        min-height: 42px;
+        border: 1px solid #cbd5e1;
+        background: #fff;
+        color: #1f2937;
+    }
+
+    .logistics-field:focus,
+    .logistics-select:focus {
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.2);
+    }
+
+    .logistics-contact-meta {
+        font-size: 0.85rem;
+        line-height: 1.35;
+    }
 </style>
 {% endblock %}
 
@@ -531,69 +571,85 @@
                     <!-- Logistics -->
                     <div class="card border-0 shadow-sm mb-4" style="border-radius:14px;">
                         <div class="card-body">
-                            <h5 class="fw-bold mb-4">Logistics</h5>
+                            <h5 class="logistics-section-title mb-4">Logistics</h5>
                             <div class="row g-4">
                                 <!-- Pickup -->
                                 <div class="col-md-6 border-end">
-                                    <h6 class="fw-bold small text-uppercase mb-3">
-                                        <span class="text-primary me-2">↑</span>PICKUP
-                                    </h6>
+                                    <h6 class="logistics-column-title">Pickup</h6>
                                     
-                                    <div class="mb-2 p-3 bg-light rounded-3 border">
-                                        <label class="small fw-bold text-muted text-uppercase d-block mb-1" style="font-size: 0.65rem;">DATE</label>
-                                        <div class="fw-bold text-dark">{{ shipment.pickup_date|date:"Y-m-d"|default:"-" }}</div>
+                                    <div class="mb-3">
+                                        <label class="logistics-label">Date</label>
+                                        <input type="date" class="form-control logistics-field" value="{% if shipment.pickup_date %}{{ shipment.pickup_date|date:'Y-m-d' }}{% endif %}">
                                     </div>
                                     
-                                    <div class="mb-2 p-3 bg-light rounded-3 border">
-                                        <label class="small fw-bold text-muted text-uppercase d-block mb-1" style="font-size: 0.65rem;">NUMBER</label>
-                                        <div class="fw-bold text-dark">{{ shipment.pickup_number|default:"-" }}</div>
+                                    <div class="mb-3">
+                                        <label class="logistics-label">Number</label>
+                                        <input type="text" class="form-control logistics-field" value="{{ shipment.pickup_number|default:'' }}" placeholder="Pickup number">
                                     </div>
                                     
-                                    <div class="mb-2 p-3 bg-light rounded-3 border">
-                                        <label class="small fw-bold text-muted text-uppercase d-block mb-1" style="font-size: 0.65rem;">APPOINTMENT</label>
-                                        <div class="fw-bold text-dark text-capitalize">{{ shipment.get_pickup_appointment_type_display|default:"-" }}</div>
+                                    <div class="mb-3">
+                                        <label class="logistics-label">Appointment</label>
+                                        <select class="form-select logistics-select">
+                                            {% for code, label in shipment.APPOINTMENT_CHOICES %}
+                                            <option value="{{ code }}" {% if shipment.pickup_appointment_type == code %}selected{% endif %}>{{ label }}</option>
+                                            {% endfor %}
+                                        </select>
                                     </div>
                                     
-                                    <div class="mb-0 p-3 bg-light rounded-3 border position-relative overflow-hidden">
-                                        <div class="d-flex justify-content-between align-items-center mb-1">
-                                            <label class="small fw-bold text-muted text-uppercase mb-0" style="font-size: 0.65rem;">CONTACT</label>
-                                            <a href="#" class="text-primary text-decoration-none" style="font-size: 0.75rem;"><i class="fas fa-plus-circle me-1"></i>Add</a>
+                                    <div class="mb-0">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <label class="logistics-label mb-0">Contact</label>
+                                            <button type="button" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-plus-circle me-1"></i>Add
+                                            </button>
                                         </div>
-                                        <div class="fw-bold text-primary mb-1">{{ shipment.pickup_contact|default:"-" }}</div>
-                                        {% if shipment.pickup_email %}<div class="text-muted" style="font-size: 0.78rem;">{{ shipment.pickup_email }}</div>{% endif %}
-                                        <div class="text-muted" style="font-size: 0.78rem;">{{ shipment.pickup_number|default:"-" }}</div>
+                                        <select class="form-select logistics-select mb-2">
+                                            <option value="">{{ shipment.pickup_contact|default:"Contact" }}</option>
+                                        </select>
+                                        <div class="logistics-contact-meta">
+                                            {% if shipment.pickup_email %}<div><a href="mailto:{{ shipment.pickup_email }}" class="text-decoration-none">{{ shipment.pickup_email }}</a></div>{% endif %}
+                                            {% if shipment.pickup_number %}<div><a href="tel:{{ shipment.pickup_number }}" class="text-decoration-none">{{ shipment.pickup_number }}</a></div>{% endif %}
+                                        </div>
                                     </div>
                                 </div>
                                 
                                 <!-- Delivery -->
                                 <div class="col-md-6">
-                                    <h6 class="fw-bold small text-uppercase mb-3">
-                                        <span class="text-success me-2">↓</span>DELIVERY
-                                    </h6>
-                                    
-                                    <div class="mb-2 p-3 bg-light rounded-3 border">
-                                        <label class="small fw-bold text-muted text-uppercase d-block mb-1" style="font-size: 0.65rem;">DATE</label>
-                                        <div class="fw-bold text-dark">{{ shipment.estimated_delivery_date|date:"Y-m-d"|default:"-" }}</div>
+                                    <h6 class="logistics-column-title">Delivery</h6>
+
+                                    <div class="mb-3">
+                                        <label class="logistics-label">Date</label>
+                                        <input type="date" class="form-control logistics-field" value="{% if shipment.estimated_delivery_date %}{{ shipment.estimated_delivery_date|date:'Y-m-d' }}{% endif %}">
                                     </div>
-                                    
-                                    <div class="mb-2 p-3 bg-light rounded-3 border">
-                                        <label class="small fw-bold text-muted text-uppercase d-block mb-1" style="font-size: 0.65rem;">NUMBER</label>
-                                        <div class="fw-bold text-dark">{{ shipment.delivery_number|default:"-" }}</div>
+
+                                    <div class="mb-3">
+                                        <label class="logistics-label">Number</label>
+                                        <input type="text" class="form-control logistics-field" value="{{ shipment.delivery_number|default:'' }}" placeholder="Delivery number">
                                     </div>
-                                    
-                                    <div class="mb-2 p-3 bg-light rounded-3 border">
-                                        <label class="small fw-bold text-muted text-uppercase d-block mb-1" style="font-size: 0.65rem;">APPOINTMENT</label>
-                                        <div class="fw-bold text-dark text-capitalize">{{ shipment.get_delivery_appointment_type_display|default:"-" }}</div>
+
+                                    <div class="mb-3">
+                                        <label class="logistics-label">Appointment</label>
+                                        <select class="form-select logistics-select">
+                                            {% for code, label in shipment.APPOINTMENT_CHOICES %}
+                                            <option value="{{ code }}" {% if shipment.delivery_appointment_type == code %}selected{% endif %}>{{ label }}</option>
+                                            {% endfor %}
+                                        </select>
                                     </div>
-                                    
-                                    <div class="mb-0 p-3 bg-light rounded-3 border position-relative overflow-hidden">
-                                        <div class="d-flex justify-content-between align-items-center mb-1">
-                                            <label class="small fw-bold text-muted text-uppercase mb-0" style="font-size: 0.65rem;">CONTACT</label>
-                                            <a href="#" class="text-primary text-decoration-none" style="font-size: 0.75rem;"><i class="fas fa-plus-circle me-1"></i>Add</a>
+
+                                    <div class="mb-0">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <label class="logistics-label mb-0">Contact</label>
+                                            <button type="button" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-plus-circle me-1"></i>Add
+                                            </button>
                                         </div>
-                                        <div class="fw-bold text-primary mb-1">{{ shipment.delivery_contact|default:"-" }}</div>
-                                        {% if shipment.delivery_email %}<div class="text-muted" style="font-size: 0.78rem;">{{ shipment.delivery_email }}</div>{% endif %}
-                                        <div class="text-muted" style="font-size: 0.78rem;">{{ shipment.delivery_number|default:"-" }}</div>
+                                        <select class="form-select logistics-select mb-2">
+                                            <option value="">{{ shipment.delivery_contact|default:"Contact" }}</option>
+                                        </select>
+                                        <div class="logistics-contact-meta">
+                                            {% if shipment.delivery_email %}<div><a href="mailto:{{ shipment.delivery_email }}" class="text-decoration-none">{{ shipment.delivery_email }}</a></div>{% endif %}
+                                            {% if shipment.delivery_number %}<div><a href="tel:{{ shipment.delivery_number }}" class="text-decoration-none">{{ shipment.delivery_number }}</a></div>{% endif %}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
