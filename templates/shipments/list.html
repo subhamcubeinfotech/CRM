@@ -10,8 +10,10 @@
         border-collapse: separate;
         border-spacing: 0 8px;
         background-color: transparent !important;
-        min-width: 1600px; /* Force horizontal scroll for all columns */
+        min-width: 1600px;
+        /* Force horizontal scroll for all columns */
     }
+
     .shipment-table thead th {
         border: none;
         color: #64748b;
@@ -22,16 +24,19 @@
         padding: 12px 16px;
         white-space: nowrap;
     }
+
     .shipment-table tbody tr {
         background-color: #ffffff;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         transition: all 0.2s ease;
     }
+
     .shipment-table tbody tr:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
         background-color: #f8fafc;
     }
+
     .shipment-table td {
         padding: 16px;
         vertical-align: middle;
@@ -39,8 +44,14 @@
         font-size: 0.875rem;
         white-space: nowrap;
     }
-    .shipment-table td:first-child { border-radius: 8px 0 0 8px; }
-    .shipment-table td:last-child { border-radius: 0 8px 8px 0; }
+
+    .shipment-table td:first-child {
+        border-radius: 8px 0 0 8px;
+    }
+
+    .shipment-table td:last-child {
+        border-radius: 0 8px 8px 0;
+    }
 
     /* Custom Status Pills */
     .status-pill {
@@ -52,23 +63,91 @@
         min-width: 80px;
         text-align: center;
     }
-    .status-pending { background-color: #FFEFEF; color: #D32F2F; border: 1px solid #FFCDD2; }
-    .status-delivered { background-color: #E8F5E9; color: #2E7D32; border: 1px solid #C8E6C9; }
-    .status-in_transit { background-color: #E3F2FD; color: #1976D2; border: 1px solid #BBDEFB; }
-    .status-dispatched { background-color: #FFF3E0; color: #EF6C00; border: 1px solid #FFE0B2; }
-    .status-approved { background-color: #F3E5F5; color: #7B1FA2; border: 1px solid #E1BEE7; }
-    .status-invoiced { background-color: #E0F2F1; color: #00796B; border: 1px solid #B2DFDB; }
-    .status-paid { background-color: #F1F8E9; color: #558B2F; border: 1px solid #DCEDC8; }
-    .status-rejected { background-color: #ECEFF1; color: #455A64; border: 1px solid #CFD8DC; }
+
+    .status-pending {
+        background-color: #FFEFEF;
+        color: #D32F2F;
+        border: 1px solid #FFCDD2;
+    }
+
+    .status-delivered {
+        background-color: #E8F5E9;
+        color: #2E7D32;
+        border: 1px solid #C8E6C9;
+    }
+
+    .status-in_transit {
+        background-color: #E3F2FD;
+        color: #1976D2;
+        border: 1px solid #BBDEFB;
+    }
+
+    .status-dispatched {
+        background-color: #FFF3E0;
+        color: #EF6C00;
+        border: 1px solid #FFE0B2;
+    }
+
+    .status-approved {
+        background-color: #F3E5F5;
+        color: #7B1FA2;
+        border: 1px solid #E1BEE7;
+    }
+
+    .status-invoiced {
+        background-color: #E0F2F1;
+        color: #00796B;
+        border: 1px solid #B2DFDB;
+    }
+
+    .status-paid {
+        background-color: #F1F8E9;
+        color: #558B2F;
+        border: 1px solid #DCEDC8;
+    }
+
+    .status-rejected {
+        background-color: #ECEFF1;
+        color: #455A64;
+        border: 1px solid #CFD8DC;
+    }
 
     /* Typography & Icons */
-    .shipment-id { color: #2563eb; font-weight: 700; text-decoration: none; }
-    .shipment-id:hover { text-decoration: underline; }
-    .location-text { color: #334155; font-weight: 500; }
-    .sub-text { font-size: 0.75rem; color: #94a3b8; }
-    .date-text { font-family: 'Inter', sans-serif; color: #475569; }
-    .financial-text { font-family: 'Inter', sans-serif; font-weight: 600; color: #1e293b; }
-    .margin-text { color: #059669; font-weight: 700; }
+    .shipment-id {
+        color: #2563eb;
+        font-weight: 700;
+        text-decoration: none;
+    }
+
+    .shipment-id:hover {
+        text-decoration: underline;
+    }
+
+    .location-text {
+        color: #334155;
+        font-weight: 500;
+    }
+
+    .sub-text {
+        font-size: 0.75rem;
+        color: #94a3b8;
+    }
+
+    .date-text {
+        font-family: 'Inter', sans-serif;
+        color: #475569;
+    }
+
+    .financial-text {
+        font-family: 'Inter', sans-serif;
+        font-weight: 600;
+        color: #1e293b;
+    }
+
+    .margin-text {
+        color: #059669;
+        font-weight: 700;
+    }
 </style>
 {% endblock %}
 
@@ -88,8 +167,10 @@
             <form method="get" class="row g-2 align-items-center">
                 <div class="col-md-3">
                     <div class="input-group input-group-sm">
-                        <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
-                        <input type="text" name="search" class="form-control border-start-0" placeholder="Search ID, Customer..." value="{{ search|default:'' }}">
+                        <span class="input-group-text bg-white border-end-0"><i
+                                class="fas fa-search text-muted"></i></span>
+                        <input type="text" name="search" class="form-control border-start-0"
+                            placeholder="Search ID, Customer..." value="{{ search|default:'' }}">
                     </div>
                 </div>
                 <div class="col-md-2">
@@ -117,7 +198,8 @@
                 </div>
                 <div class="col-md-2 text-end">
                     <button type="submit" class="btn btn-sm btn-primary px-3">Filter</button>
-                    <a href="{% url 'shipments:shipment_list' %}" class="btn btn-sm btn-light border ms-1"><i class="fas fa-sync-alt"></i></a>
+                    <a href="{% url 'shipments:shipment_list' %}" class="btn btn-sm btn-light border ms-1"><i
+                            class="fas fa-sync-alt"></i></a>
                 </div>
             </form>
         </div>
@@ -139,9 +221,6 @@
                     <th>Order ID</th>
                     <th>Pickup No.</th>
                     <th>Delivery No.</th>
-                    <th>Total Revenue</th>
-                    <th>Total Cost</th>
-                    <th>Gross Margin</th>
                     <th class="pe-4">Actions</th>
                 </tr>
             </thead>
@@ -163,36 +242,44 @@
                     <td class="date-text">
                         {{ shipment.estimated_delivery_date|date:"m/d/Y"|default:"-" }}
                         {% if shipment.is_overdue %}
-                        <br><span class="badge bg-soft-danger text-danger border border-danger-subtle px-1 py-0" style="font-size: 0.65rem;">OVERDUE</span>
+                        <br><span class="badge bg-soft-danger text-danger border border-danger-subtle px-1 py-0"
+                            style="font-size: 0.65rem;">OVERDUE</span>
                         {% endif %}
                     </td>
-                    <td><div class="location-text">{{ shipment.shipper.name|default:"-" }}</div></td>
+                    <td>
+                        <div class="location-text">{{ shipment.shipper.name|default:"-" }}</div>
+                    </td>
                     <td>
                         <div class="location-text">{{ shipment.origin_city }}</div>
                         <div class="sub-text">{{ shipment.origin_state|default:shipment.origin_country }}</div>
                     </td>
-                    <td><div class="location-text">{{ shipment.consignee.name|default:"-" }}</div></td>
+                    <td>
+                        <div class="location-text">{{ shipment.consignee.name|default:"-" }}</div>
+                    </td>
                     <td>
                         <div class="location-text">{{ shipment.destination_city }}</div>
-                        <div class="sub-text">{{ shipment.destination_state|default:shipment.destination_country }}</div>
+                        <div class="sub-text">{{ shipment.destination_state|default:shipment.destination_country }}
+                        </div>
                     </td>
                     <td><span class="fw-600 text-dark">{{ shipment.order.order_number|default:"-" }}</span></td>
                     <td><span class="text-muted">{{ shipment.pickup_number|default:"-" }}</span></td>
                     <td><span class="text-muted">{{ shipment.delivery_number|default:"-" }}</span></td>
-                    <td class="financial-text">${{ shipment.revenue|floatformat:2|intcomma }}</td>
-                    <td class="financial-text">${{ shipment.cost|floatformat:2|intcomma }}</td>
-                    <td class="financial-text margin-text">${{ shipment.gross_profit|floatformat:2|intcomma }}</td>
                     <td class="pe-4">
                         <div class="btn-group shadow-sm" style="border-radius: 8px; overflow: hidden;">
-                            <a href="{% url 'shipments:shipment_detail' shipment.pk %}" class="btn btn-sm btn-white border" title="View"><i class="fas fa-eye text-primary"></i></a>
-                            <a href="{% url 'shipments:shipment_edit' shipment.pk %}" class="btn btn-sm btn-white border" title="Edit"><i class="fas fa-edit text-secondary"></i></a>
-                            <a href="{% url 'shipments:generate_bol' shipment.pk %}" class="btn btn-sm btn-white border" title="BOL" target="_blank"><i class="fas fa-file-pdf text-danger"></i></a>
+                            <a href="{% url 'shipments:shipment_detail' shipment.pk %}"
+                                class="btn btn-sm btn-white border" title="View"><i
+                                    class="fas fa-eye text-primary"></i></a>
+                            <a href="{% url 'shipments:shipment_edit' shipment.pk %}"
+                                class="btn btn-sm btn-white border" title="Edit"><i
+                                    class="fas fa-edit text-secondary"></i></a>
+                            <a href="{% url 'shipments:generate_bol' shipment.pk %}" class="btn btn-sm btn-white border"
+                                title="BOL" target="_blank"><i class="fas fa-file-pdf text-danger"></i></a>
                         </div>
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="15" class="text-center py-5">
+                    <td colspan="12" class="text-center py-5">
                         <div class="py-4">
                             <i class="fas fa-box-open fa-3x text-light mb-3"></i>
                             <h5 class="text-muted">No shipments found</h5>
@@ -210,21 +297,28 @@
         <ul class="pagination pagination-sm justify-content-center">
             {% if shipments.has_previous %}
             <li class="page-item">
-                <a class="page-link shadow-sm border-0 mx-1" href="?page={{ shipments.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if type_filter %}&type={{ type_filter }}{% endif %}" style="border-radius: 8px;">Previous</a>
+                <a class="page-link shadow-sm border-0 mx-1"
+                    href="?page={{ shipments.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if type_filter %}&type={{ type_filter }}{% endif %}"
+                    style="border-radius: 8px;">Previous</a>
             </li>
             {% endif %}
-            
+
             {% for num in shipments.paginator.page_range %}
-                {% if shipments.number == num %}
-                <li class="page-item active"><span class="page-link shadow-sm border-0 mx-1" style="border-radius: 8px;">{{ num }}</span></li>
-                {% else %}
-                <li class="page-item"><a class="page-link shadow-sm border-0 mx-1" href="?page={{ num }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if type_filter %}&type={{ type_filter }}{% endif %}" style="border-radius: 8px;">{{ num }}</a></li>
-                {% endif %}
+            {% if shipments.number == num %}
+            <li class="page-item active"><span class="page-link shadow-sm border-0 mx-1" style="border-radius: 8px;">{{
+                    num }}</span></li>
+            {% else %}
+            <li class="page-item"><a class="page-link shadow-sm border-0 mx-1"
+                    href="?page={{ num }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if type_filter %}&type={{ type_filter }}{% endif %}"
+                    style="border-radius: 8px;">{{ num }}</a></li>
+            {% endif %}
             {% endfor %}
-            
+
             {% if shipments.has_next %}
             <li class="page-item">
-                <a class="page-link shadow-sm border-0 mx-1" href="?page={{ shipments.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if type_filter %}&type={{ type_filter }}{% endif %}" style="border-radius: 8px;">Next</a>
+                <a class="page-link shadow-sm border-0 mx-1"
+                    href="?page={{ shipments.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if type_filter %}&type={{ type_filter }}{% endif %}"
+                    style="border-radius: 8px;">Next</a>
             </li>
             {% endif %}
         </ul>
