@@ -102,8 +102,12 @@ class Order(TenantAwareModel):
 
     @property
     def shipped_weight(self):
-        """Calculate total weight shipped across all associated shipments"""
-        return sum(s.total_weight for s in self.shipments.all())
+        """Calculate total weight shipped across all associated shipments (converted to lbs)"""
+        # Shipment.total_weight is stored in kg (canonical system unit for shipments)
+        # Convert kg to lbs: kg * 2.20462
+        from decimal import Decimal
+        total_kg = sum(s.total_weight for s in self.shipments.all())
+        return total_kg * Decimal('2.20462')
 
     @property
     def total_pieces(self):
@@ -112,12 +116,19 @@ class Order(TenantAwareModel):
 
     @property
     def total_manifest_weight(self):
-        """Calculate total weight from manifest items where unit is not pcs"""
-        return sum(item.weight for item in self.manifest_items.exclude(weight_unit='pcs'))
+        """Calculate total weight from manifest items where unit is not pcs (normalized to lbs)"""
+        return sum(item.normalized_weight for item in self.manifest_items.exclude(weight_unit='pcs'))
+
+    @property
+    def manifest_progress_percentage(self):
+        """Calculate manifested weight progress percentage against target"""
+        if self.total_weight_target > 0:
+            return min(int((self.total_manifest_weight / self.total_weight_target) * 100), 100)
+        return 0
 
     @property
     def weight_progress_percentage(self):
-        """Calculate weight progress percentage"""
+        """Calculate shipped weight progress percentage against target"""
         if self.total_weight_target > 0:
             return min(int((self.shipped_weight / self.total_weight_target) * 100), 100)
         return 0
@@ -267,6 +278,22 @@ class ManifestItem(models.Model):
 
     def __str__(self):
         return f"{self.material} ({self.weight} {self.weight_unit})"
+
+    @property
+    def normalized_weight(self):
+        """Convert weight to lbs based on weight_unit"""
+        from decimal import Decimal
+        unit = self.weight_unit.lower()
+        if unit == 'lbs':
+            return self.weight
+        elif unit in ['kg', 'kgs']:
+            return self.weight * Decimal('2.20462')
+        elif unit == 'mt':
+            return self.weight * Decimal('2204.62')
+        elif unit == 'st':
+            return self.weight * Decimal('2000.0')
+        # Fallback for pcs or unknown units
+        return self.weight
 
     @property
     def total_buy_price(self):

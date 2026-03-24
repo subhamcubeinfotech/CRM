@@ -6,6 +6,54 @@
 <h3 class="text-center mb-4">Create Your Account</h3>
 <p class="text-muted text-center mb-4">Step 1 of 2: Personal Information</p>
 
+<style>
+    .password-strength-meter {
+        height: 4px;
+        background-color: #e9ecef;
+        margin-top: 8px;
+        border-radius: 2px;
+        overflow: hidden;
+        transition: all 0.3s;
+    }
+    .strength-bar {
+        height: 100%;
+        width: 0;
+        transition: all 0.3s;
+    }
+    .strength-text {
+        font-size: 0.75rem;
+        margin-top: 4px;
+        display: block;
+    }
+    .requirement-list {
+        list-style: none;
+        padding: 0;
+        margin: 10px 0 0 0;
+        font-size: 0.75rem;
+    }
+    .requirement-item {
+        color: #6c757d;
+        margin-bottom: 2px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .requirement-item.met {
+        color: #198754;
+    }
+    .requirement-item i {
+        font-size: 0.7rem;
+    }
+    .password-strength-container {
+        display: none;
+        animation: fadeIn 0.3s;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-5px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+
 <form method="post">
     {% csrf_token %}
 
@@ -65,6 +113,19 @@
                 {{ form.password }}
                 <label for="{{ form.password.id_for_label }}"><i class="fas fa-lock me-2"></i>Password</label>
             </div>
+            <div class="password-strength-container px-1">
+                <div class="password-strength-meter">
+                    <div id="strength-bar" class="strength-bar"></div>
+                </div>
+                <span id="strength-text" class="strength-text text-muted">Strength: None</span>
+                <ul class="requirement-list">
+                    <li class="requirement-item" id="req-length"><i class="fas fa-circle"></i> Min 5 characters</li>
+                    <li class="requirement-item" id="req-upper"><i class="fas fa-circle"></i> One uppercase</li>
+                    <li class="requirement-item" id="req-lower"><i class="fas fa-circle"></i> One lowercase</li>
+                    <li class="requirement-item" id="req-number"><i class="fas fa-circle"></i> One number</li>
+                    <li class="requirement-item" id="req-special"><i class="fas fa-circle"></i> One special character</li>
+                </ul>
+            </div>
             {% if form.password.errors %}
             <div class="text-danger small mt-1">{{ form.password.errors }}</div>
             {% endif %}
@@ -75,6 +136,7 @@
                 <label for="{{ form.confirm_password.id_for_label }}"><i class="fas fa-lock me-2"></i>Confirm
                     Password</label>
             </div>
+            <div id="confirm-password-message" class="small mt-1 px-1" style="display: none;"></div>
             {% if form.confirm_password.errors %}
             <div class="text-danger small mt-1">{{ form.confirm_password.errors }}</div>
             {% endif %}
@@ -85,7 +147,7 @@
     <div class="text-danger small mb-3">{{ form.non_field_errors }}</div>
     {% endif %}
 
-    <button type="submit" id="btn-signup-continue" class="btn btn-primary" disabled>Continue to Step 2 <i class="fas fa-arrow-right ms-2"></i></button>
+    <button type="submit" id="btn-signup-continue" class="btn btn-primary" disabled title="Please verify email and enter a strong password">Continue to Step 2 <i class="fas fa-arrow-right ms-2"></i></button>
 </form>
 
 <div class="login-footer">
@@ -156,6 +218,122 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // Password Strength Logic
+    const passwordInput = document.getElementById('{{ form.password.id_for_label }}');
+    const confirmInput = document.getElementById('{{ form.confirm_password.id_for_label }}');
+    const strengthBar = document.getElementById('strength-bar');
+    const strengthText = document.getElementById('strength-text');
+    const confirmMessage = document.getElementById('confirm-password-message');
+    
+    const requirements = {
+        length: { id: 'req-length', regex: /.{5,}/ },
+        upper: { id: 'req-upper', regex: /[A-Z]/ },
+        lower: { id: 'req-lower', regex: /[a-z]/ },
+        number: { id: 'req-number', regex: /[0-9]/ },
+        special: { id: 'req-special', regex: /[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/ }
+    };
+
+    let isEmailVerified = false;
+    let isPasswordStrong = false;
+    let doPasswordsMatch = false;
+
+    function updateFormState() {
+        if (isEmailVerified && isPasswordStrong && doPasswordsMatch) {
+            continueBtn.disabled = false;
+            continueBtn.title = "";
+        } else {
+            continueBtn.disabled = true;
+            let reasons = [];
+            if (!isEmailVerified) reasons.push("Verify email");
+            if (!isPasswordStrong) reasons.push("Password too weak");
+            if (!doPasswordsMatch) reasons.push("Passwords mismatch");
+            continueBtn.title = "Required: " + reasons.join(", ");
+        }
+    }
+
+    passwordInput.addEventListener('focus', function() {
+        if (passwordInput.value.length >= 0) {
+            document.querySelector('.password-strength-container').style.display = 'block';
+        }
+    });
+
+    passwordInput.addEventListener('blur', function() {
+        document.querySelector('.password-strength-container').style.display = 'none';
+    });
+
+    passwordInput.addEventListener('input', function() {
+        const val = passwordInput.value;
+        if (val.length > 0) {
+            document.querySelector('.password-strength-container').style.display = 'block';
+        } else {
+            // Keep it visible if it was already focused, or hide it if we cleared it while blurring
+            // But usually just keep it if focused
+        }
+        let metCount = 0;
+        
+        for (const [key, req] of Object.entries(requirements)) {
+            const el = document.getElementById(req.id);
+            const isMet = req.regex.test(val);
+            if (isMet) {
+                el.classList.add('met');
+                el.querySelector('i').className = 'fas fa-check-circle';
+                metCount++;
+            } else {
+                el.classList.remove('met');
+                el.querySelector('i').className = 'fas fa-circle';
+            }
+        }
+
+        // Update Meter
+        const strength = (metCount / 5) * 100;
+        strengthBar.style.width = strength + '%';
+        
+        if (metCount === 0) {
+            strengthBar.style.backgroundColor = '#e9ecef';
+            strengthText.innerText = 'Strength: None';
+            strengthText.className = 'strength-text text-muted';
+        } else if (metCount < 3) {
+            strengthBar.style.backgroundColor = '#dc3545';
+            strengthText.innerText = 'Strength: Weak';
+            strengthText.className = 'strength-text text-danger';
+        } else if (metCount < 5) {
+            strengthBar.style.backgroundColor = '#ffc107';
+            strengthText.innerText = 'Strength: Medium';
+            strengthText.className = 'strength-text text-warning';
+        } else {
+            strengthBar.style.backgroundColor = '#198754';
+            strengthText.innerText = 'Strength: Strong';
+            strengthText.className = 'strength-text text-success';
+        }
+
+        isPasswordStrong = (metCount === 5);
+        validateMatch();
+        updateFormState();
+    });
+
+    function validateMatch() {
+        const p1 = passwordInput.value;
+        const p2 = confirmInput.value;
+        confirmMessage.style.display = 'block';
+        if (p2 === "") {
+            confirmMessage.style.display = 'none';
+            doPasswordsMatch = false;
+        } else if (p1 === p2) {
+            confirmMessage.innerText = 'Passwords match';
+            confirmMessage.className = 'small mt-1 px-1 text-success';
+            doPasswordsMatch = true;
+        } else {
+            confirmMessage.innerText = 'Passwords do not match';
+            confirmMessage.className = 'small mt-1 px-1 text-danger';
+            doPasswordsMatch = false;
+        }
+    }
+
+    confirmInput.addEventListener('input', function() {
+        validateMatch();
+        updateFormState();
+    });
+
     verifyOtpBtn.addEventListener('click', async function() {
         const otp = otpInput.value.trim();
         const email = emailInput.value.trim();
@@ -182,7 +360,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 getOtpBtn.style.display = 'none';
                 otpInput.disabled = true;
                 verifyOtpBtn.style.display = 'none';
-                continueBtn.disabled = false;
+                isEmailVerified = true;
+                updateFormState();
             } else {
                 otpMessage.className = 'text-danger small mt-1';
                 otpMessage.innerText = data.message;

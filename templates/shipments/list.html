@@ -134,12 +134,10 @@
     }
 
     .date-text {
-        font-family: 'Inter', sans-serif;
         color: #475569;
     }
 
     .financial-text {
-        font-family: 'Inter', sans-serif;
         font-weight: 600;
         color: #1e293b;
     }
@@ -147,6 +145,21 @@
     .margin-text {
         color: #059669;
         font-weight: 700;
+    }
+
+    /* Sticky Table Header */
+    .table-responsive {
+        max-height: calc(100vh - 280px);
+        overflow-y: auto;
+    }
+
+    .table thead th {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background-color: #f8f9fa !important;
+        box-shadow: inset 0 -1px 0 #edf2f9;
+        white-space: nowrap;
     }
 </style>
 {% endblock %}
@@ -206,9 +219,9 @@
     </div>
 
     <!-- Table Section -->
-    <div class="table-responsive shadow-sm" style="border-radius: 12px; background: white;">
-        <table class="table shipment-table mb-0">
-            <thead>
+    <div class="table-responsive bg-white rounded-3 shadow-sm border mt-1">
+        <table class="table table-hover align-middle mb-0" style="min-width: 1600px;">
+            <thead class="small text-muted" style="background-color: #f8f9fa;">
                 <tr>
                     <th class="ps-4">ID</th>
                     <th>Status</th>
@@ -305,8 +318,7 @@
 
             {% for num in shipments.paginator.page_range %}
             {% if shipments.number == num %}
-            <li class="page-item active"><span class="page-link shadow-sm border-0 mx-1" style="border-radius: 8px;">{{
-                    num }}</span></li>
+            <li class="page-item active"><span class="page-link shadow-sm border-0 mx-1" style="border-radius: 8px;">{{ num }}</span></li>
             {% else %}
             <li class="page-item"><a class="page-link shadow-sm border-0 mx-1"
                     href="?page={{ num }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if type_filter %}&type={{ type_filter }}{% endif %}"
