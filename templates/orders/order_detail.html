@@ -180,7 +180,7 @@
                         data-bs-target="#offcanvasEditOrder">
                         <i class="fas fa-edit me-2 text-muted"></i>Edit
                     </a>
-                    <a class="dropdown-item py-2" href="{% url 'shipments:shipment_create' %}?order_id={{ order.pk }}">
+                    <a class="dropdown-item py-2" href="{% url 'orders:order_create' %}?copy_id={{ order.pk }}">
                         <i class="far fa-copy me-2 text-muted"></i>Copy
                     </a>
                     <a class="dropdown-item py-2" href="#">

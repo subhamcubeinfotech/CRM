@@ -276,13 +276,22 @@ def order_create(request):
     
     logger.info(f'New order creation page accessed by {request.user}')
     
+    # ── NEW: Handle Copy Order ────────────────────────────────────────
+    copy_id = request.GET.get('copy_id')
+    copied_order = None
+    copied_items = []
+    if copy_id:
+        copied_order = get_object_or_404(Order, pk=copy_id)
+        # Verify access to the source order
+        if copied_order.tenant != request.user.tenant:
+            copied_order = None
+        else:
+            copied_items = copied_order.manifest_items.all()
+            logger.info(f"Pre-filling New Order form from Order {copied_order.order_number} (Copy ID: {copy_id})")
+    # ──────────────────────────────────────────────────────────────────
+
     user_company = request.user.company
     assign_company = user_company
-    if not assign_company and request.user.tenant_id:
-        assign_company = Company.plain_objects.filter(
-            tenant=request.user.tenant,
-            is_active=True,
-        ).order_by('name').first()
     
     # Show all companies in supplier/receiver dropdowns
     company_qs = Company.plain_objects.all()
@@ -308,9 +317,12 @@ def order_create(request):
         'warehouses': warehouses,
         'inventory_items': inventory_items,
         'assign_company': assign_company,
+        'copied_order': copied_order,
+        'copied_items': copied_items,
         # Show both tenant-specific and global terms/tags
         'shipping_terms': ShippingTerm.plain_objects.filter(Q(tenant=request.user.tenant) | Q(tenant__isnull=True)),
         'tags': Tag.plain_objects.filter(Q(tenant=request.user.tenant) | Q(tenant__isnull=True)),
+        'team_members': get_user_model().objects.filter(tenant=request.user.tenant),
         'packaging_types': PackagingType.objects.all(),
     }
     return render(request, 'orders/order_form.html', context)

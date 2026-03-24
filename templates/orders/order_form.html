@@ -59,7 +59,8 @@
                         <select name="supplier" id="supplier-select" class="form-select border-primary-subtle" required>
                             <option value="">Select a supplier</option>
                             {% for supplier in suppliers %}
-                            <option value="{{ supplier.id }}" data-address="{{ supplier.full_address }}">
+                            <option value="{{ supplier.id }}" data-address="{{ supplier.full_address }}"
+                                {% if copied_order.supplier_id == supplier.id %}selected{% endif %}>
                                 {{ supplier.name }}</option>
                             {% endfor %}
                          </select>
@@ -84,7 +85,8 @@
                             </option>
                             {% endif %}
                             {% for warehouse in warehouses %}
-                            <option value="{{ warehouse.id }}" data-company-id="{{ warehouse.company_id }}">
+                            <option value="{{ warehouse.id }}" data-company-id="{{ warehouse.company_id }}"
+                                {% if copied_order.source_location_id == warehouse.id %}selected{% endif %}>
                                 {{ warehouse.display_name }}</option>
                             {% endfor %}
                         </select>
@@ -93,7 +95,8 @@
 
                 <div class="mb-4">
                     <label class="form-label fw-bold small text-uppercase">SO Number</label>
-                    <input type="text" name="so_number" class="form-control" placeholder="Insert a number">
+                    <input type="text" name="so_number" class="form-control" placeholder="Insert a number"
+                        value="{{ copied_order.so_number|default:'' }}">
                 </div>
             </div>
 
@@ -104,7 +107,8 @@
                         <select name="receiver" id="receiver-select" class="form-select border-primary-subtle" required>
                             <option value="">Select a receiver</option>
                             {% for receiver in receivers %}
-                            <option value="{{ receiver.id }}" data-address="{{ receiver.full_address }}">
+                            <option value="{{ receiver.id }}" data-address="{{ receiver.full_address }}"
+                                {% if copied_order.receiver_id == receiver.id %}selected{% endif %}>
                                 {{ receiver.name }}</option>
                             {% endfor %}
                         </select>
@@ -129,7 +133,8 @@
                             </option>
                             {% endif %}
                             {% for warehouse in warehouses %}
-                            <option value="{{ warehouse.id }}" data-company-id="{{ warehouse.company_id }}">
+                            <option value="{{ warehouse.id }}" data-company-id="{{ warehouse.company_id }}"
+                                {% if copied_order.destination_location_id == warehouse.id %}selected{% endif %}>
                                 {{ warehouse.display_name }}</option>
                             {% endfor %}
                         </select>
@@ -138,7 +143,8 @@
 
                 <div class="mb-4">
                     <label class="form-label fw-bold small text-uppercase">Customer PO Number</label>
-                    <input type="text" name="po_number" class="form-control" placeholder="Insert a number">
+                    <input type="text" name="po_number" class="form-control" placeholder="Insert a number"
+                        value="{{ copied_order.po_number|default:'' }}">
                 </div>
             </div>
         </div>
@@ -149,7 +155,7 @@
                 <label class="form-label fw-bold small text-uppercase">Tags</label>
                 <select class="form-select" name="tags" multiple>
                     {% for tag in tags %}
-                    <option value="{{ tag.id }}">{{ tag.name }}</option>
+                    <option value="{{ tag.id }}" {% if tag in copied_order.tags.all %}selected{% endif %}>{{ tag.name }}</option>
                     {% empty %}
                     <option disabled>No tags available — add via Admin</option>
                     {% endfor %}
@@ -160,7 +166,7 @@
                 <select name="shipping_terms" class="form-select">
                     <option value="">Select a shipping term</option>
                     {% for term in shipping_terms %}
-                    <option value="{{ term.id }}">{{ term.name }}</option>
+                    <option value="{{ term.id }}" {% if copied_order.shipping_terms_id == term.id %}selected{% endif %}>{{ term.name }}</option>
                     {% empty %}
                     <option disabled>No terms available — add via Admin</option>
                     {% endfor %}
@@ -171,7 +177,11 @@
                 <div class="input-group">
                     <select name="representative" id="rep-select" class="form-select" required>
                         <option value="">Select individual</option>
-                        <option value="{{ user.id }}" selected>{{ user.get_full_name|default:user.username }}</option>
+                        {% for member in team_members %}
+                        <option value="{{ member.id }}" {% if copied_order %}{% if copied_order.representative_id == member.id %}selected{% endif %}{% elif member.id == user.id %}selected{% endif %}>
+                            {{ member.get_full_name|default:member.username }}
+                        </option>
+                        {% endfor %}
                     </select>
                 </div>
                 <a href="#" id="assign-rep-me" class="small text-decoration-none mt-1 d-inline-block"
@@ -183,6 +193,116 @@
         <div class="mb-5 border-top pt-4">
             <h5 class="mb-4 text-uppercase fw-bold h6">Manifest Items</h5>
             <div id="manifest-items-container">
+                {% if copied_items %}
+                {% for c_item in copied_items %}
+                <div class="manifest-item card p-4 mb-3 border-light shadow-sm bg-light-subtle position-relative">
+                    <button type="button" class="btn-close remove-item-btn position-absolute top-0 end-0 m-3" aria-label="Remove" {% if forloop.first %}style="display: none;"{% endif %}></button>
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label class="form-label fw-bold small">Material<span class="text-danger">*</span></label>
+                            <div class="input-group input-group-sm">
+                                <select name="material[]" class="form-select material-select" required>
+                                    <option value="" data-max="0">Select Material</option>
+                                    {% for item in inventory_items %}
+                                    {% if item.quantity > 0 %}
+                                    <option value="{{ item.id }}" data-max="{{ item.quantity }}"
+                                        data-unit="{{ item.unit_of_measure }}" data-name="{{ item.product_name }}"
+                                        data-company-id="{{ item.warehouse.company_id|default:'' }}"
+                                        {% if c_item.material == item.product_name %}selected{% endif %}>
+                                        {{ item.product_name }} - {{ item.display_stock }}
+                                    </option>
+                                    {% endif %}
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small">Weight / Qty<span class="text-danger">*</span></label>
+                            <div class="row g-0">
+                                <div class="col-8">
+                                    <input type="number" name="weight[]"
+                                        class="form-control form-control-sm rounded-end-0 weight-input"
+                                        placeholder="Qty" required min="0" value="{{ c_item.weight|stringformat:'f' }}">
+                                </div>
+                                <div class="col-4">
+                                    <select name="weight_unit[]"
+                                        class="form-select form-select-sm rounded-start-0 border-start-0 unit-display">
+                                        <option value="lbs" {% if c_item.weight_unit == "lbs" %}selected{% endif %}>lbs</option>
+                                        <option value="kgs" {% if c_item.weight_unit == "kgs" %}selected{% endif %}>kgs</option>
+                                        <option value="mt" {% if c_item.weight_unit == "mt" %}selected{% endif %}>MT</option>
+                                        <option value="st" {% if c_item.weight_unit == "st" %}selected{% endif %}>ST</option>
+                                        <option value="pcs" {% if c_item.weight_unit == "pcs" %}selected{% endif %}>pcs</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="small text-danger weight-warning mt-1" style="display: none;">Exceeds available stock!</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small">Buy Price<span class="text-danger">*</span></label>
+                            <div class="row g-0">
+                                <div class="col-8">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" step="0.001" name="buy_price[]"
+                                            class="form-control rounded-end-0" placeholder="Price" required
+                                            value="{{ c_item.buy_price|stringformat:'f' }}">
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <select name="buy_price_unit[]"
+                                        class="form-select form-select-sm rounded-start-0 border-start-0">
+                                        <option value="per lbs" {% if c_item.buy_price_unit == "per lbs" %}selected{% endif %}>per lbs</option>
+                                        <option value="per kgs" {% if c_item.buy_price_unit == "per kgs" %}selected{% endif %}>per kgs</option>
+                                        <option value="per mt" {% if c_item.buy_price_unit == "per mt" %}selected{% endif %}>per MT</option>
+                                        <option value="per st" {% if c_item.buy_price_unit == "per st" %}selected{% endif %}>per ST</option>
+                                        <option value="per pcs" {% if c_item.buy_price_unit == "per pcs" %}selected{% endif %}>per pcs</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small">Sell Price<span class="text-danger">*</span></label>
+                            <div class="row g-0">
+                                <div class="col-8">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" step="0.001" name="sell_price[]"
+                                            class="form-control rounded-end-0" placeholder="Price" required
+                                            value="{{ c_item.sell_price|stringformat:'f' }}">
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <select name="sell_price_unit[]"
+                                        class="form-select form-select-sm rounded-start-0 border-start-0">
+                                        <option value="per lbs" {% if c_item.sell_price_unit == "per lbs" %}selected{% endif %}>per lbs</option>
+                                        <option value="per kgs" {% if c_item.sell_price_unit == "per kgs" %}selected{% endif %}>per kgs</option>
+                                        <option value="per mt" {% if c_item.sell_price_unit == "per mt" %}selected{% endif %}>per MT</option>
+                                        <option value="per st" {% if c_item.sell_price_unit == "per st" %}selected{% endif %}>per ST</option>
+                                        <option value="per pcs" {% if c_item.sell_price_unit == "per pcs" %}selected{% endif %}>per pcs</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label fw-bold small">Packaging<span class="text-danger">*</span></label>
+                            <select name="packaging[]" class="form-select form-select-sm" required>
+                                <option value="">Select packaging type</option>
+                                {% for ptype in packaging_types %}
+                                <option value="{{ ptype.name }}" {% if c_item.packaging == ptype.name %}selected{% endif %}>{{ ptype.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end mb-1">
+                            <div class="form-check">
+                                <input type="hidden" name="is_palletized_h[]" value="{{ c_item.is_palletized|lower }}" class="palletized-hidden">
+                                <input class="form-check-input palletized-checkbox" type="checkbox" {% if c_item.is_palletized %}checked{% endif %} onchange="this.previousElementSibling.value = this.checked ? 'true' : 'false'">
+                                <label class="form-check-label small fw-bold">Is the packaging palletized?</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
                 <div class="manifest-item card p-4 mb-3 border-light shadow-sm bg-light-subtle position-relative">
                     <button type="button" class="btn-close remove-item-btn position-absolute top-0 end-0 m-3" aria-label="Remove" style="display: none;"></button>
                     <div class="row g-3">
@@ -286,6 +406,7 @@
                         </div>
                     </div>
                 </div>
+                {% endif %}
             </div>
 
             <button type="button" class="btn btn-outline-primary btn-sm mt-2" id="add-item-btn">
@@ -303,8 +424,9 @@
                 <div class="col-md-4">
                     <div class="input-group">
                         <span class="input-group-text bg-white border-primary-subtle text-primary fw-bold">$</span>
-                        <input type="number" step="0.01" name="freight_cost" id="freight-cost-input" 
+                        <input type="number" step="0.01" name="freight_cost" id="freight-cost-input"
                             class="form-control border-primary-subtle fw-bold" placeholder="0.00"
+                            value="{{ copied_order.freight_cost|stringformat:'f'|default:'' }}"
                             style="font-size: 1rem;">
                     </div>
                 </div>
@@ -433,7 +555,8 @@
         <div class="card bg-light border-0 mb-4">
             <div class="card-body">
                 <label class="form-label fw-bold small text-uppercase">Total Weight Target (lbs)<span class="text-danger">*</span></label>
-                <input type="number" name="total_weight_target" class="form-control" placeholder="e.g. 200000" required>
+                <input type="number" name="total_weight_target" class="form-control" placeholder="e.g. 200000" required
+                    value="{{ copied_order.total_weight_target|stringformat:'f'|default:'' }}">
                 <div class="form-text">Used for calculating progress bar in dashboard.</div>
             </div>
         </div>
