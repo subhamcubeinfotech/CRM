@@ -549,7 +549,7 @@ def shipment_create(request):
         customer_id = request.POST.get('customer') or order.receiver_id  # Default to order receiver
         carrier_id = request.POST.get('carrier')
         shipper_id = request.POST.get('shipper') or order.supplier_id  # Default to order supplier
-        consignee_id = request.POST.get('consignee')
+        consignee_id = request.POST.get('consignee') or order.receiver_id  # Default to order receiver
         
         # Handle locations
         pickup_loc_id = request.POST.get('pickup_location_ui')
