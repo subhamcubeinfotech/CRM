@@ -474,96 +474,294 @@
                         </button>
                     </div>
                     <div class="card-body" id="shipmentItemsRoot">
-                        <div class="shipment-item border rounded-3 p-3 mb-3" data-index="0">
-                            <div class="row align-items-end g-3">
-                                <div class="col-md-12">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <label class="form-label mb-1">Material <span class="text-danger">*</span></label>
-                                        <div class="d-flex gap-2">
-                                            <button class="btn btn-sm btn-outline-danger d-none remove-shipment-item-btn" type="button" title="Remove Item">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
+                        {% if is_create and initial_items %}
+                            {% for item in initial_items %}
+                                <div class="shipment-item border rounded-3 p-3 mb-3" data-index="{{ forloop.counter0 }}">
+                                    <div class="row align-items-end g-3">
+                                        <div class="col-md-12">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <label class="form-label mb-1">Material <span class="text-danger">*</span></label>
+                                                <div class="d-flex gap-2">
+                                                    <button class="btn btn-sm btn-outline-danger {% if forloop.first %}d-none{% endif %} remove-shipment-item-btn" type="button" title="Remove Item">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="input-group">
+                                                <select name="items_ui[{{ forloop.counter0 }}][material]" class="form-select shipment-material-select" required>
+                                                    <option value="">Select a material</option>
+                                                    <option value="{{ item.material }}" selected 
+                                                        data-company-id="{{ order.supplier_id }}"
+                                                        data-name="{{ item.material }}">
+                                                        {{ item.material }}
+                                                    </option>
+                                                    {% for inv_item in inventory_items %}
+                                                    {% if inv_item.quantity > 0 %}
+                                                    <option value="{{ inv_item.id }}"
+                                                        data-max="{{ inv_item.quantity }}"
+                                                        data-unit="{{ inv_item.unit_of_measure }}"
+                                                        data-name="{{ inv_item.product_name }}"
+                                                        data-company-id="{{ inv_item.warehouse.company_id|default:'' }}">
+                                                        {{ inv_item.product_name }} - {{ inv_item.display_stock }}
+                                                    </option>
+                                                    {% endif %}
+                                                    {% endfor %}
+                                                </select>
+                                                <button class="btn btn-outline-secondary" type="button" title="Search">
+                                                    <i class="fas fa-search"></i>
+                                                </button>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div class="input-group">
-                                        <select name="items_ui[0][material]" class="form-select shipment-material-select" required>
-                                            <option value="">Select a material</option>
-                                            {% for item in inventory_items %}
-                                            {% if item.quantity > 0 %}
-                                            <option value="{{ item.id }}"
-                                                data-max="{{ item.quantity }}"
-                                                data-unit="{{ item.unit_of_measure }}"
-                                                data-name="{{ item.product_name }}"
-                                                data-company-id="{{ item.warehouse.company_id|default:'' }}">
-                                                {{ item.product_name }} - {{ item.display_stock }}
-                                            </option>
-                                            {% endif %}
-                                            {% endfor %}
-                                        </select>
-                                        <button class="btn btn-outline-secondary" type="button" title="Search">
-                                            <i class="fas fa-search"></i>
-                                        </button>
-                                    </div>
-                                </div>
 
-                                <div class="col-md-6">
-                                    <label class="form-label">Weight / Qty <span class="text-danger">*</span></label>
-                                    <div class="row g-0">
-                                        <div class="col-8">
-                                            <input type="number" name="items_ui[0][weight]" class="form-control rounded-end-0" placeholder="Qty" step="0.01" required>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Weight / Qty <span class="text-danger">*</span></label>
+                                            <div class="row g-0">
+                                                <div class="col-8">
+                                                    <input type="number" name="items_ui[{{ forloop.counter0 }}][weight]" class="form-control rounded-end-0" placeholder="Qty" step="0.01" required value="{{ item.weight|floatformat:2 }}">
+                                                </div>
+                                                <div class="col-4">
+                                                    <select name="items_ui[{{ forloop.counter0 }}][unit]" class="form-select rounded-start-0 border-start-0 weight-unit-select">
+                                                        <option value="lbs" {% if item.weight_unit == 'lbs' %}selected{% endif %}>lbs</option>
+                                                        <option value="kg" {% if item.weight_unit == 'kg' %}selected{% endif %}>kg</option>
+                                                        <option value="pcs" {% if item.weight_unit == 'pcs' %}selected{% endif %}>pcs</option>
+                                                    </select>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div class="col-4">
-                                            <select name="items_ui[0][weight_unit]" class="form-select rounded-start-0 border-start-0 weight-unit-select">
-                                                <option value="lbs" selected>lbs</option>
-                                                <option value="kg">kg</option>
-                                                <option value="pcs">pcs</option>
+
+                                        <div class="col-md-6">
+                                            <label class="form-label">Packaging</label>
+                                            <select name="items_ui[{{ forloop.counter0 }}][packaging]" class="form-select">
+                                                <option value="">Select packaging type</option>
+                                                {% for ptype in packaging_types %}
+                                                <option value="{{ ptype.name }}" {% if item.packaging == ptype.name %}selected{% endif %}>{{ ptype.name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <div class="form-check mt-2">
+                                                <input class="form-check-input" type="checkbox" value="on" id="palletized_{{ forloop.counter0 }}" name="items_ui[{{ forloop.counter0 }}][palletized]" {% if item.is_palletized %}checked{% endif %}>
+                                                <label class="form-check-label" for="palletized_{{ forloop.counter0 }}">Is the packaging palletized?</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Pieces</label>
+                                            <input type="number" name="items_ui[{{ forloop.counter0 }}][pieces]" class="form-control" placeholder="Insert" value="1">
+                                        </div>
+
+                                        <div class="col-md-4">
+                                            <label class="form-label">Buy Price <span class="text-danger">*</span></label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">$</span>
+                                                <input type="number" name="items_ui[{{ forloop.counter0 }}][buy_price]" class="form-control" placeholder="Buy Price" step="0.0001" required value="{{ item.buy_price|floatformat:4 }}">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Sell Price <span class="text-danger">*</span></label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">$</span>
+                                                <input type="number" name="items_ui[{{ forloop.counter0 }}][sell_price]" class="form-control" placeholder="Sell Price" step="0.0001" required value="{{ item.sell_price|floatformat:4 }}">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Unit</label>
+                                            <select name="items_ui[{{ forloop.counter0 }}][price_unit]" class="form-select price-unit-select">
+                                                <option value="per lbs" {% if item.buy_price_unit == 'per lbs' or item.sell_price_unit == 'per lbs' %}selected{% endif %}>per lbs</option>
+                                                <option value="per kg" {% if item.buy_price_unit == 'per kg' or item.sell_price_unit == 'per kg' %}selected{% endif %}>per kg</option>
+                                                <option value="per pcs" {% if item.buy_price_unit == 'per pcs' or item.sell_price_unit == 'per pcs' %}selected{% endif %}>per pcs</option>
                                             </select>
                                         </div>
                                     </div>
                                 </div>
+                            {% endfor %}
+                        {% elif not is_create and shipment.items.all %}
+                            {% for item in shipment.items.all %}
+                                <div class="shipment-item border rounded-3 p-3 mb-3" data-index="{{ forloop.counter0 }}">
+                                    <div class="row align-items-end g-3">
+                                        <div class="col-md-12">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <label class="form-label mb-1">Material <span class="text-danger">*</span></label>
+                                                <div class="d-flex gap-2">
+                                                    <button class="btn btn-sm btn-outline-danger {% if forloop.first %}d-none{% endif %} remove-shipment-item-btn" type="button" title="Remove Item">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="input-group">
+                                                <select name="items_ui[{{ forloop.counter0 }}][material]" class="form-select shipment-material-select" required>
+                                                    <option value="">Select a material</option>
+                                                    <option value="{{ item.inventory_item_id|default:item.material_name }}" selected
+                                                        data-company-id="{{ shipment.shipper_id }}"
+                                                        data-name="{{ item.material_name }}">
+                                                        {{ item.material_name }}
+                                                    </option>
+                                                    {% for inv_item in inventory_items %}
+                                                    {% if inv_item.quantity > 0 %}
+                                                    <option value="{{ inv_item.id }}"
+                                                        data-max="{{ inv_item.quantity }}"
+                                                        data-unit="{{ inv_item.unit_of_measure }}"
+                                                        data-name="{{ inv_item.product_name }}"
+                                                        data-company-id="{{ inv_item.warehouse.company_id|default:'' }}">
+                                                        {{ inv_item.product_name }} - {{ inv_item.display_stock }}
+                                                    </option>
+                                                    {% endif %}
+                                                    {% endfor %}
+                                                </select>
+                                                <button class="btn btn-outline-secondary" type="button" title="Search">
+                                                    <i class="fas fa-search"></i>
+                                                </button>
+                                            </div>
+                                        </div>
 
-                                <div class="col-md-6">
-                                    <label class="form-label">Packaging</label>
-                                    <select name="items_ui[0][packaging]" class="form-select">
-                                        <option value="">Select packaging type</option>
-                                        {% for ptype in packaging_types %}
-                                        <option value="{{ ptype.name }}">{{ ptype.name }}</option>
-                                        {% endfor %}
-                                    </select>
-                                    <div class="form-check mt-2">
-                                        <input class="form-check-input" type="checkbox" value="1" id="palletized_0" name="items_ui[0][palletized]">
-                                        <label class="form-check-label" for="palletized_0">Is the packaging palletized?</label>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Pieces</label>
-                                    <input type="number" name="items_ui[0][pieces]" class="form-control" placeholder="Insert">
-                                </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Weight / Qty <span class="text-danger">*</span></label>
+                                            <div class="row g-0">
+                                                <div class="col-8">
+                                                    <input type="number" name="items_ui[{{ forloop.counter0 }}][weight]" class="form-control rounded-end-0" placeholder="Qty" step="0.01" required value="{{ item.weight|floatformat:2 }}">
+                                                </div>
+                                                <div class="col-4">
+                                                    <select name="items_ui[{{ forloop.counter0 }}][unit]" class="form-select rounded-start-0 border-start-0 weight-unit-select">
+                                                        <option value="lbs" {% if item.weight_unit == 'lbs' %}selected{% endif %}>lbs</option>
+                                                        <option value="kg" {% if item.weight_unit == 'kg' %}selected{% endif %}>kg</option>
+                                                        <option value="pcs" {% if item.weight_unit == 'pcs' %}selected{% endif %}>pcs</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
 
-                                <div class="col-md-4">
-                                    <label class="form-label">Buy Price <span class="text-danger">*</span></label>
-                                    <div class="input-group">
-                                        <span class="input-group-text">$</span>
-                                        <input type="number" name="items_ui[0][buy_price]" class="form-control" placeholder="Buy Price" step="0.0001" required>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Packaging</label>
+                                            <select name="items_ui[{{ forloop.counter0 }}][packaging]" class="form-select">
+                                                <option value="">Select packaging type</option>
+                                                {% for ptype in packaging_types %}
+                                                <option value="{{ ptype.name }}" {% if item.packaging == ptype.name %}selected{% endif %}>{{ ptype.name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <div class="form-check mt-2">
+                                                <input class="form-check-input" type="checkbox" value="on" id="palletized_{{ forloop.counter0 }}" name="items_ui[{{ forloop.counter0 }}][palletized]" {% if item.is_palletized %}checked{% endif %}>
+                                                <label class="form-check-label" for="palletized_{{ forloop.counter0 }}">Is the packaging palletized?</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Pieces</label>
+                                            <input type="number" name="items_ui[{{ forloop.counter0 }}][pieces]" class="form-control" placeholder="Insert" value="{{ item.pieces|default:1 }}">
+                                        </div>
+
+                                        <div class="col-md-4">
+                                            <label class="form-label">Buy Price <span class="text-danger">*</span></label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">$</span>
+                                                <input type="number" name="items_ui[{{ forloop.counter0 }}][buy_price]" class="form-control" placeholder="Buy Price" step="0.0001" required value="{{ item.buy_price|floatformat:4 }}">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Sell Price <span class="text-danger">*</span></label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">$</span>
+                                                <input type="number" name="items_ui[{{ forloop.counter0 }}][sell_price]" class="form-control" placeholder="Sell Price" step="0.0001" required value="{{ item.sell_price|floatformat:4 }}">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Unit</label>
+                                            <select name="items_ui[{{ forloop.counter0 }}][price_unit]" class="form-select price-unit-select">
+                                                <option value="per lbs" {% if item.price_unit == 'per lbs' %}selected{% endif %}>per lbs</option>
+                                                <option value="per kg" {% if item.price_unit == 'per kg' %}selected{% endif %}>per kg</option>
+                                                <option value="per pcs" {% if item.price_unit == 'per pcs' %}selected{% endif %}>per pcs</option>
+                                            </select>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Sell Price <span class="text-danger">*</span></label>
-                                    <div class="input-group">
-                                        <span class="input-group-text">$</span>
-                                        <input type="number" name="items_ui[0][sell_price]" class="form-control" placeholder="Sell Price" step="0.0001" required>
+                            {% endfor %}
+                        {% else %}
+                            <div class="shipment-item border rounded-3 p-3 mb-3" data-index="0">
+                                <div class="row align-items-end g-3">
+                                    <div class="col-md-12">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <label class="form-label mb-1">Material <span class="text-danger">*</span></label>
+                                            <div class="d-flex gap-2">
+                                                <button class="btn btn-sm btn-outline-danger d-none remove-shipment-item-btn" type="button" title="Remove Item">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="input-group">
+                                            <select name="items_ui[0][material]" class="form-select shipment-material-select" required>
+                                                <option value="">Select a material</option>
+                                                {% for item in inventory_items %}
+                                                {% if item.quantity > 0 %}
+                                                <option value="{{ item.id }}"
+                                                    data-max="{{ item.quantity }}"
+                                                    data-unit="{{ item.unit_of_measure }}"
+                                                    data-name="{{ item.product_name }}"
+                                                    data-company-id="{{ item.warehouse.company_id|default:'' }}">
+                                                    {{ item.product_name }} - {{ item.display_stock }}
+                                                </option>
+                                                {% endif %}
+                                                {% endfor %}
+                                            </select>
+                                            <button class="btn btn-outline-secondary" type="button" title="Search">
+                                                <i class="fas fa-search"></i>
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Unit</label>
-                                    <select name="items_ui[0][buy_unit]" class="form-select price-unit-select">
-                                        <option value="per lbs" selected>per lbs</option>
-                                        <option value="per kg">per kg</option>
-                                        <option value="per pcs">per pcs</option>
-                                    </select>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label">Weight / Qty <span class="text-danger">*</span></label>
+                                        <div class="row g-0">
+                                            <div class="col-8">
+                                                <input type="number" name="items_ui[0][weight]" class="form-control rounded-end-0" placeholder="Qty" step="0.01" required>
+                                            </div>
+                                            <div class="col-4">
+                                                <select name="items_ui[0][unit]" class="form-select rounded-start-0 border-start-0 weight-unit-select">
+                                                    <option value="lbs" selected>lbs</option>
+                                                    <option value="kg">kg</option>
+                                                    <option value="pcs">pcs</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label">Packaging</label>
+                                        <select name="items_ui[0][packaging]" class="form-select">
+                                            <option value="">Select packaging type</option>
+                                            {% for ptype in packaging_types %}
+                                            <option value="{{ ptype.name }}">{{ ptype.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <div class="form-check mt-2">
+                                            <input class="form-check-input" type="checkbox" value="on" id="palletized_0" name="items_ui[0][palletized]">
+                                            <label class="form-check-label" for="palletized_0">Is the packaging palletized?</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Pieces</label>
+                                        <input type="number" name="items_ui[0][pieces]" class="form-control" placeholder="Insert">
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="form-label">Buy Price <span class="text-danger">*</span></label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">$</span>
+                                            <input type="number" name="items_ui[0][buy_price]" class="form-control" placeholder="Buy Price" step="0.0001" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Sell Price <span class="text-danger">*</span></label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">$</span>
+                                            <input type="number" name="items_ui[0][sell_price]" class="form-control" placeholder="Sell Price" step="0.0001" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Unit</label>
+                                        <select name="items_ui[0][price_unit]" class="form-select price-unit-select">
+                                            <option value="per lbs" selected>per lbs</option>
+                                            <option value="per kg">per kg</option>
+                                            <option value="per pcs">per pcs</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        {% endif %}
                     </div>
                 </div>
 
@@ -685,8 +883,9 @@
                             <input type="number" name="quoted_amount" class="form-control" value="{{ shipment.quoted_amount|default:'0' }}" step="0.01">
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Cost ($)</label>
-                            <input type="number" name="cost" class="form-control" value="{% if is_create %}{{ order.total_cost|floatformat:2 }}{% else %}{{ shipment.cost|floatformat:2 }}{% endif %}" step="0.01" id="costInput">
+                            <label class="form-label">Freight Shipment Cost ($)</label>
+                            <input type="number" name="cost" class="form-control" value="{% if is_create %}{% if is_first_shipment %}{{ order.freight_cost|floatformat:2 }}{% else %}{{ order.total_cost|floatformat:2 }}{% endif %}{% else %}{{ shipment.cost|floatformat:2 }}{% endif %}" step="0.01" id="costInput">
+                            <div class="form-text">Enter the total estimated shipping cost for this entire order.</div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Revenue ($)</label>
