@@ -31,8 +31,14 @@
     .directory-map {
         height: 520px;
         border-radius: 14px;
+        background: #f8fafc;
     }
 
+    /* Boost map vibrancy and shine */
+    .directory-map .leaflet-tile-pane {
+        filter: saturate(1.4) contrast(1.15) brightness(1.02);
+    }
+    
     .directory-map-card.is-fullscreen .directory-map {
         height: calc(100vh - 110px);
         flex: 1;
@@ -119,9 +125,44 @@
         transform: rotate(45deg);
     }
 
-    .custom-marker.carrier { background: #f59e0b; }
-    .custom-marker.customer { background: #2563eb; }
-    .custom-marker.vendor { background: #6366f1; }
+    .custom-marker.carrier { background: #f59e0b; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35); }
+    .custom-marker.customer { background: #3b82f6; box-shadow: 0 4px 14px rgba(59, 130, 246, 0.35); }
+    .custom-marker.vendor { background: #8b5cf6; box-shadow: 0 4px 14px rgba(139, 92, 246, 0.35); }
+
+    /* Custom Cluster Styles to match user reference */
+    .marker-cluster-vibrant {
+        background: none;
+    }
+    
+    .custom-cluster {
+        width: 40px;
+        height: 40px;
+        line-height: 40px;
+        background-color: rgba(37, 99, 235, 0.85);
+        border: 4px solid rgba(191, 219, 254, 0.65);
+        border-radius: 50%;
+        color: #fff;
+        text-align: center;
+        font-weight: 700;
+        font-size: 14px;
+        box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+        transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .custom-cluster:hover {
+        transform: scale(1.15);
+        background-color: rgba(29, 78, 216, 1);
+        box-shadow: 0 6px 20px rgba(37, 99, 235, 0.6);
+        z-index: 1000;
+    }
+
+    .custom-cluster span {
+        display: block;
+        margin-top: -1px;
+    }
 
     /* Legend Overlay support */
     .legend-color {
@@ -383,22 +424,28 @@
                 zoomControl: true,
             });
 
+            // High-DPI (Retina) support for crisp labels and 'shining' vibrant colors
             L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
                 maxZoom: 19,
-                attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
-            }).addTo(companyMap);
-
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-                maxZoom: 19,
-                attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+                attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+                detectRetina: true
             }).addTo(companyMap);
 
             // Using MarkerClusterGroup to handle overlapping markers (Spiderfying)
+            // Styled to look like the vibrant blue circular clusters in the reference image
             markersLayer = L.markerClusterGroup({
                 showCoverageOnHover: false,
                 spiderfyOnMaxZoom: true,
                 zoomToBoundsOnClick: true,
-                maxClusterRadius: 40
+                maxClusterRadius: 50,
+                iconCreateFunction: function(cluster) {
+                    const childCount = cluster.getChildCount();
+                    return L.divIcon({ 
+                        html: `<div class="custom-cluster"><span>${childCount}</span></div>`, 
+                        className: 'marker-cluster-vibrant', 
+                        iconSize: L.point(40, 40) 
+                    });
+                }
             }).addTo(companyMap);
 
             const mappedCompanies = companies.filter(company =>
@@ -417,7 +464,7 @@
 
             mappedCompanies.forEach(company => {
                 let markerClass = 'customer';
-                let typeColor = '#2563eb';
+                let typeColor = '#3b82f6';
                 
                 const typeLower = (company.companyType || '').toLowerCase();
                 if (typeLower.includes('carrier')) {
@@ -425,7 +472,7 @@
                     typeColor = '#f59e0b';
                 } else if (typeLower.includes('vendor')) {
                     markerClass = 'vendor';
-                    typeColor = '#6366f1';
+                    typeColor = '#8b5cf6';
                 }
 
                 const customIcon = L.divIcon({

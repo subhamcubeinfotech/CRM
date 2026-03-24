@@ -214,6 +214,46 @@
         font-weight: 700;
         color: #212529;
     }
+
+    .logistics-section-title {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: #1f2937;
+    }
+
+    .logistics-column-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 1rem;
+    }
+
+    .logistics-label {
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: #334155;
+        margin-bottom: 0.35rem;
+    }
+
+    .logistics-field,
+    .logistics-select {
+        border-radius: 8px;
+        min-height: 42px;
+        border: 1px solid #cbd5e1;
+        background: #fff;
+        color: #1f2937;
+    }
+
+    .logistics-field:focus,
+    .logistics-select:focus {
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.2);
+    }
+
+    .logistics-contact-meta {
+        font-size: 0.85rem;
+        line-height: 1.35;
+    }
 </style>
 {% endblock %}
 
@@ -372,39 +412,60 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {% if shipment.order %}
-                                        {% for item in shipment.order.manifest_items.all %}
-                                        <tr>
-                                            <td class="py-3 px-2">
-                                                <div class="fw-bold">
-                                                <a href="{% url 'materials:material_lookup' %}?name={{ item.material|urlencode }}" class="text-primary text-decoration-none">
-                                                    {{ item.material }}
-                                                </a>
-                                                </div>
-                                            </td>
-                                            <td>${{ item.buy_price|floatformat:3 }} / {{ item.buy_price_unit }}</td>
-                                            <td>${{ item.sell_price|floatformat:2 }} / {{ item.sell_price_unit }}</td>
-                                            <td>
-                                                {% if item.weight_unit == "pcs" %}
-                                                -
-                                                {% else %}
-                                                {{ item.weight|floatformat:0 }} {{ item.weight_unit }}
-                                                {% endif %}
-                                            </td>
-                                            <td>
-                                                {% if item.weight_unit == "pcs" %}
-                                                {{ item.weight|floatformat:0 }} pcs
-                                                {% else %}
-                                                -
-                                                {% endif %}
-                                            </td>
-                                            <td>{{ item.packaging|default:"-" }}</td>
-                                        </tr>
-                                        {% empty %}
-                                        <tr>
-                                            <td colspan="6" class="text-muted text-center py-3">No manifest items</td>
-                                        </tr>
-                                        {% endfor %}
+                                        {% if shipment.items.exists %}
+                                            {% for item in shipment.items.all %}
+                                            <tr>
+                                                <td class="py-3 px-2">
+                                                    <div class="fw-bold">
+                                                        <a href="{% url 'materials:material_lookup' %}?name={{ item.material_name|urlencode }}" class="text-primary text-decoration-none">
+                                                            {{ item.material_name }}
+                                                        </a>
+                                                    </div>
+                                                </td>
+                                                <td>${{ item.buy_price|floatformat:4 }} / {{ item.price_unit }}</td>
+                                                <td>${{ item.sell_price|floatformat:4 }} / {{ item.price_unit }}</td>
+                                                <td>
+                                                    {{ item.weight|floatformat:2 }} {{ item.weight_unit }}
+                                                </td>
+                                                <td>
+                                                    {{ item.pieces|default:"-" }} pcs
+                                                </td>
+                                                <td>{{ item.packaging|default:"-" }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        {% elif shipment.order %}
+                                            {% for item in shipment.order.manifest_items.all %}
+                                            <tr>
+                                                <td class="py-3 px-2">
+                                                    <div class="fw-bold">
+                                                        <a href="{% url 'materials:material_lookup' %}?name={{ item.material|urlencode }}" class="text-primary text-decoration-none">
+                                                            {{ item.material }}
+                                                        </a>
+                                                    </div>
+                                                </td>
+                                                <td>${{ item.buy_price|floatformat:4 }} / {{ item.buy_price_unit }}</td>
+                                                <td>${{ item.sell_price|floatformat:4 }} / {{ item.sell_price_unit }}</td>
+                                                <td>
+                                                    {% if item.weight_unit == 'pcs' %}
+                                                    -
+                                                    {% else %}
+                                                    {{ item.weight|floatformat:2 }} {{ item.weight_unit }}
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    {% if item.weight_unit == 'pcs' %}
+                                                    {{ item.weight|floatformat:0 }} pcs
+                                                    {% else %}
+                                                    -
+                                                    {% endif %}
+                                                </td>
+                                                <td>{{ item.packaging|default:"-" }}</td>
+                                            </tr>
+                                            {% empty %}
+                                            <tr>
+                                                <td colspan="6" class="text-muted text-center py-3">No manifest items</td>
+                                            </tr>
+                                            {% endfor %}
                                         {% else %}
                                         <tr>
                                             <td colspan="6" class="text-muted text-center py-3">{{ shipment.commodity_description|default:"No manifest items" }}</td>
@@ -504,6 +565,94 @@
                                 <input type="file" name="file" id="upload-file-input" onchange="submitTypedUpload()">
                             </form>
 
+                        </div>
+                    </div>
+
+                    <!-- Logistics -->
+                    <div class="card border-0 shadow-sm mb-4" style="border-radius:14px;">
+                        <div class="card-body">
+                            <h5 class="logistics-section-title mb-4">Logistics</h5>
+                            <div class="row g-4">
+                                <!-- Pickup -->
+                                <div class="col-md-6 border-end">
+                                    <h6 class="logistics-column-title">Pickup</h6>
+                                    
+                                    <div class="mb-3">
+                                        <label class="logistics-label">Date</label>
+                                        <input type="date" class="form-control logistics-field" value="{% if shipment.pickup_date %}{{ shipment.pickup_date|date:'Y-m-d' }}{% endif %}">
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="logistics-label">Number</label>
+                                        <input type="text" class="form-control logistics-field" value="{{ shipment.pickup_number|default:'' }}" placeholder="Pickup number">
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="logistics-label">Appointment</label>
+                                        <select class="form-select logistics-select">
+                                            {% for code, label in shipment.APPOINTMENT_CHOICES %}
+                                            <option value="{{ code }}" {% if shipment.pickup_appointment_type == code %}selected{% endif %}>{{ label }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="mb-0">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <label class="logistics-label mb-0">Contact</label>
+                                            <button type="button" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-plus-circle me-1"></i>Add
+                                            </button>
+                                        </div>
+                                        <select class="form-select logistics-select mb-2">
+                                            <option value="">{{ shipment.pickup_contact|default:"Contact" }}</option>
+                                        </select>
+                                        <div class="logistics-contact-meta">
+                                            {% if shipment.pickup_email %}<div><a href="mailto:{{ shipment.pickup_email }}" class="text-decoration-none">{{ shipment.pickup_email }}</a></div>{% endif %}
+                                            {% if shipment.pickup_number %}<div><a href="tel:{{ shipment.pickup_number }}" class="text-decoration-none">{{ shipment.pickup_number }}</a></div>{% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Delivery -->
+                                <div class="col-md-6">
+                                    <h6 class="logistics-column-title">Delivery</h6>
+
+                                    <div class="mb-3">
+                                        <label class="logistics-label">Date</label>
+                                        <input type="date" class="form-control logistics-field" value="{% if shipment.estimated_delivery_date %}{{ shipment.estimated_delivery_date|date:'Y-m-d' }}{% endif %}">
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="logistics-label">Number</label>
+                                        <input type="text" class="form-control logistics-field" value="{{ shipment.delivery_number|default:'' }}" placeholder="Delivery number">
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="logistics-label">Appointment</label>
+                                        <select class="form-select logistics-select">
+                                            {% for code, label in shipment.APPOINTMENT_CHOICES %}
+                                            <option value="{{ code }}" {% if shipment.delivery_appointment_type == code %}selected{% endif %}>{{ label }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+
+                                    <div class="mb-0">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <label class="logistics-label mb-0">Contact</label>
+                                            <button type="button" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-plus-circle me-1"></i>Add
+                                            </button>
+                                        </div>
+                                        <select class="form-select logistics-select mb-2">
+                                            <option value="">{{ shipment.delivery_contact|default:"Contact" }}</option>
+                                        </select>
+                                        <div class="logistics-contact-meta">
+                                            {% if shipment.delivery_email %}<div><a href="mailto:{{ shipment.delivery_email }}" class="text-decoration-none">{{ shipment.delivery_email }}</a></div>{% endif %}
+                                            {% if shipment.delivery_number %}<div><a href="tel:{{ shipment.delivery_number }}" class="text-decoration-none">{{ shipment.delivery_number }}</a></div>{% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -1055,10 +1204,14 @@
                             <td>
                                 <select name="item[]" class="form-select form-select-sm border-0 bg-transparent ps-0">
                                     <option value="">Select Item</option>
-                                    {% if shipment.order %}
-                                    {% for item in shipment.order.manifest_items.all %}
-                                    <option value="{{ item.material }}" selected>{{ item.material }}</option>
-                                    {% endfor %}
+                                    {% if shipment.items.exists %}
+                                        {% for item in shipment.items.all %}
+                                        <option value="{{ item.material_name }}" selected>{{ item.material_name }}</option>
+                                        {% endfor %}
+                                    {% elif shipment.order %}
+                                        {% for item in shipment.order.manifest_items.all %}
+                                        <option value="{{ item.material }}" selected>{{ item.material }}</option>
+                                        {% endfor %}
                                     {% endif %}
                                 </select>
                             </td>

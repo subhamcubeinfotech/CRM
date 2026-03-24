@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load humanize %}
 
 {% block title %}New Order - FreightPro{% endblock %}
 
@@ -36,7 +37,6 @@
     #dest-location-select.location-select-locked {
         cursor: not-allowed;
     }
-
 </style>
 {% endblock %}
 
@@ -54,18 +54,19 @@
         <div class="row g-4 mb-5">
             <div class="col-md-6">
                 <div class="mb-4">
-                    <label class="form-label fw-bold small text-uppercase">Supplier<span
-                            class="text-danger">*</span></label>
+                    <label class="form-label fw-bold small text-uppercase">Supplier<span class="text-danger">*</span></label>
+                    <div class="input-group">
                     <div class="input-group">
                         <select name="supplier" id="supplier-select" class="form-select border-primary-subtle" required>
                             <option value="">Select a supplier</option>
                             {% for supplier in suppliers %}
-                            <option value="{{ supplier.id }}" data-address="{{ supplier.full_address }}">
+                            <option value="{{ supplier.id }}" data-address="{{ supplier.full_address }}"
+                                {% if copied_order.supplier_id == supplier.id %}selected{% endif %}>
                                 {{ supplier.name }}</option>
                             {% endfor %}
                          </select>
-                        <a href="{% url 'accounts:company_create' %}?type=vendor" class="btn btn-outline-primary"><i
-                                class="fas fa-plus"></i> Add</a>
+                         <a href="{% url 'accounts:company_create' %}?type=vendor" class="btn btn-outline-primary">+ Add</a>
+                    </div>
                     </div>
                     <div style="min-height: 21px;">
                         {% if assign_company %}
@@ -76,8 +77,7 @@
                 </div>
 
                 <div class="mb-4">
-                    <label class="form-label fw-bold small text-uppercase">Source Location<span
-                            class="text-danger">*</span></label>
+                    <label class="form-label fw-bold small text-uppercase">Source Location<span class="text-danger">*</span></label>
                     <div class="input-group">
                         <select name="source_location" id="source-location-select"
                             class="form-select border-primary-subtle" required>
@@ -88,37 +88,34 @@
                             </option>
                             {% endif %}
                             {% for warehouse in warehouses %}
-                            <option value="{{ warehouse.id }}" data-company-id="{{ warehouse.company_id }}">
+                            <option value="{{ warehouse.id }}" data-company-id="{{ warehouse.company_id }}"
+                                {% if copied_order.source_location_id == warehouse.id %}selected{% endif %}>
                                 {{ warehouse.display_name }}</option>
                             {% endfor %}
                         </select>
-                        <button class="btn btn-outline-primary" type="button"><i class="fas fa-plus"></i> Add</button>
-                    </div>
-                    <div style="min-height: 21px;">
                     </div>
                 </div>
 
                 <div class="mb-4">
                     <label class="form-label fw-bold small text-uppercase">SO Number</label>
-                    <input type="text" name="so_number" class="form-control" placeholder="Insert a number">
+                    <input type="text" name="so_number" class="form-control" placeholder="Insert a number"
+                        value="{{ copied_order.so_number|default:'' }}">
                 </div>
-
             </div>
 
             <div class="col-md-6">
                 <div class="mb-4">
-                    <label class="form-label fw-bold small text-uppercase">Receiver<span
-                            class="text-danger">*</span></label>
+                    <label class="form-label fw-bold small text-uppercase">Receiver<span class="text-danger">*</span></label>
                     <div class="input-group">
                         <select name="receiver" id="receiver-select" class="form-select border-primary-subtle" required>
                             <option value="">Select a receiver</option>
                             {% for receiver in receivers %}
-                            <option value="{{ receiver.id }}" data-address="{{ receiver.full_address }}">
+                            <option value="{{ receiver.id }}" data-address="{{ receiver.full_address }}"
+                                {% if copied_order.receiver_id == receiver.id %}selected{% endif %}>
                                 {{ receiver.name }}</option>
                             {% endfor %}
                         </select>
-                        <a href="{% url 'accounts:company_create' %}?type=customer" class="btn btn-outline-primary"><i
-                                class="fas fa-plus"></i> Add</a>
+                        <a href="{% url 'accounts:company_create' %}?type=customer" class="btn btn-outline-primary">+ Add</a>
                     </div>
                     <div style="min-height: 21px;">
                         {% if assign_company %}
@@ -129,8 +126,7 @@
                 </div>
 
                 <div class="mb-4">
-                    <label class="form-label fw-bold small text-uppercase">Destination Location<span
-                            class="text-danger">*</span></label>
+                    <label class="form-label fw-bold small text-uppercase">Destination Location<span class="text-danger">*</span></label>
                     <div class="input-group">
                         <select name="destination_location" id="dest-location-select"
                             class="form-select border-primary-subtle" required>
@@ -141,21 +137,19 @@
                             </option>
                             {% endif %}
                             {% for warehouse in warehouses %}
-                            <option value="{{ warehouse.id }}" data-company-id="{{ warehouse.company_id }}">
+                            <option value="{{ warehouse.id }}" data-company-id="{{ warehouse.company_id }}"
+                                {% if copied_order.destination_location_id == warehouse.id %}selected{% endif %}>
                                 {{ warehouse.display_name }}</option>
                             {% endfor %}
                         </select>
-                        <button class="btn btn-outline-primary" type="button"><i class="fas fa-plus"></i> Add</button>
-                    </div>
-                    <div style="min-height: 21px;">
                     </div>
                 </div>
 
                 <div class="mb-4">
                     <label class="form-label fw-bold small text-uppercase">Customer PO Number</label>
-                    <input type="text" name="po_number" class="form-control" placeholder="Insert a number">
+                    <input type="text" name="po_number" class="form-control" placeholder="Insert a number"
+                        value="{{ copied_order.po_number|default:'' }}">
                 </div>
-
             </div>
         </div>
 
@@ -165,7 +159,7 @@
                 <label class="form-label fw-bold small text-uppercase">Tags</label>
                 <select class="form-select" name="tags" multiple>
                     {% for tag in tags %}
-                    <option value="{{ tag.id }}">{{ tag.name }}</option>
+                    <option value="{{ tag.id }}" {% if tag in copied_order.tags.all %}selected{% endif %}>{{ tag.name }}</option>
                     {% empty %}
                     <option disabled>No tags available — add via Admin</option>
                     {% endfor %}
@@ -176,19 +170,22 @@
                 <select name="shipping_terms" class="form-select">
                     <option value="">Select a shipping term</option>
                     {% for term in shipping_terms %}
-                    <option value="{{ term.id }}">{{ term.name }}</option>
+                    <option value="{{ term.id }}" {% if copied_order.shipping_terms_id == term.id %}selected{% endif %}>{{ term.name }}</option>
                     {% empty %}
                     <option disabled>No terms available — add via Admin</option>
                     {% endfor %}
                 </select>
             </div>
             <div class="col-md-4">
-                <label class="form-label fw-bold small text-uppercase">Representatives<span
-                        class="text-danger">*</span></label>
+                <label class="form-label fw-bold small text-uppercase">Representatives<span class="text-danger">*</span></label>
                 <div class="input-group">
                     <select name="representative" id="rep-select" class="form-select" required>
                         <option value="">Select individual</option>
-                        <option value="{{ user.id }}" selected>{{ user.get_full_name|default:user.username }}</option>
+                        {% for member in team_members %}
+                        <option value="{{ member.id }}" {% if copied_order %}{% if copied_order.representative_id == member.id %}selected{% endif %}{% elif member.id == user.id %}selected{% endif %}>
+                            {{ member.get_full_name|default:member.username }}
+                        </option>
+                        {% endfor %}
                     </select>
                 </div>
                 <a href="#" id="assign-rep-me" class="small text-decoration-none mt-1 d-inline-block"
@@ -200,6 +197,116 @@
         <div class="mb-5 border-top pt-4">
             <h5 class="mb-4 text-uppercase fw-bold h6">Manifest Items</h5>
             <div id="manifest-items-container">
+                {% if copied_items %}
+                {% for c_item in copied_items %}
+                <div class="manifest-item card p-4 mb-3 border-light shadow-sm bg-light-subtle position-relative">
+                    <button type="button" class="btn-close remove-item-btn position-absolute top-0 end-0 m-3" aria-label="Remove" {% if forloop.first %}style="display: none;"{% endif %}></button>
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label class="form-label fw-bold small">Material<span class="text-danger">*</span></label>
+                            <div class="input-group input-group-sm">
+                                <select name="material[]" class="form-select material-select" required>
+                                    <option value="" data-max="0">Select Material</option>
+                                    {% for item in inventory_items %}
+                                    {% if item.quantity > 0 %}
+                                    <option value="{{ item.id }}" data-max="{{ item.quantity }}"
+                                        data-unit="{{ item.unit_of_measure }}" data-name="{{ item.product_name }}"
+                                        data-company-id="{{ item.warehouse.company_id|default:'' }}"
+                                        {% if c_item.material == item.product_name %}selected{% endif %}>
+                                        {{ item.product_name }} - {{ item.display_stock }}
+                                    </option>
+                                    {% endif %}
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small">Weight / Qty<span class="text-danger">*</span></label>
+                            <div class="row g-0">
+                                <div class="col-8">
+                                    <input type="number" name="weight[]"
+                                        class="form-control form-control-sm rounded-end-0 weight-input"
+                                        placeholder="Qty" required min="0" value="{{ c_item.weight|stringformat:'f' }}">
+                                </div>
+                                <div class="col-4">
+                                    <select name="weight_unit[]"
+                                        class="form-select form-select-sm rounded-start-0 border-start-0 unit-display">
+                                        <option value="lbs" {% if c_item.weight_unit == "lbs" %}selected{% endif %}>lbs</option>
+                                        <option value="kgs" {% if c_item.weight_unit == "kgs" %}selected{% endif %}>kgs</option>
+                                        <option value="mt" {% if c_item.weight_unit == "mt" %}selected{% endif %}>MT</option>
+                                        <option value="st" {% if c_item.weight_unit == "st" %}selected{% endif %}>ST</option>
+                                        <option value="pcs" {% if c_item.weight_unit == "pcs" %}selected{% endif %}>pcs</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="small text-danger weight-warning mt-1" style="display: none;">Exceeds available stock!</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small">Buy Price<span class="text-danger">*</span></label>
+                            <div class="row g-0">
+                                <div class="col-8">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" step="0.001" name="buy_price[]"
+                                            class="form-control rounded-end-0" placeholder="Price" required
+                                            value="{{ c_item.buy_price|stringformat:'f' }}">
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <select name="buy_price_unit[]"
+                                        class="form-select form-select-sm rounded-start-0 border-start-0">
+                                        <option value="per lbs" {% if c_item.buy_price_unit == "per lbs" %}selected{% endif %}>per lbs</option>
+                                        <option value="per kgs" {% if c_item.buy_price_unit == "per kgs" %}selected{% endif %}>per kgs</option>
+                                        <option value="per mt" {% if c_item.buy_price_unit == "per mt" %}selected{% endif %}>per MT</option>
+                                        <option value="per st" {% if c_item.buy_price_unit == "per st" %}selected{% endif %}>per ST</option>
+                                        <option value="per pcs" {% if c_item.buy_price_unit == "per pcs" %}selected{% endif %}>per pcs</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small">Sell Price<span class="text-danger">*</span></label>
+                            <div class="row g-0">
+                                <div class="col-8">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" step="0.001" name="sell_price[]"
+                                            class="form-control rounded-end-0" placeholder="Price" required
+                                            value="{{ c_item.sell_price|stringformat:'f' }}">
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <select name="sell_price_unit[]"
+                                        class="form-select form-select-sm rounded-start-0 border-start-0">
+                                        <option value="per lbs" {% if c_item.sell_price_unit == "per lbs" %}selected{% endif %}>per lbs</option>
+                                        <option value="per kgs" {% if c_item.sell_price_unit == "per kgs" %}selected{% endif %}>per kgs</option>
+                                        <option value="per mt" {% if c_item.sell_price_unit == "per mt" %}selected{% endif %}>per MT</option>
+                                        <option value="per st" {% if c_item.sell_price_unit == "per st" %}selected{% endif %}>per ST</option>
+                                        <option value="per pcs" {% if c_item.sell_price_unit == "per pcs" %}selected{% endif %}>per pcs</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label fw-bold small">Packaging<span class="text-danger">*</span></label>
+                            <select name="packaging[]" class="form-select form-select-sm" required>
+                                <option value="">Select packaging type</option>
+                                {% for ptype in packaging_types %}
+                                <option value="{{ ptype.name }}" {% if c_item.packaging == ptype.name %}selected{% endif %}>{{ ptype.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end mb-1">
+                            <div class="form-check">
+                                <input type="hidden" name="is_palletized_h[]" value="{{ c_item.is_palletized|lower }}" class="palletized-hidden">
+                                <input class="form-check-input palletized-checkbox" type="checkbox" {% if c_item.is_palletized %}checked{% endif %} onchange="this.previousElementSibling.value = this.checked ? 'true' : 'false'">
+                                <label class="form-check-label small fw-bold">Is the packaging palletized?</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
                 <div class="manifest-item card p-4 mb-3 border-light shadow-sm bg-light-subtle position-relative">
                     <button type="button" class="btn-close remove-item-btn position-absolute top-0 end-0 m-3" aria-label="Remove" style="display: none;"></button>
                     <div class="row g-3">
@@ -218,13 +325,10 @@
                                     {% endif %}
                                     {% endfor %}
                                 </select>
-                                <button class="btn btn-outline-primary" type="button"><i class="fas fa-plus"></i>
-                                    Add</button>
                             </div>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label fw-bold small">Weight / Qty<span
-                                    class="text-danger">*</span></label>
+                            <label class="form-label fw-bold small">Weight / Qty<span class="text-danger">*</span></label>
                             <div class="row g-0">
                                 <div class="col-8">
                                     <input type="number" name="weight[]"
@@ -234,14 +338,15 @@
                                 <div class="col-4">
                                     <select name="weight_unit[]"
                                         class="form-select form-select-sm rounded-start-0 border-start-0 unit-display">
-                                        <option>lbs</option>
-                                        <option>kg</option>
-                                        <option>pcs</option>
+                                        <option value="lbs">lbs</option>
+                                        <option value="kgs">kgs</option>
+                                        <option value="mt">MT</option>
+                                        <option value="st">ST</option>
+                                        <option value="pcs">pcs</option>
                                     </select>
                                 </div>
                             </div>
-                            <div class="small text-danger weight-warning mt-1" style="display: none;">Exceeds available
-                                stock!</div>
+                            <div class="small text-danger weight-warning mt-1" style="display: none;">Exceeds available stock!</div>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label fw-bold small">Buy Price<span class="text-danger">*</span></label>
@@ -256,9 +361,11 @@
                                 <div class="col-4">
                                     <select name="buy_price_unit[]"
                                         class="form-select form-select-sm rounded-start-0 border-start-0">
-                                        <option>per lbs</option>
-                                        <option>per kg</option>
-                                        <option>per pcs</option>
+                                        <option value="per lbs">per lbs</option>
+                                        <option value="per kgs">per kgs</option>
+                                        <option value="per mt">per MT</option>
+                                        <option value="per st">per ST</option>
+                                        <option value="per pcs">per pcs</option>
                                     </select>
                                 </div>
                             </div>
@@ -276,9 +383,11 @@
                                 <div class="col-4">
                                     <select name="sell_price_unit[]"
                                         class="form-select form-select-sm rounded-start-0 border-start-0">
-                                        <option>per lbs</option>
-                                        <option>per kg</option>
-                                        <option>per pcs</option>
+                                        <option value="per lbs">per lbs</option>
+                                        <option value="per kgs">per kgs</option>
+                                        <option value="per mt">per MT</option>
+                                        <option value="per st">per ST</option>
+                                        <option value="per pcs">per pcs</option>
                                     </select>
                                 </div>
                             </div>
@@ -301,6 +410,7 @@
                         </div>
                     </div>
                 </div>
+                {% endif %}
             </div>
 
             <button type="button" class="btn btn-outline-primary btn-sm mt-2" id="add-item-btn">
@@ -308,7 +418,7 @@
             </button>
         </div>
 
-        <!-- Freight Cost Section (Styled like Manifest Item) -->
+        <!-- Freight Cost Section -->
         <div class="card p-4 mb-4 border-light shadow-sm bg-light-subtle">
             <div class="row g-3 align-items-center">
                 <div class="col-md-8">
@@ -318,8 +428,9 @@
                 <div class="col-md-4">
                     <div class="input-group">
                         <span class="input-group-text bg-white border-primary-subtle text-primary fw-bold">$</span>
-                        <input type="number" step="0.01" name="freight_cost" id="freight-cost-input" 
+                        <input type="number" step="0.01" name="freight_cost" id="freight-cost-input"
                             class="form-control border-primary-subtle fw-bold" placeholder="0.00"
+                            value="{{ copied_order.freight_cost|stringformat:'f'|default:'' }}"
                             style="font-size: 1rem;">
                     </div>
                 </div>
@@ -374,7 +485,6 @@
 
             <!-- KPI Stats Row -->
             <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; border-bottom: 1px solid #f0f2f8;">
-                <!-- Revenue -->
                 <div style="padding: 18px 22px; border-right: 1px solid #f0f2f8;">
                     <div style="display:flex; align-items:center; gap:7px; margin-bottom:6px;">
                         <div style="width:28px;height:28px;border-radius:7px;background:#eef2ff;display:flex;align-items:center;justify-content:center;">
@@ -385,7 +495,6 @@
                     <div id="est-revenue" style="font-size:1.45rem;font-weight:800;color:#1a1f36;line-height:1;">$0.00</div>
                     <div style="font-size:0.7rem;color:#9ca3af;margin-top:3px;">Total sell value</div>
                 </div>
-                <!-- Cost -->
                 <div style="padding: 18px 22px; border-right: 1px solid #f0f2f8;">
                     <div style="display:flex; align-items:center; gap:7px; margin-bottom:6px;">
                         <div style="width:28px;height:28px;border-radius:7px;background:#fff7ed;display:flex;align-items:center;justify-content:center;">
@@ -396,7 +505,6 @@
                     <div id="est-cost" style="font-size:1.45rem;font-weight:800;color:#1a1f36;line-height:1;">$0.00</div>
                     <div style="font-size:0.7rem;color:#9ca3af;margin-top:3px;">Total buy value</div>
                 </div>
-                <!-- Profit -->
                 <div style="padding: 18px 22px; background: #f8faff; border-right: 1px solid #f0f2f8;">
                     <div style="display:flex; align-items:center; gap:7px; margin-bottom:6px;">
                         <div style="width:28px;height:28px;border-radius:7px;background:#dcfce7;display:flex;align-items:center;justify-content:center;" id="profit-icon-bg">
@@ -407,7 +515,6 @@
                     <div id="est-profit" style="font-size:1.45rem;font-weight:800;color:#16a34a;line-height:1;">$0.00</div>
                     <div style="font-size:0.7rem;color:#9ca3af;margin-top:3px;" id="est-margin-text">Margin: —</div>
                 </div>
-                <!-- Total Pieces (NEW) -->
                 <div style="padding: 18px 22px;">
                     <div style="display:flex; align-items:center; gap:7px; margin-bottom:6px;">
                         <div style="width:28px;height:28px;border-radius:7px;background:#e0f2fe;display:flex;align-items:center;justify-content:center;">
@@ -431,7 +538,7 @@
                 </div>
             </div>
 
-            <!-- Per-Item Breakdown -->
+            <!-- Breakdown -->
             <div id="profit-items-breakdown">
                 <div style="padding: 10px 22px 4px; display:flex; align-items:center; gap:6px;">
                     <i class="fas fa-list-ul" style="font-size:0.7rem;color:#9ca3af;"></i>
@@ -448,17 +555,15 @@
         }
         </style>
 
-        <!-- Total Weight Target (Global for Order) -->
+        <!-- Total Weight Target -->
         <div class="card bg-light border-0 mb-4">
             <div class="card-body">
-                <label class="form-label fw-bold small text-uppercase">Total Weight Target (lbs)<span
-                        class="text-danger">*</span></label>
-                <input type="number" name="total_weight_target" class="form-control" placeholder="e.g. 200000" required>
+                <label class="form-label fw-bold small text-uppercase">Total Weight Target (lbs)<span class="text-danger">*</span></label>
+                <input type="number" name="total_weight_target" class="form-control" placeholder="e.g. 200000" required
+                    value="{{ copied_order.total_weight_target|stringformat:'f'|default:'' }}">
                 <div class="form-text">Used for calculating progress bar in dashboard.</div>
             </div>
         </div>
-
-        <!-- Order Number Handled by Backend -->
 
         <div class="d-grid gap-2 pt-4">
             <button type="submit" class="btn btn-primary btn-lg">Submit Order</button>
@@ -490,25 +595,18 @@
                     option.style.display = '';
                     return;
                 }
-
-                if (option.dataset.placeholder === 'no-material') {
-                    return;
-                }
+                if (option.dataset.placeholder === 'no-material') return;
 
                 const optionCompanyId = option.dataset.companyId || '';
                 const shouldShow = !selectedSupplierId || optionCompanyId === selectedSupplierId;
                 option.hidden = !shouldShow;
                 option.style.display = shouldShow ? '' : 'none';
-                if (shouldShow) {
-                    hasVisibleOption = true;
-                }
+                if (shouldShow) hasVisibleOption = true;
             });
 
             if (materialSelect.value) {
                 const selectedOption = materialSelect.selectedOptions[0];
-                if (selectedOption && selectedOption.hidden) {
-                    materialSelect.value = '';
-                }
+                if (selectedOption && selectedOption.hidden) materialSelect.value = '';
             }
 
             if (selectedSupplierId && !hasVisibleOption) {
@@ -526,7 +624,6 @@
                 noMaterialOption.style.display = 'none';
                 placeholderOption.text = 'Select a material';
             }
-
             materialSelect.disabled = false;
         });
     }
@@ -535,27 +632,20 @@
         const locationSelect = document.getElementById(locationSelectId);
         const partySelect = document.getElementById(partySelectId);
         if (!locationSelect || !partySelect) return;
-
         const isLocked = !partySelect.value;
         locationSelect.classList.toggle('location-select-locked', isLocked);
-        locationSelect.title = isLocked ? 'Select supplier/receiver first' : '';
     }
 
-    // Quick Assignment Links
     function assignMyCompany(selectId, companyId, companyName, companyAddress) {
         const select = document.getElementById(selectId);
         if (!companyId) return;
-
-        // Check if option exists
         let option = [...select.options].find(o => o.value == companyId);
         if (!option) {
-            // Add option dynamically
             option = new Option(companyName + " (Your Company)", companyId);
             option.dataset.address = companyAddress || "";
             select.add(option);
         }
         select.value = companyId;
-        // Manually trigger change event
         select.dispatchEvent(new Event('change'));
     }
 
@@ -575,45 +665,24 @@
         document.getElementById('rep-select').value = this.dataset.userId;
     });
 
-    // Assign Selected Company Address to Location
     function assignCompanyLocation(selectId, partySelectId, force = false) {
         const partySelect = document.getElementById(partySelectId);
         const locationSelect = document.getElementById(selectId);
-        
         const selectedOption = partySelect.selectedOptions[0];
         const addressStr = selectedOption?.dataset.address;
         const companyId = partySelect.value;
-        
-        if (!addressStr || !companyId) {
-            if (force) alert("Please select a company first.");
-            return;
-        }
-
+        if (!addressStr || !companyId) return;
         const virtualValue = "temp_addr_" + addressStr;
-        
-        // Ensure option exists
         let option = [...locationSelect.options].find(o => o.value === virtualValue);
         if (!option) {
             option = new Option(addressStr, virtualValue);
             option.dataset.companyId = companyId;
             locationSelect.add(option);
         }
-        
         locationSelect.value = virtualValue;
         syncLocationSelectState(selectId);
     }
 
-    document.getElementById('assign-source-my-location')?.addEventListener('click', function (e) {
-        e.preventDefault();
-        assignCompanyLocation('source-location-select', 'supplier-select');
-    });
-
-    document.getElementById('assign-dest-my-location')?.addEventListener('click', function (e) {
-        e.preventDefault();
-        assignCompanyLocation('dest-location-select', 'receiver-select');
-    });
-
-    // ── Profit Estimator ─────────────────────────────────────────
     function recalcProfit() {
         const items = document.querySelectorAll('.manifest-item');
         let totalRevenue = 0, totalCost = 0, totalPieces = 0;
@@ -624,278 +693,108 @@
 
         items.forEach((item, idx) => {
             const materialSelect = item.querySelector('.material-select');
-            const qty      = parseFloat(item.querySelector('.weight-input')?.value) || 0;
-            const unit     = item.querySelector('.unit-display')?.value || 'lbs';
-            const buyP     = parseFloat(item.querySelector('[name="buy_price[]"]')?.value) || 0;
-            const sellP    = parseFloat(item.querySelector('[name="sell_price[]"]')?.value) || 0;
+            const qty = parseFloat(item.querySelector('.weight-input')?.value) || 0;
+            const unit = item.querySelector('.unit-display')?.value || 'lbs';
+            const buyP = parseFloat(item.querySelector('[name="buy_price[]"]')?.value) || 0;
+            const sellP = parseFloat(item.querySelector('[name="sell_price[]"]')?.value) || 0;
             const material = materialSelect?.selectedOptions[0]?.dataset.name || materialSelect?.value || `Item ${idx + 1}`;
-
             if (!materialSelect?.value || qty === 0 || (buyP === 0 && sellP === 0)) return;
             hasAny = true;
-
-            if (unit === 'pcs') {
-                totalPieces += qty;
-            }
-
-            const cost    = buyP * qty;
-            const revenue = sellP * qty;
-            const profit  = revenue - cost;
-
-            totalRevenue += revenue;
-            totalCost    += cost;
-
-            // Per-item breakdown row (clean white style)
-            const isPos    = profit >= 0;
-            const pillColor = isPos ? '#dcfce7' : '#fee2e2';
-            const textColor = isPos ? '#15803d' : '#dc2626';
-            const sign      = isPos ? '+' : '';
-            breakdownList.innerHTML += `
-                <div style="display:flex;justify-content:space-between;align-items:center;
-                            padding:7px 0;border-bottom:1px solid #f3f4f6;font-size:0.82rem;">
-                    <div style="display:flex;align-items:center;gap:7px;">
-                        <div style="width:6px;height:6px;border-radius:50%;background:${textColor};flex-shrink:0;"></div>
-                        <span style="color:#374151;font-weight:500;">${material}</span>
-                    </div>
-                    <span style="background:${pillColor};color:${textColor};padding:2px 9px;
-                                 border-radius:99px;font-weight:700;font-size:0.75rem;">${sign}$${profit.toFixed(2)}</span>
-                </div>`;
+            if (unit === 'pcs') totalPieces += qty;
+            const cost = buyP * qty, revenue = sellP * qty, profit = revenue - cost;
+            totalRevenue += revenue; totalCost += cost;
+            const isPos = profit >= 0, sign = isPos ? '+' : '';
+            breakdownList.innerHTML += `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #f3f4f6;font-size:0.82rem;"><div style="display:flex;align-items:center;gap:7px;"><div style="width:6px;height:6px;border-radius:50%;background:${isPos?'#15803d':'#dc2626'};flex-shrink:0;"></div><span style="color:#374151;font-weight:500;">${material}</span></div><span style="background:${isPos?'#dcfce7':'#fee2e2'};color:${isPos?'#15803d':'#dc2626'};padding:2px 9px;border-radius:99px;font-weight:700;font-size:0.75rem;">${sign}$${profit.toFixed(2)}</span></div>`;
         });
-        
-        // Add Freight Cost to total cost
         totalCost += freightCost;
-
-        const totalProfit = totalRevenue - totalCost;
-        const marginVal   = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
-        const isProfit    = totalProfit >= 0;
-        const profitColor = isProfit ? '#16a34a' : '#dc2626';
-
-        // KPI values
+        const totalProfit = totalRevenue - totalCost, marginVal = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
+        const isProfit = totalProfit >= 0, profitColor = isProfit ? '#16a34a' : '#dc2626';
         document.getElementById('est-revenue').textContent = '$' + totalRevenue.toFixed(2);
-        document.getElementById('est-cost').textContent    = '$' + totalCost.toFixed(2);
-        document.getElementById('est-profit').textContent  = (isProfit ? '+' : '') + '$' + totalProfit.toFixed(2);
-        document.getElementById('est-profit').style.color  = profitColor;
-        document.getElementById('est-pieces').textContent  = Math.round(totalPieces);
-
-        // Margin text under profit
+        document.getElementById('est-cost').textContent = '$' + totalCost.toFixed(2);
+        document.getElementById('est-profit').textContent = (isProfit ? '+' : '') + '$' + totalProfit.toFixed(2);
+        document.getElementById('est-profit').style.color = profitColor;
+        document.getElementById('est-pieces').textContent = Math.round(totalPieces);
         document.getElementById('est-margin-text').textContent = totalRevenue > 0 ? `Margin: ${marginVal.toFixed(1)}%` : 'Margin: —';
-
-        // Profit icon
-        const iconBg = document.getElementById('profit-icon-bg');
-        const icon   = document.getElementById('profit-icon');
-        if (iconBg && icon) {
-            iconBg.style.background = isProfit ? '#dcfce7' : '#fee2e2';
-            icon.style.color        = profitColor;
-            icon.className          = isProfit ? 'fas fa-star' : 'fas fa-exclamation-triangle';
-        }
-
-        // Margin bar
-        const barFill  = document.getElementById('margin-bar-fill');
-        const barLabel = document.getElementById('margin-bar-label');
-        if (barFill && barLabel) {
-            const barWidth = Math.min(Math.max(Math.abs(marginVal), 0), 100);
-            barFill.style.width      = barWidth + '%';
-            barFill.style.background = isProfit
-                ? 'linear-gradient(90deg,#4f46e5,#22c55e)'
-                : 'linear-gradient(90deg,#f97316,#dc2626)';
-            barLabel.textContent     = totalRevenue > 0 ? marginVal.toFixed(1) + '%' : '—';
-            barLabel.style.color     = profitColor;
-        }
-
-        // Show/hide entire card logic removed (permanently visible)
-        // document.getElementById('profit-estimator-card').style.display = hasAny ? 'block' : 'none';
-
-        // Per-item breakdown visibility logic removed (permanently visible if has any)
+        const iconBg = document.getElementById('profit-icon-bg'), icon = document.getElementById('profit-icon');
+        if (iconBg && icon) { iconBg.style.background = isProfit ? '#dcfce7' : '#fee2e2'; icon.style.color = profitColor; icon.className = isProfit ? 'fas fa-star' : 'fas fa-exclamation-triangle'; }
+        const barFill = document.getElementById('margin-bar-fill'), barLabel = document.getElementById('margin-bar-label');
+        if (barFill && barLabel) { const barWidth = Math.min(Math.max(Math.abs(marginVal), 0), 100); barFill.style.width = barWidth + '%'; barFill.style.background = isProfit ? 'linear-gradient(90deg,#4f46e5,#22c55e)' : 'linear-gradient(90deg,#f97316,#dc2626)'; barLabel.textContent = totalRevenue > 0 ? marginVal.toFixed(1) + '%' : '—'; barLabel.style.color = profitColor; }
         document.getElementById('profit-items-breakdown').style.display = hasAny ? 'block' : 'none';
     }
 
-    // Listen for changes on dynamically added items via delegation
     document.getElementById('manifest-items-container').addEventListener('input', recalcProfit);
     document.getElementById('manifest-items-container').addEventListener('change', recalcProfit);
     document.getElementById('freight-cost-input').addEventListener('input', recalcProfit);
 
-    // ── Inventory Validation Logic ────────────────────────────────
     function setupInventoryValidation(container) {
-        const select = container.querySelector('.material-select');
-        const input = container.querySelector('.weight-input');
-        const warning = container.querySelector('.weight-warning');
-        const unitDisplay = container.querySelector('.unit-display');
-
+        const select = container.querySelector('.material-select'), input = container.querySelector('.weight-input'), warning = container.querySelector('.weight-warning'), unitDisplay = container.querySelector('.unit-display');
         function validate() {
-            const option = select.selectedOptions[0];
-            const maxVal = parseFloat(option.dataset.max) || 0;
-            const currentVal = parseFloat(input.value) || 0;
-            const unit = option.dataset.unit || 'lbs';
-
+            const option = select.selectedOptions[0], maxVal = parseFloat(option.dataset.max) || 0, currentVal = parseFloat(input.value) || 0, unit = option.dataset.unit || 'lbs';
             unitDisplay.value = unit;
-
-            if (!select.value && currentVal > 0) {
-                warning.innerHTML = '<i class="fas fa-hand-point-up me-1"></i> Please select Material* first!';
-                warning.style.display = 'block';
-                input.classList.add('is-invalid');
-            } else if (currentVal > maxVal) {
-                warning.innerHTML = `<i class="fas fa-exclamation-triangle me-1"></i> Only ${maxVal} ${unit} available!`;
-                warning.style.display = 'block';
-                input.classList.add('is-invalid');
-            } else {
-                warning.style.display = 'none';
-                input.classList.remove('is-invalid');
-            }
+            if (!select.value && currentVal > 0) { warning.innerHTML = '<i class="fas fa-hand-point-up me-1"></i> Please select Material* first!'; warning.style.display = 'block'; input.classList.add('is-invalid'); }
+            else if (currentVal > maxVal) { warning.innerHTML = `<i class="fas fa-exclamation-triangle me-1"></i> Only ${maxVal} ${unit} available!`; warning.style.display = 'block'; input.classList.add('is-invalid'); }
+            else { warning.style.display = 'none'; input.classList.remove('is-invalid'); }
         }
-
-        select.addEventListener('change', validate);
-        input.addEventListener('input', validate);
+        select.addEventListener('change', validate); input.addEventListener('input', validate);
     }
 
     function syncManifestUnits(container, baseUnit) {
-        const unitDisplay = container.querySelector('.unit-display');
-        const buyUnit = container.querySelector('[name="buy_price_unit[]"]');
-        const sellUnit = container.querySelector('[name="sell_price_unit[]"]');
+        const unitDisplay = container.querySelector('.unit-display'), buyUnit = container.querySelector('[name="buy_price_unit[]"]'), sellUnit = container.querySelector('[name="sell_price_unit[]"]');
         if (!unitDisplay || !buyUnit || !sellUnit || !baseUnit) return;
-
-        const normalized = String(baseUnit).toLowerCase();
-        const priceUnit = `per ${normalized}`;
-
-        unitDisplay.value = normalized;
-        buyUnit.value = priceUnit;
-        sellUnit.value = priceUnit;
+        const normalized = String(baseUnit).toLowerCase(), priceUnit = `per ${normalized}`;
+        unitDisplay.value = normalized; buyUnit.value = priceUnit; sellUnit.value = priceUnit;
     }
 
     function setupManifestUnitSync(container) {
-        const unitDisplay = container.querySelector('.unit-display');
-        const buyUnit = container.querySelector('[name="buy_price_unit[]"]');
-        const sellUnit = container.querySelector('[name="sell_price_unit[]"]');
+        const unitDisplay = container.querySelector('.unit-display'), buyUnit = container.querySelector('[name="buy_price_unit[]"]'), sellUnit = container.querySelector('[name="sell_price_unit[]"]');
         if (!unitDisplay || !buyUnit || !sellUnit) return;
-
-        unitDisplay.addEventListener('change', function() {
-            syncManifestUnits(container, this.value);
-        });
-
-        buyUnit.addEventListener('change', function() {
-            syncManifestUnits(container, this.value.replace(/^per\s+/i, ''));
-        });
-
-        sellUnit.addEventListener('change', function() {
-            syncManifestUnits(container, this.value.replace(/^per\s+/i, ''));
-        });
+        unitDisplay.addEventListener('change', function() { syncManifestUnits(container, this.value); });
+        buyUnit.addEventListener('change', function() { syncManifestUnits(container, this.value.replace(/^per\s+/i, '')); });
+        sellUnit.addEventListener('change', function() { syncManifestUnits(container, this.value.replace(/^per\s+/i, '')); });
     }
 
-    // Initialize for existing items
-    document.querySelectorAll('.manifest-item').forEach(item => {
-        setupInventoryValidation(item);
-        setupManifestUnitSync(item);
-    });
+    document.querySelectorAll('.manifest-item').forEach(item => { setupInventoryValidation(item); setupManifestUnitSync(item); });
 
     function filterLocations(partySelectId, locationSelectId) {
-        const partySelect = document.getElementById(partySelectId);
-        const locationSelect = document.getElementById(locationSelectId);
-        
+        const partySelect = document.getElementById(partySelectId), locationSelect = document.getElementById(locationSelectId);
         function updateFilter() {
-            const companyId = partySelect.value;
-            const companyAddress = partySelect.selectedOptions[0]?.dataset.address;
-            
-            // 1. Clear ALL existing temporary addresses first to avoid duplicates
+            const companyId = partySelect.value, companyAddress = partySelect.selectedOptions[0]?.dataset.address;
+            [...locationSelect.options].forEach(opt => { if (opt.value.startsWith('temp_addr_')) opt.remove(); });
+            let foundWarehouse = false, firstVisibleWarehouse = null;
             [...locationSelect.options].forEach(opt => {
-                if (opt.value.startsWith('temp_addr_')) {
-                    opt.remove();
-                }
-            });
-
-            let foundWarehouse = false;
-            let firstVisibleWarehouse = null;
-
-            // 2. Filter existing warehouses
-            [...locationSelect.options].forEach(opt => {
-                if (!opt.value) return; 
-                
+                if (!opt.value) return;
                 const optCompanyId = opt.dataset.companyId;
-                
-                if (!companyId) {
-                    opt.style.display = 'none';
-                    return;
-                }
-
-                if (optCompanyId === companyId || (!optCompanyId && companyId === "{{ assign_company.id|default:'' }}")) {
-                    opt.style.display = '';
-                    foundWarehouse = true;
-                    if (!firstVisibleWarehouse) firstVisibleWarehouse = opt.value;
-                } else {
-                    opt.style.display = 'none';
-                }
+                if (!companyId) { opt.style.display = 'none'; return; }
+                if (optCompanyId === companyId || (!optCompanyId && companyId === "{{ assign_company.id|default:'' }}")) { opt.style.display = ''; foundWarehouse = true; if (!firstVisibleWarehouse) firstVisibleWarehouse = opt.value; }
+                else opt.style.display = 'none';
             });
-
-            // 3. SELECTION LOGIC:
-            if (!companyId) {
-                locationSelect.value = "";
-            } else if (foundWarehouse) {
-                // If company has warehouses, pick the first one
-                locationSelect.value = firstVisibleWarehouse;
-            } else if (companyAddress) {
-                // If NO warehouses but we have a company address, use it
-                assignCompanyLocation(locationSelectId, partySelectId);
-            } else {
-                locationSelect.value = "";
-            }
-
-            syncLocationSelectState(locationSelectId);
-            syncLocationLockState(locationSelectId, partySelectId);
+            if (!companyId) locationSelect.value = "";
+            else if (foundWarehouse) locationSelect.value = firstVisibleWarehouse;
+            else if (companyAddress) assignCompanyLocation(locationSelectId, partySelectId);
+            else locationSelect.value = "";
+            syncLocationSelectState(locationSelectId); syncLocationLockState(locationSelectId, partySelectId);
         }
-
         partySelect.addEventListener('change', updateFilter);
-        locationSelect.addEventListener('change', function () {
-            syncLocationSelectState(locationSelectId);
-        });
+        locationSelect.addEventListener('change', function () { syncLocationSelectState(locationSelectId); });
         updateFilter();
     }
 
-    filterLocations('supplier-select', 'source-location-select');
-    filterLocations('receiver-select', 'dest-location-select');
-    syncLocationSelectState('source-location-select');
-    syncLocationSelectState('dest-location-select');
-    syncLocationLockState('source-location-select', 'supplier-select');
-    syncLocationLockState('dest-location-select', 'receiver-select');
-    filterMaterialOptions();
-    document.getElementById('supplier-select')?.addEventListener('change', filterMaterialOptions);
-
-    // Run initial profit calculation
+    filterLocations('supplier-select', 'source-location-select'); filterLocations('receiver-select', 'dest-location-select');
+    syncLocationSelectState('source-location-select'); syncLocationSelectState('dest-location-select');
+    syncLocationLockState('source-location-select', 'supplier-select'); syncLocationLockState('dest-location-select', 'receiver-select');
+    filterMaterialOptions(); document.getElementById('supplier-select')?.addEventListener('change', filterMaterialOptions);
     recalcProfit();
 
-    // Initialize cloning logic to initialize new items
     document.getElementById('add-item-btn').addEventListener('click', function () {
-        const container = document.getElementById('manifest-items-container');
-        const firstItem = container.querySelector('.manifest-item');
-        const newItem = firstItem.cloneNode(true);
-
-        newItem.querySelectorAll('input').forEach(input => {
-            if (input.type === 'checkbox') input.checked = false;
-            else input.value = '';
-            input.classList.remove('is-invalid');
-        });
-        newItem.querySelectorAll('select').forEach(select => {
-            select.value = '';
-        });
-        // Reset hidden palletized field
-        const hiddenPallet = newItem.querySelector('.palletized-hidden');
-        if (hiddenPallet) hiddenPallet.value = 'false';
+        const container = document.getElementById('manifest-items-container'), firstItem = container.querySelector('.manifest-item'), newItem = firstItem.cloneNode(true);
+        newItem.querySelectorAll('input').forEach(input => { if (input.type === 'checkbox') input.checked = false; else input.value = ''; input.classList.remove('is-invalid'); });
+        newItem.querySelectorAll('select').forEach(select => { select.value = ''; });
+        const hiddenPallet = newItem.querySelector('.palletized-hidden'); if (hiddenPallet) hiddenPallet.value = 'false';
         newItem.querySelector('.weight-warning').style.display = 'none';
-        
-        // Show remove button for NEW items
-        const removeBtn = newItem.querySelector('.remove-item-btn');
-        if (removeBtn) {
-            removeBtn.style.display = 'block';
-        }
-
-        container.appendChild(newItem);
-        setupInventoryValidation(newItem);
-        setupManifestUnitSync(newItem);
-        syncManifestUnits(newItem, 'lbs');
-        filterMaterialOptions();
+        const removeBtn = newItem.querySelector('.remove-item-btn'); if (removeBtn) removeBtn.style.display = 'block';
+        container.appendChild(newItem); setupInventoryValidation(newItem); setupManifestUnitSync(newItem); syncManifestUnits(newItem, 'lbs'); filterMaterialOptions();
     });
 
-    // Event delegation for removal
-    document.getElementById('manifest-items-container').addEventListener('click', function(e) {
-        if (e.target.classList.contains('remove-item-btn')) {
-            e.target.closest('.manifest-item').remove();
-        }
-    });
+    document.getElementById('manifest-items-container').addEventListener('click', function(e) { if (e.target.classList.contains('remove-item-btn')) e.target.closest('.manifest-item').remove(); });
 </script>
 {% endblock %}

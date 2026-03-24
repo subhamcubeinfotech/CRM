@@ -29,6 +29,40 @@
         border: none;
     }
 
+    .stats-card:hover .stats-icon-wrapper {
+        transform: scale(1.1);
+    }
+
+    /* Shipment Drawer Styles */
+    .ui-chip {
+        background: #fff;
+        border: 1px solid #dee2e6;
+        color: #495057;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .btn-check:checked + .ui-chip {
+        background: #0d6efd;
+        border-color: #0d6efd;
+        color: #fff;
+    }
+    .ui-chip:hover {
+        border-color: #0d6efd;
+        color: #0d6efd;
+    }
+    .btn-check:checked + .ui-chip:hover {
+        color: #fff;
+    }
+    
+    .contact-drawer.offcanvas, .location-drawer.offcanvas {
+        width: min(100vw, 450px);
+        z-index: 1060; /* Higher than main shipment drawer */
+    }
+    
+    .locked-field {
+        background-color: #f8f9fa !important;
+        cursor: not-allowed;
+    }
     .detail-label {
         font-size: 0.75rem;
         text-transform: uppercase;
@@ -122,12 +156,13 @@
                 <span class="badge bg-light text-muted fw-normal rounded-pill px-2">AS</span>
                 <div class="ms-4 mt-1" style="width: 300px;">
                     <div class="progress rounded-pill bg-light"
-                        style="height: 24px; position: relative; border: 1px solid #e3e6f0;">
+                        style="height: 24px; position: relative; border: 1px solid #e3e6f0;"
+                        title="Manifested: {{ order.total_manifest_weight|floatformat:2 }} / Target: {{ order.total_weight_target|floatformat:2 }} lbs (Shipped: {{ order.shipped_weight|floatformat:2 }} lbs)">
                         <div class="progress-bar bg-info opacity-50"
-                            style="width: {{ order.weight_progress_percentage }}%"></div>
+                            style="width: {{ order.manifest_progress_percentage }}%"></div>
                         <div class="position-absolute w-100 text-center fw-bold"
                             style="font-size: 0.75rem; line-height: 22px; color: #2d3748;">
-                            {{ order.shipped_weight|intcomma }} / {{ order.total_weight_target|intcomma }} lbs
+                            {{ order.total_manifest_weight|intcomma }} / {{ order.total_weight_target|intcomma }} lbs
                         </div>
                     </div>
                 </div>
@@ -177,12 +212,14 @@
                 <div class="dropdown-menu dropdown-menu-end shadow border-0">
                     <a class="dropdown-item py-2" href="#" data-bs-toggle="offcanvas"
                         data-bs-target="#offcanvasEditOrder">
-                        <i class="fas fa-edit me-2 text-muted"></i>Edit Parameters
+                        <i class="fas fa-edit me-2 text-muted"></i>Edit
                     </a>
-                    <a class="dropdown-item py-2" href="{% url 'shipments:shipment_create' %}?order_id={{ order.pk }}"><i
-                            class="fas fa-truck-moving me-2 text-muted"></i>Schedule Shipment</a>
-                    <a class="dropdown-item py-2" href="#"><i
-                            class="fas fa-file-invoice-dollar me-2 text-muted"></i>Issue Invoice</a>
+                    <a class="dropdown-item py-2" href="{% url 'orders:order_create' %}?copy_id={{ order.pk }}">
+                        <i class="far fa-copy me-2 text-muted"></i>Copy
+                    </a>
+                    <a class="dropdown-item py-2" href="#" data-bs-toggle="offcanvas" data-bs-target="#offcanvasPurchaseOrder">
+                        <i class="far fa-file-alt me-2 text-muted"></i>Purchase Order
+                    </a>
                 </div>
             </div>
         </div>
@@ -232,19 +269,18 @@
                     <!-- Manifest Section -->
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h4 class="fw-bold mb-0">Manifest</h4>
-                        <button class="btn btn-outline-primary btn-sm px-3 rounded-3" style="border-width: 2px;">Add
-                            Items</button>
+                        <button class="btn btn-outline-primary btn-sm px-3 rounded-3" style="border-width: 2px;"
+                            data-bs-toggle="offcanvas" data-bs-target="#offcanvasAddItems">Add Items</button>
                     </div>
                     <div class="card border-0 bg-white mb-5" style="border-radius: 12px; overflow: hidden;">
                         <div class="table-responsive">
                             <table class="table table-details table-hover align-middle mb-0">
                                 <thead>
                                     <tr>
-                                        <th class="ps-3 text-primary">Material</th>
+                                        <th>Material</th>
                                         <th>Buy Price <i class="fas fa-arrows-alt-v ms-1 op-30"></i></th>
                                         <th>Sell Price <i class="fas fa-arrows-alt-v ms-1 op-30"></i></th>
-                                        <th>Weight <i class="fas fa-arrows-alt-v ms-1 op-30"></i></th>
-                                        <th>Pieces</th>
+                                        <th>Weight / Qty <i class="fas fa-arrows-alt-v ms-1 op-30"></i></th>
                                         <th class="pe-3">Packaging</th>
                                     </tr>
                                 </thead>
@@ -255,18 +291,7 @@
                                         <td>${{ item.buy_price|floatformat:2 }} / {{ item.buy_price_unit|default:"lb" }}</td>
                                         <td>${{ item.sell_price|floatformat:2 }} / {{ item.sell_price_unit|default:"lb" }}</td>
                                         <td>
-                                            {% if item.weight_unit == "pcs" %}
-                                            -
-                                            {% else %}
-                                            {{ item.weight|intcomma }} {{ item.weight_unit }} / {{ order.total_weight_target|intcomma }} lbs
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            {% if item.weight_unit == "pcs" %}
-                                            {{ item.weight|intcomma }} pcs
-                                            {% else %}
-                                            -
-                                            {% endif %}
+                                            {{ item.weight|intcomma }} {{ item.weight_unit }}
                                         </td>
                                         <td class="pe-3">
                                             {{ item.packaging|default:"-" }}
@@ -284,9 +309,9 @@
                     <!-- Shipments Section -->
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h4 class="fw-bold mb-0">Shipments</h4>
-                        <a href="{% url 'shipments:shipment_create' %}?order_id={{ order.pk }}"
+                        <button type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasAddShipment"
                             class="btn btn-outline-primary btn-sm px-3 rounded-3" style="border-width: 2px;">Add
-                            Shipment</a>
+                            Shipment</button>
                     </div>
                     <div class="card border-0 bg-white mb-4" style="border-radius: 12px; overflow: hidden;">
                         <div class="table-responsive">
@@ -417,18 +442,30 @@
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
     </div>
     <div class="offcanvas-body p-4">
-        <form action="{% url 'orders:order_edit' order.pk %}" method="POST">
+        <form id="editOrderForm" action="{% url 'orders:order_edit' order.pk %}" method="POST">
             {% csrf_token %} {% with shipments_exist=order.shipments.exists %}
             <!-- Supplier -->
             <div class="mb-4">
                 <label class="form-label fw-bold small text-uppercase mb-1">Supplier<span
                         class="text-danger">*</span></label>
-                <select name="supplier" class="form-select bg-light" {% if shipments_exist %}disabled{% endif %}>
-                    {% for comp in suppliers %}
-                    <option value="{{ comp.id }}" {% if order.supplier_id == comp.id %}selected{% endif %}>{{ comp.name }}
-                    </option>
-                    {% endfor %}
-                </select>
+                <div class="input-group">
+                    <select name="supplier" id="supplier-select-edit" class="form-select bg-light" {% if shipments_exist %}disabled{% endif %}>
+                        {% for comp in suppliers %}
+                        <option value="{{ comp.id }}" data-address="{{ comp.full_address }}"
+                            {% if order.supplier_id == comp.id %}selected{% endif %}>{{ comp.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    {% if not shipments_exist %}
+                    <a href="{% url 'accounts:company_create' %}?type=vendor" class="btn btn-outline-primary">+ Add</a>
+                    {% endif %}
+                </div>
+                {% if not shipments_exist and assign_company %}
+                <div class="smaller text-muted mt-1">
+                    <a href="#" id="assign-supplier-mine-edit" class="text-decoration-none"
+                        data-company-id="{{ assign_company.id }}" data-address="{{ assign_company.full_address }}">Click to assign your company.</a>
+                </div>
+                {% endif %}
                 {% if shipments_exist %}
                 <div class="smaller text-muted mt-1">Company cannot be changed for an Order with shipments</div>
                 {% endif %}
@@ -438,9 +475,10 @@
             <div class="mb-4">
                 <label class="form-label fw-bold small text-uppercase mb-1">Source Location<span
                         class="text-danger">*</span></label>
-                <select name="source_location" class="form-select border-primary-subtle">
+                <select name="source_location" id="source-location-select-edit" class="form-select border-primary-subtle">
                     {% for wh in warehouses %}
-                    <option value="{{ wh.id }}" {% if order.source_location_id == wh.id %}selected{% endif %}>{{ wh.display_name }}</option>
+                    <option value="{{ wh.id }}" data-company-id="{{ wh.company_id }}"
+                        {% if order.source_location_id == wh.id %}selected{% endif %}>{{ wh.display_name }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -457,12 +495,24 @@
             <div class="mb-4">
                 <label class="form-label fw-bold small text-uppercase mb-1">Receiver<span
                         class="text-danger">*</span></label>
-                <select name="receiver" class="form-select bg-light" {% if shipments_exist %}disabled{% endif %}>
-                    {% for comp in receivers %}
-                    <option value="{{ comp.id }}" {% if order.receiver_id == comp.id %}selected{% endif %}>{{ comp.name }}
-                    </option>
-                    {% endfor %}
-                </select>
+                <div class="input-group">
+                    <select name="receiver" id="receiver-select-edit" class="form-select bg-light" {% if shipments_exist %}disabled{% endif %}>
+                        {% for comp in receivers %}
+                        <option value="{{ comp.id }}" data-address="{{ comp.full_address }}"
+                            {% if order.receiver_id == comp.id %}selected{% endif %}>{{ comp.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    {% if not shipments_exist %}
+                    <a href="{% url 'accounts:company_create' %}?type=customer" class="btn btn-outline-primary">+ Add</a>
+                    {% endif %}
+                </div>
+                {% if not shipments_exist and assign_company %}
+                <div class="smaller text-muted mt-1">
+                    <a href="#" id="assign-receiver-mine-edit" class="text-decoration-none"
+                        data-company-id="{{ assign_company.id }}" data-address="{{ assign_company.full_address }}">Click to assign your company.</a>
+                </div>
+                {% endif %}
                 {% if shipments_exist %}
                 <div class="smaller text-muted mt-1">Company cannot be changed for an Order with shipments</div>
                 {% endif %}
@@ -472,9 +522,10 @@
             <div class="mb-4">
                 <label class="form-label fw-bold small text-uppercase mb-1">Destination Location<span
                         class="text-danger">*</span></label>
-                <select name="destination_location" class="form-select border-primary-subtle">
+                <select name="destination_location" id="dest-location-select-edit" class="form-select border-primary-subtle">
                     {% for wh in warehouses %}
-                    <option value="{{ wh.id }}" {% if order.destination_location_id == wh.id %}selected{% endif %}>{{ wh.display_name }}</option>
+                    <option value="{{ wh.id }}" data-company-id="{{ wh.company_id }}"
+                        {% if order.destination_location_id == wh.id %}selected{% endif %}>{{ wh.display_name }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -531,12 +582,764 @@
             </div>
             {% endwith %}
 
-            <div class="mt-5 d-grid">
-                <button type="submit" class="btn btn-primary btn-lg py-3 fw-bold rounded-4 shadow-sm">Submit
-                    Updates</button>
+            <div class="mt-4 pt-3 border-top">
+                <button type="submit" class="btn btn-primary w-100 py-2 fw-bold rounded-3 shadow-sm" style="font-size: 0.9rem;">Submit</button>
             </div>
         </form>
     </div>
 </div>
 
+
+<!-- Purchase Order Offcanvas -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasPurchaseOrder"
+    style="width: 500px; border-left: none; box-shadow: -10px 0 30px rgba(0,0,0,0.1);">
+    <div class="offcanvas-header border-bottom p-4">
+        <h5 class="offcanvas-title fw-bold">Purchase Order</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body p-4">
+        <form id="poForm" action="{% url 'orders:order_purchase_order_pdf' order.pk %}" method="POST" target="_blank">
+            {% csrf_token %}
+            <!-- File Name -->
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase mb-1">File Name</label>
+                <div class="input-group">
+                    <input type="text" name="file_name" class="form-control" value="{{ order.order_number }}_PO">
+                    <span class="input-group-text bg-light text-muted">.pdf</span>
+                </div>
+            </div>
+
+            <!-- PO Number -->
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase mb-1">Sales/Purchase Order Number</label>
+                <input type="text" name="po_number" class="form-control" value="{{ order.order_number }}">
+            </div>
+
+            <!-- Payment Terms -->
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase mb-1">Payment Terms <span class="text-muted" style="text-transform: none;">Number of days until payment is due</span><span class="text-danger">*</span></label>
+                <input type="number" name="payment_terms" class="form-control" placeholder="Insert a value" required>
+            </div>
+
+            <!-- Instructions -->
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase mb-1">Instructions</label>
+                <textarea name="instructions" class="form-control" rows="2" placeholder="Insert instructions"></textarea>
+            </div>
+
+            <!-- Material Descriptions Toggle -->
+            <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" name="include_descriptions" id="includeDescriptions" checked>
+                <label class="form-check-label small text-muted" for="includeDescriptions">Include Material Descriptions</label>
+            </div>
+
+            <!-- Dynamic Material Descriptions -->
+            <div id="materialDescriptionsSection">
+                {% for item in manifest_items %}
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-muted mb-1">{{ item.material }}</label>
+                    <input type="text" name="item_desc_{{ item.id }}" class="form-control" placeholder="Insert Material Description">
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="mt-5 d-flex gap-2 justify-content-end">
+                <button type="button" class="btn btn-outline-primary px-4 py-2 fw-bold rounded-3 small" onclick="submitPO('preview')">Preview</button>
+                <button type="button" class="btn btn-primary px-4 py-2 fw-bold rounded-3 small" onclick="submitPO('submit')">Submit</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function submitPO(type) {
+        const form = document.getElementById('poForm');
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        if (type === 'preview') {
+            form.target = '_blank';
+        } else {
+            // To trigger download
+            form.target = '_self'; 
+            // Close offcanvas after a short delay
+            setTimeout(() => {
+                const offcanvasElement = document.getElementById('offcanvasPurchaseOrder');
+                const offcanvas = bootstrap.Offcanvas.getInstance(offcanvasElement);
+                if (offcanvas) offcanvas.hide();
+            }, 500);
+        }
+        form.submit();
+    }
+
+    // Close Edit Order Offcanvas on submit (since it now returns a file)
+    document.getElementById('editOrderForm').addEventListener('submit', function() {
+        setTimeout(() => {
+            const offcanvasElement = document.getElementById('offcanvasEditOrder');
+            const offcanvas = bootstrap.Offcanvas.getInstance(offcanvasElement);
+            if (offcanvas) offcanvas.hide();
+        }, 500);
+    });
+
+    document.getElementById('assign-supplier-mine-edit')?.addEventListener('click', function(e) {
+        e.preventDefault();
+        assignMyCompany('supplier-select-edit', this.dataset.companyId, "{{ assign_company.name|default:'My Company' }}", this.dataset.address);
+    });
+    document.getElementById('assign-receiver-mine-edit')?.addEventListener('click', function(e) {
+        e.preventDefault();
+        assignMyCompany('receiver-select-edit', this.dataset.companyId, "{{ assign_company.name|default:'My Company' }}", this.dataset.address);
+    });
+
+    document.getElementById('includeDescriptions').addEventListener('change', function() {
+        const section = document.getElementById('materialDescriptionsSection');
+        section.style.display = this.checked ? 'block' : 'none';
+    });
+</script>
+
+<!-- Add Items Offcanvas -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasAddItems"
+    style="width: 500px; border-left: none; box-shadow: -10px 0 30px rgba(0,0,0,0.1);">
+    <div class="offcanvas-header border-bottom p-4">
+        <h5 class="offcanvas-title fw-bold text-primary">Add Items</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body p-4">
+        <form id="addItemForm" action="{% url 'orders:order_add_item' order.pk %}" method="POST">
+            {% csrf_token %}
+            
+            <div id="itemsContainer">
+                <!-- Item Block 1 -->
+                <div class="item-block border rounded-4 p-3 mb-4 bg-light-subtle position-relative" style="border-style: dashed !important; border-width: 2px !important; border-color: #dee2e6 !important;">
+                    <button type="button" class="btn-close remove-item position-absolute top-0 end-0 m-2" style="display: none; font-size: 0.8rem;"></button>
+                    
+                    <!-- Material -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small text-uppercase mb-1">Material <span class="text-danger">*</span></label>
+                        <div class="d-flex gap-2 align-items-center">
+                            <select name="material[]" class="form-select border-primary-subtle rounded-3" required>
+                                <option value="">Select a material</option>
+                                {% for item in inventory_items %}
+                                <option value="{{ item.id }}" data-unit="{{ item.unit_of_measure }}">
+                                    {{ item.product_name }} - {{ item.display_stock }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="bg-primary-subtle p-2 rounded-3 text-primary">
+                                <i class="fas fa-search"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Weight & Unit -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-8">
+                            <label class="form-label fw-bold small text-uppercase mb-1">Weight<span class="text-danger">*</span></label>
+                            <input type="number" name="weight[]" class="form-control rounded-3" placeholder="Weight" required>
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label fw-bold small text-uppercase mb-1">Unit</label>
+                            <select name="weight_unit[]" class="form-select rounded-3">
+                                <option value="lbs">lbs</option>
+                                <option value="kgs">kgs</option>
+                                <option value="mt">MT</option>
+                                <option value="st">ST</option>
+                                <option value="pcs">pcs</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Buy Price & Unit -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-8">
+                            <label class="form-label fw-bold small text-uppercase mb-1">Buy Price<span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0 rounded-start-3">$</span>
+                                <input type="number" step="0.001" name="buy_price[]" class="form-control border-start-0 rounded-end-3" placeholder="Price" required>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label fw-bold small text-uppercase mb-1">Unit</label>
+                            <select name="buy_price_unit[]" class="form-select rounded-3">
+                                <option value="per lbs">per lbs</option>
+                                <option value="per kgs">per kgs</option>
+                                <option value="per mt">per MT</option>
+                                <option value="per st">per ST</option>
+                                <option value="per pcs">per pcs</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Sell Price & Unit -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-8">
+                            <label class="form-label fw-bold small text-uppercase mb-1">Sell Price<span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0 rounded-start-3">$</span>
+                                <input type="number" step="0.001" name="sell_price[]" class="form-control border-start-0 rounded-end-3" placeholder="Price" required>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label fw-bold small text-uppercase mb-1">Unit</label>
+                            <select name="sell_price_unit[]" class="form-select rounded-3">
+                                <option value="per lbs">per lbs</option>
+                                <option value="per kgs">per kgs</option>
+                                <option value="per mt">per MT</option>
+                                <option value="per st">per ST</option>
+                                <option value="per pcs">per pcs</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Packaging -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small text-uppercase mb-1">Packaging</label>
+                        <select name="packaging[]" class="form-select rounded-3">
+                            <option value="">Select packaging type</option>
+                            {% for ptype in packaging_types %}
+                            <option value="{{ ptype.name }}">{{ ptype.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Palletized Checkbox -->
+                    <div class="form-check mb-2">
+                        <input type="hidden" name="is_palletized_h[]" value="false" class="palletized-hidden">
+                        <input class="form-check-input palletized-checkbox" type="checkbox" onchange="this.previousElementSibling.value = this.checked ? 'true' : 'false'">
+                        <label class="form-check-label small fw-bold text-muted">Is the packaging palletized?</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add Item Button -->
+            <div class="d-flex justify-content-end mb-4">
+                <button type="button" class="btn btn-primary btn-sm rounded-pill py-1 px-3 fw-bold" id="addAnotherItemBtn" style="font-size: 0.75rem;">
+                    <i class="fas fa-plus-circle me-1"></i> Add Item
+                </button>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="mt-4 pt-3 border-top">
+                <button type="submit" class="btn btn-primary w-100 py-2 fw-bold rounded-3 shadow-sm" style="background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%); border: none; font-size: 0.9rem;">Submit</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.getElementById('addAnotherItemBtn').addEventListener('click', function() {
+        const container = document.getElementById('itemsContainer');
+        const firstItem = container.querySelector('.item-block');
+        const newItem = firstItem.cloneNode(true);
+        
+        // Reset values
+        newItem.querySelectorAll('input').forEach(i => {
+            if (i.type === 'checkbox') i.checked = false;
+            else if (i.type === 'hidden') i.value = 'false';
+            else i.value = '';
+        });
+        newItem.querySelectorAll('select').forEach(s => s.selectedIndex = 0);
+        
+        // Show remove button
+        newItem.querySelector('.remove-item').style.display = 'block';
+        
+        container.appendChild(newItem);
+    });
+
+    document.getElementById('itemsContainer').addEventListener('click', function(e) {
+        if (e.target.classList.contains('remove-item')) {
+            e.target.closest('.item-block').remove();
+        }
+    });
+
+    // Auto-sync units if material changes
+    document.getElementById('itemsContainer').addEventListener('change', function(e) {
+        if (e.target.name === 'material[]') {
+            const block = e.target.closest('.item-block');
+            const unit = e.target.selectedOptions[0]?.dataset.unit || 'lbs';
+            
+            block.querySelector('[name="weight_unit[]"]').value = unit;
+            block.querySelector('[name="buy_price_unit[]"]').value = 'per ' + unit;
+            block.querySelector('[name="sell_price_unit[]"]').value = 'per ' + unit;
+        }
+    });
+
+    // Shipment drawer logic
+    let shipmentItemIndex = 1;
+    document.getElementById('addAnotherShipmentItemBtn')?.addEventListener('click', function() {
+        const container = document.getElementById('shipmentItemsContainer');
+        const firstItem = container.querySelector('.shipment-item-block');
+        const newItem = firstItem.cloneNode(true);
+        
+        // Update names with the correct index
+        newItem.querySelectorAll('[name*="items_ui[0]"]').forEach(field => {
+            field.name = field.name.replace('items_ui[0]', `items_ui[${shipmentItemIndex}]`);
+        });
+
+        // Reset values
+        newItem.querySelectorAll('input').forEach(i => i.value = (i.name.includes('[pieces]') ? '1' : ''));
+        newItem.querySelectorAll('select').forEach(s => s.selectedIndex = 0);
+        
+        // Show remove button
+        newItem.querySelector('.remove-shipment-item').style.display = 'block';
+        
+        container.appendChild(newItem);
+        shipmentItemIndex++;
+    });
+
+    document.getElementById('shipmentItemsContainer')?.addEventListener('click', function(e) {
+        if (e.target.classList.contains('remove-shipment-item')) {
+            e.target.closest('.shipment-item-block').remove();
+        }
+    });
+
+    // Auto-calculate Net Weight if Gross and Tare are filled
+    document.getElementById('shipmentItemsContainer')?.addEventListener('input', function(e) {
+        if (e.target.classList.contains('gross-weight-input') || e.target.classList.contains('tare-weight-input')) {
+            const block = e.target.closest('.shipment-item-block');
+            const gross = parseFloat(block.querySelector('.gross-weight-input').value) || 0;
+            const tare = parseFloat(block.querySelector('.tare-weight-input').value) || 0;
+            const netInput = block.querySelector('.net-weight-input');
+            
+            if (gross > 0) {
+                netInput.value = (gross - tare).toFixed(2);
+            }
+        }
+    });
+
+    // Auto-sync units if material changes for shipment items
+    document.getElementById('shipmentItemsContainer')?.addEventListener('change', function(e) {
+        if (e.target.name.includes('[material]')) {
+            const block = e.target.closest('.shipment-item-block');
+            const unit = e.target.selectedOptions[0]?.dataset.unit || 'lbs';
+            
+            block.querySelector('select[name*="[unit]"]').value = unit;
+        }
+    });
+
+    // --- Expanded Shipment Drawer JS Logic ---
+
+    const shipmentPickupSelect = document.getElementById('shipment-pickup-location-select');
+    const shipmentDestinationSelect = document.getElementById('shipment-destination-location-select');
+    const pickupContactSelect = document.getElementById('shipment-pickup-contact-select');
+    const deliveryContactSelect = document.getElementById('shipment-delivery-contact-select');
+    const locationDrawerSubmit = document.getElementById('locationDrawerSubmit');
+    const contactDrawerSubmit = document.getElementById('contactDrawerSubmit');
+    
+    let activeLocationSelectId = '';
+    let activeContactSelectId = '';
+
+    // Date sequence validation
+    const pickupDateInput = document.querySelector('input[name="pickup_date"]');
+    const deliveryDateInput = document.querySelector('input[name="estimated_delivery_date"]');
+
+    if (pickupDateInput && deliveryDateInput) {
+        pickupDateInput.addEventListener('change', function() {
+            deliveryDateInput.min = this.value;
+            if (deliveryDateInput.value && deliveryDateInput.value < this.value) {
+                deliveryDateInput.value = this.value;
+            }
+        });
+    }
+
+    // Contact Change Handler
+    const handleContactChange = (event) => {
+        const select = event.target || event;
+        const option = select.selectedOptions ? select.selectedOptions[0] : null;
+        if (!option || !option.value) return;
+
+        const isPickup = select.id === 'shipment-pickup-contact-select';
+        const type = isPickup ? 'pickup' : 'delivery';
+        
+        const email = option.dataset.email || '';
+        const phone = option.dataset.phone || '';
+        
+        const emailHidden = document.getElementById(`shipment-${type}-email-hidden`);
+        if (emailHidden) emailHidden.value = email;
+
+        const numberInput = document.querySelector(`[name="${type}_number_ui"]`);
+        if (numberInput && phone) numberInput.value = phone;
+    };
+
+    pickupContactSelect?.addEventListener('change', handleContactChange);
+    deliveryContactSelect?.addEventListener('change', handleContactChange);
+
+    // Track active selects for support drawers
+    document.querySelectorAll('[data-bs-target="#locationDrawer"]').forEach(btn => {
+        btn.addEventListener('click', function() {
+            activeLocationSelectId = this.dataset.locationSelectTarget;
+        });
+    });
+
+    document.querySelectorAll('[data-bs-target="#contactDrawer"]').forEach(btn => {
+        btn.addEventListener('click', function() {
+            activeContactSelectId = this.dataset.contactSelectTarget;
+        });
+    });
+
+    // Support Drawer Submissions
+    contactDrawerSubmit?.addEventListener('click', function() {
+        const contactSelect = document.getElementById(activeContactSelectId);
+        const name = document.getElementById('contactDrawerName').value.trim();
+        const email = document.getElementById('contactDrawerEmail').value.trim();
+        const mobile = document.getElementById('contactDrawerMobile').value.trim();
+        const office = document.getElementById('contactDrawerOffice').value.trim();
+
+        if (!contactSelect || !name) return;
+
+        const option = new Option(name, name, true, true);
+        option.dataset.email = email;
+        option.dataset.phone = mobile || office;
+        contactSelect.add(option);
+        contactSelect.dispatchEvent(new Event('change'));
+
+        bootstrap.Offcanvas.getInstance(document.getElementById('contactDrawer')).hide();
+        document.getElementById('contactDrawerForm').reset();
+    });
+
+    locationDrawerSubmit?.addEventListener('click', function() {
+        const locationSelect = document.getElementById(activeLocationSelectId);
+        const name = document.getElementById('locationDrawerName').value.trim();
+        const address = document.getElementById('locationDrawerAddress').value.trim();
+
+        if (!locationSelect || !address) return;
+
+        const optionLabel = name || address;
+        const optionValue = 'temp_addr_' + address;
+        const option = new Option(optionLabel, optionValue, true, true);
+        option.dataset.address = address;
+        
+        locationSelect.add(option);
+        locationSelect.dispatchEvent(new Event('change'));
+
+        bootstrap.Offcanvas.getInstance(document.getElementById('locationDrawer')).hide();
+        document.getElementById('locationDrawerForm').reset();
+    });
+</script>
+
+<!-- Add Shipment Offcanvas -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasAddShipment"
+    style="width: 600px; border-left: none; box-shadow: -10px 0 30px rgba(0,0,0,0.1);">
+    <div class="offcanvas-header border-bottom p-4">
+        <h5 class="offcanvas-title fw-bold text-primary">Add Shipment</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body p-4">
+        <form id="addShipmentForm" action="{% url 'shipments:shipment_create' %}?order_id={{ order.pk }}&next={{ request.path }}" method="POST">
+            {% csrf_token %}
+            
+            <!-- Pickup Details -->
+            <div class="mb-4">
+                <h6 class="fw-bold text-primary mb-3"><i class="fas fa-arrow-up me-2"></i>PICKUP DETAILS</h6>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <label class="form-label fw-bold small text-uppercase mb-0">Pickup Location <span class="text-danger">*</span></label>
+                        <button class="btn btn-link btn-sm p-0 text-decoration-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#locationDrawer" data-location-select-target="shipment-pickup-location-select">
+                            <i class="fas fa-plus-circle me-1"></i>Add
+                        </button>
+                    </div>
+                    <select name="pickup_location_ui" id="shipment-pickup-location-select" class="form-select rounded-3" required>
+                        <option value="">Select a Location</option>
+                        {% for warehouse in warehouses %}
+                        <option value="{{ warehouse.id }}" 
+                            {% if order.source_location_id == warehouse.id %}selected{% endif %}
+                            data-address="{{ warehouse.address }}" data-city="{{ warehouse.city }}" data-state="{{ warehouse.state }}" data-postal-code="{{ warehouse.postal_code }}" data-country="{{ warehouse.country }}">
+                            {{ warehouse.display_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label fw-bold small text-uppercase mb-0">Pickup Contact</label>
+                            <button class="btn btn-link btn-sm p-0 text-decoration-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#contactDrawer" data-contact-select-target="shipment-pickup-contact-select">
+                                <i class="fas fa-plus-circle me-1"></i>Add
+                            </button>
+                        </div>
+                        <select name="pickup_contact_ui" id="shipment-pickup-contact-select" class="form-select rounded-3">
+                            <option value="">Select a Contact</option>
+                        </select>
+                        <input type="hidden" name="pickup_email_ui" id="shipment-pickup-email-hidden">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small text-uppercase mb-1">Pickup Number <span class="text-danger">*</span></label>
+                        <input type="text" name="pickup_number_ui" class="form-control rounded-3" placeholder="Phone #" required>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-7">
+                        <label class="form-label fw-bold small text-uppercase mb-1">Pickup Appointment</label>
+                        <div class="d-flex gap-2">
+                            <input type="radio" class="btn-check" name="pickup_appointment_ui" id="pickup_fcfs" value="fcfs" checked>
+                            <label class="btn ui-chip rounded-pill px-3 py-1" for="pickup_fcfs">FCFS</label>
+                            <input type="radio" class="btn-check" name="pickup_appointment_ui" id="pickup_required" value="required">
+                            <label class="btn ui-chip rounded-pill px-3 py-1" for="pickup_required">Required</label>
+                        </div>
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label fw-bold small text-uppercase mb-1">Pickup Date <span class="text-danger">*</span></label>
+                        <input type="date" name="pickup_date" class="form-control rounded-3" required>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="my-4">
+
+            <!-- Destination Details -->
+            <div class="mb-4">
+                <h6 class="fw-bold text-success mb-3"><i class="fas fa-arrow-down me-2"></i>DESTINATION DETAILS</h6>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <label class="form-label fw-bold small text-uppercase mb-0">Destination Location <span class="text-danger">*</span></label>
+                        <button class="btn btn-link btn-sm p-0 text-decoration-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#locationDrawer" data-location-select-target="shipment-destination-location-select">
+                            <i class="fas fa-plus-circle me-1"></i>Add
+                        </button>
+                    </div>
+                    <select name="destination_location_ui" id="shipment-destination-location-select" class="form-select rounded-3" required>
+                        <option value="">Select a Location</option>
+                        {% for warehouse in warehouses %}
+                        <option value="{{ warehouse.id }}"
+                            {% if order.destination_location_id == warehouse.id %}selected{% endif %}
+                            data-address="{{ warehouse.address }}" data-city="{{ warehouse.city }}" data-state="{{ warehouse.state }}" data-postal-code="{{ warehouse.postal_code }}" data-country="{{ warehouse.country }}">
+                            {{ warehouse.display_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label fw-bold small text-uppercase mb-0">Delivery Contact <span class="text-danger">*</span></label>
+                            <button class="btn btn-link btn-sm p-0 text-decoration-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#contactDrawer" data-contact-select-target="shipment-delivery-contact-select">
+                                <i class="fas fa-plus-circle me-1"></i>Add
+                            </button>
+                        </div>
+                        <select name="delivery_contact_ui" id="shipment-delivery-contact-select" class="form-select rounded-3" required>
+                            <option value="">Select a Contact</option>
+                        </select>
+                        <input type="hidden" name="delivery_email_ui" id="shipment-delivery-email-hidden">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small text-uppercase mb-1">Delivery Number <span class="text-danger">*</span></label>
+                        <input type="text" name="delivery_number_ui" class="form-control rounded-3" placeholder="Phone #" required>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-7">
+                        <label class="form-label fw-bold small text-uppercase mb-1">Delivery Appointment</label>
+                        <div class="d-flex gap-2">
+                            <input type="radio" class="btn-check" name="delivery_appointment_ui" id="delivery_fcfs" value="fcfs" checked>
+                            <label class="btn ui-chip rounded-pill px-3 py-1" for="delivery_fcfs">FCFS</label>
+                            <input type="radio" class="btn-check" name="delivery_appointment_ui" id="delivery_required" value="required">
+                            <label class="btn ui-chip rounded-pill px-3 py-1" for="delivery_required">Required</label>
+                        </div>
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label fw-bold small text-uppercase mb-1">Est. Delivery Date <span class="text-danger">*</span></label>
+                        <input type="date" name="estimated_delivery_date" class="form-control rounded-3" required>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="my-4">
+
+            <!-- Basic Info -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <label class="form-label fw-bold small text-uppercase mb-1">Shipment Type <span class="text-danger">*</span></label>
+                    <select name="shipment_type" class="form-select rounded-3" required>
+                        <option value="road">Road</option>
+                        <option value="sea">Sea</option>
+                        <option value="air">Air</option>
+                        <option value="rail">Rail</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold small text-uppercase mb-1">Tracking Number</label>
+                    <input type="text" name="tracking_number" class="form-control rounded-3" placeholder="Tracking #">
+                </div>
+            </div>
+
+            <!-- Commercials -->
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase mb-1">Representative <span class="text-danger">*</span></label>
+                <select name="representative_ui" class="form-select rounded-3" required>
+                    <option value="">Select individual</option>
+                    {% for rep in all_representatives %}
+                    <option value="{{ rep.id }}" {% if order.representative_id == rep.id %}selected{% endif %}>{{ rep.get_full_name|default:rep.username }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <label class="form-label fw-bold small text-uppercase mb-1">Shipping Terms <span class="text-danger">*</span></label>
+                    <select name="shipping_terms_ui" class="form-select rounded-3" required>
+                        <option value="">Select term</option>
+                        {% for term in all_shipping_terms %}
+                        <option value="{{ term.id }}" {% if order.shipping_terms_id == term.id %}selected{% endif %}>{{ term.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold small text-uppercase mb-1">Tags</label>
+                    <select name="tags_ui" class="form-select rounded-3" multiple>
+                        {% for tag in all_tags %}
+                        <option value="{{ tag.id }}" {% if tag in order.tags.all %}selected{% endif %}>{{ tag.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <hr class="my-4">
+
+            <!-- Items Section -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold mb-0">SHIPMENT ITEMS</h6>
+                <button type="button" class="btn btn-outline-primary btn-sm rounded-pill" id="addAnotherShipmentItemBtn">
+                    <i class="fas fa-plus me-1"></i> Add Item
+                </button>
+            </div>
+
+            <div id="shipmentItemsContainer">
+                <!-- Shipment Item Block 1 -->
+                <div class="shipment-item-block border rounded-4 p-3 mb-4 bg-light-subtle position-relative">
+                    <button type="button" class="btn-close remove-shipment-item position-absolute top-0 end-0 m-2" style="display: none; font-size: 0.8rem;"></button>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-uppercase mb-1">Material <span class="text-danger">*</span></label>
+                        <select name="items_ui[0][material]" class="form-select rounded-3" required>
+                            <option value="">Select a material</option>
+                            {% for item in inventory_items %}
+                            <option value="{{ item.id }}" data-unit="{{ item.unit_of_measure }}">
+                                {{ item.product_name }} - {{ item.display_stock }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-4">
+                            <label class="form-label fw-bold small text-uppercase mb-1">Pieces</label>
+                            <input type="number" name="items_ui[0][pieces]" class="form-control rounded-3" value="1">
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label fw-bold small text-uppercase mb-1">Unit</label>
+                            <select name="items_ui[0][unit]" class="form-select rounded-3">
+                                <option value="lbs">lbs</option>
+                                <option value="kgs">kgs</option>
+                                <option value="mt">MT</option>
+                                <option value="st">ST</option>
+                                <option value="pcs">pcs</option>
+                            </select>
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label fw-bold small text-uppercase mb-1">Packaging</label>
+                            <select name="items_ui[0][packaging]" class="form-select rounded-3">
+                                <option value="">Type</option>
+                                {% for ptype in packaging_types %}
+                                <option value="{{ ptype.name }}">{{ ptype.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-4">
+                            <label class="form-label fw-bold small text-uppercase mb-1">Net Weight</label>
+                            <input type="number" step="0.01" name="items_ui[0][weight]" class="form-control rounded-3 net-weight-input" placeholder="Net">
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label fw-bold small text-uppercase mb-1 text-primary">Gross weight</label>
+                            <input type="number" step="0.01" name="items_ui[0][gross_weight]" class="form-control rounded-3 border-primary gross-weight-input" placeholder="Gross">
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label fw-bold small text-uppercase mb-1 text-primary">Tare weight</label>
+                            <input type="number" step="0.01" name="items_ui[0][tare_weight]" class="form-control rounded-3 border-primary tare-weight-input" placeholder="Tare">
+                        </div>
+                    </div>
+
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <label class="form-label fw-bold small text-uppercase mb-1">Buy Price</label>
+                            <input type="number" step="0.001" name="items_ui[0][buy_price]" class="form-control rounded-3" placeholder="Buy $">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold small text-uppercase mb-1">Sell Price</label>
+                            <input type="number" step="0.001" name="items_ui[0][sell_price]" class="form-control rounded-3" placeholder="Sell $">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="mt-4 pt-3 border-top">
+                <button type="submit" class="btn btn-primary w-100 py-2 fw-bold rounded-3 shadow-sm">Save Shipment</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Contact Support Drawer -->
+<div class="offcanvas offcanvas-end contact-drawer" tabindex="-1" id="contactDrawer">
+    <div class="offcanvas-header border-bottom p-4">
+        <h5 class="offcanvas-title fw-bold">Add Contact</h5>
+        <button type="button" class="btn-outline-primary drawer-close-btn" data-bs-dismiss="offcanvas"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="offcanvas-body p-4">
+        <form id="contactDrawerForm">
+            <div class="mb-3">
+                <label class="form-label small fw-bold text-uppercase">Full Name <span class="text-danger">*</span></label>
+                <input type="text" id="contactDrawerName" class="form-control rounded-3" placeholder="Enter name">
+            </div>
+            <div class="mb-3">
+                <label class="form-label small fw-bold text-uppercase">Email <span class="text-danger">*</span></label>
+                <input type="email" id="contactDrawerEmail" class="form-control rounded-3" placeholder="email@example.com">
+            </div>
+            <div class="mb-3">
+                <label class="form-label small fw-bold text-uppercase">Mobile Number</label>
+                <input type="text" id="contactDrawerMobile" class="form-control rounded-3" placeholder="Mobile #">
+            </div>
+            <div class="row mb-3">
+                <div class="col-8">
+                    <label class="form-label small fw-bold text-uppercase">Office Number</label>
+                    <input type="text" id="contactDrawerOffice" class="form-control rounded-3" placeholder="Office #">
+                </div>
+                <div class="col-4">
+                    <label class="form-label small fw-bold text-uppercase">Ext.</label>
+                    <input type="text" id="contactDrawerExtension" class="form-control rounded-3" placeholder="Ext.">
+                </div>
+            </div>
+            <button type="button" id="contactDrawerSubmit" class="btn btn-primary w-100 py-2 fw-bold rounded-3 mt-3">Add to Selection</button>
+        </form>
+    </div>
+</div>
+
+<!-- Location Support Drawer -->
+<div class="offcanvas offcanvas-end location-drawer" tabindex="-1" id="locationDrawer">
+    <div class="offcanvas-header border-bottom p-4">
+        <h5 class="offcanvas-title fw-bold">Add Location</h5>
+        <button type="button" class="btn-outline-primary drawer-close-btn" data-bs-dismiss="offcanvas"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="offcanvas-body p-4">
+        <form id="locationDrawerForm">
+            <div class="mb-3">
+                <label class="form-label small fw-bold text-uppercase">Location Name / Purpose</label>
+                <input type="text" id="locationDrawerName" class="form-control rounded-3" placeholder="e.g. Loading Dock B">
+            </div>
+            <div class="mb-3">
+                <label class="form-label small fw-bold text-uppercase">Full Address <span class="text-danger">*</span></label>
+                <textarea id="locationDrawerAddress" class="form-control rounded-3" rows="3" placeholder="Enter full address..."></textarea>
+            </div>
+            <button type="button" id="locationDrawerSubmit" class="btn btn-primary w-100 py-2 fw-bold rounded-3 mt-3">Add to Selection</button>
+        </form>
+    </div>
+</div>
 {% endblock %}

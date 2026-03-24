@@ -74,7 +74,7 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
         # Context for Edit Offcanvas
         user_tenant = self.request.user.tenant
         user_company = self.request.user.company
-        
+        assign_company = user_company or Company.objects.filter(tenant=user_tenant).first()
         # Show all active companies (tenant-specific + global)
         all_companies = Company.plain_objects.filter(is_active=True).filter(Q(tenant=user_tenant) | Q(tenant__isnull=True))
         context['suppliers'] = all_companies
@@ -106,6 +106,20 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
             context['team_members'] = get_user_model().objects.filter(pk=self.object.representative.pk)
         else:
             context['team_members'] = get_user_model().objects.none()
+            
+        # Context for Add Shipment Offcanvas
+        context['all_tags'] = Tag.plain_objects.filter(Q(tenant=user_tenant) | Q(tenant__isnull=True)).order_by('name')
+        context['all_shipping_terms'] = ShippingTerm.plain_objects.filter(Q(tenant=user_tenant) | Q(tenant__isnull=True)).order_by('name')
+        context['all_representatives'] = get_user_model().objects.filter(tenant=user_tenant, is_active=True).order_by('first_name', 'username')
+            
+        # Context for Add Item Offcanvas
+        context['inventory_items'] = InventoryItem.plain_objects.filter(
+            warehouse__company=self.object.supplier,
+            tenant=self.object.tenant,
+            quantity__gt=0
+        )
+        context['assign_company'] = assign_company
+        context['packaging_types'] = PackagingType.objects.all()
         
         return context
 
@@ -225,7 +239,15 @@ def order_create(request):
                 continue
                 
             material_name = materials[i]
-            qty_to_deduct = float(weights[i]) if i < len(weights) and weights[i] else 0
+            
+            # Robustly parse weight and prices (handle empty strings)
+            raw_weight = weights[i] if i < len(weights) else ""
+            raw_buy = buy_prices[i] if i < len(buy_prices) else ""
+            raw_sell = sell_prices[i] if i < len(sell_prices) else ""
+            
+            qty_to_deduct = float(raw_weight) if raw_weight and str(raw_weight).strip() else 0
+            buy_price_val = raw_buy if raw_buy and str(raw_buy).strip() else 0
+            sell_price_val = raw_sell if raw_sell and str(raw_sell).strip() else 0
             
             # ── NEW: Deduct Stock if material is an ID ────────────────
             try:
@@ -254,15 +276,15 @@ def order_create(request):
                     material=material_name,
                     weight=qty_to_deduct,
                     weight_unit=weight_units[i] if i < len(weight_units) else "lbs",
-                    buy_price=buy_prices[i] if i < len(buy_prices) else 0,
+                    buy_price=buy_price_val,
                     buy_price_unit=buy_price_units[i] if i < len(buy_price_units) else "per lbs",
-                    sell_price=sell_prices[i] if i < len(sell_prices) else 0,
+                    sell_price=sell_price_val,
                     sell_price_unit=sell_price_units[i] if i < len(sell_price_units) else "per lbs",
                     packaging=packagings[i] if i < len(packagings) else "",
                     is_palletized=is_palletized_list[i].lower() == 'true' if i < len(is_palletized_list) else False 
                 )
             except Exception as e:
-                print(f"Error creating manifest item {i}: {e}")
+                logger.error(f"Error creating manifest item {i} ({material_name}): {e}")
                 continue
         
         # ── NEW: Send email notification to supplier ──────────────────
@@ -276,13 +298,22 @@ def order_create(request):
     
     logger.info(f'New order creation page accessed by {request.user}')
     
+    # ── NEW: Handle Copy Order ────────────────────────────────────────
+    copy_id = request.GET.get('copy_id')
+    copied_order = None
+    copied_items = []
+    if copy_id:
+        copied_order = get_object_or_404(Order, pk=copy_id)
+        # Verify access to the source order
+        if copied_order.tenant != request.user.tenant:
+            copied_order = None
+        else:
+            copied_items = copied_order.manifest_items.all()
+            logger.info(f"Pre-filling New Order form from Order {copied_order.order_number} (Copy ID: {copy_id})")
+    # ──────────────────────────────────────────────────────────────────
+
     user_company = request.user.company
-    assign_company = user_company
-    if not assign_company and request.user.tenant_id:
-        assign_company = Company.plain_objects.filter(
-            tenant=request.user.tenant,
-            is_active=True,
-        ).order_by('name').first()
+    assign_company = user_company or Company.objects.filter(tenant=request.user.tenant).first()
     
     # Show all companies in supplier/receiver dropdowns
     company_qs = Company.plain_objects.all()
@@ -308,9 +339,12 @@ def order_create(request):
         'warehouses': warehouses,
         'inventory_items': inventory_items,
         'assign_company': assign_company,
+        'copied_order': copied_order,
+        'copied_items': copied_items,
         # Show both tenant-specific and global terms/tags
         'shipping_terms': ShippingTerm.plain_objects.filter(Q(tenant=request.user.tenant) | Q(tenant__isnull=True)),
         'tags': Tag.plain_objects.filter(Q(tenant=request.user.tenant) | Q(tenant__isnull=True)),
+        'team_members': get_user_model().objects.filter(tenant=request.user.tenant),
         'packaging_types': PackagingType.objects.all(),
     }
     return render(request, 'orders/order_form.html', context)
@@ -346,7 +380,9 @@ def order_edit(request, pk):
             
         order.save()
         logger.info(f'Order {order.order_number} parameters updated by {request.user}')
-        return redirect('orders:order_detail', pk=order.pk)
+        
+        # ── NEW: Return PDF after saving in Edit Order ────────────────
+        return order_purchase_order_pdf(request, pk)
 
     # For AJAX/Offcanvas pre-fill if needed, but here we just redirect back 
     # since the offcanvas is embedded in the detail page.
@@ -508,3 +544,241 @@ def send_low_stock_notification(item, request):
         logger.info(f"Low stock notification sent for {item.product_name} to {recipient_email}")
     except Exception as e:
         logger.error(f"Failed to send low stock notification for {item.product_name}: {e}")
+
+@login_required
+def order_purchase_order_pdf(request, pk):
+    """
+    Generate a Purchase Order PDF using ReportLab.
+    Accepts POST data for custom instructions, payment terms, and item descriptions.
+    """
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib import colors
+    from reportlab.lib.units import mm
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, HRFlowable
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.enums import TA_RIGHT, TA_CENTER, TA_LEFT
+    from io import BytesIO
+    from django.http import FileResponse
+
+    order = get_object_or_404(Order, pk=pk)
+    # Check access (similar to OrderDetailView)
+    if order.created_by != request.user:
+        check_company_access(order.receiver, request.user)
+
+    manifest_items = order.manifest_items.all()
+
+    # Get custom data from POST
+    file_name = request.POST.get('file_name', f"{order.order_number}_PO.pdf")
+    po_number_override = request.POST.get('po_number', order.order_number)
+    payment_terms = request.POST.get('payment_terms', 'Net 30')
+    instructions = request.POST.get('instructions', '')
+    include_descriptions = request.POST.get('include_descriptions') == 'on'
+
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        rightMargin=15*mm, leftMargin=15*mm,
+        topMargin=15*mm, bottomMargin=15*mm,
+    )
+
+    styles = getSampleStyleSheet()
+    primary_color = colors.HexColor('#0055aa')
+    light_gray = colors.HexColor('#f8f9fa')
+    border_color = colors.HexColor('#dee2e6')
+
+    # Custom Styles
+    title_style = ParagraphStyle('Title', parent=styles['Heading1'], fontSize=24, textColor=primary_color, fontName='Helvetica-Bold')
+    label_style = ParagraphStyle('Label', parent=styles['Normal'], fontSize=8, textColor=colors.grey, fontName='Helvetica-Bold', textTransform='uppercase')
+    normal_style = ParagraphStyle('Normal2', parent=styles['Normal'], fontSize=10, leading=14)
+    bold_style = ParagraphStyle('Bold', parent=styles['Normal'], fontSize=10, fontName='Helvetica-Bold', leading=14)
+    right_style = ParagraphStyle('Right', parent=styles['Normal'], fontSize=10, alignment=TA_RIGHT)
+    
+    elements = []
+
+    # --- Header ---
+    header_data = [
+        [Paragraph("PURCHASE ORDER", title_style), Paragraph(f"<b>PO #:</b> {po_number_override}<br/><b>Date:</b> {timezone.now().strftime('%Y-%m-%d')}", right_style)]
+    ]
+    header_table = Table(header_data, colWidths=[110*mm, 70*mm])
+    header_table.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'BOTTOM'), ('LEFTPADDING', (0,0), (-1,-1), 0), ('RIGHTPADDING', (0,0), (-1,-1), 0)]))
+    elements.append(header_table)
+    elements.append(Spacer(1, 5*mm))
+    elements.append(HRFlowable(width="100%", thickness=1, color=primary_color))
+    elements.append(Spacer(1, 10*mm))
+
+    # --- Vendor & Delivery Details ---
+    vendor_info = [
+        Paragraph("VENDOR", label_style),
+        Paragraph(order.supplier.name, bold_style),
+        Paragraph(order.supplier.full_address, normal_style),
+    ]
+    
+    ship_to_info = [
+        Paragraph("SHIP TO", label_style),
+        Paragraph(order.receiver.name, bold_style),
+        Paragraph(order.destination_location.display_name if order.destination_location else order.receiver.full_address, normal_style),
+    ]
+    
+    addresses_data = [[vendor_info, ship_to_info]]
+    addresses_table = Table(addresses_data, colWidths=[90*mm, 90*mm])
+    addresses_table.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'TOP'), ('LEFTPADDING', (0,0), (-1,-1), 0)]))
+    elements.append(addresses_table)
+    elements.append(Spacer(1, 10*mm))
+
+    # --- Order Terms ---
+    terms_data = [
+        [Paragraph("PAYMENT TERMS", label_style), Paragraph("SHIPPING METHOD", label_style), Paragraph("EXPECTED DATE", label_style)],
+        [Paragraph(f"{payment_terms} Days", normal_style), Paragraph(order.shipping_terms.name if order.shipping_terms else "Standard", normal_style), Paragraph(order.expected_pickup_date.strftime('%Y-%m-%d') if order.expected_pickup_date else "-", normal_style)]
+    ]
+    terms_table = Table(terms_data, colWidths=[60*mm, 60*mm, 60*mm])
+    terms_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), light_gray),
+        ('GRID', (0,0), (-1,-1), 0.5, border_color),
+        ('PADDING', (0,0), (-1,-1), 6),
+    ]))
+    elements.append(terms_table)
+    elements.append(Spacer(1, 10*mm))
+
+    # --- Item Table ---
+    item_header = [Paragraph("ITEM / MATERIAL", label_style), Paragraph("QTY", label_style), Paragraph("UNIT", label_style), Paragraph("UNIT PRICE", label_style), Paragraph("TOTAL", label_style)]
+    table_data = [item_header]
+    
+    from decimal import Decimal
+    total_amount = Decimal('0')
+    for item in manifest_items:
+        # Get custom description from POST
+        custom_desc = request.POST.get(f'item_desc_{item.id}', '')
+        item_text = f"<b>{item.material}</b>"
+        if include_descriptions and custom_desc:
+            item_text += f"<br/><font size='8' color='grey'>{custom_desc}</font>"
+            
+        row_total = item.weight * item.buy_price
+        total_amount += row_total
+        
+        table_data.append([
+            Paragraph(item_text, normal_style),
+            Paragraph(f"{item.weight:,.2f}", normal_style),
+            Paragraph(item.weight_unit, normal_style),
+            Paragraph(f"${item.buy_price:,.4f}", normal_style),
+            Paragraph(f"${row_total:,.2f}", right_style),
+        ])
+
+    items_table = Table(table_data, colWidths=[80*mm, 25*mm, 20*mm, 30*mm, 25*mm])
+    items_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), primary_color),
+        ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+        ('ALIGN', (0,0), (-1,0), 'CENTER'),
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ('GRID', (0,0), (-1,-1), 0.5, border_color),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('PADDING', (0,0), (-1,-1), 6),
+    ]))
+    elements.append(items_table)
+
+    # --- Totals ---
+    totals_data = [
+        ['', '', '', Paragraph("<b>TOTAL</b>", right_style), Paragraph(f"<b>${total_amount:,.2f}</b>", right_style)]
+    ]
+    totals_table = Table(totals_data, colWidths=[80*mm, 25*mm, 20*mm, 30*mm, 25*mm])
+    totals_table.setStyle(TableStyle([
+        ('ALIGN', (3,0), (4,0), 'RIGHT'),
+        ('GRID', (3,0), (4,0), 0.5, border_color),
+        ('BACKGROUND', (3,0), (4,0), light_gray),
+        ('PADDING', (0,0), (-1,-1), 6),
+    ]))
+    elements.append(totals_table)
+    elements.append(Spacer(1, 10*mm))
+
+    # --- Instructions ---
+    if instructions:
+        elements.append(Paragraph("SPECIAL INSTRUCTIONS", label_style))
+        elements.append(Spacer(1, 2*mm))
+        elements.append(Paragraph(instructions, normal_style))
+        elements.append(Spacer(1, 10*mm))
+
+    # --- Footer ---
+    elements.append(Spacer(1, 20*mm))
+    elements.append(HRFlowable(width="100%", thickness=0.5, color=colors.grey))
+    elements.append(Spacer(1, 2*mm))
+    elements.append(Paragraph("Authorized Signature: ___________________________", normal_style))
+    elements.append(Spacer(1, 5*mm))
+    elements.append(Paragraph("Thank you for your business!", ParagraphStyle('Center', parent=styles['Normal'], alignment=TA_CENTER, textColor=colors.grey)))
+
+    doc.build(elements)
+    buffer.seek(0)
+    
+    if not file_name.endswith('.pdf'):
+        file_name += '.pdf'
+        
+    return FileResponse(buffer, as_attachment=True, filename=file_name)
+
+@login_required
+def order_add_item(request, pk):
+    """
+    Adds one or more manifest items to an existing order.
+    Logic mirrored from order_create.
+    """
+    order = get_object_or_404(Order, pk=pk)
+    
+    if request.method == 'POST':
+        materials = request.POST.getlist('material[]')
+        weights = request.POST.getlist('weight[]')
+        weight_units = request.POST.getlist('weight_unit[]')
+        buy_prices = request.POST.getlist('buy_price[]')
+        buy_price_units = request.POST.getlist('buy_price_unit[]')
+        sell_prices = request.POST.getlist('sell_price[]')
+        sell_price_units = request.POST.getlist('sell_price_unit[]')
+        packagings = request.POST.getlist('packaging[]')
+        is_palletized_list = request.POST.getlist('is_palletized_h[]')
+
+        for i in range(len(materials)):
+            if not materials[i]:
+                continue
+                
+            material_name = materials[i]
+            
+            # Robustly parse weight and prices
+            raw_weight = weights[i] if i < len(weights) else ""
+            raw_buy = buy_prices[i] if i < len(buy_prices) else ""
+            raw_sell = sell_prices[i] if i < len(sell_prices) else ""
+            
+            qty_to_deduct = float(raw_weight) if raw_weight and str(raw_weight).strip() else 0
+            buy_price_val = raw_buy if raw_buy and str(raw_buy).strip() else 0
+            sell_price_val = raw_sell if raw_sell and str(raw_sell).strip() else 0
+            
+            # Deduct stock if material is an ID
+            try:
+                if materials[i].isdigit():
+                    inv_item = InventoryItem.plain_objects.get(pk=materials[i])
+                    material_name = inv_item.product_name
+                    
+                    if qty_to_deduct > 0:
+                        inv_item.quantity = max(0, inv_item.quantity - int(qty_to_deduct))
+                        inv_item.save()
+                        
+                        if inv_item.quantity <= 10:
+                            send_low_stock_notification(inv_item, request)
+            except Exception as e:
+                logger.warning(f"Stock deduction failed for item {materials[i]}: {e}")
+
+            try:
+                ManifestItem.objects.create(
+                    order=order,
+                    material=material_name,
+                    weight=qty_to_deduct,
+                    weight_unit=weight_units[i] if i < len(weight_units) else "lbs",
+                    buy_price=buy_price_val,
+                    buy_price_unit=buy_price_units[i] if i < len(buy_price_units) else "per lbs",
+                    sell_price=sell_price_val,
+                    sell_price_unit=sell_price_units[i] if i < len(sell_price_units) else "per lbs",
+                    packaging=packagings[i] if i < len(packagings) else "",
+                    is_palletized=is_palletized_list[i].lower() == 'true' if i < len(is_palletized_list) else False 
+                )
+            except Exception as e:
+                logger.error(f"Error creating manifest item {i} ({material_name}): {e}")
+                continue
+                
+        logger.info(f"New manifest items added to Order {order.order_number} by {request.user}")
+    
+    return redirect('orders:order_detail', pk=pk)
