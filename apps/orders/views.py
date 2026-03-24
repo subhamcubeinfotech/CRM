@@ -108,7 +108,11 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
             context['team_members'] = get_user_model().objects.none()
             
         # Context for Add Item Offcanvas
-        context['inventory_items'] = InventoryItem.plain_objects.all()
+        context['inventory_items'] = InventoryItem.plain_objects.filter(
+            warehouse__company=self.object.supplier,
+            tenant=self.object.tenant,
+            quantity__gt=0
+        )
         context['packaging_types'] = PackagingType.objects.all()
         
         return context
