@@ -122,12 +122,13 @@
                 <span class="badge bg-light text-muted fw-normal rounded-pill px-2">AS</span>
                 <div class="ms-4 mt-1" style="width: 300px;">
                     <div class="progress rounded-pill bg-light"
-                        style="height: 24px; position: relative; border: 1px solid #e3e6f0;">
+                        style="height: 24px; position: relative; border: 1px solid #e3e6f0;"
+                        title="Manifested: {{ order.total_manifest_weight|floatformat:2 }} / Target: {{ order.total_weight_target|floatformat:2 }} lbs (Shipped: {{ order.shipped_weight|floatformat:2 }} lbs)">
                         <div class="progress-bar bg-info opacity-50"
-                            style="width: {{ order.weight_progress_percentage }}%"></div>
+                            style="width: {{ order.manifest_progress_percentage }}%"></div>
                         <div class="position-absolute w-100 text-center fw-bold"
                             style="font-size: 0.75rem; line-height: 22px; color: #2d3748;">
-                            {{ order.shipped_weight|intcomma }} / {{ order.total_weight_target|intcomma }} lbs
+                            {{ order.total_manifest_weight|intcomma }} / {{ order.total_weight_target|intcomma }} lbs
                         </div>
                     </div>
                 </div>
@@ -240,11 +241,10 @@
                             <table class="table table-details table-hover align-middle mb-0">
                                 <thead>
                                     <tr>
-                                        <th class="ps-3 text-primary">Material</th>
+                                        <th>Material</th>
                                         <th>Buy Price <i class="fas fa-arrows-alt-v ms-1 op-30"></i></th>
                                         <th>Sell Price <i class="fas fa-arrows-alt-v ms-1 op-30"></i></th>
-                                        <th>Weight <i class="fas fa-arrows-alt-v ms-1 op-30"></i></th>
-                                        <th>Pieces</th>
+                                        <th>Weight / Qty <i class="fas fa-arrows-alt-v ms-1 op-30"></i></th>
                                         <th class="pe-3">Packaging</th>
                                     </tr>
                                 </thead>
@@ -255,18 +255,7 @@
                                         <td>${{ item.buy_price|floatformat:2 }} / {{ item.buy_price_unit|default:"lb" }}</td>
                                         <td>${{ item.sell_price|floatformat:2 }} / {{ item.sell_price_unit|default:"lb" }}</td>
                                         <td>
-                                            {% if item.weight_unit == "pcs" %}
-                                            -
-                                            {% else %}
-                                            {{ item.weight|intcomma }} {{ item.weight_unit }} / {{ order.total_weight_target|intcomma }} lbs
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            {% if item.weight_unit == "pcs" %}
-                                            {{ item.weight|intcomma }} pcs
-                                            {% else %}
-                                            -
-                                            {% endif %}
+                                            {{ item.weight|intcomma }} {{ item.weight_unit }}
                                         </td>
                                         <td class="pe-3">
                                             {{ item.packaging|default:"-" }}

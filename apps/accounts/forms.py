@@ -137,6 +137,23 @@ class SignupStep1Form(forms.ModelForm):
             raise ValidationError("A user with this email already exists.")
         return email
 
+    def clean_password(self):
+        password = self.cleaned_data.get('password')
+        if password:
+            if len(password) < 5:
+                raise ValidationError("Password must be at least 5 characters long.")
+            
+            # Strong password criteria
+            if not any(c.isupper() for c in password):
+                raise ValidationError("Password must contain at least one uppercase letter.")
+            if not any(c.islower() for c in password):
+                raise ValidationError("Password must contain at least one lowercase letter.")
+            if not any(c.isdigit() for c in password):
+                raise ValidationError("Password must contain at least one number.")
+            if not any(c in "!@#$%^&*()_+-=[]{}|;:,.<>?" for c in password):
+                raise ValidationError("Password must contain at least one special character.")
+        return password
+
     def clean(self):
         cleaned_data = super().clean()
         password = cleaned_data.get("password")
