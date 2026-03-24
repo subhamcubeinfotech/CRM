@@ -178,12 +178,14 @@
                 <div class="dropdown-menu dropdown-menu-end shadow border-0">
                     <a class="dropdown-item py-2" href="#" data-bs-toggle="offcanvas"
                         data-bs-target="#offcanvasEditOrder">
-                        <i class="fas fa-edit me-2 text-muted"></i>Edit Parameters
+                        <i class="fas fa-edit me-2 text-muted"></i>Edit
                     </a>
-                    <a class="dropdown-item py-2" href="{% url 'shipments:shipment_create' %}?order_id={{ order.pk }}"><i
-                            class="fas fa-truck-moving me-2 text-muted"></i>Schedule Shipment</a>
-                    <a class="dropdown-item py-2" href="#"><i
-                            class="fas fa-file-invoice-dollar me-2 text-muted"></i>Issue Invoice</a>
+                    <a class="dropdown-item py-2" href="{% url 'shipments:shipment_create' %}?order_id={{ order.pk }}">
+                        <i class="far fa-copy me-2 text-muted"></i>Copy
+                    </a>
+                    <a class="dropdown-item py-2" href="#">
+                        <i class="far fa-file-alt me-2 text-muted"></i>Purchase Order
+                    </a>
                 </div>
             </div>
         </div>
