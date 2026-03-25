@@ -130,6 +130,31 @@
         box-shadow: inset 0 -1px 0 #edf2f9;
         white-space: nowrap;
     }
+
+    /* Status Pill Synchronization */
+    .status-pill {
+        padding: 4.5px 12px;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 0.72rem;
+        display: inline-block;
+        min-width: 85px;
+        text-align: center;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+
+    .status-open {
+        background-color: #e0f2f1;
+        color: #00796b;
+        border: 1.5px solid #b2dfdb;
+    }
+
+    .status-complete {
+        background-color: #e8f5e9;
+        color: #2e7d32;
+        border: 1.5px solid #c8e6c9;
+    }
 </style>
 
 <div class="container-fluid py-4 px-4">
@@ -264,7 +289,7 @@
                             </a>
                         </td>
                         <td>
-                            <span class="status-pill {% if order.simple_status_label == 'Open' %}status-pending{% else %}status-delivered{% endif %}">
+                            <span class="status-pill {% if order.simple_status_label == 'Open' %}status-open{% else %}status-complete{% endif %}">
                                 {{ order.simple_status_label }}
                             </span>
                         </td>
