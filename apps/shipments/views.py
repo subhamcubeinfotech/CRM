@@ -37,6 +37,41 @@ def _get_tracking_shipment_for_user(user, pk):
     return shipment
 
 
+@login_required
+@transaction.atomic
+def shipment_copy(request, pk):
+    """Create a duplicate of an existing shipment and redirect to edit page"""
+    original = get_object_or_404(Shipment, pk=pk)
+    
+    # Clone the shipment object
+    new_shipment = get_object_or_404(Shipment, pk=pk)
+    new_shipment.pk = None
+    new_shipment.id = None
+    new_shipment.shipment_number = None  # Model should auto-generate a new number
+    new_shipment.status = 'pending'
+    new_shipment.tracking_number = f"COPY-{original.tracking_number}" if original.tracking_number else ""
+    new_shipment.created_at = timezone.now()
+    new_shipment.updated_at = timezone.now()
+    new_shipment.save()
+    
+    # Clone shipment items
+    for item in original.items.all():
+        ShipmentItem.objects.create(
+            shipment=new_shipment,
+            inventory_item=item.inventory_item,
+            material_name=item.material_name,
+            weight=item.weight,
+            weight_unit=item.weight_unit,
+            pieces=item.pieces,
+            packaging=item.packaging,
+            buy_price=item.buy_price,
+            sell_price=item.sell_price,
+        )
+    
+    messages.success(request, f"Shipment {original.shipment_number} copied successfully. You are now editing the copy.")
+    return redirect('shipments:shipment_edit', pk=new_shipment.pk)
+
+
 def _reverse_geocode_location(latitude, longitude):
     """
     Resolve GPS coordinates into a short human-readable place label.
