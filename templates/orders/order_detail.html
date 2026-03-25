@@ -1005,46 +1005,47 @@ document.addEventListener('DOMContentLoaded', function() {
     pickupContactSelect?.addEventListener('change', handleContactChange);
     deliveryContactSelect?.addEventListener('change', handleContactChange);
 
-    // Track active selects for support drawers
-    document.querySelectorAll('[data-bs-target="#locationDrawer"]').forEach(btn => {
+    // Track active selects for support modals
+    document.querySelectorAll('[data-bs-target="#locationModal"]').forEach(btn => {
         btn.addEventListener('click', function() {
             activeLocationSelectId = this.dataset.locationSelectTarget;
         });
     });
-
-    document.querySelectorAll('[data-bs-target="#contactDrawer"]').forEach(btn => {
+    
+    document.querySelectorAll('[data-bs-target="#contactModal"]').forEach(btn => {
         btn.addEventListener('click', function() {
             activeContactSelectId = this.dataset.contactSelectTarget;
         });
     });
-
-    // Support Drawer Submissions
+    
+    // Support Modal Submissions
     contactDrawerSubmit?.addEventListener('click', function() {
         const contactSelect = document.getElementById(activeContactSelectId);
-        const name = document.getElementById('contactDrawerName').value.trim();
-        const email = document.getElementById('contactDrawerEmail').value.trim();
-        const mobile = document.getElementById('contactDrawerMobile').value.trim();
-        const office = document.getElementById('contactDrawerOffice').value.trim();
-
+        const name = document.getElementById('contactModalName').value.trim();
+        const email = document.getElementById('contactModalEmail').value.trim();
+        const mobile = document.getElementById('contactModalMobile').value.trim();
+        const office = document.getElementById('contactModalOffice').value.trim();
+    
         if (!contactSelect || !name) return;
-
+    
         const option = new Option(name, name, true, true);
         option.dataset.email = email;
         option.dataset.phone = mobile || office;
         contactSelect.add(option);
         contactSelect.dispatchEvent(new Event('change'));
-
-        bootstrap.Offcanvas.getInstance(document.getElementById('contactDrawer')).hide();
-        document.getElementById('contactDrawerForm').reset();
+    
+        const modal = bootstrap.Modal.getInstance(document.getElementById('contactModal'));
+        if (modal) modal.hide();
+        document.getElementById('contactModalForm').reset();
     });
-
+    
     locationDrawerSubmit?.addEventListener('click', function() {
         const locationSelect = document.getElementById(activeLocationSelectId);
-        const name = document.getElementById('locationDrawerName').value.trim();
-        const address = document.getElementById('locationDrawerAddress').value.trim();
-
+        const name = document.getElementById('locationModalName').value.trim();
+        const address = document.getElementById('locationModalAddress').value.trim();
+    
         if (!locationSelect || !address) return;
-
+    
         const optionLabel = name || address;
         const optionValue = 'temp_addr_' + address;
         const option = new Option(optionLabel, optionValue, true, true);
@@ -1052,9 +1053,10 @@ document.addEventListener('DOMContentLoaded', function() {
         
         locationSelect.add(option);
         locationSelect.dispatchEvent(new Event('change'));
-
-        bootstrap.Offcanvas.getInstance(document.getElementById('locationDrawer')).hide();
-        document.getElementById('locationDrawerForm').reset();
+    
+        const modal = bootstrap.Modal.getInstance(document.getElementById('locationModal'));
+        if (modal) modal.hide();
+        document.getElementById('locationModalForm').reset();
     });
 });
 </script>
@@ -1077,7 +1079,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="mb-3">
                     <div class="d-flex justify-content-between align-items-center mb-1">
                         <label class="form-label fw-bold small text-uppercase mb-0">Pickup Location <span class="text-danger">*</span></label>
-                        <button class="btn btn-link btn-sm p-0 text-decoration-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#locationDrawer" data-location-select-target="shipment-pickup-location-select">
+                        <button class="btn btn-outline-primary btn-sm rounded-3 px-3 py-1 fw-bold" type="button" data-bs-toggle="modal" data-bs-target="#locationModal" data-location-select-target="shipment-pickup-location-select">
                             <i class="fas fa-plus-circle me-1"></i>Add
                         </button>
                     </div>
@@ -1109,7 +1111,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="col-md-6">
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <label class="form-label fw-bold small text-uppercase mb-0">Pickup Contact</label>
-                            <button class="btn btn-link btn-sm p-0 text-decoration-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#contactDrawer" data-contact-select-target="shipment-pickup-contact-select">
+                            <button class="btn btn-outline-primary btn-sm rounded-3 px-3 py-1 fw-bold" type="button" data-bs-toggle="modal" data-bs-target="#contactModal" data-contact-select-target="shipment-pickup-contact-select">
                                 <i class="fas fa-plus-circle me-1"></i>Add
                             </button>
                         </div>
@@ -1149,7 +1151,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="mb-3">
                     <div class="d-flex justify-content-between align-items-center mb-1">
                         <label class="form-label fw-bold small text-uppercase mb-0">Destination Location <span class="text-danger">*</span></label>
-                        <button class="btn btn-link btn-sm p-0 text-decoration-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#locationDrawer" data-location-select-target="shipment-destination-location-select">
+                        <button class="btn btn-outline-primary btn-sm rounded-3 px-3 py-1 fw-bold" type="button" data-bs-toggle="modal" data-bs-target="#locationModal" data-location-select-target="shipment-destination-location-select">
                             <i class="fas fa-plus-circle me-1"></i>Add
                         </button>
                     </div>
@@ -1181,7 +1183,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="col-md-6">
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <label class="form-label fw-bold small text-uppercase mb-0">Delivery Contact <span class="text-danger">*</span></label>
-                            <button class="btn btn-link btn-sm p-0 text-decoration-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#contactDrawer" data-contact-select-target="shipment-delivery-contact-select">
+                            <button class="btn btn-outline-primary btn-sm rounded-3 px-3 py-1 fw-bold" type="button" data-bs-toggle="modal" data-bs-target="#contactModal" data-contact-select-target="shipment-delivery-contact-select">
                                 <i class="fas fa-plus-circle me-1"></i>Add
                             </button>
                         </div>
@@ -1395,7 +1397,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             <!-- Add Item Button -->
             <div class="d-flex justify-content-end mb-4">
-                <button type="button" class="btn btn-outline-primary btn-sm rounded-pill py-1 px-3 fw-bold" id="addAnotherShipmentItemBtn" style="font-size: 0.75rem;">
+                <button type="button" class="btn btn-outline-primary rounded-pill py-2 px-4 fw-bold shadow-sm" id="addAnotherShipmentItemBtn">
                     <i class="fas fa-plus-circle me-1"></i> Add Item
                 </button>
             </div>
@@ -1408,59 +1410,108 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
 </div>
 
-<!-- Contact Support Drawer -->
-<div class="offcanvas offcanvas-end contact-drawer" tabindex="-1" id="contactDrawer">
-    <div class="offcanvas-header border-bottom p-4">
-        <h5 class="offcanvas-title fw-bold">Add Contact</h5>
-        <button type="button" class="btn-outline-primary drawer-close-btn" data-bs-dismiss="offcanvas"><i class="fas fa-times"></i></button>
-    </div>
-    <div class="offcanvas-body p-4">
-        <form id="contactDrawerForm">
-            <div class="mb-3">
-                <label class="form-label small fw-bold text-uppercase">Full Name <span class="text-danger">*</span></label>
-                <input type="text" id="contactDrawerName" class="form-control rounded-3" placeholder="Enter name">
+<!-- Contact Support Modal -->
+<div class="modal fade" id="contactModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-bottom p-4">
+                <h5 class="modal-title fw-bold">Add Contact</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="mb-3">
-                <label class="form-label small fw-bold text-uppercase">Email <span class="text-danger">*</span></label>
-                <input type="email" id="contactDrawerEmail" class="form-control rounded-3" placeholder="email@example.com">
+            <div class="modal-body p-4">
+                <form id="contactModalForm">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-uppercase">Full Name <span class="text-danger">*</span></label>
+                        <input type="text" id="contactModalName" class="form-control rounded-3" placeholder="Enter name">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-uppercase">Email <span class="text-danger">*</span></label>
+                        <input type="email" id="contactModalEmail" class="form-control rounded-3" placeholder="email@example.com">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-uppercase">Mobile Number</label>
+                        <input type="text" id="contactModalMobile" class="form-control rounded-3" placeholder="Mobile #">
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <label class="form-label small fw-bold text-uppercase">Office Number</label>
+                            <input type="text" id="contactModalOffice" class="form-control rounded-3" placeholder="Office #">
+                        </div>
+                    </div>
+                </form>
             </div>
-            <div class="mb-3">
-                <label class="form-label small fw-bold text-uppercase">Mobile Number</label>
-                <input type="text" id="contactDrawerMobile" class="form-control rounded-3" placeholder="Mobile #">
+            <div class="modal-footer border-0 p-4 pt-0">
+                <button type="button" id="contactDrawerSubmit" class="btn btn-primary w-100 py-2 fw-bold rounded-3">Add to Selection</button>
             </div>
-            <div class="row mb-3">
-                <div class="col-8">
-                    <label class="form-label small fw-bold text-uppercase">Office Number</label>
-                    <input type="text" id="contactDrawerOffice" class="form-control rounded-3" placeholder="Office #">
-                </div>
-                <div class="col-4">
-                    <label class="form-label small fw-bold text-uppercase">Ext.</label>
-                    <input type="text" id="contactDrawerExtension" class="form-control rounded-3" placeholder="Ext.">
-                </div>
-            </div>
-            <button type="button" id="contactDrawerSubmit" class="btn btn-primary w-100 py-2 fw-bold rounded-3 mt-3">Add to Selection</button>
-        </form>
+        </div>
     </div>
 </div>
 
-<!-- Location Support Drawer -->
-<div class="offcanvas offcanvas-end location-drawer" tabindex="-1" id="locationDrawer">
-    <div class="offcanvas-header border-bottom p-4">
-        <h5 class="offcanvas-title fw-bold">Add Location</h5>
-        <button type="button" class="btn-outline-primary drawer-close-btn" data-bs-dismiss="offcanvas"><i class="fas fa-times"></i></button>
-    </div>
-    <div class="offcanvas-body p-4">
-        <form id="locationDrawerForm">
-            <div class="mb-3">
-                <label class="form-label small fw-bold text-uppercase">Location Name / Purpose</label>
-                <input type="text" id="locationDrawerName" class="form-control rounded-3" placeholder="e.g. Loading Dock B">
+<!-- Location Support Modal -->
+<div class="modal fade" id="locationModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-bottom p-4">
+                <h5 class="modal-title fw-bold">Add New Location</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="mb-3">
-                <label class="form-label small fw-bold text-uppercase">Full Address <span class="text-danger">*</span></label>
-                <textarea id="locationDrawerAddress" class="form-control rounded-3" rows="3" placeholder="Enter full address..."></textarea>
+            <div class="modal-body p-4">
+                <form id="locationModalForm">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-uppercase">Address <span class="text-danger">*</span></label>
+                        <input type="text" id="locationModalAddress" class="form-control rounded-3" placeholder="Start typing to search for a business or address">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-uppercase">Location Name</label>
+                        <input type="text" id="locationModalName" class="form-control rounded-3" placeholder="Name for this location">
+                        <div class="smaller text-muted mt-1">Optional name to help identify this location</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-uppercase">Phone Number</label>
+                        <input type="text" id="locationModalPhone" class="form-control rounded-3" placeholder="(000) 000-0000">
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-uppercase">Shipping Requirements</label>
+                        <textarea id="locationModalShippingReqs" class="form-control rounded-3" rows="2" placeholder="Insert Scales, Packing list, etc."></textarea>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-12">
+                            <label class="form-label small fw-bold text-uppercase mb-2">Default Delivery Appointment</label>
+                            <div class="d-flex gap-2">
+                                <input type="radio" class="btn-check" name="def_del_apt" id="del_fcfs" value="fcfs">
+                                <label class="btn btn-outline-primary btn-sm rounded-pill px-3 py-1" for="del_fcfs">FCFS</label>
+                                <input type="radio" class="btn-check" name="def_del_apt" id="del_req" value="required">
+                                <label class="btn btn-outline-primary btn-sm rounded-pill px-3 py-1" for="del_req">Required</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-12">
+                            <label class="form-label small fw-bold text-uppercase mb-2">Default Pickup Appointment</label>
+                            <div class="d-flex gap-2">
+                                <input type="radio" class="btn-check" name="def_pick_apt" id="pick_fcfs" value="fcfs">
+                                <label class="btn btn-outline-primary btn-sm rounded-pill px-3 py-1" for="pick_fcfs">FCFS</label>
+                                <input type="radio" class="btn-check" name="def_pick_apt" id="pick_req" value="required">
+                                <label class="btn btn-outline-primary btn-sm rounded-pill px-3 py-1" for="pick_req">Required</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="remit_to" name="remit_to">
+                        <label class="form-check-label small fw-bold" for="remit_to">Remit To</label>
+                    </div>
+                    <div class="smaller text-muted">
+                        Note: a company can only have one remittance location at a time, so adding a new remittance location will unset any previously set one
+                    </div>
+                </form>
             </div>
-            <button type="button" id="locationDrawerSubmit" class="btn btn-primary w-100 py-2 fw-bold rounded-3 mt-3">Add to Selection</button>
-        </form>
+            <div class="modal-footer border-0 p-4 pt-0 d-flex justify-content-center">
+                <button type="button" id="locationDrawerSubmit" class="btn btn-primary px-5 py-2 fw-bold rounded-3">Submit</button>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
