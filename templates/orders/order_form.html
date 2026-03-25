@@ -769,8 +769,8 @@
                 else opt.style.display = 'none';
             });
             if (!companyId) locationSelect.value = "";
-            else if (foundWarehouse) locationSelect.value = firstVisibleWarehouse;
             else if (companyAddress) assignCompanyLocation(locationSelectId, partySelectId);
+            else if (foundWarehouse) locationSelect.value = firstVisibleWarehouse;
             else locationSelect.value = "";
             syncLocationSelectState(locationSelectId); syncLocationLockState(locationSelectId, partySelectId);
         }
