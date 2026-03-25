@@ -596,6 +596,8 @@
                                             <th>Buy Price</th>
                                             <th>Sell Price</th>
                                             <th>Net Weight</th>
+                                            <th>Gross Weight</th>
+                                            <th>Tare Weight</th>
                                             <th>Pieces</th>
                                             <th>Packaging</th>
                                         </tr>
@@ -615,6 +617,12 @@
                                                 <td>${{ item.sell_price|floatformat:4 }} / {{ item.price_unit }}</td>
                                                 <td>
                                                     {{ item.weight|floatformat:2 }} {{ item.weight_unit }}
+                                                </td>
+                                                <td>
+                                                    {{ item.gross_weight|floatformat:2 }} {{ item.gross_weight_unit|default:item.weight_unit }}
+                                                </td>
+                                                <td>
+                                                    {{ item.tare_weight|floatformat:2 }} {{ item.tare_weight_unit|default:item.weight_unit }}
                                                 </td>
                                                 <td>
                                                     {{ item.pieces|default:"-" }} pcs
@@ -641,6 +649,8 @@
                                                     {{ item.weight|floatformat:2 }} {{ item.weight_unit }}
                                                     {% endif %}
                                                 </td>
+                                                <td>-</td>
+                                                <td>-</td>
                                                 <td>
                                                     {% if item.weight_unit == 'pcs' %}
                                                     {{ item.weight|floatformat:0 }} pcs
