@@ -309,9 +309,15 @@
                     <!-- Shipments Section -->
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h4 class="fw-bold mb-0">Shipments</h4>
+                        {% if shipments %}
                         <button type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasAddShipment"
                             class="btn btn-outline-primary btn-sm px-3 rounded-3" style="border-width: 2px;">Add
                             Shipment</button>
+                        {% else %}
+                        <a href="{% url 'shipments:shipment_create' %}?order_id={{ order.pk }}&next={{ request.path }}"
+                            class="btn btn-outline-primary btn-sm px-3 rounded-3" style="border-width: 2px; text-decoration: none; display: inline-flex; align-items: center;">Add
+                            Shipment</a>
+                        {% endif %}
                     </div>
                     <div class="card border-0 bg-white mb-4" style="border-radius: 12px; overflow: hidden;">
                         <div class="table-responsive">
