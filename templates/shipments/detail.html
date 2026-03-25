@@ -152,7 +152,7 @@
         align-items: center;
         justify-content: center;
         line-height: 1;
-        width: 105px;
+        min-width: 90px;
         height: 38px;
     }
     .ui-chip:hover {
@@ -2083,10 +2083,10 @@
                     </div>
                 </div>
 
-                <div class="row gx-5 gy-3 align-items-end">
-                    <div class="col-md-5">
+                <div class="row g-3">
+                    <div class="col-md-7">
                         <label class="form-label small fw-bold text-muted text-uppercase mb-1">Pickup Appointment</label>
-                        <div class="d-flex align-items-center gap-3 mt-1">
+                        <div class="d-flex align-items-center gap-2 mt-1">
                             <div>
                                 <input type="radio" class="btn-check" name="pickup_appointment_ui" id="edit_pickup_fcfs" value="fcfs" {% if shipment.pickup_appointment_type == "fcfs" %}checked{% endif %}>
                                 <label class="btn ui-chip rounded-pill" for="edit_pickup_fcfs">FCFS</label>
@@ -2097,7 +2097,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-7">
+                    <div class="col-md-5">
                         <label class="form-label small fw-bold text-muted text-uppercase mb-1">Pickup Date</label>
                         <input type="date" name="pickup_date" class="form-control" value="{{ shipment.pickup_date|date:'Y-m-d' }}">
                     </div>
@@ -2145,10 +2145,10 @@
                     </div>
                 </div>
 
-                <div class="row gx-5 gy-3 align-items-end">
-                    <div class="col-md-5">
+                <div class="row g-3">
+                    <div class="col-md-7">
                         <label class="form-label small fw-bold text-muted text-uppercase mb-1">Delivery Appointment</label>
-                        <div class="d-flex align-items-center gap-3 mt-1">
+                        <div class="d-flex align-items-center gap-2 mt-1">
                             <div>
                                 <input type="radio" class="btn-check" name="delivery_appointment_ui" id="edit_delivery_fcfs" value="fcfs" {% if shipment.delivery_appointment_type == "fcfs" %}checked{% endif %}>
                                 <label class="btn ui-chip rounded-pill" for="edit_delivery_fcfs">FCFS</label>
@@ -2159,7 +2159,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-7">
+                    <div class="col-md-5">
                         <label class="form-label small fw-bold text-muted text-uppercase mb-1">Delivery Date</label>
                         <input type="date" name="estimated_delivery_date" class="form-control" value="{{ shipment.estimated_delivery_date|date:'Y-m-d' }}">
                     </div>
