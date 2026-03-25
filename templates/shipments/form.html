@@ -513,11 +513,11 @@
                                                 </div>
                                                 <div class="col-4">
                                                     <select name="items_ui[{{ forloop.counter0 }}][unit]" class="form-select rounded-start-0 border-start-0 weight-unit-select">
-                                                        <option value="lbs" {% if item.weight_unit == 'lbs' %}selected{% endif %}>lbs</option>
+                                                        <option value="lbs" selected>lbs</option>
                                                         <option value="kgs" {% if item.weight_unit == 'kgs' %}selected{% endif %}>kgs</option>
                                                         <option value="mt" {% if item.weight_unit == 'mt' or item.weight_unit == 'MT' %}selected{% endif %}>MT</option>
                                                         <option value="st" {% if item.weight_unit == 'st' or item.weight_unit == 'ST' %}selected{% endif %}>ST</option>
-                                                        <option value="pcs" {% if item.weight_unit == 'pcs' %}selected{% endif %}>pcs</option>
+                                                        <option value="pcs">pcs</option>
                                                     </select>
                                                 </div>
                                             </div>
@@ -642,7 +642,7 @@
                                                 </div>
                                                 <div class="col-4">
                                                     <select name="items_ui[{{ forloop.counter0 }}][unit]" class="form-select rounded-start-0 border-start-0 weight-unit-select">
-                                                        <option value="lbs" {% if item.weight_unit == 'lbs' %}selected{% endif %}>lbs</option>
+                                                        <option value="lbs" {% if item.weight_unit == 'lbs' or not item.weight_unit %}selected{% endif %}>lbs</option>
                                                         <option value="kgs" {% if item.weight_unit == 'kgs' %}selected{% endif %}>kgs</option>
                                                         <option value="mt" {% if item.weight_unit == 'mt' or item.weight_unit == 'MT' %}selected{% endif %}>MT</option>
                                                         <option value="st" {% if item.weight_unit == 'st' or item.weight_unit == 'ST' %}selected{% endif %}>ST</option>
