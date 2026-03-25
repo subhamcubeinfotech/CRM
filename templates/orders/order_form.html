@@ -54,42 +54,46 @@
         <div class="row g-4 mb-5">
             <div class="col-md-6">
                 <div class="mb-4">
-                    <label class="form-label fw-bold small text-uppercase">Supplier<span class="text-danger">*</span></label>
+                    <label class="form-label fw-bold small text-uppercase">Supplier<span
+                            class="text-danger">*</span></label>
                     <div class="input-group">
-                    <div class="input-group">
-                        <select name="supplier" id="supplier-select" class="form-select border-primary-subtle" required>
-                            <option value="">Select a supplier</option>
-                            {% for supplier in suppliers %}
-                            <option value="{{ supplier.id }}" data-address="{{ supplier.full_address }}"
-                                {% if copied_order.supplier_id == supplier.id %}selected{% endif %}>
-                                {{ supplier.name }}</option>
-                            {% endfor %}
-                         </select>
-                         <a href="{% url 'accounts:company_create' %}?type=vendor" class="btn btn-outline-primary">+ Add</a>
-                    </div>
+                        <div class="input-group">
+                            <select name="supplier" id="supplier-select" class="form-select border-primary-subtle"
+                                required>
+                                <option value="">Select a supplier</option>
+                                {% for supplier in suppliers %}
+                                <option value="{{ supplier.id }}" data-address="{{ supplier.full_address }}" {% if copied_order.supplier_id == supplier.id %}selected{% endif %}>
+                                    {{ supplier.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <a href="{% url 'accounts:company_create' %}?type=vendor" class="btn btn-outline-primary">+
+                                Add</a>
+                        </div>
                     </div>
                     <div style="min-height: 21px;">
                         {% if assign_company %}
                         <a href="#" id="assign-supplier-mine" class="small text-decoration-none mt-1 d-inline-block"
-                            data-company-id="{{ assign_company.id }}" data-address="{{ assign_company.full_address }}">Click to assign to your company.</a>
+                            data-company-id="{{ assign_company.id }}"
+                            data-address="{{ assign_company.full_address }}">Click to assign to your company.</a>
                         {% endif %}
                     </div>
                 </div>
 
                 <div class="mb-4">
-                    <label class="form-label fw-bold small text-uppercase">Source Location<span class="text-danger">*</span></label>
+                    <label class="form-label fw-bold small text-uppercase">Source Location<span
+                            class="text-danger">*</span></label>
                     <div class="input-group">
                         <select name="source_location" id="source-location-select"
                             class="form-select border-primary-subtle" required>
                             <option value="">Select location</option>
                             {% if assign_company %}
-                            <option value="temp_addr_{{ assign_company.full_address }}" data-company-id="{{ assign_company.id }}">
+                            <option value="temp_addr_{{ assign_company.full_address }}"
+                                data-company-id="{{ assign_company.id }}">
                                 {{ assign_company.full_address }} (Your Address)
                             </option>
                             {% endif %}
                             {% for warehouse in warehouses %}
-                            <option value="{{ warehouse.id }}" data-company-id="{{ warehouse.company_id }}"
-                                {% if copied_order.source_location_id == warehouse.id %}selected{% endif %}>
+                            <option value="{{ warehouse.id }}" data-company-id="{{ warehouse.company_id }}" {% if copied_order.source_location_id == warehouse.id %}selected{% endif %}>
                                 {{ warehouse.display_name }}</option>
                             {% endfor %}
                         </select>
@@ -105,40 +109,43 @@
 
             <div class="col-md-6">
                 <div class="mb-4">
-                    <label class="form-label fw-bold small text-uppercase">Receiver<span class="text-danger">*</span></label>
+                    <label class="form-label fw-bold small text-uppercase">Receiver<span
+                            class="text-danger">*</span></label>
                     <div class="input-group">
                         <select name="receiver" id="receiver-select" class="form-select border-primary-subtle" required>
                             <option value="">Select a receiver</option>
                             {% for receiver in receivers %}
-                            <option value="{{ receiver.id }}" data-address="{{ receiver.full_address }}"
-                                {% if copied_order.receiver_id == receiver.id %}selected{% endif %}>
+                            <option value="{{ receiver.id }}" data-address="{{ receiver.full_address }}" {% if copied_order.receiver_id == receiver.id %}selected{% endif %}>
                                 {{ receiver.name }}</option>
                             {% endfor %}
                         </select>
-                        <a href="{% url 'accounts:company_create' %}?type=customer" class="btn btn-outline-primary">+ Add</a>
+                        <a href="{% url 'accounts:company_create' %}?type=customer" class="btn btn-outline-primary">+
+                            Add</a>
                     </div>
                     <div style="min-height: 21px;">
                         {% if assign_company %}
                         <a href="#" id="assign-receiver-mine" class="small text-decoration-none mt-1 d-inline-block"
-                            data-company-id="{{ assign_company.id }}" data-address="{{ assign_company.full_address }}">Click to assign to your company.</a>
+                            data-company-id="{{ assign_company.id }}"
+                            data-address="{{ assign_company.full_address }}">Click to assign to your company.</a>
                         {% endif %}
                     </div>
                 </div>
 
                 <div class="mb-4">
-                    <label class="form-label fw-bold small text-uppercase">Destination Location<span class="text-danger">*</span></label>
+                    <label class="form-label fw-bold small text-uppercase">Destination Location<span
+                            class="text-danger">*</span></label>
                     <div class="input-group">
                         <select name="destination_location" id="dest-location-select"
                             class="form-select border-primary-subtle" required>
                             <option value="">Select location</option>
                             {% if assign_company %}
-                            <option value="temp_addr_{{ assign_company.full_address }}" data-company-id="{{ assign_company.id }}">
+                            <option value="temp_addr_{{ assign_company.full_address }}"
+                                data-company-id="{{ assign_company.id }}">
                                 {{ assign_company.full_address }} (Your Address)
                             </option>
                             {% endif %}
                             {% for warehouse in warehouses %}
-                            <option value="{{ warehouse.id }}" data-company-id="{{ warehouse.company_id }}"
-                                {% if copied_order.destination_location_id == warehouse.id %}selected{% endif %}>
+                            <option value="{{ warehouse.id }}" data-company-id="{{ warehouse.company_id }}" {% if copied_order.destination_location_id == warehouse.id %}selected{% endif %}>
                                 {{ warehouse.display_name }}</option>
                             {% endfor %}
                         </select>
@@ -159,7 +166,8 @@
                 <label class="form-label fw-bold small text-uppercase">Tags</label>
                 <select class="form-select" name="tags" multiple>
                     {% for tag in tags %}
-                    <option value="{{ tag.id }}" {% if tag in copied_order.tags.all %}selected{% endif %}>{{ tag.name }}</option>
+                    <option value="{{ tag.id }}" {% if tag in copied_order.tags.all %}selected{% endif %}>{{ tag.name }}
+                    </option>
                     {% empty %}
                     <option disabled>No tags available — add via Admin</option>
                     {% endfor %}
@@ -177,7 +185,8 @@
                 </select>
             </div>
             <div class="col-md-4">
-                <label class="form-label fw-bold small text-uppercase">Representatives<span class="text-danger">*</span></label>
+                <label class="form-label fw-bold small text-uppercase">Representatives<span
+                        class="text-danger">*</span></label>
                 <div class="input-group">
                     <select name="representative" id="rep-select" class="form-select" required>
                         <option value="">Select individual</option>
@@ -200,7 +209,8 @@
                 {% if copied_items %}
                 {% for c_item in copied_items %}
                 <div class="manifest-item card p-4 mb-3 border-light shadow-sm bg-light-subtle position-relative">
-                    <button type="button" class="btn-close remove-item-btn position-absolute top-0 end-0 m-3" aria-label="Remove" {% if forloop.first %}style="display: none;"{% endif %}></button>
+                    <button type="button" class="btn-close remove-item-btn position-absolute top-0 end-0 m-3"
+                        aria-label="Remove" {% if forloop.first %}style="display: none;" {% endif %}></button>
                     <div class="row g-3">
                         <div class="col-md-12">
                             <label class="form-label fw-bold small">Material<span class="text-danger">*</span></label>
@@ -211,8 +221,7 @@
                                     {% if item.quantity > 0 %}
                                     <option value="{{ item.id }}" data-max="{{ item.quantity }}"
                                         data-unit="{{ item.unit_of_measure }}" data-name="{{ item.product_name }}"
-                                        data-company-id="{{ item.warehouse.company_id|default:'' }}"
-                                        {% if c_item.material == item.product_name %}selected{% endif %}>
+                                        data-company-id="{{ item.warehouse.company_id|default:'' }}" {% if c_item.material == item.product_name %}selected{% endif %}>
                                         {{ item.product_name }} - {{ item.display_stock }}
                                     </option>
                                     {% endif %}
@@ -221,7 +230,8 @@
                             </div>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label fw-bold small">Weight / Qty<span class="text-danger">*</span></label>
+                            <label class="form-label fw-bold small">Weight / Qty<span
+                                    class="text-danger">*</span></label>
                             <div class="row g-0">
                                 <div class="col-8">
                                     <input type="number" name="weight[]"
@@ -231,15 +241,21 @@
                                 <div class="col-4">
                                     <select name="weight_unit[]"
                                         class="form-select form-select-sm rounded-start-0 border-start-0 unit-display">
-                                        <option value="lbs" {% if c_item.weight_unit == "lbs" %}selected{% endif %}>lbs</option>
-                                        <option value="kgs" {% if c_item.weight_unit == "kgs" %}selected{% endif %}>kgs</option>
-                                        <option value="mt" {% if c_item.weight_unit == "mt" %}selected{% endif %}>MT</option>
-                                        <option value="st" {% if c_item.weight_unit == "st" %}selected{% endif %}>ST</option>
-                                        <option value="pcs" {% if c_item.weight_unit == "pcs" %}selected{% endif %}>pcs</option>
+                                        <option value="lbs" {% if c_item.weight_unit == "lbs" %}selected{% endif %}>lbs
+                                        </option>
+                                        <option value="kgs" {% if c_item.weight_unit == "kgs" %}selected{% endif %}>kgs
+                                        </option>
+                                        <option value="mt" {% if c_item.weight_unit == "mt" %}selected{% endif %}>MT
+                                        </option>
+                                        <option value="st" {% if c_item.weight_unit == "st" %}selected{% endif %}>ST
+                                        </option>
+                                        <option value="pcs" {% if c_item.weight_unit == "pcs" %}selected{% endif %}>pcs
+                                        </option>
                                     </select>
                                 </div>
                             </div>
-                            <div class="small text-danger weight-warning mt-1" style="display: none;">Exceeds available stock!</div>
+                            <div class="small text-danger weight-warning mt-1" style="display: none;">Exceeds available
+                                stock!</div>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label fw-bold small">Buy Price<span class="text-danger">*</span></label>
@@ -298,8 +314,10 @@
                         </div>
                         <div class="col-md-4 d-flex align-items-end mb-1">
                             <div class="form-check">
-                                <input type="hidden" name="is_palletized_h[]" value="{{ c_item.is_palletized|lower }}" class="palletized-hidden">
-                                <input class="form-check-input palletized-checkbox" type="checkbox" {% if c_item.is_palletized %}checked{% endif %} onchange="this.previousElementSibling.value = this.checked ? 'true' : 'false'">
+                                <input type="hidden" name="is_palletized_h[]" value="{{ c_item.is_palletized|lower }}"
+                                    class="palletized-hidden">
+                                <input class="form-check-input palletized-checkbox" type="checkbox" {% if c_item.is_palletized %}checked{% endif %}
+                                    onchange="this.previousElementSibling.value = this.checked ? 'true' : 'false'">
                                 <label class="form-check-label small fw-bold">Is the packaging palletized?</label>
                             </div>
                         </div>
@@ -308,7 +326,8 @@
                 {% endfor %}
                 {% else %}
                 <div class="manifest-item card p-4 mb-3 border-light shadow-sm bg-light-subtle position-relative">
-                    <button type="button" class="btn-close remove-item-btn position-absolute top-0 end-0 m-3" aria-label="Remove" style="display: none;"></button>
+                    <button type="button" class="btn-close remove-item-btn position-absolute top-0 end-0 m-3"
+                        aria-label="Remove" style="display: none;"></button>
                     <div class="row g-3">
                         <div class="col-md-12">
                             <label class="form-label fw-bold small">Material<span class="text-danger">*</span></label>
@@ -328,7 +347,8 @@
                             </div>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label fw-bold small">Weight / Qty<span class="text-danger">*</span></label>
+                            <label class="form-label fw-bold small">Weight / Qty<span
+                                    class="text-danger">*</span></label>
                             <div class="row g-0">
                                 <div class="col-8">
                                     <input type="number" name="weight[]"
@@ -346,7 +366,8 @@
                                     </select>
                                 </div>
                             </div>
-                            <div class="small text-danger weight-warning mt-1" style="display: none;">Exceeds available stock!</div>
+                            <div class="small text-danger weight-warning mt-1" style="display: none;">Exceeds available
+                                stock!</div>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label fw-bold small">Buy Price<span class="text-danger">*</span></label>
@@ -404,7 +425,8 @@
                         <div class="col-md-4 d-flex align-items-end mb-1">
                             <div class="form-check">
                                 <input type="hidden" name="is_palletized_h[]" value="false" class="palletized-hidden">
-                                <input class="form-check-input palletized-checkbox" type="checkbox" onchange="this.previousElementSibling.value = this.checked ? 'true' : 'false'">
+                                <input class="form-check-input palletized-checkbox" type="checkbox"
+                                    onchange="this.previousElementSibling.value = this.checked ? 'true' : 'false'">
                                 <label class="form-check-label small fw-bold">Is the packaging palletized?</label>
                             </div>
                         </div>
@@ -463,8 +485,11 @@
                     <i class="fas fa-chart-line" style="color:#a5b4fc; font-size:0.95rem;"></i>
                 </div>
                 <div>
-                    <div style="color:#fff; font-size:0.85rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase;">Profit Estimator</div>
-                    <div style="color:rgba(255,255,255,0.45); font-size:0.7rem;">Real-time calculation based on item prices</div>
+                    <div
+                        style="color:#fff; font-size:0.85rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase;">
+                        Profit Estimator</div>
+                    <div style="color:rgba(255,255,255,0.45); font-size:0.7rem;">Real-time calculation based on item
+                        prices</div>
                 </div>
                 <span style="
                     margin-left: auto;
@@ -478,7 +503,8 @@
                     text-transform: uppercase;
                     display: flex; align-items:center; gap:4px;
                 ">
-                    <span style="width:6px;height:6px;background:#fff;border-radius:50%;display:inline-block;opacity:0.8;animation:livepulse 1.4s infinite;"></span>
+                    <span
+                        style="width:6px;height:6px;background:#fff;border-radius:50%;display:inline-block;opacity:0.8;animation:livepulse 1.4s infinite;"></span>
                     LIVE
                 </span>
             </div>
@@ -487,40 +513,53 @@
             <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; border-bottom: 1px solid #f0f2f8;">
                 <div style="padding: 18px 22px; border-right: 1px solid #f0f2f8;">
                     <div style="display:flex; align-items:center; gap:7px; margin-bottom:6px;">
-                        <div style="width:28px;height:28px;border-radius:7px;background:#eef2ff;display:flex;align-items:center;justify-content:center;">
+                        <div
+                            style="width:28px;height:28px;border-radius:7px;background:#eef2ff;display:flex;align-items:center;justify-content:center;">
                             <i class="fas fa-arrow-up" style="font-size:0.7rem;color:#4f46e5;"></i>
                         </div>
-                        <span style="font-size:0.72rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">Revenue</span>
+                        <span
+                            style="font-size:0.72rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">Revenue</span>
                     </div>
-                    <div id="est-revenue" style="font-size:1.45rem;font-weight:800;color:#1a1f36;line-height:1;">$0.00</div>
+                    <div id="est-revenue" style="font-size:1.45rem;font-weight:800;color:#1a1f36;line-height:1;">$0.00
+                    </div>
                     <div style="font-size:0.7rem;color:#9ca3af;margin-top:3px;">Total sell value</div>
                 </div>
                 <div style="padding: 18px 22px; border-right: 1px solid #f0f2f8;">
                     <div style="display:flex; align-items:center; gap:7px; margin-bottom:6px;">
-                        <div style="width:28px;height:28px;border-radius:7px;background:#fff7ed;display:flex;align-items:center;justify-content:center;">
+                        <div
+                            style="width:28px;height:28px;border-radius:7px;background:#fff7ed;display:flex;align-items:center;justify-content:center;">
                             <i class="fas fa-arrow-down" style="font-size:0.7rem;color:#f97316;"></i>
                         </div>
-                        <span style="font-size:0.72rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">Cost</span>
+                        <span
+                            style="font-size:0.72rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">Cost</span>
                     </div>
-                    <div id="est-cost" style="font-size:1.45rem;font-weight:800;color:#1a1f36;line-height:1;">$0.00</div>
+                    <div id="est-cost" style="font-size:1.45rem;font-weight:800;color:#1a1f36;line-height:1;">$0.00
+                    </div>
                     <div style="font-size:0.7rem;color:#9ca3af;margin-top:3px;">Total buy value</div>
                 </div>
                 <div style="padding: 18px 22px; background: #f8faff; border-right: 1px solid #f0f2f8;">
                     <div style="display:flex; align-items:center; gap:7px; margin-bottom:6px;">
-                        <div style="width:28px;height:28px;border-radius:7px;background:#dcfce7;display:flex;align-items:center;justify-content:center;" id="profit-icon-bg">
+                        <div style="width:28px;height:28px;border-radius:7px;background:#dcfce7;display:flex;align-items:center;justify-content:center;"
+                            id="profit-icon-bg">
                             <i class="fas fa-star" style="font-size:0.7rem;color:#16a34a;" id="profit-icon"></i>
                         </div>
-                        <span style="font-size:0.72rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">Est. Profit</span>
+                        <span
+                            style="font-size:0.72rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">Est.
+                            Profit</span>
                     </div>
-                    <div id="est-profit" style="font-size:1.45rem;font-weight:800;color:#16a34a;line-height:1;">$0.00</div>
+                    <div id="est-profit" style="font-size:1.45rem;font-weight:800;color:#16a34a;line-height:1;">$0.00
+                    </div>
                     <div style="font-size:0.7rem;color:#9ca3af;margin-top:3px;" id="est-margin-text">Margin: —</div>
                 </div>
                 <div style="padding: 18px 22px;">
                     <div style="display:flex; align-items:center; gap:7px; margin-bottom:6px;">
-                        <div style="width:28px;height:28px;border-radius:7px;background:#e0f2fe;display:flex;align-items:center;justify-content:center;">
+                        <div
+                            style="width:28px;height:28px;border-radius:7px;background:#e0f2fe;display:flex;align-items:center;justify-content:center;">
                             <i class="fas fa-cubes" style="font-size:0.7rem;color:#0ea5e9;"></i>
                         </div>
-                        <span style="font-size:0.72rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">Total Pieces</span>
+                        <span
+                            style="font-size:0.72rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">Total
+                            Pieces</span>
                     </div>
                     <div id="est-pieces" style="font-size:1.45rem;font-weight:800;color:#1a1f36;line-height:1;">0</div>
                     <div style="font-size:0.7rem;color:#9ca3af;margin-top:3px;">From manifest</div>
@@ -528,13 +567,16 @@
             </div>
 
             <!-- Margin Bar -->
-            <div style="padding: 12px 22px; background:#fafbff; border-bottom: 1px solid #f0f2f8;" id="margin-bar-section">
+            <div style="padding: 12px 22px; background:#fafbff; border-bottom: 1px solid #f0f2f8;"
+                id="margin-bar-section">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
                     <span style="font-size:0.72rem;color:#6b7280;font-weight:600;">Profit Margin</span>
                     <span id="margin-bar-label" style="font-size:0.72rem;font-weight:700;color:#6b7280;">—</span>
                 </div>
                 <div style="background:#e5e9f2;border-radius:99px;height:6px;overflow:hidden;">
-                    <div id="margin-bar-fill" style="height:100%;width:0%;border-radius:99px;background:linear-gradient(90deg,#4f46e5,#22c55e);transition:width 0.4s ease;"></div>
+                    <div id="margin-bar-fill"
+                        style="height:100%;width:0%;border-radius:99px;background:linear-gradient(90deg,#4f46e5,#22c55e);transition:width 0.4s ease;">
+                    </div>
                 </div>
             </div>
 
@@ -542,23 +584,35 @@
             <div id="profit-items-breakdown">
                 <div style="padding: 10px 22px 4px; display:flex; align-items:center; gap:6px;">
                     <i class="fas fa-list-ul" style="font-size:0.7rem;color:#9ca3af;"></i>
-                    <span style="font-size:0.7rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.06em;">Per Item Breakdown</span>
+                    <span
+                        style="font-size:0.7rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.06em;">Per
+                        Item Breakdown</span>
                 </div>
                 <div id="profit-items-list" style="padding: 0 22px 14px;"></div>
             </div>
         </div>
 
         <style>
-        @keyframes livepulse {
-            0%,100% { opacity: 0.5; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.3); }
-        }
+            @keyframes livepulse {
+
+                0%,
+                100% {
+                    opacity: 0.5;
+                    transform: scale(1);
+                }
+
+                50% {
+                    opacity: 1;
+                    transform: scale(1.3);
+                }
+            }
         </style>
 
         <!-- Total Weight Target -->
         <div class="card bg-light border-0 mb-4">
             <div class="card-body">
-                <label class="form-label fw-bold small text-uppercase">Total Weight Target (lbs)<span class="text-danger">*</span></label>
+                <label class="form-label fw-bold small text-uppercase">Total Weight Target (lbs)<span
+                        class="text-danger">*</span></label>
                 <input type="number" name="total_weight_target" class="form-control" placeholder="e.g. 200000" required
                     value="{{ copied_order.total_weight_target|stringformat:'f'|default:'' }}">
                 <div class="form-text">Used for calculating progress bar in dashboard.</div>
@@ -704,7 +758,7 @@
             const cost = buyP * qty, revenue = sellP * qty, profit = revenue - cost;
             totalRevenue += revenue; totalCost += cost;
             const isPos = profit >= 0, sign = isPos ? '+' : '';
-            breakdownList.innerHTML += `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #f3f4f6;font-size:0.82rem;"><div style="display:flex;align-items:center;gap:7px;"><div style="width:6px;height:6px;border-radius:50%;background:${isPos?'#15803d':'#dc2626'};flex-shrink:0;"></div><span style="color:#374151;font-weight:500;">${material}</span></div><span style="background:${isPos?'#dcfce7':'#fee2e2'};color:${isPos?'#15803d':'#dc2626'};padding:2px 9px;border-radius:99px;font-weight:700;font-size:0.75rem;">${sign}$${profit.toFixed(2)}</span></div>`;
+            breakdownList.innerHTML += `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #f3f4f6;font-size:0.82rem;"><div style="display:flex;align-items:center;gap:7px;"><div style="width:6px;height:6px;border-radius:50%;background:${isPos ? '#15803d' : '#dc2626'};flex-shrink:0;"></div><span style="color:#374151;font-weight:500;">${material}</span></div><span style="background:${isPos ? '#dcfce7' : '#fee2e2'};color:${isPos ? '#15803d' : '#dc2626'};padding:2px 9px;border-radius:99px;font-weight:700;font-size:0.75rem;">${sign}$${profit.toFixed(2)}</span></div>`;
         });
         totalCost += freightCost;
         const totalProfit = totalRevenue - totalCost, marginVal = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
@@ -731,6 +785,7 @@
         function validate() {
             const option = select.selectedOptions[0], maxVal = parseFloat(option.dataset.max) || 0, currentVal = parseFloat(input.value) || 0, unit = option.dataset.unit || 'lbs';
             unitDisplay.value = unit;
+            syncManifestUnits(container, unit);
             if (!select.value && currentVal > 0) { warning.innerHTML = '<i class="fas fa-hand-point-up me-1"></i> Please select Material* first!'; warning.style.display = 'block'; input.classList.add('is-invalid'); }
             else if (currentVal > maxVal) { warning.innerHTML = `<i class="fas fa-exclamation-triangle me-1"></i> Only ${maxVal} ${unit} available!`; warning.style.display = 'block'; input.classList.add('is-invalid'); }
             else { warning.style.display = 'none'; input.classList.remove('is-invalid'); }
@@ -748,9 +803,9 @@
     function setupManifestUnitSync(container) {
         const unitDisplay = container.querySelector('.unit-display'), buyUnit = container.querySelector('[name="buy_price_unit[]"]'), sellUnit = container.querySelector('[name="sell_price_unit[]"]');
         if (!unitDisplay || !buyUnit || !sellUnit) return;
-        unitDisplay.addEventListener('change', function() { syncManifestUnits(container, this.value); });
-        buyUnit.addEventListener('change', function() { syncManifestUnits(container, this.value.replace(/^per\s+/i, '')); });
-        sellUnit.addEventListener('change', function() { syncManifestUnits(container, this.value.replace(/^per\s+/i, '')); });
+        unitDisplay.addEventListener('change', function () { syncManifestUnits(container, this.value); });
+        buyUnit.addEventListener('change', function () { syncManifestUnits(container, this.value.replace(/^per\s+/i, '')); });
+        sellUnit.addEventListener('change', function () { syncManifestUnits(container, this.value.replace(/^per\s+/i, '')); });
     }
 
     document.querySelectorAll('.manifest-item').forEach(item => { setupInventoryValidation(item); setupManifestUnitSync(item); });
@@ -769,8 +824,8 @@
                 else opt.style.display = 'none';
             });
             if (!companyId) locationSelect.value = "";
-            else if (foundWarehouse) locationSelect.value = firstVisibleWarehouse;
             else if (companyAddress) assignCompanyLocation(locationSelectId, partySelectId);
+            else if (foundWarehouse) locationSelect.value = firstVisibleWarehouse;
             else locationSelect.value = "";
             syncLocationSelectState(locationSelectId); syncLocationLockState(locationSelectId, partySelectId);
         }
@@ -795,6 +850,6 @@
         container.appendChild(newItem); setupInventoryValidation(newItem); setupManifestUnitSync(newItem); syncManifestUnits(newItem, 'lbs'); filterMaterialOptions();
     });
 
-    document.getElementById('manifest-items-container').addEventListener('click', function(e) { if (e.target.classList.contains('remove-item-btn')) e.target.closest('.manifest-item').remove(); });
+    document.getElementById('manifest-items-container').addEventListener('click', function (e) { if (e.target.classList.contains('remove-item-btn')) e.target.closest('.manifest-item').remove(); });
 </script>
 {% endblock %}
