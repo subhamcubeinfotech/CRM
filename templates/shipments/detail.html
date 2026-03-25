@@ -147,12 +147,12 @@
         font-weight: 700 !important;
         transition: all 0.2s;
         cursor: pointer;
-        padding: 6px 20px !important;
+        padding: 6px 15px !important;
         display: inline-flex !important;
         align-items: center;
         justify-content: center;
         line-height: 1;
-        min-width: 80px;
+        min-width: 90px;
         height: 38px;
     }
     .ui-chip:hover {
@@ -203,11 +203,34 @@
     }
 
     .actions-btn {
-        background: #1c7ed6;
-        color: #fff;
+        background: #1c7ed6 !important;
+        color: #fff !important;
         border-radius: 10px;
         font-weight: 600;
         padding: 0.5rem 1.25rem;
+    }
+
+    .btn-add-outline {
+        border: 1px solid #0d6efd !important;
+        background: #fff !important;
+        color: #0d6efd !important;
+        font-size: 0.85rem !important;
+        font-weight: 600 !important;
+        padding: 4px 14px !important;
+        border-radius: 8px !important;
+        display: inline-flex !important;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+        text-decoration: none !important;
+    }
+    .btn-add-outline:hover {
+        background: #f0f7ff !important;
+        border-color: #0a58ca !important;
+        color: #0a58ca !important;
+    }
+    .btn-add-outline i {
+        font-size: 1rem;
     }
 
     .tracking-card {
@@ -2025,7 +2048,7 @@
             <div class="mb-4">
                 <div class="d-flex justify-content-between align-items-center mb-1">
                     <label class="form-label small fw-bold text-muted text-uppercase mb-0">Pickup Location<span class="text-danger">*</span></label>
-                    <button type="button" class="btn btn-sm btn-link text-decoration-none p-0" style="font-size: 0.8rem;"><i class="far fa-plus-square me-1"></i>Add</button>
+                    <button type="button" class="btn btn-add-outline"><i class="fas fa-plus-circle"></i>Add</button>
                 </div>
                 <select name="pickup_location_ui" class="form-select mb-3">
                     <option value="">Select location</option>
@@ -2045,7 +2068,7 @@
                     <div class="col-md-6">
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <label class="form-label small fw-bold text-muted text-uppercase mb-0">Pickup Contact</label>
-                            <button type="button" class="btn btn-sm btn-link text-decoration-none p-0" style="font-size: 0.8rem;"><i class="far fa-plus-square me-1"></i>Add</button>
+                            <button type="button" class="btn btn-add-outline"><i class="fas fa-plus-circle"></i>Add</button>
                         </div>
                         <select name="pickup_contact_ui" class="form-select">
                             <option value="">Select a contact</option>
@@ -2060,10 +2083,10 @@
                     </div>
                 </div>
 
-                <div class="row gx-5 gy-3 align-items-end">
-                    <div class="col-md-5">
+                <div class="row g-3">
+                    <div class="col-md-7">
                         <label class="form-label small fw-bold text-muted text-uppercase mb-1">Pickup Appointment</label>
-                        <div class="d-flex align-items-center gap-3 mt-1">
+                        <div class="d-flex align-items-center gap-2 mt-1">
                             <div>
                                 <input type="radio" class="btn-check" name="pickup_appointment_ui" id="edit_pickup_fcfs" value="fcfs" {% if shipment.pickup_appointment_type == "fcfs" %}checked{% endif %}>
                                 <label class="btn ui-chip rounded-pill" for="edit_pickup_fcfs">FCFS</label>
@@ -2074,7 +2097,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-7">
+                    <div class="col-md-5">
                         <label class="form-label small fw-bold text-muted text-uppercase mb-1">Pickup Date</label>
                         <input type="date" name="pickup_date" class="form-control" value="{{ shipment.pickup_date|date:'Y-m-d' }}">
                     </div>
@@ -2087,7 +2110,7 @@
             <div class="mb-4">
                 <div class="d-flex justify-content-between align-items-center mb-1">
                     <label class="form-label small fw-bold text-muted text-uppercase mb-0">Destination Location<span class="text-danger">*</span></label>
-                    <button type="button" class="btn btn-sm btn-link text-decoration-none p-0" style="font-size: 0.8rem;"><i class="far fa-plus-square me-1"></i>Add</button>
+                    <button type="button" class="btn btn-add-outline"><i class="fas fa-plus-circle"></i>Add</button>
                 </div>
                 <select name="destination_location_ui" class="form-select mb-3">
                     <option value="">Select location</option>
@@ -2107,7 +2130,7 @@
                     <div class="col-md-6">
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <label class="form-label small fw-bold text-muted text-uppercase mb-0">Delivery Contact</label>
-                            <button type="button" class="btn btn-sm btn-link text-decoration-none p-0" style="font-size: 0.8rem;"><i class="far fa-plus-square me-1"></i>Add</button>
+                            <button type="button" class="btn btn-add-outline"><i class="fas fa-plus-circle"></i>Add</button>
                         </div>
                         <select name="delivery_contact_ui" class="form-select">
                             <option value="">Select a contact</option>
@@ -2122,10 +2145,10 @@
                     </div>
                 </div>
 
-                <div class="row gx-5 gy-3 align-items-end">
-                    <div class="col-md-5">
+                <div class="row g-3">
+                    <div class="col-md-7">
                         <label class="form-label small fw-bold text-muted text-uppercase mb-1">Delivery Appointment</label>
-                        <div class="d-flex align-items-center gap-3 mt-1">
+                        <div class="d-flex align-items-center gap-2 mt-1">
                             <div>
                                 <input type="radio" class="btn-check" name="delivery_appointment_ui" id="edit_delivery_fcfs" value="fcfs" {% if shipment.delivery_appointment_type == "fcfs" %}checked{% endif %}>
                                 <label class="btn ui-chip rounded-pill" for="edit_delivery_fcfs">FCFS</label>
@@ -2136,7 +2159,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-7">
+                    <div class="col-md-5">
                         <label class="form-label small fw-bold text-muted text-uppercase mb-1">Delivery Date</label>
                         <input type="date" name="estimated_delivery_date" class="form-control" value="{{ shipment.estimated_delivery_date|date:'Y-m-d' }}">
                     </div>
