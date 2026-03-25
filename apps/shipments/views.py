@@ -397,6 +397,7 @@ def shipment_detail(request, pk):
         'containers': containers,
         'invoices': invoices,
         'users': CustomUser.objects.filter(tenant=request.user.tenant, is_active=True).order_by('first_name'),
+        'companies': Company.objects.all().order_by('name'),
         'map_data': json.dumps(map_data),
         'next_invoice_number': Invoice.generate_invoice_number(shipment) if hasattr(Invoice, 'generate_invoice_number') else "Generating...",
         'today': timezone.now().date(),

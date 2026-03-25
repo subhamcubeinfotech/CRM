@@ -287,6 +287,72 @@
         box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }
 
+    /* Finance Tab Styles */
+    .finance-summary-table {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .finance-summary-table tr td {
+        padding: 0.85rem 1rem;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 0.95rem;
+    }
+    .finance-summary-table tr:last-child td {
+        border-bottom: none;
+    }
+    .finance-summary-table .summary-label {
+        color: #64748b;
+    }
+    .finance-summary-table .summary-value {
+        font-weight: 500;
+        text-align: right;
+    }
+    .finance-summary-table tr.highlight-blue {
+        color: #0d6efd;
+    }
+    .finance-summary-table tr.highlight-bold {
+        font-weight: 700;
+    }
+    .finance-summary-table tr.highlight-bold .summary-label {
+        color: #1e293b;
+        font-size: 1rem;
+    }
+    .finance-summary-table tr.highlight-bold .summary-value {
+        color: #1e293b;
+        font-size: 1rem;
+    }
+
+    .ledger-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+    .ledger-table thead th {
+        border-top: none;
+        border-bottom: 1px solid #f1f5f9;
+        color: #64748b;
+        font-weight: 600;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 0.75rem 1rem;
+    }
+    .ledger-table tbody td {
+        padding: 1rem;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 0.9rem;
+    }
+    .ledger-amount-pos {
+        color: #1a73e8;
+        font-weight: 600;
+    }
+    .ledger-amount-neg {
+        color: #64748b;
+    }
+
     .document-list-title {
         font-size: 0.95rem;
         font-weight: 600;
@@ -814,43 +880,71 @@
 
                 <!-- Finance Tab -->
                 <div class="tab-pane fade" id="finance">
-                    <div class="card border-0 shadow-sm" style="border-radius:14px;">
-                        <div class="card-body">
-                            <h5 class="fw-bold mb-3">Financial Details</h5>
-                            <table class="table table-sm">
+                    <div class="row g-5">
+                        <!-- Summary Column -->
+                        <div class="col-md-4">
+                            <h5 class="fw-bold mb-3">Summary</h5>
+                            <table class="table finance-summary-table mb-0">
                                 <tr>
-                                    <td class="text-muted">Quoted Amount</td>
-                                    <td class="text-end fw-semibold">${{ shipment.quoted_amount|floatformat:2 }}</td>
+                                    <td class="summary-label">Total Revenue</td>
+                                    <td class="summary-value">${{ shipment.revenue|floatformat:2 }}</td>
                                 </tr>
                                 <tr>
-                                    <td class="text-muted">Cost</td>
-                                    <td class="text-end fw-semibold">${{ shipment.cost|floatformat:2 }}</td>
+                                    <td class="summary-label">Total Cost</td>
+                                    <td class="summary-value">${{ shipment.cost|floatformat:2 }}</td>
+                                </tr>
+                                <tr class="highlight-bold">
+                                    <td class="summary-label">Gross Profit</td>
+                                    <td class="summary-value">${{ shipment.gross_profit|floatformat:2 }} / {{ shipment.profit_margin|floatformat:2 }}%</td>
                                 </tr>
                                 <tr>
-                                    <td class="text-muted">Revenue</td>
-                                    <td class="text-end fw-semibold">${{ shipment.revenue|floatformat:2 }}</td>
+                                    <td class="summary-label">Commissions</td>
+                                    <td class="summary-value">$0.00</td>
                                 </tr>
-                                <tr class="table-success">
-                                    <td class="fw-bold">Gross Profit</td>
-                                    <td class="text-end fw-bold text-success">${{ shipment.gross_profit|floatformat:2 }}
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class="text-muted">Profit Margin</td>
-                                    <td class="text-end fw-semibold text-success">{{ shipment.profit_margin|floatformat:1 }}%</td>
+                                <tr class="highlight-bold" style="border-top: 2px solid #e2e8f0;">
+                                    <td class="summary-label">Net Profit</td>
+                                    <td class="summary-value">${{ shipment.gross_profit|floatformat:2 }}</td>
                                 </tr>
                             </table>
-                            {% if invoices %}
-                            <h6 class="fw-bold mt-4 mb-2">Linked Invoices</h6>
-                            {% for inv in invoices %}
-                            <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
-                                <a href="{% url 'invoicing:invoice_detail' inv.pk %}" class="fw-semibold text-primary text-decoration-none">
-                                    {{ inv.invoice_number }}
-                                </a>
-                                <span class="badge bg-{{ inv.status }}">${{ inv.total|floatformat:2 }}</span>
+                        </div>
+
+                        <!-- Ledger Column -->
+                        <div class="col-md-8">
+                            <div class="ledger-header">
+                                <h5 class="fw-bold mb-0">Ledger</h5>
+                                <button class="btn btn-sm btn-outline-primary px-3 fw-bold" style="border-radius: 8px;" 
+                                        data-bs-toggle="offcanvas" data-bs-target="#ledgerDrawer">Add Item</button>
                             </div>
-                            {% endfor %}
-                            {% endif %}
+                            <div class="table-responsive">
+                                <table class="table ledger-table mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Company</th>
+                                            <th>Amount</th>
+                                            <th>Description</th>
+                                            <th class="text-end">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="ledger-table-body">
+                                        <!-- Revenue Entry -->
+                                        <tr>
+                                            <td class="fw-semibold text-dark">{{ shipment.customer.name }}</td>
+                                            <td class="ledger-amount-pos">${{ shipment.revenue|floatformat:2 }}</td>
+                                            <td class="text-muted">Material Sale</td>
+                                            <td class="text-end"></td>
+                                        </tr>
+                                        <!-- Cost Entry -->
+                                        {% if shipment.carrier %}
+                                        <tr>
+                                            <td class="fw-semibold text-dark">{{ shipment.carrier.name }}</td>
+                                            <td class="ledger-amount-neg">(${{ shipment.cost|floatformat:2 }})</td>
+                                            <td class="text-muted">Material Cost</td>
+                                            <td class="text-end"></td>
+                                        </tr>
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1800,6 +1894,84 @@
             window.location.href = downloadUrl;
         }, 1000);
         {% endif %}
+
+        // Live Ledger Addition
+        const ledgerForm = document.getElementById('ledger-form');
+        if (ledgerForm) {
+            ledgerForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const companySelect = this.querySelector('select[name="company"]');
+                const companyName = companySelect.options[companySelect.selectedIndex].text.split(' (')[0];
+                const amount = parseFloat(this.querySelector('input[name="amount"]').value).toFixed(2);
+                const description = this.querySelector('input[name="description"]').value;
+                
+                if (!companyName || isNaN(amount) || !description) return;
+
+                const tbody = document.getElementById('ledger-table-body');
+                const newRow = document.createElement('tr');
+                newRow.innerHTML = `
+                    <td class="fw-semibold text-dark">${companyName}</td>
+                    <td class="ledger-amount-pos">$${amount}</td>
+                    <td class="text-muted">${description}</td>
+                    <td class="text-end"></td>
+                `;
+                
+                tbody.appendChild(newRow);
+
+                // Close offcanvas
+                const offcanvasEl = this.closest('.offcanvas');
+                const bsOffcanvas = bootstrap.Offcanvas.getInstance(offcanvasEl);
+                if (bsOffcanvas) bsOffcanvas.hide();
+
+                // Reset form
+                this.reset();
+            });
+        }
     });
 </script>
+
+<!-- Ledger Item Drawer (Offcanvas) -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="ledgerDrawer" aria-labelledby="ledgerDrawerLabel"
+    style="width: 500px; border-left: none; box-shadow: -5px 0 25px rgba(0,0,0,0.1);">
+    <div class="offcanvas-header border-bottom px-4">
+        <h5 class="offcanvas-title fw-bold" id="ledgerDrawerLabel">Add Ledger Item</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body px-4 py-4">
+        <form id="ledger-form">
+            {% csrf_token %}
+            <div class="mb-4">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-1">Company<span class="text-danger">*</span></label>
+                <select name="company" class="form-select" required>
+                    <option value="">Select company...</option>
+                    {% for company in companies %}
+                    <option value="{{ company.pk }}" 
+                        {% if company.pk == shipment.customer_id %}selected{% endif %}>
+                        {{ company.name }} ({{ company.get_company_type_display }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-1">Amount<span class="text-danger">*</span></label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light text-muted fw-bold">$</span>
+                    <input type="number" step="0.01" name="amount" class="form-control" placeholder="Type in the amount" required style="border-left:none;">
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-1">Description<span class="text-danger">*</span></label>
+                <input type="text" name="description" class="form-control" placeholder="Type in item name" required>
+            </div>
+
+            <div class="d-grid mt-5">
+                <button type="submit" class="btn btn-primary fw-bold py-2 shadow-sm" style="border-radius:10px;">Add</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 {% endblock %}
