@@ -309,9 +309,15 @@
                     <!-- Shipments Section -->
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h4 class="fw-bold mb-0">Shipments</h4>
+                        {% if shipments %}
                         <button type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasAddShipment"
                             class="btn btn-outline-primary btn-sm px-3 rounded-3" style="border-width: 2px;">Add
                             Shipment</button>
+                        {% else %}
+                        <a href="{% url 'shipments:shipment_create' %}?order_id={{ order.pk }}&next={{ request.path }}"
+                            class="btn btn-outline-primary btn-sm px-3 rounded-3" style="border-width: 2px; text-decoration: none; display: inline-flex; align-items: center;">Add
+                            Shipment</a>
+                        {% endif %}
                     </div>
                     <div class="card border-0 bg-white mb-4" style="border-radius: 12px; overflow: hidden;">
                         <div class="table-responsive">
@@ -1042,6 +1048,18 @@
                     </div>
                     <select name="pickup_location_ui" id="shipment-pickup-location-select" class="form-select rounded-3" required>
                         <option value="">Select a Location</option>
+                        {% if order.supplier and order.supplier.full_address %}
+                        <option value="temp_addr_{{ order.supplier.full_address }}" 
+                            {% if not order.source_location %}selected{% endif %}
+                            data-company-id="{{ order.supplier.id }}"
+                            data-address="{{ order.supplier.address_line1 }}"
+                            data-city="{{ order.supplier.city }}"
+                            data-state="{{ order.supplier.state }}"
+                            data-postal-code="{{ order.supplier.postal_code }}"
+                            data-country="{{ order.supplier.country|default:'USA' }}">
+                            {{ order.supplier.full_address }}
+                        </option>
+                        {% endif %}
                         {% for warehouse in warehouses %}
                         <option value="{{ warehouse.id }}" 
                             {% if order.source_location_id == warehouse.id %}selected{% endif %}
@@ -1102,6 +1120,18 @@
                     </div>
                     <select name="destination_location_ui" id="shipment-destination-location-select" class="form-select rounded-3" required>
                         <option value="">Select a Location</option>
+                        {% if order.receiver and order.receiver.full_address %}
+                        <option value="temp_addr_{{ order.receiver.full_address }}" 
+                            {% if not order.destination_location %}selected{% endif %}
+                            data-company-id="{{ order.receiver.id }}"
+                            data-address="{{ order.receiver.address_line1 }}"
+                            data-city="{{ order.receiver.city }}"
+                            data-state="{{ order.receiver.state }}"
+                            data-postal-code="{{ order.receiver.postal_code }}"
+                            data-country="{{ order.receiver.country|default:'USA' }}">
+                            {{ order.receiver.full_address }}
+                        </option>
+                        {% endif %}
                         {% for warehouse in warehouses %}
                         <option value="{{ warehouse.id }}"
                             {% if order.destination_location_id == warehouse.id %}selected{% endif %}

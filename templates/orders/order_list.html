@@ -29,57 +29,77 @@
         justify-content: center;
         font-size: 1.25rem;
     }
-    .order-table-card {
-        border: none;
-        border-radius: 20px;
-        background: var(--glass-bg);
-        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+    /* Premium Table Styling synchronized with Shipments */
+    .order-table {
+        border-collapse: separate;
+        border-spacing: 0 8px;
+        background-color: transparent !important;
+        min-width: 1800px;
     }
-    .table thead th {
-        background-color: #f8f9fa;
-        border-bottom: 2px solid #edf2f9;
-        color: #495057;
-        font-weight: 700;
+
+    .order-table thead th {
+        border: none;
+        color: #64748b;
+        font-weight: 600;
         text-transform: uppercase;
         font-size: 0.75rem;
-        letter-spacing: .08em;
-        padding: 1.25rem 1rem;
+        letter-spacing: 0.025em;
+        padding: 12px 16px;
+        white-space: nowrap;
     }
-    .table tbody td {
-        padding: 1.25rem 1rem;
+
+    .order-table tbody tr {
+        background-color: #ffffff;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .order-table tbody tr:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        background-color: #f8fafc;
+    }
+
+    .order-table td {
+        padding: 16px;
         vertical-align: middle;
-        border-bottom: 1px solid #edf2f9;
-        color: #212529;
-        font-size: 0.875rem;
+        border: none;
+        font-size: 0.95rem;
+        white-space: nowrap;
     }
-    .table tr:hover {
-        background-color: #f9fbfd;
+
+    .order-table td:first-child {
+        border-radius: 8px 0 0 8px;
     }
-    .status-badge-premium {
-        padding: 0.25rem 0.75rem;
-        font-weight: 600;
-        border-radius: 6px;
-        font-size: 0.7rem;
-        border: 1px solid transparent;
-        display: inline-block;
+
+    .order-table td:last-child {
+        border-radius: 0 8px 8px 0;
     }
-    .badge-open-premium {
-        background-color: #e6f7ff;
-        color: #096dd9;
-        border-color: #91d5ff;
-    }
-    .badge-complete-premium {
-        background-color: #f6ffed;
-        color: #389e0d;
-        border-color: #b7eb8f;
-    }
+
     .id-link {
-        color: #4e73df;
+        color: #2563eb;
         font-weight: 700;
         text-decoration: none;
+        font-size: 1.05rem;
     }
+
     .id-link:hover {
         text-decoration: underline;
+    }
+
+    .location-text {
+        color: #334155;
+        font-weight: 500;
+    }
+
+    .sub-text {
+        font-size: 0.75rem;
+        color: #94a3b8;
+    }
+
+    .date-text {
+        color: #475569;
     }
 
     .search-group .form-control {
@@ -110,6 +130,31 @@
         box-shadow: inset 0 -1px 0 #edf2f9;
         white-space: nowrap;
     }
+
+    /* Status Pill Synchronization */
+    .status-pill {
+        padding: 4.5px 12px;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 0.72rem;
+        display: inline-block;
+        min-width: 85px;
+        text-align: center;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+
+    .status-open {
+        background-color: #e0f2f1;
+        color: #00796b;
+        border: 1.5px solid #b2dfdb;
+    }
+
+    .status-complete {
+        background-color: #e8f5e9;
+        color: #2e7d32;
+        border: 1.5px solid #c8e6c9;
+    }
 </style>
 
 <div class="container-fluid py-4 px-4">
@@ -121,8 +166,8 @@
                     <li class="breadcrumb-item active small" aria-current="page">Orders</li>
                 </ol>
             </nav>
-            <h1 class="h2 mb-0 fw-bold text-dark">Order Portfolio</h1>
-            <p class="text-muted mb-0">Monitor your active supply chain and financial performance at a glance.</p>
+            <h1 class="h3 mb-1 fw-bold text-dark">Order Portfolio</h1>
+            <p class="text-muted small mb-0">Monitor your active supply chain and financial performance at a glance.</p>
         </div>
         <div class="d-flex gap-2">
             <button class="btn btn-outline-primary btn-lg rounded-3 px-4">
@@ -216,10 +261,9 @@
     </div>
 
     <!-- Redesigned Orders Board -->
-    <div class="card order-table-card border-0 shadow-sm">
-        <div class="table-responsive rounded-3">
-            <table class="table table-hover align-middle mb-0" id="ordersTable" style="min-width: 1800px;">
-                <thead class="bg-light sticky-top">
+    <div class="table-responsive bg-transparent rounded-3 mt-1">
+        <table class="table order-table align-middle mb-0" id="ordersTable">
+                <thead class="small text-muted" style="background-color: #f8f9fa;">
                     <tr>
                         <th class="ps-4">ID</th>
                         <th>Status</th>
@@ -245,46 +289,46 @@
                             </a>
                         </td>
                         <td>
-                            <span class="status-badge-premium badge-{% if order.simple_status_label == 'Open' %}open{% else %}complete{% endif %}-premium">
+                            <span class="status-pill {% if order.simple_status_label == 'Open' %}status-open{% else %}status-complete{% endif %}">
                                 {{ order.simple_status_label }}
                             </span>
                         </td>
-                        <td class="text-muted small">
+                        <td class="sub-text">
                             {{ order.po_number|default:"-" }}
                         </td>
-                        <td class="text-muted small">
+                        <td class="sub-text">
                             {{ order.so_number|default:"-" }}
                         </td>
-                        <td class="text-muted small">
+                        <td class="date-text">
                             {{ order.created_at|date:"m/d/Y" }}
                         </td>
-                        <td class="fw-medium small">
-                            {{ order.supplier.name|truncatechars:20 }}
+                        <td>
+                            <div class="location-text">{{ order.supplier.name|truncatechars:20 }}</div>
                         </td>
-                        <td class="text-muted small">
+                        <td class="sub-text">
                             {{ order.supplier.city }}, {{ order.supplier.state }}
                         </td>
-                        <td class="fw-medium small">
-                            {{ order.receiver.name|truncatechars:20 }}
+                        <td>
+                            <div class="location-text">{{ order.receiver.name|truncatechars:20 }}</div>
                         </td>
-                        <td class="text-muted small">
+                        <td class="sub-text">
                             {{ order.receiver.city }}, {{ order.receiver.state }}
                         </td>
                         <td class="text-center">
-                            <div class="small fw-bold mb-1">{{ order.weight_progress_percentage }}%</div>
+                            <div class="fw-bold mb-1">{{ order.weight_progress_percentage }}%</div>
                             <div class="progress rounded-pill" style="height: 4px; background-color: #f1f3f9; width: 40px; margin: 0 auto;">
                                 <div class="progress-bar rounded-pill {% if order.weight_progress_percentage > 90 %}bg-success{% elif order.weight_progress_percentage > 50 %}bg-info{% else %}bg-primary{% endif %}" 
                                      role="progressbar" style="width: {{ order.weight_progress_percentage }}%"></div>
                             </div>
                         </td>
-                        <td class="text-end fw-bold small">
+                        <td class="text-end fw-bold text-dark">
                             ${{ order.total_revenue|floatformat:2|intcomma }}
                         </td>
-                        <td class="text-end fw-bold small">
+                        <td class="text-end fw-bold text-dark">
                             ${{ order.total_cost|floatformat:2|intcomma }}
                         </td>
                         <td class="text-end pe-4">
-                            <div class="fw-bold small {% if order.gross_profit > 0 %}text-success{% else %}text-danger{% endif %}">
+                            <div class="fw-bold {% if order.gross_profit > 0 %}text-success{% else %}text-danger{% endif %}">
                                 ${{ order.gross_profit|floatformat:2|intcomma }}
                             </div>
                         </td>

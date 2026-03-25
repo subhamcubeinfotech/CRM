@@ -12,6 +12,7 @@ urlpatterns = [
     path('create/', views.shipment_create, name='shipment_create'),
     path('<int:pk>/', views.shipment_detail, name='shipment_detail'),
     path('<int:pk>/edit/', views.shipment_edit, name='shipment_edit'),
+    path('<int:pk>/copy/', views.shipment_copy, name='shipment_copy'),
     path('<int:pk>/delete/', views.shipment_delete, name='shipment_delete'),
     path('<int:pk>/tracking/mobile/', views.shipment_tracking_mobile, name='shipment_tracking_mobile'),
     path('<int:pk>/tracking/update/', views.shipment_tracking_update, name='shipment_tracking_update'),

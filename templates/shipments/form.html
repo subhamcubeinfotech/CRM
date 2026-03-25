@@ -185,13 +185,13 @@
                                     <option value="{{ current_order.pk }}"
                                         data-supplier-id="{{ current_order.supplier_id }}"
                                         data-supplier-address="{{ current_order.supplier.full_address }}"
-                                        data-source-location-id="{{ current_order.source_location_id|default:'' }}"
-                                        data-source-location-label="{% if current_order.source_location %}{{ current_order.source_location.display_name }}{% else %}{{ current_order.supplier.full_address }}{% endif %}"
-                                        data-source-address="{% if current_order.source_location %}{{ current_order.source_location.address }}{% else %}{{ current_order.supplier.address_line1 }}{% endif %}"
-                                        data-source-city="{% if current_order.source_location %}{{ current_order.source_location.city }}{% else %}{{ current_order.supplier.city }}{% endif %}"
-                                        data-source-state="{% if current_order.source_location %}{{ current_order.source_location.state }}{% else %}{{ current_order.supplier.state }}{% endif %}"
-                                        data-source-postal-code="{% if current_order.source_location %}{{ current_order.source_location.postal_code }}{% else %}{{ current_order.supplier.postal_code }}{% endif %}"
-                                        data-source-country="{% if current_order.source_location %}{{ current_order.source_location.country }}{% else %}{{ current_order.supplier.country|default:'USA' }}{% endif %}"
+                                        data-source-location-id=""
+                                        data-source-location-label="{{ current_order.supplier.full_address }}"
+                                        data-source-address="{{ current_order.supplier.address_line1 }}"
+                                        data-source-city="{{ current_order.supplier.city }}"
+                                        data-source-state="{{ current_order.supplier.state }}"
+                                        data-source-postal-code="{{ current_order.supplier.postal_code }}"
+                                        data-source-country="{{ current_order.supplier.country|default:'USA' }}"
                                         data-destination-location-id="{{ current_order.destination_location_id|default:'' }}"
                                         data-destination-location-label="{% if current_order.destination_location %}{{ current_order.destination_location.display_name }}{% else %}{{ current_order.receiver.full_address }}{% endif %}"
                                         data-destination-address="{% if current_order.destination_location %}{{ current_order.destination_location.address }}{% else %}{{ current_order.receiver.address_line1 }}{% endif %}"
@@ -524,6 +524,42 @@
                                         </div>
 
                                         <div class="col-md-6">
+                                            <label class="form-label">Gross Weight</label>
+                                            <div class="row g-0">
+                                                <div class="col-8">
+                                                    <input type="number" name="items_ui[{{ forloop.counter0 }}][gross_weight]" class="form-control rounded-end-0" placeholder="Gross Wt." step="0.01">
+                                                </div>
+                                                <div class="col-4">
+                                                    <select name="items_ui[{{ forloop.counter0 }}][gross_unit]" class="form-select rounded-start-0 border-start-0">
+                                                        <option value="lbs" selected>lbs</option>
+                                                        <option value="kgs">kgs</option>
+                                                        <option value="mt">MT</option>
+                                                        <option value="st">ST</option>
+                                                        <option value="pcs">pcs</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <label class="form-label">Tare Weight</label>
+                                            <div class="row g-0">
+                                                <div class="col-8">
+                                                    <input type="number" name="items_ui[{{ forloop.counter0 }}][tare_weight]" class="form-control rounded-end-0" placeholder="Tare Wt." step="0.01">
+                                                </div>
+                                                <div class="col-4">
+                                                    <select name="items_ui[{{ forloop.counter0 }}][tare_unit]" class="form-select rounded-start-0 border-start-0">
+                                                        <option value="lbs" selected>lbs</option>
+                                                        <option value="kgs">kgs</option>
+                                                        <option value="mt">MT</option>
+                                                        <option value="st">ST</option>
+                                                        <option value="pcs">pcs</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-6">
                                             <label class="form-label">Packaging</label>
                                             <select name="items_ui[{{ forloop.counter0 }}][packaging]" class="form-select">
                                                 <option value="">Select packaging type</option>
@@ -626,6 +662,42 @@
                                         </div>
 
                                         <div class="col-md-6">
+                                            <label class="form-label">Gross Weight</label>
+                                            <div class="row g-0">
+                                                <div class="col-8">
+                                                    <input type="number" name="items_ui[{{ forloop.counter0 }}][gross_weight]" class="form-control rounded-end-0" placeholder="Gross Wt." step="0.01" value="{{ item.gross_weight|floatformat:2 }}">
+                                                </div>
+                                                <div class="col-4">
+                                                    <select name="items_ui[{{ forloop.counter0 }}][gross_unit]" class="form-select rounded-start-0 border-start-0">
+                                                        <option value="lbs" {% if item.gross_weight_unit == 'lbs' or not item.gross_weight_unit %}selected{% endif %}>lbs</option>
+                                                        <option value="kgs" {% if item.gross_weight_unit == 'kgs' %}selected{% endif %}>kgs</option>
+                                                        <option value="mt" {% if item.gross_weight_unit == 'mt' or item.gross_weight_unit == 'MT' %}selected{% endif %}>MT</option>
+                                                        <option value="st" {% if item.gross_weight_unit == 'st' or item.gross_weight_unit == 'ST' %}selected{% endif %}>ST</option>
+                                                        <option value="pcs" {% if item.gross_weight_unit == 'pcs' %}selected{% endif %}>pcs</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <label class="form-label">Tare Weight</label>
+                                            <div class="row g-0">
+                                                <div class="col-8">
+                                                    <input type="number" name="items_ui[{{ forloop.counter0 }}][tare_weight]" class="form-control rounded-end-0" placeholder="Tare Wt." step="0.01" value="{{ item.tare_weight|floatformat:2 }}">
+                                                </div>
+                                                <div class="col-4">
+                                                    <select name="items_ui[{{ forloop.counter0 }}][tare_unit]" class="form-select rounded-start-0 border-start-0">
+                                                        <option value="lbs" {% if item.tare_weight_unit == 'lbs' or not item.tare_weight_unit %}selected{% endif %}>lbs</option>
+                                                        <option value="kgs" {% if item.tare_weight_unit == 'kgs' %}selected{% endif %}>kgs</option>
+                                                        <option value="mt" {% if item.tare_weight_unit == 'mt' or item.tare_weight_unit == 'MT' %}selected{% endif %}>MT</option>
+                                                        <option value="st" {% if item.tare_weight_unit == 'st' or item.tare_weight_unit == 'ST' %}selected{% endif %}>ST</option>
+                                                        <option value="pcs" {% if item.tare_weight_unit == 'pcs' %}selected{% endif %}>pcs</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-6">
                                             <label class="form-label">Packaging</label>
                                             <select name="items_ui[{{ forloop.counter0 }}][packaging]" class="form-select">
                                                 <option value="">Select packaging type</option>
@@ -711,6 +783,42 @@
                                             </div>
                                             <div class="col-4">
                                                 <select name="items_ui[0][unit]" class="form-select rounded-start-0 border-start-0 weight-unit-select">
+                                                    <option value="lbs" selected>lbs</option>
+                                                    <option value="kgs">kgs</option>
+                                                    <option value="mt">MT</option>
+                                                    <option value="st">ST</option>
+                                                    <option value="pcs">pcs</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label">Gross Weight</label>
+                                        <div class="row g-0">
+                                            <div class="col-8">
+                                                <input type="number" name="items_ui[0][gross_weight]" class="form-control rounded-end-0" placeholder="Gross Wt." step="0.01">
+                                            </div>
+                                            <div class="col-4">
+                                                <select name="items_ui[0][gross_unit]" class="form-select rounded-start-0 border-start-0">
+                                                    <option value="lbs" selected>lbs</option>
+                                                    <option value="kgs">kgs</option>
+                                                    <option value="mt">MT</option>
+                                                    <option value="st">ST</option>
+                                                    <option value="pcs">pcs</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label">Tare Weight</label>
+                                        <div class="row g-0">
+                                            <div class="col-8">
+                                                <input type="number" name="items_ui[0][tare_weight]" class="form-control rounded-end-0" placeholder="Tare Wt." step="0.01">
+                                            </div>
+                                            <div class="col-4">
+                                                <select name="items_ui[0][tare_unit]" class="form-select rounded-start-0 border-start-0">
                                                     <option value="lbs" selected>lbs</option>
                                                     <option value="kgs">kgs</option>
                                                     <option value="mt">MT</option>
@@ -1030,6 +1138,7 @@
 
 {% block extra_js %}
 <script>
+(function() {
     function assignMyCompany(selectId, companyId, companyName, companyAddress) {
         const select = document.getElementById(selectId);
         if (!select || !companyId) return;
@@ -1730,16 +1839,54 @@
             if (idx > 0) wireRemove(container);
         });
 
-        // Sync weight unit to price unit
+        // On page load: sync all units to match Weight/Qty unit for each item
+        function syncUnitsInItem(container) {
+            const weightUnitSelect = container.querySelector('.weight-unit-select');
+            if (!weightUnitSelect) return;
+            const selectedUnit = weightUnitSelect.value;
+
+            const priceUnitSelect = container.querySelector('.price-unit-select');
+            if (priceUnitSelect) priceUnitSelect.value = 'per ' + selectedUnit;
+
+            const grossUnitSelect = container.querySelector('select[name*="[gross_unit]"]');
+            if (grossUnitSelect) grossUnitSelect.value = selectedUnit;
+
+            const tareUnitSelect = container.querySelector('select[name*="[tare_unit]"]');
+            if (tareUnitSelect) tareUnitSelect.value = selectedUnit;
+        }
+
+        root.querySelectorAll('.shipment-item').forEach(function(container) {
+            syncUnitsInItem(container);
+        });
+
+        // Sync all weight units together (Weight/Qty, Gross, Tare) and price unit
         root.addEventListener('change', function(e) {
-            if (e.target.classList.contains('weight-unit-select')) {
+            const isWeightUnit = e.target.classList.contains('weight-unit-select');
+            const isGrossUnit = e.target.name && e.target.name.includes('[gross_unit]');
+            const isTareUnit = e.target.name && e.target.name.includes('[tare_unit]');
+
+            if (isWeightUnit || isGrossUnit || isTareUnit) {
                 const itemContainer = e.target.closest('.shipment-item');
+                const selectedUnit = e.target.value;
+
+                // Sync Weight/Qty unit
+                const weightUnitSelect = itemContainer.querySelector('.weight-unit-select');
+                if (weightUnitSelect) weightUnitSelect.value = selectedUnit;
+
+                // Sync price unit
                 const priceUnitSelect = itemContainer.querySelector('.price-unit-select');
-                if (priceUnitSelect) {
-                    priceUnitSelect.value = 'per ' + e.target.value;
-                }
+                if (priceUnitSelect) priceUnitSelect.value = 'per ' + selectedUnit;
+
+                // Sync gross weight unit
+                const grossUnitSelect = itemContainer.querySelector('select[name*="[gross_unit]"]');
+                if (grossUnitSelect) grossUnitSelect.value = selectedUnit;
+
+                // Sync tare weight unit
+                const tareUnitSelect = itemContainer.querySelector('select[name*="[tare_unit]"]');
+                if (tareUnitSelect) tareUnitSelect.value = selectedUnit;
             }
         });
     })();
+})();
 </script>
 {% endblock %}
