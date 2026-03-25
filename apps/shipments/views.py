@@ -804,16 +804,24 @@ def shipment_edit(request, pk):
 
                 # Handle locations
                 pickup_loc_id = request.POST.get('pickup_location_ui')
-                if pickup_loc_id and not pickup_loc_id.startswith('temp_'):
-                    shipment.pickup_location_id = pickup_loc_id
+                if pickup_loc_id:
+                    if pickup_loc_id.startswith('temp_addr_'):
+                        shipment.pickup_location_id = None
+                        shipment.origin_address = pickup_loc_id.replace('temp_addr_', '')
+                    else:
+                        shipment.pickup_location_id = pickup_loc_id
                 else:
-                    shipment.pickup_location = None
+                    shipment.pickup_location_id = None
                     
                 dest_loc_id = request.POST.get('destination_location_ui')
-                if dest_loc_id and not dest_loc_id.startswith('temp_'):
-                    shipment.destination_location_id = dest_loc_id
+                if dest_loc_id:
+                    if dest_loc_id.startswith('temp_addr_'):
+                        shipment.destination_location_id = None
+                        shipment.destination_address = dest_loc_id.replace('temp_addr_', '')
+                    else:
+                        shipment.destination_location_id = dest_loc_id
                 else:
-                    shipment.destination_location = None
+                    shipment.destination_location_id = None
                 
                 # Origin
                 shipment.origin_address = request.POST.get('origin_address', '')

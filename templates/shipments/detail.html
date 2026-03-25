@@ -140,22 +140,29 @@
 
     /* UI Chips for Radio Buttons */
     .ui-chip {
-        border: 1.5px solid #e2e8f0;
-        background: #fff;
-        color: #64748b;
-        font-size: 0.85rem;
-        font-weight: 600;
+        border: 2px solid #64748b !important;
+        background: #fff !important;
+        color: #1e293b !important;
+        font-size: 0.8rem !important;
+        font-weight: 700 !important;
         transition: all 0.2s;
         cursor: pointer;
+        padding: 6px 20px !important;
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+        min-width: 80px;
+        height: 38px;
     }
     .ui-chip:hover {
-        border-color: #cbd5e1;
-        background: #f8fafc;
+        border-color: #334155 !important;
+        background: #f8fafc !important;
     }
     .btn-check:checked + .ui-chip {
-        background: #e7f5ff;
-        border-color: #1c7ed6;
-        color: #1c7ed6;
+        background: #0d6efd !important;
+        border-color: #0d6efd !important;
+        color: #fff !important;
     }
 
     .progress-track {
@@ -2025,8 +2032,12 @@
                     {% for warehouse in warehouses %}
                     <option value="{{ warehouse.pk }}" {% if shipment.pickup_location_id == warehouse.pk %}selected{% endif %}>{{ warehouse.name }}</option>
                     {% endfor %}
-                    {% if not shipment.pickup_location and shipment.origin_address %}
-                    <option value="temp_addr_{{ shipment.origin_address }}" selected>{{ shipment.origin_address }}</option>
+                    {% if not shipment.pickup_location %}
+                        {% with current_addr=shipment.origin_address|default:shipment.shipper.full_address %}
+                            {% if current_addr %}
+                            <option value="temp_addr_{{ current_addr }}" selected>{{ current_addr }}</option>
+                            {% endif %}
+                        {% endwith %}
                     {% endif %}
                 </select>
 
@@ -2049,17 +2060,21 @@
                     </div>
                 </div>
 
-                <div class="row g-3 align-items-end">
-                    <div class="col-md-4">
+                <div class="row gx-5 gy-3 align-items-end">
+                    <div class="col-md-5">
                         <label class="form-label small fw-bold text-muted text-uppercase mb-1">Pickup Appointment</label>
-                        <div class="d-flex gap-2">
-                            <input type="radio" class="btn-check" name="pickup_appointment_ui" id="edit_pickup_fcfs" value="fcfs" {% if shipment.pickup_appointment_type == "fcfs" %}checked{% endif %}>
-                            <label class="btn ui-chip rounded-pill px-3 py-1" for="edit_pickup_fcfs">FCFS</label>
-                            <input type="radio" class="btn-check" name="pickup_appointment_ui" id="edit_pickup_required" value="required" {% if shipment.pickup_appointment_type == "required" %}checked{% endif %}>
-                            <label class="btn ui-chip rounded-pill px-3 py-1" for="edit_pickup_required">Required</label>
+                        <div class="d-flex align-items-center gap-3 mt-1">
+                            <div>
+                                <input type="radio" class="btn-check" name="pickup_appointment_ui" id="edit_pickup_fcfs" value="fcfs" {% if shipment.pickup_appointment_type == "fcfs" %}checked{% endif %}>
+                                <label class="btn ui-chip rounded-pill" for="edit_pickup_fcfs">FCFS</label>
+                            </div>
+                            <div>
+                                <input type="radio" class="btn-check" name="pickup_appointment_ui" id="edit_pickup_required" value="required" {% if shipment.pickup_appointment_type == "required" %}checked{% endif %}>
+                                <label class="btn ui-chip rounded-pill" for="edit_pickup_required">Required</label>
+                            </div>
                         </div>
                     </div>
-                    <div class="col-md-8">
+                    <div class="col-md-7">
                         <label class="form-label small fw-bold text-muted text-uppercase mb-1">Pickup Date</label>
                         <input type="date" name="pickup_date" class="form-control" value="{{ shipment.pickup_date|date:'Y-m-d' }}">
                     </div>
@@ -2079,8 +2094,12 @@
                     {% for warehouse in warehouses %}
                     <option value="{{ warehouse.pk }}" {% if shipment.destination_location_id == warehouse.pk %}selected{% endif %}>{{ warehouse.name }}</option>
                     {% endfor %}
-                    {% if not shipment.destination_location and shipment.destination_address %}
-                    <option value="temp_addr_{{ shipment.destination_address }}" selected>{{ shipment.destination_address }}</option>
+                    {% if not shipment.destination_location %}
+                        {% with current_dest=shipment.destination_address|default:shipment.consignee.full_address|default:shipment.order.receiver.full_address %}
+                            {% if current_dest %}
+                            <option value="temp_addr_{{ current_dest }}" selected>{{ current_dest }}</option>
+                            {% endif %}
+                        {% endwith %}
                     {% endif %}
                 </select>
 
@@ -2103,17 +2122,21 @@
                     </div>
                 </div>
 
-                <div class="row g-3 align-items-end">
-                    <div class="col-md-4">
+                <div class="row gx-5 gy-3 align-items-end">
+                    <div class="col-md-5">
                         <label class="form-label small fw-bold text-muted text-uppercase mb-1">Delivery Appointment</label>
-                        <div class="d-flex gap-2">
-                            <input type="radio" class="btn-check" name="delivery_appointment_ui" id="edit_delivery_fcfs" value="fcfs" {% if shipment.delivery_appointment_type == "fcfs" %}checked{% endif %}>
-                            <label class="btn ui-chip rounded-pill px-3 py-1" for="edit_delivery_fcfs">FCFS</label>
-                            <input type="radio" class="btn-check" name="delivery_appointment_ui" id="edit_delivery_required" value="required" {% if shipment.delivery_appointment_type == "required" %}checked{% endif %}>
-                            <label class="btn ui-chip rounded-pill px-3 py-1" for="edit_delivery_required">Required</label>
+                        <div class="d-flex align-items-center gap-3 mt-1">
+                            <div>
+                                <input type="radio" class="btn-check" name="delivery_appointment_ui" id="edit_delivery_fcfs" value="fcfs" {% if shipment.delivery_appointment_type == "fcfs" %}checked{% endif %}>
+                                <label class="btn ui-chip rounded-pill" for="edit_delivery_fcfs">FCFS</label>
+                            </div>
+                            <div>
+                                <input type="radio" class="btn-check" name="delivery_appointment_ui" id="edit_delivery_required" value="required" {% if shipment.delivery_appointment_type == "required" %}checked{% endif %}>
+                                <label class="btn ui-chip rounded-pill" for="edit_delivery_required">Required</label>
+                            </div>
                         </div>
                     </div>
-                    <div class="col-md-8">
+                    <div class="col-md-7">
                         <label class="form-label small fw-bold text-muted text-uppercase mb-1">Delivery Date</label>
                         <input type="date" name="estimated_delivery_date" class="form-control" value="{{ shipment.estimated_delivery_date|date:'Y-m-d' }}">
                     </div>
