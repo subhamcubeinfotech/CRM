@@ -149,7 +149,7 @@ def _parse_items_from_post(post_data):
             'pieces': int(pieces_val) if pieces_val else 1,
             'buy_price': float(buy_val),
             'sell_price': float(sell_val),
-            'price_unit': post_data.get(f'items_ui[{i}][price_unit]', 'per lbs'),
+            'price_unit': post_data.get(f'items_ui[{i}][buy_unit]', post_data.get(f'items_ui[{i}][price_unit]', 'per lbs')),
         }
         items.append(item)
     return items
