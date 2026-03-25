@@ -1138,6 +1138,7 @@
 
 {% block extra_js %}
 <script>
+(function() {
     function assignMyCompany(selectId, companyId, companyName, companyAddress) {
         const select = document.getElementById(selectId);
         if (!select || !companyId) return;
@@ -1886,5 +1887,6 @@
             }
         });
     })();
+})();
 </script>
 {% endblock %}
