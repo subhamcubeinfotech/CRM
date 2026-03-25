@@ -438,6 +438,14 @@ def shipment_detail(request, pk):
         'today': timezone.now().date(),
         'download_invoice_id': request.session.pop('download_invoice_id', None),
         'tracking_update_url': f"/shipments/{shipment.pk}/tracking/update/",
+        'warehouses': Warehouse.plain_objects.filter(tenant=request.user.tenant).order_by('name'),
+        'suppliers': Company.plain_objects.filter(Q(tenant=request.user.tenant) | Q(tenant__isnull=True)).order_by('name'),
+        'customers': Company.plain_objects.filter(Q(tenant=request.user.tenant) | Q(tenant__isnull=True), company_type='customer').order_by('name'),
+        'carriers': Company.plain_objects.filter(Q(tenant=request.user.tenant) | Q(tenant__isnull=True), company_type='carrier').order_by('name'),
+        'tags': Tag.plain_objects.filter(Q(tenant=request.user.tenant) | Q(tenant__isnull=True)).order_by('name'),
+        'shipping_terms': ShippingTerm.plain_objects.filter(Q(tenant=request.user.tenant) | Q(tenant__isnull=True)).order_by('name'),
+        'packaging_types': PackagingType.objects.all().order_by('name'),
+        'shipment_types': Shipment.SHIPMENT_TYPE_CHOICES,
     }
     return render(request, 'shipments/detail.html', context)
 
@@ -872,28 +880,28 @@ def shipment_edit(request, pk):
                 tag_ids = request.POST.getlist('tags_ui')
                 if tag_ids:
                     shipment.tags.set(tag_ids)
-
-                # Sync items
-                shipment.items.all().delete()
-                items_data = _parse_items_from_post(request.POST)
-                for item_data in items_data:
-                    inv_item = None
-                    if item_data['material_id'] and str(item_data['material_id']).isdigit():
-                        inv_item = InventoryItem.objects.filter(pk=item_data['material_id']).first()
-                    
-                    ShipmentItem.objects.create(
-                        shipment=shipment,
-                        inventory_item=inv_item,
-                        material_name=inv_item.product_name if inv_item else item_data['material_id'] or "Unknown Material",
-                        weight=item_data['weight'],
-                        weight_unit=item_data['weight_unit'],
-                        gross_weight=item_data['gross_weight'],
-                        gross_weight_unit=item_data['gross_weight_unit'],
-                        tare_weight=item_data['tare_weight'],
-                        tare_weight_unit=item_data['tare_weight_unit'],
-                        packaging=item_data['packaging'],
-                        is_palletized=item_data['is_palletized'],
-                        pieces=item_data['pieces'],
+                # Sync items if provided in POST
+                if 'items_ui[0][weight]' in request.POST:
+                    shipment.items.all().delete()
+                    items_data = _parse_items_from_post(request.POST)
+                    for item_data in items_data:
+                        inv_item = None
+                        if item_data['material_id'] and str(item_data['material_id']).isdigit():
+                            inv_item = InventoryItem.objects.filter(pk=item_data['material_id']).first()
+                        
+                        ShipmentItem.objects.create(
+                            shipment=shipment,
+                            inventory_item=inv_item,
+                            material_name=inv_item.product_name if inv_item else item_data['material_id'] or "Unknown Material",
+                            weight=item_data['weight'],
+                            weight_unit=item_data['weight_unit'],
+                            gross_weight=item_data['gross_weight'],
+                            gross_weight_unit=item_data['gross_weight_unit'],
+                            tare_weight=item_data['tare_weight'],
+                            tare_weight_unit=item_data['tare_weight_unit'],
+                            packaging=item_data['packaging'],
+                            is_palletized=item_data['is_palletized'],
+                            pieces=item_data['pieces'],
                         buy_price=item_data['buy_price'],
                         sell_price=item_data['sell_price'],
                         price_unit=item_data['price_unit'],

@@ -138,6 +138,26 @@
         font-size: 1.6rem;
     }
 
+    /* UI Chips for Radio Buttons */
+    .ui-chip {
+        border: 1.5px solid #e2e8f0;
+        background: #fff;
+        color: #64748b;
+        font-size: 0.85rem;
+        font-weight: 600;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+    .ui-chip:hover {
+        border-color: #cbd5e1;
+        background: #f8fafc;
+    }
+    .btn-check:checked + .ui-chip {
+        background: #e7f5ff;
+        border-color: #1c7ed6;
+        color: #1c7ed6;
+    }
+
     .progress-track {
         height: 6px;
         background: #e9ecef;
@@ -507,9 +527,9 @@
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end shadow border-0 p-2" style="border-radius:12px; min-width: 180px;">
                         <li>
-                            <a class="dropdown-item py-2 px-3 rounded-2" href="{% url 'shipments:shipment_edit' shipment.pk %}">
+                            <button class="dropdown-item py-2 px-3 rounded-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#editShipmentDrawer">
                                 <i class="fas fa-edit me-2 text-muted"></i> Edit
-                            </a>
+                            </button>
                         </li>
                         <li>
                             <a class="dropdown-item py-2 px-3 rounded-2" href="{% url 'shipments:shipment_copy' shipment.pk %}">
@@ -1983,5 +2003,176 @@
         </form>
     </div>
 </div>
+
+<!-- Edit Shipment Offcanvas -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="editShipmentDrawer" aria-labelledby="editShipmentDrawerLabel" style="width: 550px;">
+    <div class="offcanvas-header border-bottom px-4">
+        <h5 class="offcanvas-title fw-bold" id="editShipmentDrawerLabel">Edit Shipment</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body p-4">
+        <form action="{% url 'shipments:shipment_edit' shipment.pk %}" method="post">
+            {% csrf_token %}
+            
+            <!-- Pickup Section -->
+            <div class="mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <label class="form-label small fw-bold text-muted text-uppercase mb-0">Pickup Location<span class="text-danger">*</span></label>
+                    <button type="button" class="btn btn-sm btn-link text-decoration-none p-0" style="font-size: 0.8rem;"><i class="far fa-plus-square me-1"></i>Add</button>
+                </div>
+                <select name="pickup_location_ui" class="form-select mb-3">
+                    <option value="">Select location</option>
+                    {% for warehouse in warehouses %}
+                    <option value="{{ warehouse.pk }}" {% if shipment.pickup_location_id == warehouse.pk %}selected{% endif %}>{{ warehouse.name }}</option>
+                    {% endfor %}
+                    {% if not shipment.pickup_location and shipment.origin_address %}
+                    <option value="temp_addr_{{ shipment.origin_address }}" selected>{{ shipment.origin_address }}</option>
+                    {% endif %}
+                </select>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label small fw-bold text-muted text-uppercase mb-0">Pickup Contact</label>
+                            <button type="button" class="btn btn-sm btn-link text-decoration-none p-0" style="font-size: 0.8rem;"><i class="far fa-plus-square me-1"></i>Add</button>
+                        </div>
+                        <select name="pickup_contact_ui" class="form-select">
+                            <option value="">Select a contact</option>
+                            {% if shipment.pickup_contact %}
+                            <option value="{{ shipment.pickup_contact }}" selected>{{ shipment.pickup_contact }}</option>
+                            {% endif %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold text-muted text-uppercase mb-1">Pickup Number</label>
+                        <input type="text" name="pickup_number_ui" class="form-control" value="{{ shipment.pickup_number|default:'' }}">
+                    </div>
+                </div>
+
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label small fw-bold text-muted text-uppercase mb-1">Pickup Appointment</label>
+                        <div class="d-flex gap-2">
+                            <input type="radio" class="btn-check" name="pickup_appointment_ui" id="edit_pickup_fcfs" value="fcfs" {% if shipment.pickup_appointment_type == "fcfs" %}checked{% endif %}>
+                            <label class="btn ui-chip rounded-pill px-3 py-1" for="edit_pickup_fcfs">FCFS</label>
+                            <input type="radio" class="btn-check" name="pickup_appointment_ui" id="edit_pickup_required" value="required" {% if shipment.pickup_appointment_type == "required" %}checked{% endif %}>
+                            <label class="btn ui-chip rounded-pill px-3 py-1" for="edit_pickup_required">Required</label>
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label small fw-bold text-muted text-uppercase mb-1">Pickup Date</label>
+                        <input type="date" name="pickup_date" class="form-control" value="{{ shipment.pickup_date|date:'Y-m-d' }}">
+                    </div>
+                </div>
+            </div>
+
+            <hr class="my-4 text-muted opacity-25">
+
+            <!-- Delivery Section -->
+            <div class="mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <label class="form-label small fw-bold text-muted text-uppercase mb-0">Destination Location<span class="text-danger">*</span></label>
+                    <button type="button" class="btn btn-sm btn-link text-decoration-none p-0" style="font-size: 0.8rem;"><i class="far fa-plus-square me-1"></i>Add</button>
+                </div>
+                <select name="destination_location_ui" class="form-select mb-3">
+                    <option value="">Select location</option>
+                    {% for warehouse in warehouses %}
+                    <option value="{{ warehouse.pk }}" {% if shipment.destination_location_id == warehouse.pk %}selected{% endif %}>{{ warehouse.name }}</option>
+                    {% endfor %}
+                    {% if not shipment.destination_location and shipment.destination_address %}
+                    <option value="temp_addr_{{ shipment.destination_address }}" selected>{{ shipment.destination_address }}</option>
+                    {% endif %}
+                </select>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label small fw-bold text-muted text-uppercase mb-0">Delivery Contact</label>
+                            <button type="button" class="btn btn-sm btn-link text-decoration-none p-0" style="font-size: 0.8rem;"><i class="far fa-plus-square me-1"></i>Add</button>
+                        </div>
+                        <select name="delivery_contact_ui" class="form-select">
+                            <option value="">Select a contact</option>
+                            {% if shipment.delivery_contact %}
+                            <option value="{{ shipment.delivery_contact }}" selected>{{ shipment.delivery_contact }}</option>
+                            {% endif %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold text-muted text-uppercase mb-1">Delivery Number</label>
+                        <input type="text" name="delivery_number_ui" class="form-control" value="{{ shipment.delivery_number|default:'' }}">
+                    </div>
+                </div>
+
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label small fw-bold text-muted text-uppercase mb-1">Delivery Appointment</label>
+                        <div class="d-flex gap-2">
+                            <input type="radio" class="btn-check" name="delivery_appointment_ui" id="edit_delivery_fcfs" value="fcfs" {% if shipment.delivery_appointment_type == "fcfs" %}checked{% endif %}>
+                            <label class="btn ui-chip rounded-pill px-3 py-1" for="edit_delivery_fcfs">FCFS</label>
+                            <input type="radio" class="btn-check" name="delivery_appointment_ui" id="edit_delivery_required" value="required" {% if shipment.delivery_appointment_type == "required" %}checked{% endif %}>
+                            <label class="btn ui-chip rounded-pill px-3 py-1" for="edit_delivery_required">Required</label>
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label small fw-bold text-muted text-uppercase mb-1">Delivery Date</label>
+                        <input type="date" name="estimated_delivery_date" class="form-control" value="{{ shipment.estimated_delivery_date|date:'Y-m-d' }}">
+                    </div>
+                </div>
+            </div>
+
+            <hr class="my-4 text-muted opacity-25">
+
+            <!-- Logistics & Commercial Section -->
+            <div class="mb-4">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-1">Tags</label>
+                <select name="tags_ui" class="form-select mb-3" multiple style="min-height: 50px;">
+                    {% for tag in tags %}
+                    <option value="{{ tag.pk }}" {% if tag in shipment.tags.all %}selected{% endif %}>{{ tag.name }}</option>
+                    {% endfor %}
+                </select>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-muted text-uppercase mb-1">Shipping Terms<span class="text-danger">*</span></label>
+                    <select name="shipping_terms_ui" class="form-select">
+                        <option value="">Select terms</option>
+                        {% for term in shipping_terms %}
+                        <option value="{{ term.pk }}" {% if shipment.shipping_terms_id == term.pk %}selected{% endif %}>{{ term.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-1">
+                    <label class="form-label small fw-bold text-muted text-uppercase mb-1">Representatives</label>
+                    <select name="representative_ui" id="representativeSelect" class="form-select">
+                        <option value="">Select representative</option>
+                        {% for u in users %}
+                        <option value="{{ u.pk }}" {% if shipment.representative_id == u.pk %}selected{% endif %}>{{ u.first_name }} {{ u.last_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="button" class="btn btn-link text-decoration-none p-0 small" id="assignYourselfBtn">Click to assign to yourself.</button>
+            </div>
+
+            <div class="d-grid mt-5">
+                <button type="submit" class="btn btn-primary fw-bold py-2 shadow-sm" style="border-radius:10px;">Submit</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const assignBtn = document.getElementById('assignYourselfBtn');
+        const repSelect = document.getElementById('representativeSelect');
+        const currentUserId = "{{ request.user.pk }}";
+
+        if (assignBtn && repSelect) {
+            assignBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                repSelect.value = currentUserId;
+            });
+        }
+    });
+</script>
 
 {% endblock %}
