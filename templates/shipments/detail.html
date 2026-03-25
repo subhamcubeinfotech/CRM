@@ -2048,9 +2048,9 @@
             <div class="mb-4">
                 <div class="d-flex justify-content-between align-items-center mb-1">
                     <label class="form-label small fw-bold text-muted text-uppercase mb-0">Pickup Location<span class="text-danger">*</span></label>
-                    <button type="button" class="btn btn-add-outline"><i class="fas fa-plus-circle"></i>Add</button>
+                    <button type="button" class="btn btn-add-outline py-0" data-bs-toggle="modal" data-bs-target="#locationModal" data-location-select-target="edit-pickup-location-select"><i class="fas fa-plus-circle me-1"></i>Add</button>
                 </div>
-                <select name="pickup_location_ui" class="form-select mb-3">
+                <select name="pickup_location_ui" id="edit-pickup-location-select" class="form-select mb-3">
                     <option value="">Select location</option>
                     {% for warehouse in warehouses %}
                     <option value="{{ warehouse.pk }}" {% if shipment.pickup_location_id == warehouse.pk %}selected{% endif %}>{{ warehouse.name }}</option>
@@ -2068,9 +2068,9 @@
                     <div class="col-md-6">
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <label class="form-label small fw-bold text-muted text-uppercase mb-0">Pickup Contact</label>
-                            <button type="button" class="btn btn-add-outline"><i class="fas fa-plus-circle"></i>Add</button>
+                            <button type="button" class="btn btn-add-outline py-0" data-bs-toggle="modal" data-bs-target="#contactModal" data-contact-select-target="edit-pickup-contact-select"><i class="fas fa-plus-circle me-1"></i>Add</button>
                         </div>
-                        <select name="pickup_contact_ui" class="form-select">
+                        <select name="pickup_contact_ui" id="edit-pickup-contact-select" class="form-select">
                             <option value="">Select a contact</option>
                             {% if shipment.pickup_contact %}
                             <option value="{{ shipment.pickup_contact }}" selected>{{ shipment.pickup_contact }}</option>
@@ -2110,9 +2110,9 @@
             <div class="mb-4">
                 <div class="d-flex justify-content-between align-items-center mb-1">
                     <label class="form-label small fw-bold text-muted text-uppercase mb-0">Destination Location<span class="text-danger">*</span></label>
-                    <button type="button" class="btn btn-add-outline"><i class="fas fa-plus-circle"></i>Add</button>
+                    <button type="button" class="btn btn-add-outline py-0" data-bs-toggle="modal" data-bs-target="#locationModal" data-location-select-target="edit-destination-location-select"><i class="fas fa-plus-circle me-1"></i>Add</button>
                 </div>
-                <select name="destination_location_ui" class="form-select mb-3">
+                <select name="destination_location_ui" id="edit-destination-location-select" class="form-select mb-3">
                     <option value="">Select location</option>
                     {% for warehouse in warehouses %}
                     <option value="{{ warehouse.pk }}" {% if shipment.destination_location_id == warehouse.pk %}selected{% endif %}>{{ warehouse.name }}</option>
@@ -2130,9 +2130,9 @@
                     <div class="col-md-6">
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <label class="form-label small fw-bold text-muted text-uppercase mb-0">Delivery Contact</label>
-                            <button type="button" class="btn btn-add-outline"><i class="fas fa-plus-circle"></i>Add</button>
+                            <button type="button" class="btn btn-add-outline py-0" data-bs-toggle="modal" data-bs-target="#contactModal" data-contact-select-target="edit-delivery-contact-select"><i class="fas fa-plus-circle me-1"></i>Add</button>
                         </div>
-                        <select name="delivery_contact_ui" class="form-select">
+                        <select name="delivery_contact_ui" id="edit-delivery-contact-select" class="form-select">
                             <option value="">Select a contact</option>
                             {% if shipment.delivery_contact %}
                             <option value="{{ shipment.delivery_contact }}" selected>{{ shipment.delivery_contact }}</option>
@@ -2206,8 +2206,100 @@
     </div>
 </div>
 
+<!-- Add Contact Modal -->
+<div class="modal fade" id="contactModal" tabindex="-1" aria-labelledby="contactModalLabel" aria-hidden="true" style="z-index: 1060;">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 480px;">
+        <div class="modal-content shadow-lg border-0" style="border-radius: 12px;">
+            <div class="modal-header border-bottom px-4 pt-4 pb-3">
+                <h5 class="modal-title fw-bold text-dark" id="contactModalLabel" style="font-size: 1.15rem;">Add Contact</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="contactModalForm">
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-dark text-uppercase mb-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">Full Name <span class="text-danger">*</span></label>
+                        <input type="text" id="contactModalName" class="form-control form-control-lg fs-6" placeholder="Enter name" style="border-radius: 8px;">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-dark text-uppercase mb-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">Email <span class="text-danger">*</span></label>
+                        <input type="email" id="contactModalEmail" class="form-control form-control-lg fs-6" placeholder="email@example.com" style="border-radius: 8px;">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-dark text-uppercase mb-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">Mobile Number</label>
+                        <input type="text" id="contactModalMobile" class="form-control form-control-lg fs-6" placeholder="Mobile #" style="border-radius: 8px;">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-dark text-uppercase mb-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">Office Number</label>
+                        <input type="text" id="contactModalOffice" class="form-control form-control-lg fs-6" placeholder="Office #" style="border-radius: 8px;">
+                    </div>
+                    
+                    <div class="d-grid mt-4 pt-2">
+                        <button type="button" id="contactModalSubmit" class="btn btn-primary btn-lg fw-semibold" style="border-radius: 8px;">Add to Selection</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Location Modal -->
+<div class="modal fade" id="locationModal" tabindex="-1" aria-labelledby="locationModalLabel" aria-hidden="true" style="z-index: 1060;">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 500px;">
+        <div class="modal-content shadow-lg border-0" style="border-radius: 12px;">
+            <div class="modal-header border-bottom px-4 pt-4 pb-3">
+                <h5 class="modal-title fw-bold text-dark" id="locationModalLabel" style="font-size: 1.15rem;">Add Location</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="locationModalForm">
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-dark text-uppercase mb-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">Address <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control form-control-lg fs-6" id="locationModalAddress" placeholder="Enter Full Address" style="border-radius: 8px;">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-dark text-uppercase mb-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">Location Name</label>
+                        <input type="text" class="form-control form-control-lg fs-6" id="locationModalName" placeholder="Location Name (Optional)" style="border-radius: 8px;">
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-6">
+                            <label class="form-label small fw-bold text-dark text-uppercase mb-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">Phone Number</label>
+                            <input type="text" class="form-control fs-6 p-2" id="locationModalPhone" placeholder="Phone #" style="border-radius: 8px;">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold text-dark text-uppercase mb-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">Requirements</label>
+                            <input type="text" class="form-control fs-6 p-2" id="locationModalRequirements" placeholder="e.g. Scales" style="border-radius: 8px;">
+                        </div>
+                    </div>
+                    
+                    <div class="row g-3 mb-4">
+                        <div class="col-12">
+                            <label class="form-label small fw-bold text-dark text-uppercase mb-2 d-block" style="font-size: 0.75rem; letter-spacing: 0.5px;">Default Delivery Appt.</label>
+                            <div class="d-flex gap-2">
+                                <input type="radio" class="btn-check" name="location_delivery_appointment" id="loc_del_fcfs" value="fcfs">
+                                <label class="btn btn-outline-primary btn-sm rounded-pill px-3" for="loc_del_fcfs">FCFS</label>
+                                <input type="radio" class="btn-check" name="location_delivery_appointment" id="loc_del_req" value="required">
+                                <label class="btn btn-outline-primary btn-sm rounded-pill px-3" for="loc_del_req">Required</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid mt-4 pt-2">
+                        <button type="button" id="locationModalSubmit" class="btn btn-primary btn-lg fw-semibold" style="border-radius: 8px;">Add to Selection</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Representative Assignment
         const assignBtn = document.getElementById('assignYourselfBtn');
         const repSelect = document.getElementById('representativeSelect');
         const currentUserId = "{{ request.user.pk }}";
@@ -2216,6 +2308,142 @@
             assignBtn.addEventListener('click', function(e) {
                 e.preventDefault();
                 repSelect.value = currentUserId;
+            });
+        }
+
+        // Modal Handling State
+        let activeLocationSelectId = '';
+        let activeContactSelectId = '';
+
+        // Track active selects when modal triggers are clicked
+        document.querySelectorAll('[data-location-select-target]').forEach(function(button) {
+            button.addEventListener('click', function() {
+                activeLocationSelectId = this.dataset.locationSelectTarget || '';
+            });
+        });
+
+        document.querySelectorAll('[data-contact-select-target]').forEach(function(button) {
+            button.addEventListener('click', function() {
+                activeContactSelectId = this.dataset.contactSelectTarget || '';
+            });
+        });
+
+        // Contact Modal Submit Logic
+        const contactModalSubmit = document.getElementById('contactModalSubmit');
+        if (contactModalSubmit) {
+            contactModalSubmit.addEventListener('click', function() {
+                const contactSelect = activeContactSelectId ? document.getElementById(activeContactSelectId) : null;
+                const nameInput = document.getElementById('contactModalName');
+                const emailInput = document.getElementById('contactModalEmail');
+                const mobileInput = document.getElementById('contactModalMobile');
+                const officeInput = document.getElementById('contactModalOffice');
+                
+                const fullName = nameInput?.value.trim() || '';
+                const email = emailInput?.value.trim() || '';
+                const mobile = mobileInput?.value.trim() || '';
+                const office = officeInput?.value.trim() || '';
+
+                if (!contactSelect) return;
+                
+                // Basic validation
+                if (!fullName) {
+                    nameInput?.focus();
+                    return;
+                }
+                if (!email) {
+                    emailInput?.focus();
+                    return;
+                }
+
+                // Add to selection
+                const optionValue = fullName; // Using name as the value based on other parts of the app
+                const optionLabel = fullName;
+                const option = new Option(optionLabel, optionValue, true, true);
+                
+                // Add data attributes for backend processing
+                option.dataset.name = fullName;
+                option.dataset.email = email;
+                option.dataset.mobile = mobile;
+                option.dataset.office = office;
+                
+                contactSelect.add(option);
+                contactSelect.value = optionValue;
+                
+                // Trigger change event to update any listening scripts
+                contactSelect.dispatchEvent(new Event('change'));
+
+                // Close the Modal
+                const contactModalElement = document.getElementById('contactModal');
+                if (contactModalElement && window.bootstrap?.Modal) {
+                    const modal = bootstrap.Modal.getInstance(contactModalElement);
+                    if (modal) modal.hide();
+                }
+
+                // Reset form
+                document.getElementById('contactModalForm')?.reset();
+            });
+        }
+
+        // Location Modal Submit Logic
+        const locationModalSubmit = document.getElementById('locationModalSubmit');
+        if (locationModalSubmit) {
+            locationModalSubmit.addEventListener('click', function() {
+                const locationSelect = activeLocationSelectId ? document.getElementById(activeLocationSelectId) : null;
+                const addressInput = document.getElementById('locationModalAddress');
+                const nameInput = document.getElementById('locationModalName');
+                
+                const address = addressInput?.value.trim() || '';
+                const locationName = nameInput?.value.trim() || '';
+
+                if (!locationSelect) return;
+                
+                // Basic validation
+                if (!address) {
+                    addressInput?.focus();
+                    return;
+                }
+
+                // Parse address components (simple splitting based on expected format)
+                const parts = address.split(',');
+                const city = (parts[1] || '').trim();
+                const statePostal = (parts[2] || '').trim().split(/\s+/);
+                const state = statePostal[0] || '';
+                const postalCode = statePostal.slice(1).join(' ');
+                const country = (parts[3] || 'USA').trim();
+                
+                const optionLabel = locationName || address;
+                const optionValue = 'temp_addr_' + address;
+
+                // Check if option already exists
+                let option = [...locationSelect.options].find(o => o.value === optionValue);
+                
+                if (!option) {
+                    option = new Option(optionLabel, optionValue);
+                    locationSelect.add(option);
+                }
+
+                // Add necessary data attributes
+                option.dataset.address = address;
+                option.dataset.city = city;
+                option.dataset.state = state;
+                option.dataset.postalCode = postalCode;
+                option.dataset.country = country;
+                option.text = optionLabel;
+
+                // Make visible and select
+                option.hidden = false;
+                option.style.display = '';
+                locationSelect.value = optionValue;
+
+                // Close the Modal
+                const locationModalElement = document.getElementById('locationModal');
+                if (locationModalElement && window.bootstrap?.Modal) {
+                    const modal = bootstrap.Modal.getInstance(locationModalElement);
+                    if (modal) modal.hide();
+                }
+
+                // Reset form
+                document.getElementById('locationModalForm')?.reset();
             });
         }
     });
