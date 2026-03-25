@@ -316,25 +316,28 @@
                 </div>
                 <!-- Actions -->
                 <div class="dropdown">
-                    <button class="btn actions-btn dropdown-toggle">
+                    <button class="btn actions-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="fas fa-chevron-down me-1"></i> Actions
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="border-radius:12px;">
-                        <li><a class="dropdown-item" href="{% url 'shipments:shipment_edit' shipment.pk %}"><i
-                                    class="fas fa-edit me-2 text-muted"></i>Edit Shipment</a></li>
-                        <li><a class="dropdown-item" href="{% url 'shipments:shipment_tracking_mobile' shipment.pk %}"><i
-                                    class="fas fa-location-arrow me-2 text-muted"></i>Open Driver Tracking</a></li>
-                        <li><a class="dropdown-item" href="{% url 'shipments:generate_bol' shipment.pk %}"
-                                target="_blank"><i class="fas fa-file-alt me-2 text-muted"></i>View BOL</a></li>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 p-2" style="border-radius:12px; min-width: 180px;">
                         <li>
-                            <hr class="dropdown-divider">
+                            <a class="dropdown-item py-2 px-3 rounded-2" href="{% url 'shipments:shipment_edit' shipment.pk %}">
+                                <i class="fas fa-edit me-2 text-muted"></i> Edit
+                            </a>
                         </li>
+                        <li>
+                            <a class="dropdown-item py-2 px-3 rounded-2" href="#">
+                                <i class="fas fa-copy me-2 text-muted"></i> Copy
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider mx-2"></li>
                         <li>
                             <form method="post" action="{% url 'shipments:shipment_delete' shipment.pk %}"
                                 onsubmit="return confirm('Delete this shipment?')">
                                 {% csrf_token %}
-                                <button type="submit" class="dropdown-item text-danger"><i
-                                        class="fas fa-trash me-2"></i>Delete</button>
+                                <button type="submit" class="dropdown-item py-2 px-3 rounded-2 text-danger border-0 w-100 text-start bg-transparent">
+                                    <i class="fas fa-trash-alt me-2"></i> Delete
+                                </button>
                             </form>
                         </li>
                     </ul>
