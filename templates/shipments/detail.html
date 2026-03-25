@@ -2032,8 +2032,12 @@
                     {% for warehouse in warehouses %}
                     <option value="{{ warehouse.pk }}" {% if shipment.pickup_location_id == warehouse.pk %}selected{% endif %}>{{ warehouse.name }}</option>
                     {% endfor %}
-                    {% if not shipment.pickup_location and shipment.origin_address %}
-                    <option value="temp_addr_{{ shipment.origin_address }}" selected>{{ shipment.origin_address }}</option>
+                    {% if not shipment.pickup_location %}
+                        {% with current_addr=shipment.origin_address|default:shipment.shipper.full_address %}
+                            {% if current_addr %}
+                            <option value="temp_addr_{{ current_addr }}" selected>{{ current_addr }}</option>
+                            {% endif %}
+                        {% endwith %}
                     {% endif %}
                 </select>
 
@@ -2090,8 +2094,12 @@
                     {% for warehouse in warehouses %}
                     <option value="{{ warehouse.pk }}" {% if shipment.destination_location_id == warehouse.pk %}selected{% endif %}>{{ warehouse.name }}</option>
                     {% endfor %}
-                    {% if not shipment.destination_location and shipment.destination_address %}
-                    <option value="temp_addr_{{ shipment.destination_address }}" selected>{{ shipment.destination_address }}</option>
+                    {% if not shipment.destination_location %}
+                        {% with current_dest=shipment.destination_address|default:shipment.consignee.full_address|default:shipment.order.receiver.full_address %}
+                            {% if current_dest %}
+                            <option value="temp_addr_{{ current_dest }}" selected>{{ current_dest }}</option>
+                            {% endif %}
+                        {% endwith %}
                     {% endif %}
                 </select>
 
