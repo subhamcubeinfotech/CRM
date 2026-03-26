@@ -857,9 +857,13 @@
                                         <select class="form-select logistics-select mb-2" id="logistics-pickup-contact-select">
                                             <option value="">{{ shipment.pickup_contact|default:"Contact" }}</option>
                                         </select>
-                                        <div class="logistics-contact-meta">
-                                            {% if shipment.pickup_email %}<div><a href="mailto:{{ shipment.pickup_email }}" class="text-decoration-none">{{ shipment.pickup_email }}</a></div>{% endif %}
-                                            {% if shipment.pickup_contact_phone %}<div><a href="tel:{{ shipment.pickup_contact_phone }}" class="text-decoration-none">{{ shipment.pickup_contact_phone }}</a></div>{% endif %}
+                                        <div class="logistics-contact-meta" id="logistics-pickup-contact-meta">
+                                            <div id="logistics-pickup-email-display">
+                                                {% if shipment.pickup_email %}<a href="mailto:{{ shipment.pickup_email }}" class="text-decoration-none">{{ shipment.pickup_email }}</a>{% endif %}
+                                            </div>
+                                            <div id="logistics-pickup-phone-display">
+                                                {% if shipment.pickup_contact_phone %}<a href="tel:{{ shipment.pickup_contact_phone }}" class="text-decoration-none">{{ shipment.pickup_contact_phone }}</a>{% endif %}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -897,9 +901,13 @@
                                         <select class="form-select logistics-select mb-2" id="logistics-delivery-contact-select">
                                             <option value="">{{ shipment.delivery_contact|default:"Contact" }}</option>
                                         </select>
-                                        <div class="logistics-contact-meta">
-                                            {% if shipment.delivery_email %}<div><a href="mailto:{{ shipment.delivery_email }}" class="text-decoration-none">{{ shipment.delivery_email }}</a></div>{% endif %}
-                                            {% if shipment.delivery_contact_phone %}<div><a href="tel:{{ shipment.delivery_contact_phone }}" class="text-decoration-none">{{ shipment.delivery_contact_phone }}</a></div>{% endif %}
+                                        <div class="logistics-contact-meta" id="logistics-delivery-contact-meta">
+                                            <div id="logistics-delivery-email-display">
+                                                {% if shipment.delivery_email %}<a href="mailto:{{ shipment.delivery_email }}" class="text-decoration-none">{{ shipment.delivery_email }}</a>{% endif %}
+                                            </div>
+                                            <div id="logistics-delivery-phone-display">
+                                                {% if shipment.delivery_contact_phone %}<a href="tel:{{ shipment.delivery_contact_phone }}" class="text-decoration-none">{{ shipment.delivery_contact_phone }}</a>{% endif %}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -2075,7 +2083,7 @@
                         <select name="pickup_contact_ui" id="edit-pickup-contact-select" class="form-select">
                             <option value="">Select a contact</option>
                             {% if shipment.pickup_contact %}
-                            <option value="{{ shipment.pickup_contact }}" selected>{{ shipment.pickup_contact }}</option>
+                            <option value="{{ shipment.pickup_contact }}" selected data-email="{{ shipment.pickup_email }}" data-phone="{{ shipment.pickup_contact_phone }}">{{ shipment.pickup_contact }}</option>
                             {% endif %}
                         </select>
                         <input type="hidden" name="pickup_email_ui" id="edit-pickup-email-hidden" value="{{ shipment.pickup_email }}">
@@ -2139,7 +2147,7 @@
                         <select name="delivery_contact_ui" id="edit-delivery-contact-select" class="form-select">
                             <option value="">Select a contact</option>
                             {% if shipment.delivery_contact %}
-                            <option value="{{ shipment.delivery_contact }}" selected>{{ shipment.delivery_contact }}</option>
+                            <option value="{{ shipment.delivery_contact }}" selected data-email="{{ shipment.delivery_email }}" data-phone="{{ shipment.delivery_contact_phone }}">{{ shipment.delivery_contact }}</option>
                             {% endif %}
                         </select>
                         <input type="hidden" name="delivery_email_ui" id="edit-delivery-email-hidden" value="{{ shipment.delivery_email }}">
@@ -2348,24 +2356,53 @@
             });
         });
 
-        // Contact Change Handler for Edit Drawer
+        // Contact Change Handler for Edit Drawer & Logistics Section
         const handleEditContactChange = (idPrefix) => {
-            const select = document.getElementById(`edit-${idPrefix}-contact-select`);
+            const editSelect = document.getElementById(`edit-${idPrefix}-contact-select`);
+            const logisticsSelect = document.getElementById(`logistics-${idPrefix}-contact-select`);
             const emailHidden = document.getElementById(`edit-${idPrefix}-email-hidden`);
             const phoneHidden = document.getElementById(`edit-${idPrefix}-phone-hidden`);
             
-            if (!select) return;
-            
-            select.addEventListener('change', function() {
-                const option = this.selectedOptions[0];
+            const emailDisplay = document.getElementById(`logistics-${idPrefix}-email-display`);
+            const phoneDisplay = document.getElementById(`logistics-${idPrefix}-phone-display`);
+
+            const syncAll = (select) => {
+                const option = select.selectedOptions[0];
                 if (!option) return;
                 
+                const name = option.value || '';
                 const email = option.dataset.email || '';
-                const phone = option.dataset.mobile || option.dataset.phone || '';
+                const phone = option.dataset.phone || option.dataset.mobile || '';
                 
+                // Sync Hidden Fields
                 if (emailHidden) emailHidden.value = email;
                 if (phoneHidden) phoneHidden.value = phone;
-            });
+                
+                // Sync Other Selects
+                [editSelect, logisticsSelect].forEach(s => {
+                    if (s && s !== select) {
+                        // If option doesn't exist in other select, add it
+                        if (![...s.options].some(o => o.value === name)) {
+                            const newOpt = new Option(name, name);
+                            newOpt.dataset.email = email;
+                            newOpt.dataset.phone = phone;
+                            s.add(newOpt);
+                        }
+                        s.value = name;
+                    }
+                });
+
+                // Update Display text
+                if (emailDisplay) {
+                    emailDisplay.innerHTML = email ? `<a href="mailto:${email}" class="text-decoration-none">${email}</a>` : '';
+                }
+                if (phoneDisplay) {
+                    phoneDisplay.innerHTML = phone ? `<a href="tel:${phone}" class="text-decoration-none">${phone}</a>` : '';
+                }
+            };
+
+            if (editSelect) editSelect.addEventListener('change', () => syncAll(editSelect));
+            if (logisticsSelect) logisticsSelect.addEventListener('change', () => syncAll(logisticsSelect));
         };
         
         handleEditContactChange('pickup');
@@ -2406,6 +2443,7 @@
                 // Add data attributes for backend processing
                 option.dataset.name = fullName;
                 option.dataset.email = email;
+                option.dataset.phone = mobile || office;
                 option.dataset.mobile = mobile;
                 option.dataset.office = office;
                 
