@@ -591,6 +591,7 @@
                 {% if shipment.shipper %}
                 <div class="party-detail"><i class="fas fa-map-marker-alt text-primary me-1"></i>{{ shipment.shipper.full_address }}</div>
                 {% endif %}
+                <div class="party-detail"><i class="fas fa-hashtag me-1 text-muted"></i>P/U No: {{ shipment.pickup_number|default:"-" }}</div>
                 <div class="party-detail mt-1"><i class="fas fa-handshake me-1 text-muted"></i>FOB Origin</div>
                 {% if shipment.pickup_date %}<div class="party-detail"><i class="fas fa-calendar me-1 text-muted"></i>{{ shipment.pickup_date|date:"l, M j" }}</div>{% endif %}
             </div>
@@ -612,6 +613,7 @@
                 {% elif shipment.order and shipment.order.receiver %}
                 <div class="party-detail"><i class="fas fa-map-marker-alt text-primary me-1"></i>{{ shipment.order.receiver.full_address }}</div>
                 {% endif %}
+                <div class="party-detail"><i class="fas fa-hashtag me-1 text-muted"></i>Del No: {{ shipment.delivery_number|default:"-" }}</div>
                 <div class="party-detail mt-1"><i class="fas fa-handshake me-1 text-muted"></i>FOB Destination</div>
                 {% if shipment.estimated_delivery_date %}<div class="party-detail"><i class="fas fa-calendar me-1 text-muted"></i>{{ shipment.estimated_delivery_date|date:"l, M j" }}</div>{% endif %}
             </div>
@@ -857,7 +859,7 @@
                                         </select>
                                         <div class="logistics-contact-meta">
                                             {% if shipment.pickup_email %}<div><a href="mailto:{{ shipment.pickup_email }}" class="text-decoration-none">{{ shipment.pickup_email }}</a></div>{% endif %}
-                                            {% if shipment.pickup_number %}<div><a href="tel:{{ shipment.pickup_number }}" class="text-decoration-none">{{ shipment.pickup_number }}</a></div>{% endif %}
+                                            {% if shipment.pickup_contact_phone %}<div><a href="tel:{{ shipment.pickup_contact_phone }}" class="text-decoration-none">{{ shipment.pickup_contact_phone }}</a></div>{% endif %}
                                         </div>
                                     </div>
                                 </div>
@@ -897,7 +899,7 @@
                                         </select>
                                         <div class="logistics-contact-meta">
                                             {% if shipment.delivery_email %}<div><a href="mailto:{{ shipment.delivery_email }}" class="text-decoration-none">{{ shipment.delivery_email }}</a></div>{% endif %}
-                                            {% if shipment.delivery_number %}<div><a href="tel:{{ shipment.delivery_number }}" class="text-decoration-none">{{ shipment.delivery_number }}</a></div>{% endif %}
+                                            {% if shipment.delivery_contact_phone %}<div><a href="tel:{{ shipment.delivery_contact_phone }}" class="text-decoration-none">{{ shipment.delivery_contact_phone }}</a></div>{% endif %}
                                         </div>
                                     </div>
                                 </div>
@@ -2076,6 +2078,8 @@
                             <option value="{{ shipment.pickup_contact }}" selected>{{ shipment.pickup_contact }}</option>
                             {% endif %}
                         </select>
+                        <input type="hidden" name="pickup_email_ui" id="edit-pickup-email-hidden" value="{{ shipment.pickup_email }}">
+                        <input type="hidden" name="pickup_contact_phone_ui" id="edit-pickup-phone-hidden" value="{{ shipment.pickup_contact_phone }}">
                     </div>
                     <div class="col-md-6">
                         <label class="form-label small fw-bold text-muted text-uppercase mb-1">Pickup Number</label>
@@ -2138,6 +2142,8 @@
                             <option value="{{ shipment.delivery_contact }}" selected>{{ shipment.delivery_contact }}</option>
                             {% endif %}
                         </select>
+                        <input type="hidden" name="delivery_email_ui" id="edit-delivery-email-hidden" value="{{ shipment.delivery_email }}">
+                        <input type="hidden" name="delivery_contact_phone_ui" id="edit-delivery-phone-hidden" value="{{ shipment.delivery_contact_phone }}">
                     </div>
                     <div class="col-md-6">
                         <label class="form-label small fw-bold text-muted text-uppercase mb-1">Delivery Number</label>
@@ -2341,6 +2347,29 @@
                 activeContactSelectId = this.dataset.contactSelectTarget || '';
             });
         });
+
+        // Contact Change Handler for Edit Drawer
+        const handleEditContactChange = (idPrefix) => {
+            const select = document.getElementById(`edit-${idPrefix}-contact-select`);
+            const emailHidden = document.getElementById(`edit-${idPrefix}-email-hidden`);
+            const phoneHidden = document.getElementById(`edit-${idPrefix}-phone-hidden`);
+            
+            if (!select) return;
+            
+            select.addEventListener('change', function() {
+                const option = this.selectedOptions[0];
+                if (!option) return;
+                
+                const email = option.dataset.email || '';
+                const phone = option.dataset.mobile || option.dataset.phone || '';
+                
+                if (emailHidden) emailHidden.value = email;
+                if (phoneHidden) phoneHidden.value = phone;
+            });
+        };
+        
+        handleEditContactChange('pickup');
+        handleEditContactChange('delivery');
 
         // Contact Modal Submit Logic
         const contactModalSubmit = document.getElementById('contactModalSubmit');

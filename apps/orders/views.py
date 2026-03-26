@@ -70,6 +70,7 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
         context['shipments'] = self.object.shipments.all()
         context['invoices'] = self.object.invoices.all()
         context['events'] = self.object.events.all()
+        context['documents'] = self.object.documents.all()
         
         # Context for Edit Offcanvas
         user_tenant = self.request.user.tenant
@@ -120,6 +121,57 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
         )
         context['assign_company'] = assign_company
         context['packaging_types'] = PackagingType.objects.all()
+        
+        # --- Context for Contact Pre-filling ---
+        # Fetch unique contacts from existing shipments of this order
+        shipments = self.object.shipments.all().order_by('-created_at')
+        
+        pickup_contacts = []
+        seen_pickup = set()
+        
+        # Add company default as fallback
+        if self.object.supplier:
+            s_name = self.object.supplier.name + " (Main)"
+            pickup_contacts.append({
+                'name': s_name,
+                'email': self.object.supplier.email,
+                'phone': self.object.supplier.phone
+            })
+            seen_pickup.add(s_name)
+
+        for s in shipments:
+            if s.pickup_contact and s.pickup_contact not in seen_pickup:
+                pickup_contacts.append({
+                    'name': s.pickup_contact,
+                    'email': s.pickup_email,
+                    'phone': s.pickup_contact_phone
+                })
+                seen_pickup.add(s.pickup_contact)
+
+        delivery_contacts = []
+        seen_delivery = set()
+        
+        # Add company default as fallback
+        if self.object.receiver:
+            r_name = self.object.receiver.name + " (Main)"
+            delivery_contacts.append({
+                'name': r_name,
+                'email': self.object.receiver.email,
+                'phone': self.object.receiver.phone
+            })
+            seen_delivery.add(r_name)
+
+        for s in shipments:
+            if s.delivery_contact and s.delivery_contact not in seen_delivery:
+                delivery_contacts.append({
+                    'name': s.delivery_contact,
+                    'email': s.delivery_email,
+                    'phone': s.delivery_contact_phone
+                })
+                seen_delivery.add(s.delivery_contact)
+
+        context['previous_pickup_contacts'] = pickup_contacts
+        context['previous_delivery_contacts'] = delivery_contacts
         
         return context
 
@@ -782,3 +834,39 @@ def order_add_item(request, pk):
         logger.info(f"New manifest items added to Order {order.order_number} by {request.user}")
     
     return redirect('orders:order_detail', pk=pk)
+
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from .models import OrderDocument
+
+@login_required
+@require_POST
+def order_upload_document(request, pk):
+    order = get_object_or_404(Order, pk=pk)
+    
+    if 'file' not in request.FILES:
+        return JsonResponse({'success': False, 'error': 'No file uploaded'}, status=400)
+        
+    try:
+        file_obj = request.FILES['file']
+        
+        doc = OrderDocument.objects.create(
+            order=order,
+            title=file_obj.name,
+            file=file_obj,
+            uploaded_by=request.user
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'document': {
+                'id': doc.id,
+                'title': doc.title,
+                'url': doc.file.url,
+                'uploaded_by': doc.uploaded_by.get_full_name() or doc.uploaded_by.username,
+                'uploaded_at': doc.uploaded_at.strftime('%b %d, %Y')
+            }
+        })
+    except Exception as e:
+        logger.error(f"Error uploading document: {e}")
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
