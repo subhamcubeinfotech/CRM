@@ -70,6 +70,7 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
         context['shipments'] = self.object.shipments.all()
         context['invoices'] = self.object.invoices.all()
         context['events'] = self.object.events.all()
+        context['documents'] = self.object.documents.all()
         
         # Context for Edit Offcanvas
         user_tenant = self.request.user.tenant
@@ -782,3 +783,39 @@ def order_add_item(request, pk):
         logger.info(f"New manifest items added to Order {order.order_number} by {request.user}")
     
     return redirect('orders:order_detail', pk=pk)
+
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from .models import OrderDocument
+
+@login_required
+@require_POST
+def order_upload_document(request, pk):
+    order = get_object_or_404(Order, pk=pk)
+    
+    if 'file' not in request.FILES:
+        return JsonResponse({'success': False, 'error': 'No file uploaded'}, status=400)
+        
+    try:
+        file_obj = request.FILES['file']
+        
+        doc = OrderDocument.objects.create(
+            order=order,
+            title=file_obj.name,
+            file=file_obj,
+            uploaded_by=request.user
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'document': {
+                'id': doc.id,
+                'title': doc.title,
+                'url': doc.file.url,
+                'uploaded_by': doc.uploaded_by.get_full_name() or doc.uploaded_by.username,
+                'uploaded_at': doc.uploaded_at.strftime('%b %d, %Y')
+            }
+        })
+    except Exception as e:
+        logger.error(f"Error uploading document: {e}")
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)

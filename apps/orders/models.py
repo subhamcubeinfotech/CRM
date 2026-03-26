@@ -302,3 +302,27 @@ class ManifestItem(models.Model):
     @property
     def total_sell_price(self):
         return self.weight * self.sell_price
+
+class OrderDocument(models.Model):
+    """Documents attached directly to an Order"""
+    DOCUMENT_TYPE_CHOICES = [
+        ('po', 'Purchase Order'),
+        ('contract', 'Contract'),
+        ('invoice', 'Commercial Invoice'),
+        ('bol', 'Bill of Lading'),
+        ('other', 'Other'),
+    ]
+    
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='documents')
+    document_type = models.CharField(max_length=30, choices=DOCUMENT_TYPE_CHOICES, default='other')
+    title = models.CharField(max_length=200)
+    file = models.FileField(upload_to='order_documents/%Y/%m/')
+    uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-uploaded_at']
+    
+    def __str__(self):
+        return f"{self.title} ({self.get_document_type_display()})"
+
