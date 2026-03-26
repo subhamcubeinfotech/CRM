@@ -710,10 +710,34 @@ def shipment_create(request):
 
                 # Save items
                 items_data = _parse_items_from_post(request.POST)
+                calculated_weight = 0
+                calculated_pieces = 0
+                
                 for item_data in items_data:
                     inv_item = None
                     if item_data['material_id'] and str(item_data['material_id']).isdigit():
                         inv_item = InventoryItem.objects.filter(pk=item_data['material_id']).first()
+                        
+                        # Deduct stock if item is from inventory
+                        if inv_item:
+                            try:
+                                qty_to_deduct = float(item_data.get('weight') or 0)
+                                if qty_to_deduct > 0:
+                                    inv_item.quantity = max(0, inv_item.quantity - int(qty_to_deduct))
+                                    inv_item.save()
+                                    logger.info(f"Deducted {qty_to_deduct} from {inv_item.product_name} during Shipment {shipment.shipment_number}. New stock: {inv_item.quantity}")
+                            except Exception as e:
+                                logger.warning(f"Stock deduction failed for item {item_data['material_id']} in Shipment {shipment.shipment_number}: {e}")
+                    
+                    try:
+                        calculated_weight += float(item_data.get('weight') or 0)
+                    except (ValueError, TypeError):
+                        pass
+                        
+                    try:
+                        calculated_pieces += int(item_data.get('pieces') or 0)
+                    except (ValueError, TypeError):
+                        pass
                     
                     ShipmentItem.objects.create(
                         shipment=shipment,
@@ -732,6 +756,29 @@ def shipment_create(request):
                         sell_price=item_data['sell_price'],
                         price_unit=item_data['price_unit'],
                     )
+                
+                # Update shipment totals if they were missing from the form
+                update_shipment = False
+                try:
+                    form_weight = float(request.POST.get('total_weight') or 0)
+                except (ValueError, TypeError):
+                    form_weight = 0
+                    
+                if form_weight <= 0 and calculated_weight > 0:
+                    shipment.total_weight = calculated_weight
+                    update_shipment = True
+                
+                try:
+                    form_pieces = int(request.POST.get('number_of_pieces') or 0)
+                except (ValueError, TypeError):
+                    form_pieces = 0
+                    
+                if form_pieces <= 1 and calculated_pieces > 1:
+                    shipment.number_of_pieces = calculated_pieces
+                    update_shipment = True
+                    
+                if update_shipment:
+                    shipment.save(update_fields=['total_weight', 'number_of_pieces', 'updated_at'])
                 
                 # Copy commercial details to order if not set
                 if order:
