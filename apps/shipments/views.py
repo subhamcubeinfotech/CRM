@@ -826,6 +826,48 @@ def shipment_create(request):
     
     is_first_shipment = not order.shipments.exists()
     
+    # --- Context for Contact Pre-filling ---
+    # Fetch unique contacts from existing shipments of this order
+    shipments = order.shipments.all().order_by('-created_at')
+    
+    pickup_contacts = []
+    seen_pickup = set()
+    if order.supplier:
+        s_name = order.supplier.name + " (Main)"
+        pickup_contacts.append({
+            'name': s_name,
+            'email': order.supplier.email,
+            'phone': order.supplier.phone
+        })
+        seen_pickup.add(s_name)
+    for s in shipments:
+        if s.pickup_contact and s.pickup_contact not in seen_pickup:
+            pickup_contacts.append({
+                'name': s.pickup_contact,
+                'email': s.pickup_email,
+                'phone': s.pickup_contact_phone
+            })
+            seen_pickup.add(s.pickup_contact)
+
+    delivery_contacts = []
+    seen_delivery = set()
+    if order.receiver:
+        r_name = order.receiver.name + " (Main)"
+        delivery_contacts.append({
+            'name': r_name,
+            'email': order.receiver.email,
+            'phone': order.receiver.phone
+        })
+        seen_delivery.add(r_name)
+    for s in shipments:
+        if s.delivery_contact and s.delivery_contact not in seen_delivery:
+            delivery_contacts.append({
+                'name': s.delivery_contact,
+                'email': s.delivery_email,
+                'phone': s.delivery_contact_phone
+            })
+            seen_delivery.add(s.delivery_contact)
+    
     context = {
         'order': order,
         'orders': order_qs,
@@ -846,6 +888,8 @@ def shipment_create(request):
         'is_create': True,
         'is_first_shipment': is_first_shipment,
         'initial_items': order.manifest_items.all() if is_first_shipment else [],
+        'previous_pickup_contacts': pickup_contacts,
+        'previous_delivery_contacts': delivery_contacts,
     }
     return render(request, 'shipments/form.html', context)
 

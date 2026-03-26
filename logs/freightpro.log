@@ -155,3 +155,151 @@
 [2026-03-18 06:03:27] INFO django.server basehttp.log_message:213 — "GET /shipments/156/ HTTP/1.1" 200 77611
 [2026-03-18 06:03:28] INFO django.server basehttp.log_message:213 — "GET /materials/lookup/?name=Pizza HTTP/1.1" 200 21846
 [2026-03-18 06:03:34] INFO django.server basehttp.log_message:213 — "GET /materials/lookup/?name=Pizza HTTP/1.1" 200 21846
+[2026-03-26 09:15:50] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-26 09:16:04] INFO django.utils.autoreload autoreload.trigger_reload:265 — /app/apps/shipments/views.py changed, reloading.
+[2026-03-26 09:16:07] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-26 09:22:54] INFO django.server basehttp.log_message:213 — "GET /shipments/create/?order_id=167&next=/orders/167/ HTTP/1.1" 200 192443
+[2026-03-26 09:22:54] WARNING django.request log.log_response:253 — Not Found: /favicon.ico
+[2026-03-26 09:22:54] WARNING django.server basehttp.log_message:213 — "GET /favicon.ico HTTP/1.1" 404 7178
+[2026-03-26 09:22:55] ERROR django.request log.log_response:253 — Internal Server Error: /orders/
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/sqlite3/base.py", line 360, in execute
+    return super().execute(query, params)
+sqlite3.OperationalError: no such column: shipments_shipment.pickup_contact_phone
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/usr/local/lib/python3.10/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/usr/local/lib/python3.10/site-packages/django/views/generic/base.py", line 105, in view
+    return self.dispatch(request, *args, **kwargs)
+  File "/usr/local/lib/python3.10/site-packages/django/contrib/auth/mixins.py", line 73, in dispatch
+    return super().dispatch(request, *args, **kwargs)
+  File "/usr/local/lib/python3.10/site-packages/django/views/generic/base.py", line 144, in dispatch
+    return handler(request, *args, **kwargs)
+  File "/usr/local/lib/python3.10/site-packages/django/views/generic/list.py", line 178, in get
+    context = self.get_context_data()
+  File "/app/apps/orders/views.py", line 49, in get_context_data
+    shipped_weight += o.shipped_weight
+  File "/app/apps/orders/models.py", line 109, in shipped_weight
+    total_kg = sum(s.total_weight for s in self.shipments.all())
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/query.py", line 386, in __iter__
+    self._fetch_all()
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/query.py", line 1954, in _fetch_all
+    self._result_cache = list(self._iterable_class(self))
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/query.py", line 93, in __iter__
+    results = compiler.execute_sql(
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/sql/compiler.py", line 1623, in execute_sql
+    cursor.execute(sql, params)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 122, in execute
+    return super().execute(sql, params)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "/usr/local/lib/python3.10/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/sqlite3/base.py", line 360, in execute
+    return super().execute(query, params)
+django.db.utils.OperationalError: no such column: shipments_shipment.pickup_contact_phone
+[2026-03-26 09:22:55] ERROR django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 500 191884
+[2026-03-26 09:22:58] ERROR django.request log.log_response:253 — Internal Server Error: /orders/
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/sqlite3/base.py", line 360, in execute
+    return super().execute(query, params)
+sqlite3.OperationalError: no such column: shipments_shipment.pickup_contact_phone
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/usr/local/lib/python3.10/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/usr/local/lib/python3.10/site-packages/django/views/generic/base.py", line 105, in view
+    return self.dispatch(request, *args, **kwargs)
+  File "/usr/local/lib/python3.10/site-packages/django/contrib/auth/mixins.py", line 73, in dispatch
+    return super().dispatch(request, *args, **kwargs)
+  File "/usr/local/lib/python3.10/site-packages/django/views/generic/base.py", line 144, in dispatch
+    return handler(request, *args, **kwargs)
+  File "/usr/local/lib/python3.10/site-packages/django/views/generic/list.py", line 178, in get
+    context = self.get_context_data()
+  File "/app/apps/orders/views.py", line 49, in get_context_data
+    shipped_weight += o.shipped_weight
+  File "/app/apps/orders/models.py", line 109, in shipped_weight
+    total_kg = sum(s.total_weight for s in self.shipments.all())
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/query.py", line 386, in __iter__
+    self._fetch_all()
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/query.py", line 1954, in _fetch_all
+    self._result_cache = list(self._iterable_class(self))
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/query.py", line 93, in __iter__
+    results = compiler.execute_sql(
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/sql/compiler.py", line 1623, in execute_sql
+    cursor.execute(sql, params)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 122, in execute
+    return super().execute(sql, params)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "/usr/local/lib/python3.10/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/sqlite3/base.py", line 360, in execute
+    return super().execute(query, params)
+django.db.utils.OperationalError: no such column: shipments_shipment.pickup_contact_phone
+[2026-03-26 09:22:58] ERROR django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 500 192021
+[2026-03-26 09:23:58] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 58161
+[2026-03-26 09:23:59] WARNING django.request log.log_response:253 — Not Found: /favicon.ico
+[2026-03-26 09:23:59] WARNING django.server basehttp.log_message:213 — "GET /favicon.ico HTTP/1.1" 404 7178
+[2026-03-26 09:24:00] INFO apps.orders views.order_create:300 — New order creation page accessed by shubham (Customer)
+[2026-03-26 09:24:01] INFO django.server basehttp.log_message:213 — "GET /orders/create/ HTTP/1.1" 200 130331
+[2026-03-26 09:24:05] DEBUG apps.shipments views.shipment_list:357 — Shipment list filters: search=None, status=None, type=None, from=None, to=None
+[2026-03-26 09:24:05] DEBUG apps.shipments views.shipment_list:379 — Total shipments after filtering: 8
+[2026-03-26 09:24:06] INFO django.server basehttp.log_message:213 — "GET /shipments/ HTTP/1.1" 200 63601
+[2026-03-26 09:24:08] INFO django.server basehttp.log_message:213 — "GET /shipments/216/ HTTP/1.1" 200 155782
+[2026-03-26 09:24:08] INFO django.server basehttp.log_message:213 — "GET /api/shipments/216/tracking/ HTTP/1.1" 200 734
+[2026-03-26 09:24:10] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 58161
+[2026-03-26 09:24:14] INFO django.server basehttp.log_message:213 — "GET /orders/167/ HTTP/1.1" 200 133633
+[2026-03-26 09:24:17] INFO django.server basehttp.log_message:213 — "GET /shipments/create/?order_id=167&next=/orders/167/ HTTP/1.1" 200 192443
+[2026-03-26 09:26:34] INFO apps.shipments views.shipment_create:804 — Shipment created: SHP-2026-19888 for Deloitte (Customer) by shubham (Customer)
+[2026-03-26 09:26:34] INFO django.server basehttp.log_message:213 — "POST /shipments/create/?order_id=167&next=/orders/167/ HTTP/1.1" 302 0
+[2026-03-26 09:26:34] INFO django.server basehttp.log_message:213 — "GET /orders/167/ HTTP/1.1" 200 137539
+[2026-03-26 09:26:41] DEBUG apps.shipments views.shipment_list:357 — Shipment list filters: search=None, status=None, type=None, from=None, to=None
+[2026-03-26 09:26:41] DEBUG apps.shipments views.shipment_list:379 — Total shipments after filtering: 9
+[2026-03-26 09:26:41] INFO django.server basehttp.log_message:213 — "GET /shipments/ HTTP/1.1" 200 66007
+[2026-03-26 09:26:43] INFO django.server basehttp.log_message:213 — "GET /shipments/217/ HTTP/1.1" 200 155939
+[2026-03-26 09:26:44] INFO django.server basehttp.log_message:213 — "GET /api/shipments/217/tracking/ HTTP/1.1" 200 734
+[2026-03-26 09:27:09] DEBUG apps.shipments views.shipment_list:357 — Shipment list filters: search=None, status=None, type=None, from=None, to=None
+[2026-03-26 09:27:09] DEBUG apps.shipments views.shipment_list:379 — Total shipments after filtering: 9
+[2026-03-26 09:27:09] INFO django.server basehttp.log_message:213 — "GET /shipments/ HTTP/1.1" 200 66007
+[2026-03-26 09:27:11] INFO django.server basehttp.log_message:213 — "GET /shipments/217/ HTTP/1.1" 200 155939
+[2026-03-26 09:27:11] INFO django.server basehttp.log_message:213 — "GET /api/shipments/217/tracking/ HTTP/1.1" 200 734
+[2026-03-26 09:27:15] DEBUG apps.accounts utils.filter_by_user_company:21 — Data filter applied for shubham → company: Deloitte (Customer)
+[2026-03-26 09:27:15] INFO django.server basehttp.log_message:213 — "GET /dashboard/ HTTP/1.1" 200 61180
+[2026-03-26 09:27:17] DEBUG apps.shipments views.shipment_list:357 — Shipment list filters: search=None, status=None, type=None, from=None, to=None
+[2026-03-26 09:27:17] DEBUG apps.shipments views.shipment_list:379 — Total shipments after filtering: 9
+[2026-03-26 09:27:17] INFO django.server basehttp.log_message:213 — "GET /shipments/ HTTP/1.1" 200 66007
+[2026-03-26 09:27:18] INFO django.server basehttp.log_message:213 — "GET /shipments/217/ HTTP/1.1" 200 155939
+[2026-03-26 09:27:19] INFO django.server basehttp.log_message:213 — "GET /api/shipments/217/tracking/ HTTP/1.1" 200 734
+[2026-03-26 09:27:21] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 58163
+[2026-03-26 09:27:23] INFO django.server basehttp.log_message:213 — "GET /orders/167/ HTTP/1.1" 200 137214
+[2026-03-26 09:27:23] INFO django.server basehttp.log_message:213 — "GET /orders/167/ HTTP/1.1" 200 137214
+[2026-03-26 09:34:08] INFO django.utils.autoreload autoreload.trigger_reload:265 — /app/apps/orders/views.py changed, reloading.
+[2026-03-26 09:34:10] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-26 09:34:51] INFO django.utils.autoreload autoreload.trigger_reload:265 — /app/apps/shipments/views.py changed, reloading.
+[2026-03-26 09:34:54] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader

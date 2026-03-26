@@ -1108,6 +1108,16 @@ document.addEventListener('DOMContentLoaded', function() {
         if (modal) modal.hide();
         document.getElementById('locationModalForm').reset();
     });
+    
+    // Auto-sync contact details when Add Shipment drawer is shown
+    const addShipmentOffcanvas = document.getElementById('offcanvasAddShipment');
+    if (addShipmentOffcanvas) {
+        addShipmentOffcanvas.addEventListener('show.bs.offcanvas', function() {
+            // Trigger sync for both selects
+            if (pickupContactSelect) handleContactChange({ target: pickupContactSelect });
+            if (deliveryContactSelect) handleContactChange({ target: deliveryContactSelect });
+        });
+    }
 });
 </script>
 
@@ -1167,6 +1177,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                         <select name="pickup_contact_ui" id="shipment-pickup-contact-select" class="form-select rounded-3">
                             <option value="">Select a Contact</option>
+                            {% for contact in previous_pickup_contacts %}
+                            <option value="{{ contact.name }}" data-email="{{ contact.email }}" data-phone="{{ contact.phone }}" {% if forloop.first %}selected{% endif %}>
+                                {{ contact.name }}
+                            </option>
+                            {% endfor %}
                         </select>
                         <input type="hidden" name="pickup_email_ui" id="shipment-pickup-email-hidden">
                         <input type="hidden" name="pickup_contact_phone_ui" id="shipment-pickup-phone-hidden">
@@ -1240,6 +1255,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                         <select name="delivery_contact_ui" id="shipment-delivery-contact-select" class="form-select rounded-3" required>
                             <option value="">Select a Contact</option>
+                            {% for contact in previous_delivery_contacts %}
+                            <option value="{{ contact.name }}" data-email="{{ contact.email }}" data-phone="{{ contact.phone }}" {% if forloop.first %}selected{% endif %}>
+                                {{ contact.name }}
+                            </option>
+                            {% endfor %}
                         </select>
                         <input type="hidden" name="delivery_email_ui" id="shipment-delivery-email-hidden">
                         <input type="hidden" name="delivery_contact_phone_ui" id="shipment-delivery-phone-hidden">
