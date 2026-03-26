@@ -195,9 +195,21 @@ def dashboard(request):
     selected_chart_month = chart_start_date.strftime('%Y-%m')
     
     # Base queryset filtered by user's company
-    base_qs = filter_by_user_company(Shipment.objects.all(), request.user)
-    invoice_qs = filter_by_user_company(Invoice.objects.all(), request.user)
-    order_qs = filter_by_user_company(Order.objects.all(), request.user, company_field='receiver')
+    if request.user.role == 'customer' and request.user.company:
+        base_qs = Shipment.objects.filter(
+            Q(customer=request.user.company) | 
+            Q(created_by=request.user) |
+            Q(order__created_by=request.user)
+        ).distinct()
+        order_qs = Order.objects.filter(
+            Q(receiver=request.user.company) | 
+            Q(created_by=request.user)
+        ).distinct()
+        invoice_qs = filter_by_user_company(Invoice.objects.all(), request.user)
+    else:
+        base_qs = filter_by_user_company(Shipment.objects.all(), request.user)
+        order_qs = filter_by_user_company(Order.objects.all(), request.user, company_field='receiver')
+        invoice_qs = filter_by_user_company(Invoice.objects.all(), request.user)
     
     # Stat cards
     active_shipments = base_qs.filter(
@@ -316,9 +328,15 @@ def dashboard(request):
 @login_required
 def shipment_list(request):
     """List all shipments with filters"""
-    shipments = filter_by_user_company(
-        Shipment.objects.select_related('customer', 'shipper', 'consignee', 'order').all(), request.user
-    )
+    base_qs = Shipment.objects.select_related('customer', 'shipper', 'consignee', 'order').all()
+    if request.user.role == 'customer' and request.user.company:
+        shipments = base_qs.filter(
+            Q(customer=request.user.company) | 
+            Q(created_by=request.user) |
+            Q(order__created_by=request.user)
+        ).distinct()
+    else:
+        shipments = filter_by_user_company(base_qs, request.user)
     
     # Search
     search = request.GET.get('search')
@@ -599,7 +617,10 @@ def shipment_create(request):
         try:
             with transaction.atomic():
                 # Get form data
-                customer_id = request.POST.get('customer') or order.receiver_id
+                if request.user.role == 'customer' and request.user.company:
+                    customer_id = request.user.company_id
+                else:
+                    customer_id = request.POST.get('customer') or order.receiver_id
                 carrier_id = request.POST.get('carrier')
                 shipper_id = request.POST.get('shipper') or order.supplier_id
                 consignee_id = request.POST.get('consignee') or order.receiver_id
