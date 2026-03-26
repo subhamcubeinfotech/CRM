@@ -182,7 +182,11 @@ def dashboard(request):
         chart_end_date = last_month_end + timedelta(days=1)
     elif date_range == 'this_month':
         chart_start_date = today.replace(day=1)
-        chart_end_date = today + timedelta(days=1)
+        # Get last day of current month
+        if today.month == 12:
+            chart_end_date = today.replace(year=today.year + 1, month=1, day=1)
+        else:
+            chart_end_date = today.replace(month=today.month + 1, day=1)
     elif date_range == 'custom' and start_date_str and end_date_str:
         try:
             chart_start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
@@ -217,7 +221,7 @@ def dashboard(request):
     ).count()
     
     monthly_revenue = base_qs.filter(
-        status='delivered'
+        status__in=['delivered', 'invoiced', 'paid']
     ).filter(
         Q(actual_delivery_date__gte=chart_start_date, actual_delivery_date__lt=chart_end_date) | 
         Q(actual_delivery_date__isnull=True, estimated_delivery_date__gte=chart_start_date, estimated_delivery_date__lt=chart_end_date)
@@ -248,7 +252,7 @@ def dashboard(request):
         month_end_date = (month_start_date + timedelta(days=32)).replace(day=1) - timedelta(days=1)
         
         month_revenue = base_qs.filter(
-            status='delivered'
+            status__in=['delivered', 'invoiced', 'paid']
         ).filter(
             Q(actual_delivery_date__gte=month_start_date, actual_delivery_date__lte=month_end_date) |
             Q(actual_delivery_date__isnull=True, estimated_delivery_date__gte=month_start_date, estimated_delivery_date__lte=month_end_date)
