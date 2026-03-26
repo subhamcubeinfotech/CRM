@@ -717,6 +717,17 @@ def shipment_create(request):
                     inv_item = None
                     if item_data['material_id'] and str(item_data['material_id']).isdigit():
                         inv_item = InventoryItem.objects.filter(pk=item_data['material_id']).first()
+                        
+                        # Deduct stock if item is from inventory
+                        if inv_item:
+                            try:
+                                qty_to_deduct = float(item_data.get('weight') or 0)
+                                if qty_to_deduct > 0:
+                                    inv_item.quantity = max(0, inv_item.quantity - int(qty_to_deduct))
+                                    inv_item.save()
+                                    logger.info(f"Deducted {qty_to_deduct} from {inv_item.product_name} during Shipment {shipment.shipment_number}. New stock: {inv_item.quantity}")
+                            except Exception as e:
+                                logger.warning(f"Stock deduction failed for item {item_data['material_id']} in Shipment {shipment.shipment_number}: {e}")
                     
                     try:
                         calculated_weight += float(item_data.get('weight') or 0)
