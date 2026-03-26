@@ -331,7 +331,8 @@
                                         <th>Pickup Location</th>
                                         <th>Destination Location</th>
                                         <th>Net Weight <i class="fas fa-arrows-alt-v ms-1 op-30"></i></th>
-                                        <th class="pe-3">Pickup Num.</th>
+                                        <th>Pickup No. <i class="fas fa-arrows-alt-v ms-1 op-30"></i></th>
+                                        <th class="pe-3">Delivery No. <i class="fas fa-arrows-alt-v ms-1 op-30"></i></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -355,11 +356,12 @@
                                             <div class="text-muted" style="font-size: 0.65rem;">{{ ship.order.receiver.city }}, {{ ship.order.receiver.state }}</div>
                                         </td>
                                         <td class="fw-bold">{{ ship.total_weight|intcomma }} lbs</td>
-                                        <td class="pe-3 small text-muted">{{ ship.tracking_number|default:"-" }}</td>
+                                        <td class="small text-muted">{{ ship.pickup_number|default:"-" }}</td>
+                                        <td class="pe-3 small text-muted">{{ ship.delivery_number|default:"-" }}</td>
                                     </tr>
                                     {% empty %}
                                     <tr>
-                                        <td colspan="8" class="text-center py-4 text-muted">No shipments recorded for
+                                        <td colspan="9" class="text-center py-4 text-muted">No shipments recorded for
                                             this order</td>
                                     </tr>
                                     {% endfor %}
@@ -1043,8 +1045,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const emailHidden = document.getElementById(`shipment-${type}-email-hidden`);
         if (emailHidden) emailHidden.value = email;
 
-        const numberInput = document.querySelector(`[name="${type}_number_ui"]`);
-        if (numberInput && phone) numberInput.value = phone;
+        // const numberInput = document.querySelector(`[name="${type}_number_ui"]`);
+        // if (numberInput && phone) numberInput.value = phone;
     };
 
     pickupContactSelect?.addEventListener('change', handleContactChange);

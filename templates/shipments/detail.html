@@ -591,6 +591,7 @@
                 {% if shipment.shipper %}
                 <div class="party-detail"><i class="fas fa-map-marker-alt text-primary me-1"></i>{{ shipment.shipper.full_address }}</div>
                 {% endif %}
+                <div class="party-detail"><i class="fas fa-hashtag me-1 text-muted"></i>P/U No: {{ shipment.pickup_number|default:"-" }}</div>
                 <div class="party-detail mt-1"><i class="fas fa-handshake me-1 text-muted"></i>FOB Origin</div>
                 {% if shipment.pickup_date %}<div class="party-detail"><i class="fas fa-calendar me-1 text-muted"></i>{{ shipment.pickup_date|date:"l, M j" }}</div>{% endif %}
             </div>
@@ -612,6 +613,7 @@
                 {% elif shipment.order and shipment.order.receiver %}
                 <div class="party-detail"><i class="fas fa-map-marker-alt text-primary me-1"></i>{{ shipment.order.receiver.full_address }}</div>
                 {% endif %}
+                <div class="party-detail"><i class="fas fa-hashtag me-1 text-muted"></i>Del No: {{ shipment.delivery_number|default:"-" }}</div>
                 <div class="party-detail mt-1"><i class="fas fa-handshake me-1 text-muted"></i>FOB Destination</div>
                 {% if shipment.estimated_delivery_date %}<div class="party-detail"><i class="fas fa-calendar me-1 text-muted"></i>{{ shipment.estimated_delivery_date|date:"l, M j" }}</div>{% endif %}
             </div>
