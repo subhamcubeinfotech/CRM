@@ -848,11 +848,11 @@
                                     <div class="mb-0">
                                         <div class="d-flex justify-content-between align-items-center mb-2">
                                             <label class="logistics-label mb-0">Contact</label>
-                                            <button type="button" class="btn btn-sm btn-outline-primary">
+                                            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="offcanvas" data-bs-target="#contactOffcanvas" data-contact-select-target="logistics-pickup-contact-select">
                                                 <i class="fas fa-plus-circle me-1"></i>Add
                                             </button>
                                         </div>
-                                        <select class="form-select logistics-select mb-2">
+                                        <select class="form-select logistics-select mb-2" id="logistics-pickup-contact-select">
                                             <option value="">{{ shipment.pickup_contact|default:"Contact" }}</option>
                                         </select>
                                         <div class="logistics-contact-meta">
@@ -888,11 +888,11 @@
                                     <div class="mb-0">
                                         <div class="d-flex justify-content-between align-items-center mb-2">
                                             <label class="logistics-label mb-0">Contact</label>
-                                            <button type="button" class="btn btn-sm btn-outline-primary">
+                                            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="offcanvas" data-bs-target="#contactOffcanvas" data-contact-select-target="logistics-delivery-contact-select">
                                                 <i class="fas fa-plus-circle me-1"></i>Add
                                             </button>
                                         </div>
-                                        <select class="form-select logistics-select mb-2">
+                                        <select class="form-select logistics-select mb-2" id="logistics-delivery-contact-select">
                                             <option value="">{{ shipment.delivery_contact|default:"Contact" }}</option>
                                         </select>
                                         <div class="logistics-contact-meta">
@@ -2068,7 +2068,7 @@
                     <div class="col-md-6">
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <label class="form-label small fw-bold text-muted text-uppercase mb-0">Pickup Contact</label>
-                            <button type="button" class="btn btn-add-outline py-0" data-bs-toggle="modal" data-bs-target="#contactModal" data-contact-select-target="edit-pickup-contact-select"><i class="fas fa-plus-circle me-1"></i>Add</button>
+                            <button type="button" class="btn btn-add-outline py-0" data-bs-toggle="offcanvas" data-bs-target="#contactOffcanvas" data-contact-select-target="edit-pickup-contact-select"><i class="fas fa-plus-circle me-1"></i>Add</button>
                         </div>
                         <select name="pickup_contact_ui" id="edit-pickup-contact-select" class="form-select">
                             <option value="">Select a contact</option>
@@ -2130,7 +2130,7 @@
                     <div class="col-md-6">
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <label class="form-label small fw-bold text-muted text-uppercase mb-0">Delivery Contact</label>
-                            <button type="button" class="btn btn-add-outline py-0" data-bs-toggle="modal" data-bs-target="#contactModal" data-contact-select-target="edit-delivery-contact-select"><i class="fas fa-plus-circle me-1"></i>Add</button>
+                            <button type="button" class="btn btn-add-outline py-0" data-bs-toggle="offcanvas" data-bs-target="#contactOffcanvas" data-contact-select-target="edit-delivery-contact-select"><i class="fas fa-plus-circle me-1"></i>Add</button>
                         </div>
                         <select name="delivery_contact_ui" id="edit-delivery-contact-select" class="form-select">
                             <option value="">Select a contact</option>
@@ -2206,41 +2206,55 @@
     </div>
 </div>
 
-<!-- Add Contact Modal -->
-<div class="modal fade" id="contactModal" tabindex="-1" aria-labelledby="contactModalLabel" aria-hidden="true" style="z-index: 1060;">
-    <div class="modal-dialog modal-dialog-centered" style="max-width: 480px;">
-        <div class="modal-content shadow-lg border-0" style="border-radius: 12px;">
-            <div class="modal-header border-bottom px-4 pt-4 pb-3">
-                <h5 class="modal-title fw-bold text-dark" id="contactModalLabel" style="font-size: 1.15rem;">Add Contact</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-4">
-                <form id="contactModalForm">
-                    <div class="mb-4">
-                        <label class="form-label small fw-bold text-dark text-uppercase mb-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">Full Name <span class="text-danger">*</span></label>
-                        <input type="text" id="contactModalName" class="form-control form-control-lg fs-6" placeholder="Enter name" style="border-radius: 8px;">
+<!-- Add Contact Offcanvas -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="contactOffcanvas" aria-labelledby="contactOffcanvasLabel" style="width: 500px; z-index: 1070;">
+    <div class="offcanvas-header border-bottom px-4 py-3">
+        <h5 class="offcanvas-title fw-bold text-dark" id="contactOffcanvasLabel" style="font-size: 1.25rem;">Add Contact</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body p-0 d-flex flex-column" style="height: 100%;">
+        <div class="px-4 py-4 flex-grow-1" style="overflow-y: auto;">
+            <form id="contactOffcanvasForm">
+                <div class="mb-4">
+                    <label class="form-label small fw-bold text-dark mb-2">Name <span class="text-danger">*</span></label>
+                    <input type="text" id="contactModalName" class="form-control" placeholder="Full name">
+                </div>
+                
+                <div class="mb-4">
+                    <label class="form-label small fw-bold text-dark mb-2">Contact Type</label>
+                    <select class="form-select" id="contactModalType">
+                        <option value="">Select a contact type</option>
+                        <option value="driver">Driver</option>
+                        <option value="dispatcher">Dispatcher</option>
+                        <option value="warehouse">Warehouse Manager</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label small fw-bold text-dark mb-2">Email <span class="text-danger">*</span></label>
+                    <input type="email" id="contactModalEmail" class="form-control" placeholder="Insert an email">
+                </div>
+                
+                <div class="mb-4">
+                    <label class="form-label small fw-bold text-dark mb-2">Mobile number</label>
+                    <input type="text" id="contactModalMobile" class="form-control" placeholder="(000) 000-0000">
+                </div>
+                
+                <div class="row g-3">
+                    <div class="col-8">
+                        <label class="form-label small fw-bold text-dark mb-2">Office Number</label>
+                        <input type="text" id="contactModalOffice" class="form-control" placeholder="(000) 000-0000">
                     </div>
-                    
-                    <div class="mb-4">
-                        <label class="form-label small fw-bold text-dark text-uppercase mb-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">Email <span class="text-danger">*</span></label>
-                        <input type="email" id="contactModalEmail" class="form-control form-control-lg fs-6" placeholder="email@example.com" style="border-radius: 8px;">
+                    <div class="col-4">
+                        <label class="form-label small fw-bold text-dark mb-2">Extension</label>
+                        <input type="text" id="contactModalExt" class="form-control" placeholder="00000" style="background-color: #f1f5f9;">
                     </div>
-                    
-                    <div class="mb-4">
-                        <label class="form-label small fw-bold text-dark text-uppercase mb-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">Mobile Number</label>
-                        <input type="text" id="contactModalMobile" class="form-control form-control-lg fs-6" placeholder="Mobile #" style="border-radius: 8px;">
-                    </div>
-                    
-                    <div class="mb-4">
-                        <label class="form-label small fw-bold text-dark text-uppercase mb-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">Office Number</label>
-                        <input type="text" id="contactModalOffice" class="form-control form-control-lg fs-6" placeholder="Office #" style="border-radius: 8px;">
-                    </div>
-                    
-                    <div class="d-grid mt-4 pt-2">
-                        <button type="button" id="contactModalSubmit" class="btn btn-primary btn-lg fw-semibold" style="border-radius: 8px;">Add to Selection</button>
-                    </div>
-                </form>
-            </div>
+                </div>
+            </form>
+        </div>
+        <div class="px-4 py-3 border-top" style="background-color: #f8fafc; text-align: center;">
+            <button type="button" id="contactModalSubmit" class="btn btn-primary px-5 py-2 fw-semibold" style="border-radius: 6px;">Submit</button>
         </div>
     </div>
 </div>
@@ -2372,15 +2386,15 @@
                 // Trigger change event to update any listening scripts
                 contactSelect.dispatchEvent(new Event('change'));
 
-                // Close the Modal
-                const contactModalElement = document.getElementById('contactModal');
-                if (contactModalElement && window.bootstrap?.Modal) {
-                    const modal = bootstrap.Modal.getInstance(contactModalElement);
-                    if (modal) modal.hide();
+                // Close the Offcanvas
+                const contactOffcanvasElement = document.getElementById('contactOffcanvas');
+                if (contactOffcanvasElement && window.bootstrap?.Offcanvas) {
+                    const offcanvas = bootstrap.Offcanvas.getInstance(contactOffcanvasElement);
+                    if (offcanvas) offcanvas.hide();
                 }
 
                 // Reset form
-                document.getElementById('contactModalForm')?.reset();
+                document.getElementById('contactOffcanvasForm')?.reset();
             });
         }
 
