@@ -178,20 +178,64 @@
         transition: width 0.4s;
     }
 
-    .milestone-item {
-        display: flex;
-        gap: 1rem;
-        padding: 0.75rem 0;
-        border-bottom: 1px solid #f1f3f5;
+    /* History Timeline styles */
+    .history-timeline {
+        position: relative;
+        padding-left: 20px;
     }
 
-    .milestone-dot {
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        background: #1c7ed6;
-        margin-top: 5px;
+    .history-item {
+        position: relative;
+        padding-bottom: 1.5rem;
+    }
+
+    .history-item:last-child {
+        padding-bottom: 0;
+    }
+
+    .history-line {
+        position: absolute;
+        left: 17px;
+        top: 36px;
+        bottom: 0;
+        width: 2px;
+        background: #f1f3f5;
+        z-index: 1;
+    }
+
+    .history-item:last-child .history-line {
+        display: none;
+    }
+
+    .history-icon-wrapper {
+        position: relative;
+        z-index: 2;
         flex-shrink: 0;
+    }
+
+    .history-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.9rem;
+        border: 2px solid #fff;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+
+    .history-content {
+        background: #fff;
+        border: 1px solid #f1f3f5;
+        border-radius: 12px;
+        padding: 1rem;
+        transition: all 0.2s;
+    }
+
+    .history-content:hover {
+        border-color: #e9ecef;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.03);
     }
 
     .chat-bubble {
@@ -857,9 +901,13 @@
                                         <select class="form-select logistics-select mb-2" id="logistics-pickup-contact-select">
                                             <option value="">{{ shipment.pickup_contact|default:"Contact" }}</option>
                                         </select>
-                                        <div class="logistics-contact-meta">
-                                            {% if shipment.pickup_email %}<div><a href="mailto:{{ shipment.pickup_email }}" class="text-decoration-none">{{ shipment.pickup_email }}</a></div>{% endif %}
-                                            {% if shipment.pickup_contact_phone %}<div><a href="tel:{{ shipment.pickup_contact_phone }}" class="text-decoration-none">{{ shipment.pickup_contact_phone }}</a></div>{% endif %}
+                                        <div class="logistics-contact-meta" id="logistics-pickup-contact-meta">
+                                            <div id="logistics-pickup-email-display">
+                                                {% if shipment.pickup_email %}<a href="mailto:{{ shipment.pickup_email }}" class="text-decoration-none">{{ shipment.pickup_email }}</a>{% endif %}
+                                            </div>
+                                            <div id="logistics-pickup-phone-display">
+                                                {% if shipment.pickup_contact_phone %}<a href="tel:{{ shipment.pickup_contact_phone }}" class="text-decoration-none">{{ shipment.pickup_contact_phone }}</a>{% endif %}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -897,9 +945,13 @@
                                         <select class="form-select logistics-select mb-2" id="logistics-delivery-contact-select">
                                             <option value="">{{ shipment.delivery_contact|default:"Contact" }}</option>
                                         </select>
-                                        <div class="logistics-contact-meta">
-                                            {% if shipment.delivery_email %}<div><a href="mailto:{{ shipment.delivery_email }}" class="text-decoration-none">{{ shipment.delivery_email }}</a></div>{% endif %}
-                                            {% if shipment.delivery_contact_phone %}<div><a href="tel:{{ shipment.delivery_contact_phone }}" class="text-decoration-none">{{ shipment.delivery_contact_phone }}</a></div>{% endif %}
+                                        <div class="logistics-contact-meta" id="logistics-delivery-contact-meta">
+                                            <div id="logistics-delivery-email-display">
+                                                {% if shipment.delivery_email %}<a href="mailto:{{ shipment.delivery_email }}" class="text-decoration-none">{{ shipment.delivery_email }}</a>{% endif %}
+                                            </div>
+                                            <div id="logistics-delivery-phone-display">
+                                                {% if shipment.delivery_contact_phone %}<a href="tel:{{ shipment.delivery_contact_phone }}" class="text-decoration-none">{{ shipment.delivery_contact_phone }}</a>{% endif %}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -1088,23 +1140,55 @@
                 <div class="tab-pane fade" id="history">
                     <div class="card border-0 shadow-sm" style="border-radius:14px;">
                         <div class="card-body">
-                            <h5 class="fw-bold mb-3">Shipment History</h5>
-                            <div id="tracking-history-list">
-                            {% for milestone in milestones %}
-                            <div class="milestone-item">
-                                <div class="milestone-dot"></div>
-                                <div>
-                                    <div class="fw-semibold" style="font-size:0.9rem;">{{ milestone.status }}</div>
-                                    {% if milestone.location %}<div class="text-muted small"><i class="fas fa-map-marker-alt me-1"></i>{{ milestone.location }}</div>{% endif %}
-                                    <div class="text-muted small">{{ milestone.timestamp|date:"M d, Y H:i" }}</div>
-                                    {% if milestone.notes %}<div class="text-muted small mt-1">{{ milestone.notes }}</div>{% endif %}
+                            <h5 class="fw-bold mb-4">Shipment History</h5>
+                            
+                            <div class="history-timeline" id="tracking-history-list">
+                            {% for item in all_history %}
+                                <div class="history-item d-flex">
+                                    <div class="history-icon-wrapper me-3">
+                                        <div class="history-icon {% if item.icon %}bg-primary-subtle text-primary{% else %}bg-light text-secondary{% endif %}">
+                                            <i class="{{ item.icon|default:'fas fa-map-marker-alt' }}"></i>
+                                        </div>
+                                        <div class="history-line"></div>
+                                    </div>
+                                    <div class="history-content flex-grow-1">
+                                        <div class="d-flex justify-content-between align-items-start mb-1">
+                                            <div>
+                                                <div class="fw-bold text-dark" style="font-size: 0.95rem;">
+                                                    {% if item.action %}{{ item.action }}{% else %}{{ item.status }}{% endif %}
+                                                </div>
+                                                <div class="text-secondary small">
+                                                    {% if item.description %}{{ item.description }}{% else %}{{ item.notes }}{% endif %}
+                                                </div>
+                                                {% if item.location %}
+                                                <div class="text-primary mt-1" style="font-size: 0.75rem; font-weight: 600;">
+                                                    <i class="fas fa-map-marker-alt me-1"></i>{{ item.location }}
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                            <div class="text-end ms-3" style="min-width: 100px;">
+                                                <div class="small fw-bold text-dark mb-0">
+                                                    {% if item.user %}
+                                                        {{ item.user.get_full_name|default:item.user.username }}
+                                                    {% else %}
+                                                        System
+                                                    {% endif %}
+                                                </div>
+                                                <div class="text-muted" style="font-size: 0.75rem;">
+                                                    {% if item.timestamp %}{{ item.timestamp|timesince }}{% else %}{{ item.created_at|timesince }}{% endif %} ago
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
                             {% empty %}
-                            <div class="text-center py-5 text-muted">
-                                <i class="fas fa-history fa-2x mb-2"></i>
-                                <p>No history recorded yet</p>
-                            </div>
+                                <div class="text-center py-5 text-muted">
+                                    <div class="mb-3 opacity-25">
+                                        <i class="fas fa-history fa-3x"></i>
+                                    </div>
+                                    <p class="mb-0">No history history recorded yet</p>
+                                    <small>Activity and updates will appear here</small>
+                                </div>
                             {% endfor %}
                             </div>
                         </div>
@@ -1690,31 +1774,56 @@
         }
     }
 
-    function renderTrackingHistory(milestones) {
+    function renderTrackingHistory(history) {
         const historyList = document.getElementById('tracking-history-list');
         if (!historyList) return;
 
-        if (!milestones || !milestones.length) {
+        if (!history || !history.length) {
             historyList.innerHTML = `
                 <div class="text-center py-5 text-muted">
-                    <i class="fas fa-history fa-2x mb-2"></i>
-                    <p>No history recorded yet</p>
+                    <div class="mb-3 opacity-25">
+                        <i class="fas fa-history fa-3x"></i>
+                    </div>
+                    <p class="mb-0">No history history recorded yet</p>
+                    <small>Activity and updates will appear here</small>
                 </div>
             `;
             return;
         }
 
-        historyList.innerHTML = milestones.map((milestone) => `
-            <div class="milestone-item">
-                <div class="milestone-dot"></div>
-                <div>
-                    <div class="fw-semibold" style="font-size:0.9rem;">${milestone.status}</div>
-                    ${milestone.location ? `<div class="text-muted small"><i class="fas fa-map-marker-alt me-1"></i>${milestone.location}</div>` : ''}
-                    <div class="text-muted small">${formatTrackingTime(milestone.timestamp)}</div>
-                    ${milestone.notes ? `<div class="text-muted small mt-1">${milestone.notes}</div>` : ''}
+        historyList.innerHTML = history.map((item) => {
+            const iconClass = item.icon || 'fas fa-map-marker-alt';
+            const iconBg = item.icon ? 'bg-primary-subtle text-primary' : 'bg-light text-secondary';
+            const title = item.action || item.status;
+            const description = item.description || item.notes || '';
+            const locationLine = item.location ? `<div class="text-primary mt-1" style="font-size: 0.75rem; font-weight: 600;"><i class="fas fa-map-marker-alt me-1"></i>${item.location}</div>` : '';
+            const userName = item.user_name || 'System';
+            const timeStr = item.timestamp || item.created_at;
+            
+            return `
+                <div class="history-item d-flex">
+                    <div class="history-icon-wrapper me-3">
+                        <div class="history-icon ${iconBg}">
+                            <i class="${iconClass}"></i>
+                        </div>
+                        <div class="history-line"></div>
+                    </div>
+                    <div class="history-content flex-grow-1">
+                        <div class="d-flex justify-content-between align-items-start mb-1">
+                            <div>
+                                <div class="fw-bold text-dark" style="font-size: 0.95rem;">${title}</div>
+                                <div class="text-secondary small">${description}</div>
+                                ${locationLine}
+                            </div>
+                            <div class="text-end ms-3" style="min-width: 100px;">
+                                <div class="small fw-bold text-dark mb-0">${userName}</div>
+                                <div class="text-muted" style="font-size: 0.75rem;">just now</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
     }
 
     function updateTrackingSummary(data) {
@@ -2075,7 +2184,7 @@
                         <select name="pickup_contact_ui" id="edit-pickup-contact-select" class="form-select">
                             <option value="">Select a contact</option>
                             {% if shipment.pickup_contact %}
-                            <option value="{{ shipment.pickup_contact }}" selected>{{ shipment.pickup_contact }}</option>
+                            <option value="{{ shipment.pickup_contact }}" selected data-email="{{ shipment.pickup_email }}" data-phone="{{ shipment.pickup_contact_phone }}">{{ shipment.pickup_contact }}</option>
                             {% endif %}
                         </select>
                         <input type="hidden" name="pickup_email_ui" id="edit-pickup-email-hidden" value="{{ shipment.pickup_email }}">
@@ -2139,7 +2248,7 @@
                         <select name="delivery_contact_ui" id="edit-delivery-contact-select" class="form-select">
                             <option value="">Select a contact</option>
                             {% if shipment.delivery_contact %}
-                            <option value="{{ shipment.delivery_contact }}" selected>{{ shipment.delivery_contact }}</option>
+                            <option value="{{ shipment.delivery_contact }}" selected data-email="{{ shipment.delivery_email }}" data-phone="{{ shipment.delivery_contact_phone }}">{{ shipment.delivery_contact }}</option>
                             {% endif %}
                         </select>
                         <input type="hidden" name="delivery_email_ui" id="edit-delivery-email-hidden" value="{{ shipment.delivery_email }}">
@@ -2348,24 +2457,53 @@
             });
         });
 
-        // Contact Change Handler for Edit Drawer
+        // Contact Change Handler for Edit Drawer & Logistics Section
         const handleEditContactChange = (idPrefix) => {
-            const select = document.getElementById(`edit-${idPrefix}-contact-select`);
+            const editSelect = document.getElementById(`edit-${idPrefix}-contact-select`);
+            const logisticsSelect = document.getElementById(`logistics-${idPrefix}-contact-select`);
             const emailHidden = document.getElementById(`edit-${idPrefix}-email-hidden`);
             const phoneHidden = document.getElementById(`edit-${idPrefix}-phone-hidden`);
             
-            if (!select) return;
-            
-            select.addEventListener('change', function() {
-                const option = this.selectedOptions[0];
+            const emailDisplay = document.getElementById(`logistics-${idPrefix}-email-display`);
+            const phoneDisplay = document.getElementById(`logistics-${idPrefix}-phone-display`);
+
+            const syncAll = (select) => {
+                const option = select.selectedOptions[0];
                 if (!option) return;
                 
+                const name = option.value || '';
                 const email = option.dataset.email || '';
-                const phone = option.dataset.mobile || option.dataset.phone || '';
+                const phone = option.dataset.phone || option.dataset.mobile || '';
                 
+                // Sync Hidden Fields
                 if (emailHidden) emailHidden.value = email;
                 if (phoneHidden) phoneHidden.value = phone;
-            });
+                
+                // Sync Other Selects
+                [editSelect, logisticsSelect].forEach(s => {
+                    if (s && s !== select) {
+                        // If option doesn't exist in other select, add it
+                        if (![...s.options].some(o => o.value === name)) {
+                            const newOpt = new Option(name, name);
+                            newOpt.dataset.email = email;
+                            newOpt.dataset.phone = phone;
+                            s.add(newOpt);
+                        }
+                        s.value = name;
+                    }
+                });
+
+                // Update Display text
+                if (emailDisplay) {
+                    emailDisplay.innerHTML = email ? `<a href="mailto:${email}" class="text-decoration-none">${email}</a>` : '';
+                }
+                if (phoneDisplay) {
+                    phoneDisplay.innerHTML = phone ? `<a href="tel:${phone}" class="text-decoration-none">${phone}</a>` : '';
+                }
+            };
+
+            if (editSelect) editSelect.addEventListener('change', () => syncAll(editSelect));
+            if (logisticsSelect) logisticsSelect.addEventListener('change', () => syncAll(logisticsSelect));
         };
         
         handleEditContactChange('pickup');
@@ -2406,6 +2544,7 @@
                 // Add data attributes for backend processing
                 option.dataset.name = fullName;
                 option.dataset.email = email;
+                option.dataset.phone = mobile || office;
                 option.dataset.mobile = mobile;
                 option.dataset.office = office;
                 

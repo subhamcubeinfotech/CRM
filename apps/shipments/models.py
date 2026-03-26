@@ -361,3 +361,20 @@ class ShipmentItem(models.Model):
         
     def __str__(self):
         return f"{self.material_name} ({self.weight} {self.weight_unit})"
+
+class ShipmentHistory(models.Model):
+    """Detailed audit log for shipment changes"""
+    shipment = models.ForeignKey(Shipment, on_delete=models.CASCADE, related_name='history')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    action = models.CharField(max_length=255) # e.g., "Changed Pickup Contact to राघव त्रेहन"
+    description = models.TextField(blank=True)
+    icon = models.CharField(max_length=50, default='fas fa-info-circle')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Shipment History'
+        verbose_name_plural = 'Shipment History'
+
+    def __str__(self):
+        return f"{self.shipment.shipment_number} - {self.action} at {self.created_at}"
