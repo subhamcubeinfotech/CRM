@@ -128,16 +128,6 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
         
         pickup_contacts = []
         seen_pickup = set()
-        
-        # Add company default as fallback
-        if self.object.supplier:
-            s_name = self.object.supplier.name + " (Main)"
-            pickup_contacts.append({
-                'name': s_name,
-                'email': self.object.supplier.email,
-                'phone': self.object.supplier.phone
-            })
-            seen_pickup.add(s_name)
 
         for s in shipments:
             if s.pickup_contact and s.pickup_contact not in seen_pickup:
@@ -150,16 +140,6 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
 
         delivery_contacts = []
         seen_delivery = set()
-        
-        # Add company default as fallback
-        if self.object.receiver:
-            r_name = self.object.receiver.name + " (Main)"
-            delivery_contacts.append({
-                'name': r_name,
-                'email': self.object.receiver.email,
-                'phone': self.object.receiver.phone
-            })
-            seen_delivery.add(r_name)
 
         for s in shipments:
             if s.delivery_contact and s.delivery_contact not in seen_delivery:
