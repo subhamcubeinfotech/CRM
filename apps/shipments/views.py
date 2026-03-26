@@ -279,13 +279,16 @@ def dashboard(request):
         created_at__date__gte=chart_start_date,
         created_at__date__lt=chart_end_date,
     ).values('status').annotate(count=Count('id'))
-    order_status_counts_dict = {item['status']: item['count'] for item in order_status_counts}
+    open_count = 0
+    complete_count = 0
+    for item in order_status_counts:
+        if item['status'] in ['delivered', 'closed']:
+            complete_count += item['count']
+        else:
+            open_count += item['count']
 
-    order_status_data = []
-    order_status_labels = []
-    for code, label in Order.STATUS_CHOICES:
-        order_status_data.append(order_status_counts_dict.get(code, 0))
-        order_status_labels.append(label)
+    order_status_data = [open_count, complete_count]
+    order_status_labels = ['Open', 'Complete']
     
     # Recent shipments
     recent_shipments = base_qs.select_related('customer').order_by('-created_at')[:10]
