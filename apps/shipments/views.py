@@ -841,14 +841,6 @@ def shipment_create(request):
     
     pickup_contacts = []
     seen_pickup = set()
-    if order.supplier:
-        s_name = order.supplier.name + " (Main)"
-        pickup_contacts.append({
-            'name': s_name,
-            'email': order.supplier.email,
-            'phone': order.supplier.phone
-        })
-        seen_pickup.add(s_name)
     for s in shipments:
         if s.pickup_contact and s.pickup_contact not in seen_pickup:
             pickup_contacts.append({
@@ -860,14 +852,6 @@ def shipment_create(request):
 
     delivery_contacts = []
     seen_delivery = set()
-    if order.receiver:
-        r_name = order.receiver.name + " (Main)"
-        delivery_contacts.append({
-            'name': r_name,
-            'email': order.receiver.email,
-            'phone': order.receiver.phone
-        })
-        seen_delivery.add(r_name)
     for s in shipments:
         if s.delivery_contact and s.delivery_contact not in seen_delivery:
             delivery_contacts.append({
