@@ -70,6 +70,7 @@ class Shipment(TenantAwareModel):
     pickup_location = models.ForeignKey('inventory.Warehouse', on_delete=models.SET_NULL, null=True, blank=True, related_name='pickup_shipments')
     pickup_contact = models.CharField(max_length=255, blank=True)
     pickup_email = models.EmailField(max_length=254, blank=True)
+    pickup_contact_phone = models.CharField(max_length=50, blank=True)
     pickup_number = models.CharField(max_length=50, blank=True)
     pickup_appointment_type = models.CharField(max_length=20, choices=APPOINTMENT_CHOICES, default='fcfs')
     
@@ -77,6 +78,7 @@ class Shipment(TenantAwareModel):
     destination_location = models.ForeignKey('inventory.Warehouse', on_delete=models.SET_NULL, null=True, blank=True, related_name='delivery_shipments')
     delivery_contact = models.CharField(max_length=255, blank=True)
     delivery_email = models.EmailField(max_length=254, blank=True)
+    delivery_contact_phone = models.CharField(max_length=50, blank=True)
     delivery_number = models.CharField(max_length=50, blank=True)
     delivery_appointment_type = models.CharField(max_length=20, choices=APPOINTMENT_CHOICES, default='fcfs')
 

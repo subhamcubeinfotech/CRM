@@ -649,6 +649,7 @@ def shipment_create(request):
                     origin_postal_code=request.POST.get('origin_postal_code', ''),
                     pickup_contact=request.POST.get('pickup_contact_ui', ''),
                     pickup_email=request.POST.get('pickup_email_ui', ''),
+                    pickup_contact_phone=request.POST.get('pickup_contact_phone_ui', ''),
                     pickup_number=request.POST.get('pickup_number_ui', ''),
                     pickup_appointment_type=request.POST.get('pickup_appointment_ui', 'fcfs'),
                     
@@ -661,6 +662,7 @@ def shipment_create(request):
                     destination_postal_code=request.POST.get('destination_postal_code', ''),
                     delivery_contact=request.POST.get('delivery_contact_ui', ''),
                     delivery_email=request.POST.get('delivery_email_ui', ''),
+                    delivery_contact_phone=request.POST.get('delivery_contact_phone_ui', ''),
                     delivery_number=request.POST.get('delivery_number_ui', ''),
                     delivery_appointment_type=request.POST.get('delivery_appointment_ui', 'fcfs'),
                     
@@ -899,6 +901,7 @@ def shipment_edit(request, pk):
                 shipment.origin_postal_code = request.POST.get('origin_postal_code', '')
                 shipment.pickup_contact = request.POST.get('pickup_contact_ui', '')
                 shipment.pickup_email = request.POST.get('pickup_email_ui', '')
+                shipment.pickup_contact_phone = request.POST.get('pickup_contact_phone_ui', '')
                 shipment.pickup_number = request.POST.get('pickup_number_ui', '')
                 shipment.pickup_appointment_type = request.POST.get('pickup_appointment_ui', '')
                 
@@ -910,6 +913,7 @@ def shipment_edit(request, pk):
                 shipment.destination_postal_code = request.POST.get('destination_postal_code', '')
                 shipment.delivery_contact = request.POST.get('delivery_contact_ui', '')
                 shipment.delivery_email = request.POST.get('delivery_email_ui', '')
+                shipment.delivery_contact_phone = request.POST.get('delivery_contact_phone_ui', '')
                 shipment.delivery_number = request.POST.get('delivery_number_ui', '')
                 shipment.delivery_appointment_type = request.POST.get('delivery_appointment_ui', '')
                 

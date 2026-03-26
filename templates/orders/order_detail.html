@@ -1045,6 +1045,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const emailHidden = document.getElementById(`shipment-${type}-email-hidden`);
         if (emailHidden) emailHidden.value = email;
 
+        const phoneHidden = document.getElementById(`shipment-${type}-phone-hidden`);
+        if (phoneHidden) phoneHidden.value = phone;
+
         // const numberInput = document.querySelector(`[name="${type}_number_ui"]`);
         // if (numberInput && phone) numberInput.value = phone;
     };
@@ -1166,6 +1169,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <option value="">Select a Contact</option>
                         </select>
                         <input type="hidden" name="pickup_email_ui" id="shipment-pickup-email-hidden">
+                        <input type="hidden" name="pickup_contact_phone_ui" id="shipment-pickup-phone-hidden">
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-bold small text-uppercase mb-1">Pickup Number <span class="text-danger">*</span></label>
@@ -1238,6 +1242,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <option value="">Select a Contact</option>
                         </select>
                         <input type="hidden" name="delivery_email_ui" id="shipment-delivery-email-hidden">
+                        <input type="hidden" name="delivery_contact_phone_ui" id="shipment-delivery-phone-hidden">
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-bold small text-uppercase mb-1">Delivery Number <span class="text-danger">*</span></label>
