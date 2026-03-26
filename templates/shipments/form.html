@@ -292,11 +292,19 @@
                                 </div>
                                 <select name="pickup_contact_ui" id="shipment-pickup-contact-select" class="form-select">
                                     <option value="">Select a Contact</option>
-                                    {% if not is_create and shipment.pickup_contact %}
-                                    <option value="{{ shipment.pickup_contact }}" selected data-email="{{ shipment.pickup_email }}" data-phone="{{ shipment.pickup_number }}">{{ shipment.pickup_contact }}</option>
+                                    {% if shipment.pickup_contact %}
+                                    <option value="{{ shipment.pickup_contact }}" selected data-email="{{ shipment.pickup_email }}" data-phone="{{ shipment.pickup_contact_phone }}">{{ shipment.pickup_contact }}</option>
                                     {% endif %}
+                                    {% for contact in previous_pickup_contacts %}
+                                    {% if contact.name != shipment.pickup_contact %}
+                                    <option value="{{ contact.name }}" data-email="{{ contact.email }}" data-phone="{{ contact.phone }}" {% if is_create and forloop.first %}selected{% endif %}>
+                                        {{ contact.name }}
+                                    </option>
+                                    {% endif %}
+                                    {% endfor %}
                                 </select>
                                 <input type="hidden" name="pickup_email_ui" id="shipment-pickup-email-hidden" value="{{ shipment.pickup_email }}">
+                                <input type="hidden" name="pickup_contact_phone_ui" id="shipment-pickup-phone-hidden" value="{{ shipment.pickup_contact_phone }}">
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Pickup Number <span class="text-danger">*</span></label>
@@ -381,11 +389,19 @@
                                 </div>
                                 <select name="delivery_contact_ui" id="shipment-delivery-contact-select" class="form-select" required>
                                     <option value="">Select a Contact</option>
-                                    {% if not is_create and shipment.delivery_contact %}
-                                    <option value="{{ shipment.delivery_contact }}" selected data-email="{{ shipment.delivery_email }}" data-phone="{{ shipment.delivery_number }}">{{ shipment.delivery_contact }}</option>
+                                    {% if shipment.delivery_contact %}
+                                    <option value="{{ shipment.delivery_contact }}" selected data-email="{{ shipment.delivery_email }}" data-phone="{{ shipment.delivery_contact_phone }}">{{ shipment.delivery_contact }}</option>
                                     {% endif %}
+                                    {% for contact in previous_delivery_contacts %}
+                                    {% if contact.name != shipment.delivery_contact %}
+                                    <option value="{{ contact.name }}" data-email="{{ contact.email }}" data-phone="{{ contact.phone }}" {% if is_create and forloop.first %}selected{% endif %}>
+                                        {{ contact.name }}
+                                    </option>
+                                    {% endif %}
+                                    {% endfor %}
                                 </select>
                                 <input type="hidden" name="delivery_email_ui" id="shipment-delivery-email-hidden" value="{{ shipment.delivery_email }}">
+                                <input type="hidden" name="delivery_contact_phone_ui" id="shipment-delivery-phone-hidden" value="{{ shipment.delivery_contact_phone }}">
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Delivery Number <span class="text-danger">*</span></label>
@@ -1732,9 +1748,13 @@
         const emailHidden = document.getElementById(`shipment-${type}-email-hidden`);
         if (emailHidden) emailHidden.value = email;
 
+        // Update hidden phone field
+        const phoneHidden = document.getElementById(`shipment-${type}-phone-hidden`);
+        if (phoneHidden) phoneHidden.value = phone;
+
         // Update number input (which is visible in form)
-        const numberInput = document.querySelector(`[name="${type}_number_ui"]`);
-        if (numberInput && phone) numberInput.value = phone;
+        // const numberInput = document.querySelector(`[name="${type}_number_ui"]`);
+        // if (numberInput && phone) numberInput.value = phone;
 
         /* Removed detail display logic */
     };

@@ -331,7 +331,8 @@
                                         <th>Pickup Location</th>
                                         <th>Destination Location</th>
                                         <th>Net Weight <i class="fas fa-arrows-alt-v ms-1 op-30"></i></th>
-                                        <th class="pe-3">Pickup Num.</th>
+                                        <th>Pickup No. <i class="fas fa-arrows-alt-v ms-1 op-30"></i></th>
+                                        <th class="pe-3">Delivery No. <i class="fas fa-arrows-alt-v ms-1 op-30"></i></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -355,11 +356,12 @@
                                             <div class="text-muted" style="font-size: 0.65rem;">{{ ship.order.receiver.city }}, {{ ship.order.receiver.state }}</div>
                                         </td>
                                         <td class="fw-bold">{{ ship.total_weight|intcomma }} lbs</td>
-                                        <td class="pe-3 small text-muted">{{ ship.tracking_number|default:"-" }}</td>
+                                        <td class="small text-muted">{{ ship.pickup_number|default:"-" }}</td>
+                                        <td class="pe-3 small text-muted">{{ ship.delivery_number|default:"-" }}</td>
                                     </tr>
                                     {% empty %}
                                     <tr>
-                                        <td colspan="8" class="text-center py-4 text-muted">No shipments recorded for
+                                        <td colspan="9" class="text-center py-4 text-muted">No shipments recorded for
                                             this order</td>
                                     </tr>
                                     {% endfor %}
@@ -1043,8 +1045,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const emailHidden = document.getElementById(`shipment-${type}-email-hidden`);
         if (emailHidden) emailHidden.value = email;
 
-        const numberInput = document.querySelector(`[name="${type}_number_ui"]`);
-        if (numberInput && phone) numberInput.value = phone;
+        const phoneHidden = document.getElementById(`shipment-${type}-phone-hidden`);
+        if (phoneHidden) phoneHidden.value = phone;
+
+        // const numberInput = document.querySelector(`[name="${type}_number_ui"]`);
+        // if (numberInput && phone) numberInput.value = phone;
     };
 
     pickupContactSelect?.addEventListener('change', handleContactChange);
@@ -1103,6 +1108,16 @@ document.addEventListener('DOMContentLoaded', function() {
         if (modal) modal.hide();
         document.getElementById('locationModalForm').reset();
     });
+    
+    // Auto-sync contact details when Add Shipment drawer is shown
+    const addShipmentOffcanvas = document.getElementById('offcanvasAddShipment');
+    if (addShipmentOffcanvas) {
+        addShipmentOffcanvas.addEventListener('show.bs.offcanvas', function() {
+            // Trigger sync for both selects
+            if (pickupContactSelect) handleContactChange({ target: pickupContactSelect });
+            if (deliveryContactSelect) handleContactChange({ target: deliveryContactSelect });
+        });
+    }
 });
 </script>
 
@@ -1162,8 +1177,14 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                         <select name="pickup_contact_ui" id="shipment-pickup-contact-select" class="form-select rounded-3">
                             <option value="">Select a Contact</option>
+                            {% for contact in previous_pickup_contacts %}
+                            <option value="{{ contact.name }}" data-email="{{ contact.email }}" data-phone="{{ contact.phone }}" {% if forloop.first %}selected{% endif %}>
+                                {{ contact.name }}
+                            </option>
+                            {% endfor %}
                         </select>
                         <input type="hidden" name="pickup_email_ui" id="shipment-pickup-email-hidden">
+                        <input type="hidden" name="pickup_contact_phone_ui" id="shipment-pickup-phone-hidden">
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-bold small text-uppercase mb-1">Pickup Number <span class="text-danger">*</span></label>
@@ -1234,8 +1255,14 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                         <select name="delivery_contact_ui" id="shipment-delivery-contact-select" class="form-select rounded-3" required>
                             <option value="">Select a Contact</option>
+                            {% for contact in previous_delivery_contacts %}
+                            <option value="{{ contact.name }}" data-email="{{ contact.email }}" data-phone="{{ contact.phone }}" {% if forloop.first %}selected{% endif %}>
+                                {{ contact.name }}
+                            </option>
+                            {% endfor %}
                         </select>
                         <input type="hidden" name="delivery_email_ui" id="shipment-delivery-email-hidden">
+                        <input type="hidden" name="delivery_contact_phone_ui" id="shipment-delivery-phone-hidden">
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-bold small text-uppercase mb-1">Delivery Number <span class="text-danger">*</span></label>
