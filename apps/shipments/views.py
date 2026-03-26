@@ -413,8 +413,17 @@ def shipment_detail(request, pk):
     else:
         check_company_access(shipment.customer, request.user)
     
-    # Get milestones
+    # Get milestones and history
+    from itertools import chain
     milestones = shipment.milestones.all()
+    history_events = shipment.history.all()
+    
+    # Combined history sorted by time
+    all_history = sorted(
+        chain(milestones, history_events),
+        key=lambda x: getattr(x, 'timestamp', getattr(x, 'created_at', None)),
+        reverse=True
+    )
     
     # Get documents
     documents = shipment.documents.all()
@@ -446,6 +455,7 @@ def shipment_detail(request, pk):
     context = {
         'shipment': shipment,
         'milestones': milestones,
+        'all_history': all_history,
         'documents': documents,
         'containers': containers,
         'invoices': invoices,
@@ -698,11 +708,10 @@ def shipment_create(request):
                     # Notes
                     special_instructions=request.POST.get('special_instructions', ''),
                     internal_notes=request.POST.get('internal_notes', ''),
-                    
-                    # Metadata
-                    created_by=request.user,
-                    tenant=request.user.tenant,
                 )
+                shipment.created_by = request.user
+                shipment.tenant = request.user.tenant
+                shipment._current_user = request.user
                 shipment.save()
 
                 # Save tags
@@ -909,6 +918,7 @@ def shipment_edit(request, pk):
         try:
             with transaction.atomic():
                 # Update shipment
+                shipment._current_user = request.user
                 shipment.customer_id = request.POST.get('customer') or shipment.customer_id
                 shipment.carrier_id = request.POST.get('carrier') or shipment.carrier_id
                 shipment.shipper_id = request.POST.get('shipper') or shipment.shipper_id

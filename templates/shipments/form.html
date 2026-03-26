@@ -305,6 +305,10 @@
                                 </select>
                                 <input type="hidden" name="pickup_email_ui" id="shipment-pickup-email-hidden" value="{{ shipment.pickup_email }}">
                                 <input type="hidden" name="pickup_contact_phone_ui" id="shipment-pickup-phone-hidden" value="{{ shipment.pickup_contact_phone }}">
+                                <div id="shipment-pickup-contact-display" class="mt-1 small text-muted">
+                                    {% if shipment.pickup_email %}<div><i class="fas fa-envelope me-1"></i>{{ shipment.pickup_email }}</div>{% endif %}
+                                    {% if shipment.pickup_contact_phone %}<div><i class="fas fa-phone me-1"></i>{{ shipment.pickup_contact_phone }}</div>{% endif %}
+                                </div>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Pickup Number <span class="text-danger">*</span></label>
@@ -402,6 +406,10 @@
                                 </select>
                                 <input type="hidden" name="delivery_email_ui" id="shipment-delivery-email-hidden" value="{{ shipment.delivery_email }}">
                                 <input type="hidden" name="delivery_contact_phone_ui" id="shipment-delivery-phone-hidden" value="{{ shipment.delivery_contact_phone }}">
+                                <div id="shipment-delivery-contact-display" class="mt-1 small text-muted">
+                                    {% if shipment.delivery_email %}<div><i class="fas fa-envelope me-1"></i>{{ shipment.delivery_email }}</div>{% endif %}
+                                    {% if shipment.delivery_contact_phone %}<div><i class="fas fa-phone me-1"></i>{{ shipment.delivery_contact_phone }}</div>{% endif %}
+                                </div>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Delivery Number <span class="text-danger">*</span></label>
@@ -1750,6 +1758,16 @@
 
         // Update hidden phone field
         const phoneHidden = document.getElementById(`shipment-${type}-phone-hidden`);
+        if (phoneHidden) phoneHidden.value = phone;
+
+        // Update display labels
+        const displayDiv = document.getElementById(`shipment-${type}-contact-display`);
+        if (displayDiv) {
+            let html = '';
+            if (email) html += `<div><i class="fas fa-envelope me-1"></i>${email}</div>`;
+            if (phone) html += `<div><i class="fas fa-phone me-1"></i>${phone}</div>`;
+            displayDiv.innerHTML = html;
+        }
         if (phoneHidden) phoneHidden.value = phone;
 
         // Update number input (which is visible in form)

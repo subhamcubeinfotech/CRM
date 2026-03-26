@@ -79,17 +79,32 @@ def shipment_tracking_api(request, pk):
     """API endpoint for shipment tracking data"""
     shipment = get_object_or_404(Shipment, pk=pk)
     
-    # Get milestones
-    milestones = []
+    # Get combined milestones and history
+    combined_history = []
+    
     for m in shipment.milestones.all():
-        milestones.append({
+        combined_history.append({
             'status': m.status,
             'location': m.location,
             'latitude': float(m.latitude) if m.latitude else None,
             'longitude': float(m.longitude) if m.longitude else None,
             'notes': m.notes,
             'timestamp': m.timestamp.isoformat(),
+            'user_name': m.created_by.get_full_name() if m.created_by else 'System',
+            'icon': 'fas fa-map-marker-alt'
         })
+        
+    for h in shipment.history.all():
+        combined_history.append({
+            'action': h.action,
+            'description': h.description,
+            'icon': h.icon,
+            'timestamp': h.created_at.isoformat(),
+            'user_name': h.user.get_full_name() if h.user else 'System'
+        })
+        
+    # Sort combined history by timestamp
+    combined_history.sort(key=lambda x: x['timestamp'], reverse=True)
     
     # Map data
     map_data = {
@@ -121,7 +136,7 @@ def shipment_tracking_api(request, pk):
         'vehicle_number': shipment.vehicle_number,
         'driver_name': shipment.driver_name,
         'driver_phone': shipment.driver_phone,
-        'milestones': milestones,
+        'milestones': combined_history,
         'map_data': map_data,
     }
     

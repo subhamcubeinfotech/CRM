@@ -348,12 +348,26 @@
                                         <td class="small">{{ ship.pickup_date|date:"l, M jS" }}</td>
                                         <td class="small">{{ ship.estimated_delivery_date|date:"l, M jS" }}</td>
                                         <td>
-                                            <div class="small fw-bold text-primary">{{ ship.order.supplier.address|truncatechars:15 }}</div>
-                                            <div class="text-muted" style="font-size: 0.65rem;">{{ ship.order.supplier.city }}, {{ ship.order.supplier.state }}</div>
+                                            <div class="small fw-bold text-primary">{{ ship.origin_address|default:ship.order.supplier.address_line1 }}</div>
+                                            <div class="text-muted" style="font-size: 0.65rem;">
+                                                {{ ship.origin_city|default:ship.order.supplier.city }}, 
+                                                {{ ship.origin_state|default:ship.order.supplier.state }} 
+                                                {{ ship.origin_postal_code|default:ship.order.supplier.postal_code }}
+                                                {% if ship.origin_country or ship.order.supplier.country %}
+                                                , {{ ship.origin_country|default:ship.order.supplier.country }}
+                                                {% endif %}
+                                            </div>
                                         </td>
                                         <td>
-                                            <div class="small fw-bold text-primary">{{ ship.order.receiver.address|truncatechars:15 }}</div>
-                                            <div class="text-muted" style="font-size: 0.65rem;">{{ ship.order.receiver.city }}, {{ ship.order.receiver.state }}</div>
+                                            <div class="small fw-bold text-primary">{{ ship.destination_address|default:ship.order.receiver.address_line1 }}</div>
+                                            <div class="text-muted" style="font-size: 0.65rem;">
+                                                {{ ship.destination_city|default:ship.order.receiver.city }}, 
+                                                {{ ship.destination_state|default:ship.order.receiver.state }} 
+                                                {{ ship.destination_postal_code|default:ship.order.receiver.postal_code }}
+                                                {% if ship.destination_country or ship.order.receiver.country %}
+                                                , {{ ship.destination_country|default:ship.order.receiver.country }}
+                                                {% endif %}
+                                            </div>
                                         </td>
                                         <td class="fw-bold">{{ ship.total_weight|intcomma }} lbs</td>
                                         <td class="small text-muted">{{ ship.pickup_number|default:"-" }}</td>
@@ -1040,13 +1054,22 @@ document.addEventListener('DOMContentLoaded', function() {
         const type = isPickup ? 'pickup' : 'delivery';
         
         const email = option.dataset.email || '';
-        const phone = option.dataset.phone || '';
+        const phone = option.dataset.phone || option.dataset.mobile || '';
         
         const emailHidden = document.getElementById(`shipment-${type}-email-hidden`);
         if (emailHidden) emailHidden.value = email;
 
         const phoneHidden = document.getElementById(`shipment-${type}-phone-hidden`);
         if (phoneHidden) phoneHidden.value = phone;
+
+        // Update display labels
+        const displayDiv = document.getElementById(`shipment-${type}-contact-display`);
+        if (displayDiv) {
+            let html = '';
+            if (email) html += `<div><i class="fas fa-envelope me-1"></i>${email}</div>`;
+            if (phone) html += `<div><i class="fas fa-phone me-1"></i>${phone}</div>`;
+            displayDiv.innerHTML = html;
+        }
 
         // const numberInput = document.querySelector(`[name="${type}_number_ui"]`);
         // if (numberInput && phone) numberInput.value = phone;
@@ -1185,6 +1208,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </select>
                         <input type="hidden" name="pickup_email_ui" id="shipment-pickup-email-hidden">
                         <input type="hidden" name="pickup_contact_phone_ui" id="shipment-pickup-phone-hidden">
+                        <div id="shipment-pickup-contact-display" class="mt-1 small text-muted"></div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-bold small text-uppercase mb-1">Pickup Number <span class="text-danger">*</span></label>
@@ -1263,6 +1287,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </select>
                         <input type="hidden" name="delivery_email_ui" id="shipment-delivery-email-hidden">
                         <input type="hidden" name="delivery_contact_phone_ui" id="shipment-delivery-phone-hidden">
+                        <div id="shipment-delivery-contact-display" class="mt-1 small text-muted"></div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-bold small text-uppercase mb-1">Delivery Number <span class="text-danger">*</span></label>
