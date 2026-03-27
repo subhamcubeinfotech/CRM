@@ -28,6 +28,11 @@ class OrderListView(LoginRequiredMixin, ListView):
         else:
             qs = filter_by_user_company(qs, self.request.user, company_field='receiver')
 
+        # --- Scope Filtering ---
+        scope = self.request.GET.get('scope', 'all')
+        if scope == 'personal':
+            qs = qs.filter(created_by=self.request.user)
+
         # --- Advanced Filtering ---
         statuses = self.request.GET.getlist('status')
         if statuses:
@@ -176,6 +181,7 @@ class OrderListView(LoginRequiredMixin, ListView):
             'representative_list': self.request.GET.getlist('representative'),
             'tag_list': self.request.GET.getlist('tag'),
             'search': self.request.GET.get('search', ''),
+            'scope': self.request.GET.get('scope', 'all'),
         }
         
         return context
