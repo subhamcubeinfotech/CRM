@@ -8,7 +8,7 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from .models import Order, ManifestItem, Tag, ShippingTerm, PackagingType
 from apps.accounts.models import Company
-from apps.inventory.models import Warehouse, InventoryItem
+from apps.inventory.models import Warehouse, InventoryItem, Material
 from apps.accounts.utils import filter_by_user_company, check_company_access
 import logging
 
@@ -24,8 +24,75 @@ class OrderListView(LoginRequiredMixin, ListView):
         qs = Order.objects.all().order_by('-created_at')
         # Allow access if user is receiver OR the creator of the order
         if self.request.user.role == 'customer' and self.request.user.company:
-            return qs.filter(Q(receiver=self.request.user.company) | Q(created_by=self.request.user))
-        return filter_by_user_company(qs, self.request.user, company_field='receiver')
+            qs = qs.filter(Q(receiver=self.request.user.company) | Q(created_by=self.request.user))
+        else:
+            qs = filter_by_user_company(qs, self.request.user, company_field='receiver')
+
+        # --- Advanced Filtering ---
+        status = self.request.GET.get('status')
+        if status:
+            if status == 'open':
+                qs = qs.exclude(status__in=['delivered', 'closed'])
+            elif status == 'complete':
+                qs = qs.filter(status__in=['delivered', 'closed'])
+            else:
+                qs = qs.filter(status=status)
+            
+        supplier_id = self.request.GET.get('supplier')
+        if supplier_id:
+            qs = qs.filter(supplier_id=supplier_id)
+            
+        receiver_id = self.request.GET.get('receiver')
+        if receiver_id:
+            qs = qs.filter(receiver_id=receiver_id)
+            
+        material = self.request.GET.get('material')
+        if material:
+            # Filter orders that have at least one manifest item with this material
+            qs = qs.filter(manifest_items__material=material).distinct()
+            
+        material_type = self.request.GET.get('material_type')
+        if material_type:
+            # Match ManifestItem.material names with Material.name who have this material_type
+            material_names = Material.objects.filter(tenant=self.request.user.tenant, material_type=material_type).values_list('name', flat=True)
+            qs = qs.filter(manifest_items__material__in=material_names).distinct()
+            
+        min_weight = self.request.GET.get('min_weight')
+        if min_weight:
+            qs = qs.filter(total_weight_target__gte=min_weight)
+            
+        max_weight = self.request.GET.get('max_weight')
+        if max_weight:
+            qs = qs.filter(total_weight_target__lte=max_weight)
+            
+        shipping_term_id = self.request.GET.get('shipping_term')
+        if shipping_term_id:
+            qs = qs.filter(shipping_terms_id=shipping_term_id)
+            
+        packaging = self.request.GET.get('packaging')
+        if packaging:
+            qs = qs.filter(manifest_items__packaging=packaging).distinct()
+            
+        representative_id = self.request.GET.get('representative')
+        if representative_id:
+            qs = qs.filter(representative_id=representative_id)
+            
+        tag_id = self.request.GET.get('tag')
+        if tag_id:
+            qs = qs.filter(tags__id=tag_id)
+
+        # Global Search
+        search_query = self.request.GET.get('search')
+        if search_query:
+            qs = qs.filter(
+                Q(order_number__icontains=search_query) |
+                Q(po_number__icontains=search_query) |
+                Q(so_number__icontains=search_query) |
+                Q(supplier__name__icontains=search_query) |
+                Q(receiver__name__icontains=search_query)
+            ).distinct()
+
+        return qs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -48,6 +115,48 @@ class OrderListView(LoginRequiredMixin, ListView):
         for o in orders:
             shipped_weight += o.shipped_weight
         context['total_shipped_weight'] = shipped_weight
+        
+        # --- Context for Advanced Filters Drawer ---
+        user_tenant = self.request.user.tenant
+        # Companies: use all companies (match order_create behavior)
+        all_companies = Company.plain_objects.all().order_by('name')
+        
+        context['status_choices'] = Order.STATUS_CHOICES
+        context['suppliers'] = all_companies
+        context['receivers'] = all_companies
+        
+        # Unique materials from both Material model and existing orders
+        m_model = set(Material.objects.all().values_list('name', flat=True))
+        m_items = set(ManifestItem.objects.all().values_list('material', flat=True))
+        context['materials'] = sorted(list(m_model | m_items))
+        
+        # Unique material types from Material model
+        context['material_types'] = Material.objects.filter(tenant=user_tenant).values_list('material_type', flat=True).distinct().order_by('material_type')
+        
+        # Packaging types from both PackagingType model and existing orders
+        p_model = set(PackagingType.objects.all().values_list('name', flat=True))
+        p_items = set(ManifestItem.objects.all().values_list('packaging', flat=True))
+        context['packagings'] = sorted(list(p_model | p_items))
+        
+        context['tags'] = Tag.plain_objects.filter(Q(tenant=user_tenant) | Q(tenant__isnull=True)).order_by('name')
+        context['shipping_terms'] = ShippingTerm.plain_objects.filter(Q(tenant=user_tenant) | Q(tenant__isnull=True)).order_by('name')
+        context['representatives'] = get_user_model().objects.filter(tenant=user_tenant, is_active=True).order_by('first_name', 'username')
+        
+        # Preserve filter states to pre-fill the drawer inputs
+        context['filters'] = {
+            'status': self.request.GET.get('status', ''),
+            'supplier': self.request.GET.get('supplier', ''),
+            'receiver': self.request.GET.get('receiver', ''),
+            'material': self.request.GET.get('material', ''),
+            'material_type': self.request.GET.get('material_type', ''),
+            'min_weight': self.request.GET.get('min_weight', ''),
+            'max_weight': self.request.GET.get('max_weight', ''),
+            'shipping_term': self.request.GET.get('shipping_term', ''),
+            'packaging': self.request.GET.get('packaging', ''),
+            'representative': self.request.GET.get('representative', ''),
+            'tag': self.request.GET.get('tag', ''),
+            'search': self.request.GET.get('search', ''),
+        }
         
         return context
 
