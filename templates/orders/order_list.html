@@ -324,7 +324,7 @@
                 <label class="filter-section-label">Status</label>
                 <div class="dropdown dropdown-check-list">
                     <button class="btn dropdown-toggle" type="button" id="statusDropdown" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
-                        <span id="statusDropdownLabel">Any Status</span>
+                        <span id="statusDropdownLabel">Select a Value</span>
                     </button>
                     <div class="dropdown-menu" aria-labelledby="statusDropdown">
                         <div class="form-check">
@@ -344,7 +344,7 @@
                 <label class="filter-section-label">Supplier</label>
                 <div class="dropdown dropdown-check-list">
                     <button class="btn dropdown-toggle" type="button" id="supplierDropdown" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
-                        <span id="supplierDropdownLabel">Any Supplier</span>
+                        <span id="supplierDropdownLabel">Select a Value</span>
                     </button>
                     <div class="dropdown-menu" aria-labelledby="supplierDropdown">
                         {% for supplier in suppliers %}
@@ -362,7 +362,7 @@
                 <label class="filter-section-label">Receiver</label>
                 <div class="dropdown dropdown-check-list">
                     <button class="btn dropdown-toggle" type="button" id="receiverDropdown" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
-                        <span id="receiverDropdownLabel">Any Receiver</span>
+                        <span id="receiverDropdownLabel">Select a Value</span>
                     </button>
                     <div class="dropdown-menu" aria-labelledby="receiverDropdown">
                         {% for receiver in receivers %}
@@ -380,7 +380,7 @@
                 <label class="filter-section-label">Material</label>
                 <div class="dropdown dropdown-check-list">
                     <button class="btn dropdown-toggle" type="button" id="materialDropdown" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
-                        <span id="materialDropdownLabel">Any Material</span>
+                        <span id="materialDropdownLabel">Select a Value</span>
                     </button>
                     <div class="dropdown-menu" aria-labelledby="materialDropdown">
                         {% for mat in materials %}
@@ -398,7 +398,7 @@
                 <label class="filter-section-label">Material Type</label>
                 <div class="dropdown dropdown-check-list">
                     <button class="btn dropdown-toggle" type="button" id="materialTypeDropdown" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
-                        <span id="materialTypeDropdownLabel">Any Material Type</span>
+                        <span id="materialTypeDropdownLabel">Select a Value</span>
                     </button>
                     <div class="dropdown-menu" aria-labelledby="materialTypeDropdown">
                         {% for mat_type in material_types %}
@@ -439,7 +439,7 @@
                 <label class="filter-section-label">Shipping Terms</label>
                 <div class="dropdown dropdown-check-list">
                     <button class="btn dropdown-toggle" type="button" id="shippingTermDropdown" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
-                        <span id="shippingTermDropdownLabel">Any Term</span>
+                        <span id="shippingTermDropdownLabel">Select a Value</span>
                     </button>
                     <div class="dropdown-menu" aria-labelledby="shippingTermDropdown">
                         {% for term in shipping_terms %}
@@ -457,7 +457,7 @@
                 <label class="filter-section-label">Packaging</label>
                 <div class="dropdown dropdown-check-list">
                     <button class="btn dropdown-toggle" type="button" id="packagingDropdown" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
-                        <span id="packagingDropdownLabel">Any Packaging</span>
+                        <span id="packagingDropdownLabel">Select a Value</span>
                     </button>
                     <div class="dropdown-menu" aria-labelledby="packagingDropdown">
                         {% for pkg in packagings %}
@@ -475,7 +475,7 @@
                 <label class="filter-section-label">Representatives</label>
                 <div class="dropdown dropdown-check-list">
                     <button class="btn dropdown-toggle" type="button" id="representativeDropdown" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
-                        <span id="representativeDropdownLabel">Any Representative</span>
+                        <span id="representativeDropdownLabel">Select a Value</span>
                     </button>
                     <div class="dropdown-menu" aria-labelledby="representativeDropdown">
                         {% for rep in representatives %}
@@ -493,7 +493,7 @@
                 <label class="filter-section-label">Tags</label>
                 <div class="dropdown dropdown-check-list">
                     <button class="btn dropdown-toggle" type="button" id="tagDropdown" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
-                        <span id="tagDropdownLabel">Any Tag</span>
+                        <span id="tagDropdownLabel">Select a Value</span>
                     </button>
                     <div class="dropdown-menu" aria-labelledby="tagDropdown">
                         {% for tag in tags %}
@@ -613,15 +613,15 @@
             return updateLabel;
         };
 
-        const updateStatus = setupMultiSelect('status-filter-check', 'statusDropdownLabel', 'Any Status');
-        const updateSupplier = setupMultiSelect('supplier-filter-check', 'supplierDropdownLabel', 'Any Supplier');
-        const updateReceiver = setupMultiSelect('receiver-filter-check', 'receiverDropdownLabel', 'Any Receiver');
-        const updateMaterial = setupMultiSelect('material-filter-check', 'materialDropdownLabel', 'Any Material');
-        const updateMaterialType = setupMultiSelect('materialType-filter-check', 'materialTypeDropdownLabel', 'Any Material Type');
-        const updateShippingTerm = setupMultiSelect('shippingTerm-filter-check', 'shippingTermDropdownLabel', 'Any Term');
-        const updatePackaging = setupMultiSelect('packaging-filter-check', 'packagingDropdownLabel', 'Any Packaging');
-        const updateRepresentative = setupMultiSelect('representative-filter-check', 'representativeDropdownLabel', 'Any Representative');
-        const updateTag = setupMultiSelect('tag-filter-check', 'tagDropdownLabel', 'Any Tag');
+        const updateStatus = setupMultiSelect('status-filter-check', 'statusDropdownLabel', 'Select a Value');
+        const updateSupplier = setupMultiSelect('supplier-filter-check', 'supplierDropdownLabel', 'Select a Value');
+        const updateReceiver = setupMultiSelect('receiver-filter-check', 'receiverDropdownLabel', 'Select a Value');
+        const updateMaterial = setupMultiSelect('material-filter-check', 'materialDropdownLabel', 'Select a Value');
+        const updateMaterialType = setupMultiSelect('materialType-filter-check', 'materialTypeDropdownLabel', 'Select a Value');
+        const updateShippingTerm = setupMultiSelect('shippingTerm-filter-check', 'shippingTermDropdownLabel', 'Select a Value');
+        const updatePackaging = setupMultiSelect('packaging-filter-check', 'packagingDropdownLabel', 'Select a Value');
+        const updateRepresentative = setupMultiSelect('representative-filter-check', 'representativeDropdownLabel', 'Select a Value');
+        const updateTag = setupMultiSelect('tag-filter-check', 'tagDropdownLabel', 'Select a Value');
 
         const updateAllLabels = () => {
             [updateStatus, updateSupplier, updateReceiver, updateMaterial, updateMaterialType, 
