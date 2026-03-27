@@ -57,11 +57,23 @@ class OrderListView(LoginRequiredMixin, ListView):
             material_names = Material.objects.filter(tenant=self.request.user.tenant, material_type=material_type).values_list('name', flat=True)
             qs = qs.filter(manifest_items__material__in=material_names).distinct()
             
-        min_weight = self.request.GET.get('min_weight')
+        weight_unit = self.request.GET.get('weight_unit', 'lbs')
+        
+        def to_lbs(val, unit):
+            if not val: return None
+            try:
+                v = float(val)
+                if unit == 'kgs': return v * 2.20462
+                if unit == 'mt': return v * 2204.62
+                if unit == 'st': return v * 2000
+                return v
+            except: return None
+
+        min_weight = to_lbs(self.request.GET.get('min_weight'), weight_unit)
         if min_weight:
             qs = qs.filter(total_weight_target__gte=min_weight)
             
-        max_weight = self.request.GET.get('max_weight')
+        max_weight = to_lbs(self.request.GET.get('max_weight'), weight_unit)
         if max_weight:
             qs = qs.filter(total_weight_target__lte=max_weight)
             
@@ -151,6 +163,7 @@ class OrderListView(LoginRequiredMixin, ListView):
             'material_type': self.request.GET.get('material_type', ''),
             'min_weight': self.request.GET.get('min_weight', ''),
             'max_weight': self.request.GET.get('max_weight', ''),
+            'weight_unit': self.request.GET.get('weight_unit', 'lbs'),
             'shipping_term': self.request.GET.get('shipping_term', ''),
             'packaging': self.request.GET.get('packaging', ''),
             'representative': self.request.GET.get('representative', ''),

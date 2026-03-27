@@ -155,6 +155,47 @@
         color: #2e7d32;
         border: 1.5px solid #c8e6c9;
     }
+
+    /* Filter Drawer Premium Styling */
+    .filter-offcanvas {
+        background: #ffffff;
+        border-right: 1px solid #eef2f6;
+    }
+    .filter-section-label {
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #94a3b8;
+        margin-bottom: 0.6rem;
+        display: block;
+    }
+    .filter-select, .filter-control {
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 0.6rem 0.85rem;
+        font-size: 0.9rem;
+        color: #1e293b;
+        transition: all 0.2s ease;
+        background-color: #ffffff;
+    }
+    .filter-select:focus, .filter-control:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        background-color: #fff;
+    }
+    .filter-group {
+        margin-bottom: 1.5rem;
+    }
+    .weight-unit-badge {
+        font-size: 0.65rem;
+        background: #f1f5f9;
+        color: #64748b;
+        padding: 2px 8px;
+        border-radius: 6px;
+        vertical-align: middle;
+        margin-left: 6px;
+    }
 </style>
 
 <div class="container-fluid py-4 px-4">
@@ -244,18 +285,8 @@
             </div>
         </div>
         <div class="col-lg-7 d-flex justify-content-end gap-2">
-            <div class="dropdown">
-                <button class="btn btn-light border dropdown-toggle px-3" type="button" data-bs-toggle="dropdown">
-                    <i class="fas fa-calendar-alt me-2 text-muted"></i>All Time
-                </button>
-                <div class="dropdown-menu">
-                    <a class="dropdown-item" href="#">Last 30 Days</a>
-                    <a class="dropdown-item" href="#">This Quarter</a>
-                    <a class="dropdown-item" href="#">Custom Range</a>
-                </div>
-            </div>
-            <button class="btn btn-light border px-3">
-                <i class="fas fa-filter me-2 text-muted"></i>Advanced Filters
+            <button class="btn btn-light border px-3 rounded-3 shadow-sm bg-white fw-bold text-dark d-flex align-items-center" type="button" data-bs-toggle="offcanvas" data-bs-target="#filterDrawer">
+                <i class="fas fa-filter me-2 text-muted"></i>Filters
             </button>
         </div>
     </div>
@@ -365,4 +396,177 @@
         {% endif %}
     </div>
 </div>
+
+<!-- Advanced Filter Drawer (Offcanvas Start) -->
+<div class="offcanvas offcanvas-start filter-offcanvas border-0 shadow" tabindex="-1" id="filterDrawer" aria-labelledby="filterDrawerLabel" style="width: 420px;">
+    <div class="offcanvas-header border-bottom py-3 px-4">
+        <h5 class="offcanvas-title fw-bold text-dark" id="filterDrawerLabel">Filters</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body p-4">
+        <form method="get" action="{% url 'orders:order_list' %}">
+            <!-- Search within drawer -->
+            <div class="filter-group mb-4">
+                <div class="search-group position-relative">
+                    <i class="fas fa-search search-icon" style="left: 1rem;"></i>
+                    <input type="text" name="search" class="form-control ps-5 filter-control" placeholder="Search for a filter" value="{{ filters.search }}">
+                </div>
+            </div>
+
+            <!-- Status -->
+            <div class="filter-group">
+                <label class="filter-section-label">Status</label>
+                <select name="status" class="form-select filter-select">
+                    <option value="">Select a value</option>
+                    <option value="open" {% if filters.status == 'open' %}selected{% endif %}>Open</option>
+                    <option value="complete" {% if filters.status == 'complete' %}selected{% endif %}>Complete</option>
+                    {% for code, label in status_choices %}
+                    <option value="{{ code }}" {% if filters.status == code %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Supplier -->
+            <div class="filter-group">
+                <label class="filter-section-label">Supplier</label>
+                <select name="supplier" class="form-select filter-select">
+                    <option value="">Select a value</option>
+                    {% for supplier in suppliers %}
+                    <option value="{{ supplier.id }}" {% if filters.supplier == supplier.id|stringformat:"i" %}selected{% endif %}>{{ supplier.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Receiver -->
+            <div class="filter-group">
+                <label class="filter-section-label">Receiver</label>
+                <select name="receiver" class="form-select filter-select">
+                    <option value="">Select a value</option>
+                    {% for receiver in receivers %}
+                    <option value="{{ receiver.id }}" {% if filters.receiver == receiver.id|stringformat:"i" %}selected{% endif %}>{{ receiver.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Material -->
+            <div class="filter-group">
+                <label class="filter-section-label">Material</label>
+                <select name="material" class="form-select filter-select">
+                    <option value="">Select a value</option>
+                    {% for mat in materials %}
+                    <option value="{{ mat }}" {% if filters.material == mat %}selected{% endif %}>{{ mat }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Material Type -->
+            <div class="filter-group">
+                <label class="filter-section-label">Material Type</label>
+                <select name="material_type" class="form-select filter-select">
+                    <option value="">Select a value</option>
+                    {% for mat_type in material_types %}
+                    <option value="{{ mat_type }}" {% if filters.material_type == mat_type %}selected{% endif %}>{{ mat_type }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Total Weight -->
+            <div class="filter-group">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <label class="filter-section-label m-0">Total Weight</label>
+                    <div class="position-relative">
+                        <select name="weight_unit" class="form-select border-0 bg-transparent text-muted fw-bold p-0 pe-4" style="width: auto; font-size: 0.8rem; box-shadow: none; cursor: pointer;" onchange="this.form.submit()">
+                            <option value="lbs" {% if filters.weight_unit == 'lbs' %}selected{% endif %}>lbs</option>
+                            <option value="mt" {% if filters.weight_unit == 'mt' %}selected{% endif %}>MT</option>
+                            <option value="st" {% if filters.weight_unit == 'st' %}selected{% endif %}>ST</option>
+                            <option value="kgs" {% if filters.weight_unit == 'kgs' %}selected{% endif %}>kgs</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <input type="number" name="min_weight" class="form-control filter-control" placeholder="Min value" value="{{ filters.min_weight }}">
+                    </div>
+                    <div class="col-6">
+                        <input type="number" name="max_weight" class="form-control filter-control" placeholder="Max value" value="{{ filters.max_weight }}">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Shipping Terms -->
+            <div class="filter-group">
+                <label class="filter-section-label">Shipping Terms</label>
+                <select name="shipping_term" class="form-select filter-select">
+                    <option value="">Select a value</option>
+                    {% for term in shipping_terms %}
+                    <option value="{{ term.id }}" {% if filters.shipping_term == term.id|stringformat:"i" %}selected{% endif %}>{{ term.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Packaging -->
+            <div class="filter-group">
+                <label class="filter-section-label">Packaging</label>
+                <select name="packaging" class="form-select filter-select">
+                    <option value="">Select a value</option>
+                    {% for pkg in packagings %}
+                    <option value="{{ pkg }}" {% if filters.packaging == pkg %}selected{% endif %}>{{ pkg }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Representatives -->
+            <div class="filter-group">
+                <label class="filter-section-label">Representatives</label>
+                <select name="representative" class="form-select filter-select">
+                    <option value="">Select a value</option>
+                    {% for rep in representatives %}
+                    <option value="{{ rep.id }}" {% if filters.representative == rep.id|stringformat:"i" %}selected{% endif %}>{{ rep.get_full_name|default:rep.username }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Tags -->
+            <div class="filter-group">
+                <label class="filter-section-label">Tags</label>
+                <select name="tag" class="form-select filter-select">
+                    <option value="">Select a value</option>
+                    {% for tag in tags %}
+                    <option value="{{ tag.id }}" {% if filters.tag == tag.id|stringformat:"i" %}selected{% endif %}>{{ tag.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const filterDrawer = document.getElementById('filterDrawer');
+        if (!filterDrawer) return;
+
+        const filterForm = filterDrawer.querySelector('form');
+        const inputs = filterForm.querySelectorAll('select, input');
+
+        inputs.forEach(input => {
+            input.addEventListener('change', function() {
+                filterForm.submit();
+            });
+        });
+        
+        // Handle search input with a small delay for better UX
+        const searchInput = filterForm.querySelector('input[name="search"]');
+        let timeout = null;
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => {
+                    filterForm.submit();
+                }, 800);
+            });
+        }
+    });
+</script>
 {% endblock %}
