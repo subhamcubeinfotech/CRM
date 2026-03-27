@@ -524,13 +524,11 @@
                 toggleTable.classList.remove('active');
                 toggleCalendar.classList.add('active');
                 initCalendar();
-                localStorage.setItem('shipment_view_pref', 'calendar');
             } else {
                 tableView.style.display = 'block';
                 calendarView.style.display = 'none';
                 toggleTable.classList.add('active');
                 toggleCalendar.classList.remove('active');
-                localStorage.setItem('shipment_view_pref', 'table');
             }
         }
 
@@ -550,10 +548,6 @@
             });
         });
 
-        const pref = localStorage.getItem('shipment_view_pref');
-        if (pref === 'calendar') {
-            switchView('calendar');
-        }
     });
 </script>
 </div>
