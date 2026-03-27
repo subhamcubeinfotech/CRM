@@ -354,14 +354,26 @@ def shipment_list(request):
             Q(customer__name__icontains=search)
         )
     
+    # Scope filter (All, Company, Personal)
+    scope = request.GET.get('scope', 'all')
+    
     # Filter parameters
     status = request.GET.get('status')
     shipment_type = request.GET.get('type')
     date_from = request.GET.get('date_from')
     date_to = request.GET.get('date_to')
 
+    if scope == 'personal':
+        shipments = shipments.filter(created_by=request.user)
+    elif scope == 'company' and request.user.company_id:
+        shipments = shipments.filter(
+            Q(customer_id=request.user.company_id) |
+            Q(shipper_id=request.user.company_id) |
+            Q(consignee_id=request.user.company_id)
+        )
+
     # Debug logging
-    logger.debug(f"Shipment list filters: search={search}, status={status}, type={shipment_type}, from={date_from}, to={date_to}")
+    logger.debug(f"Shipment list filters: scope={scope}, search={search}, status={status}, type={shipment_type}, from={date_from}, to={date_to}")
     
     # Status filter
     if status and status != '':
@@ -411,6 +423,7 @@ def shipment_list(request):
         'sort_param': sort_param,
         'status_choices': Shipment.STATUS_CHOICES,
         'type_choices': Shipment.SHIPMENT_TYPE_CHOICES,
+        'scope': scope,
     }
     return render(request, 'shipments/list.html', context)
 
