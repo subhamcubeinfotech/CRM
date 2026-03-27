@@ -334,7 +334,11 @@ def dashboard(request):
 
 @login_required
 def shipment_list(request):
-    """List all shipments with filters"""
+    """List all shipments with filters and AJAX support"""
+    from apps.inventory.models import Material
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+
     base_qs = Shipment.objects.select_related('customer', 'shipper', 'consignee', 'order').all()
     if request.user.role == 'customer' and request.user.company:
         shipments = base_qs.filter(
@@ -351,18 +355,14 @@ def shipment_list(request):
         shipments = shipments.filter(
             Q(shipment_number__icontains=search) |
             Q(tracking_number__icontains=search) |
-            Q(customer__name__icontains=search)
-        )
+            Q(customer__name__icontains=search) |
+            Q(shipper__name__icontains=search) |
+            Q(consignee__name__icontains=search) |
+            Q(order__order_number__icontains=search)
+        ).distinct()
     
     # Scope filter (All, Company, Personal)
     scope = request.GET.get('scope', 'all')
-    
-    # Filter parameters
-    status = request.GET.get('status')
-    shipment_type = request.GET.get('type')
-    date_from = request.GET.get('date_from')
-    date_to = request.GET.get('date_to')
-
     if scope == 'personal':
         shipments = shipments.filter(created_by=request.user)
     elif scope == 'company' and request.user.company_id:
@@ -370,26 +370,93 @@ def shipment_list(request):
             Q(customer_id=request.user.company_id) |
             Q(shipper_id=request.user.company_id) |
             Q(consignee_id=request.user.company_id)
-        )
+        ).distinct()
 
-    # Debug logging
-    logger.debug(f"Shipment list filters: scope={scope}, search={search}, status={status}, type={shipment_type}, from={date_from}, to={date_to}")
+    # --- Advanced Multi-select Filters ---
+    statuses = request.GET.getlist('status')
+    if statuses:
+        shipments = shipments.filter(status__in=statuses)
     
-    # Status filter
-    if status and status != '':
-        shipments = shipments.filter(status=status)
+    types = request.GET.getlist('type')
+    if types:
+        shipments = shipments.filter(shipment_type__in=types)
     
-    # Type filter
-    if shipment_type and shipment_type != '':
-        shipments = shipments.filter(shipment_type=shipment_type)
-    
+    supplier_ids = [v for v in request.GET.getlist('supplier') if v]
+    if supplier_ids:
+        shipments = shipments.filter(shipper_id__in=supplier_ids)
+        
+    receiver_ids = [v for v in request.GET.getlist('receiver') if v]
+    if receiver_ids:
+        shipments = shipments.filter(consignee_id__in=receiver_ids)
+        
+    carrier_ids = [v for v in request.GET.getlist('carrier') if v]
+    if carrier_ids:
+        shipments = shipments.filter(carrier_id__in=carrier_ids)
+        
+    material_names = [v for v in request.GET.getlist('material') if v]
+    if material_names:
+        shipments = shipments.filter(items__material_name__in=material_names).distinct()
+        
+    material_types = [v for v in request.GET.getlist('material_type') if v]
+    if material_types:
+        mat_names = Material.objects.filter(tenant=request.user.tenant, material_type__in=material_types).values_list('name', flat=True)
+        shipments = shipments.filter(items__material_name__in=mat_names).distinct()
+
+    # Pickup/Delivery Number logic
+    def filter_number(qs, field, mode, val):
+        if mode == 'set':
+            return qs.filter(**{f"{field}__isnull": False}).exclude(**{field: ''})
+        if mode == 'unset':
+            return qs.filter(Q(**{f"{field}__isnull": True}) | Q(**{field: ''}))
+        if mode == 'contains' and val:
+            return qs.filter(**{f"{field}__icontains": val})
+        return qs
+
+    shipments = filter_number(shipments, 'pickup_number', request.GET.get('pickup_number_mode'), request.GET.get('pickup_number_val'))
+    shipments = filter_number(shipments, 'delivery_number', request.GET.get('delivery_number_mode'), request.GET.get('delivery_number_val'))
+
+    pickup_radius = request.GET.get('pickup_radius', '250')
+    dest_radius = request.GET.get('destination_radius', '250')
+
+    # Locations (Text Search)
+    pickup_loc_text = request.GET.get('pickup_location_text')
+    if pickup_loc_text:
+        # For now, we search by text. Radius logic can be added here if geocoding is set up.
+        shipments = shipments.filter(
+            Q(pickup_location__name__icontains=pickup_loc_text) |
+            Q(origin_address__icontains=pickup_loc_text) |
+            Q(origin_city__icontains=pickup_loc_text)
+        ).distinct()
+        
+    dest_loc_text = request.GET.get('destination_location_text')
+    if dest_loc_text:
+        shipments = shipments.filter(
+            Q(destination_location__name__icontains=dest_loc_text) |
+            Q(destination_address__icontains=dest_loc_text) |
+            Q(destination_city__icontains=dest_loc_text)
+        ).distinct()
+
+    shipping_term_ids = [v for v in request.GET.getlist('shipping_term') if v]
+    if shipping_term_ids:
+        shipments = shipments.filter(shipping_terms_id__in=shipping_term_ids)
+        
+    representative_ids = [v for v in request.GET.getlist('representative') if v]
+    if representative_ids:
+        shipments = shipments.filter(representative_id__in=representative_ids)
+        
+    tag_ids = [v for v in request.GET.getlist('tag') if v]
+    if tag_ids:
+        shipments = shipments.filter(tags__id__in=tag_ids).distinct()
+
     # Date range filter
+    date_from = request.GET.get('date_from')
     if date_from:
         shipments = shipments.filter(pickup_date__gte=date_from)
+    date_to = request.GET.get('date_to')
     if date_to:
         shipments = shipments.filter(pickup_date__lte=date_to)
     
-    # Sorting mapping
+    # Sorting
     sort_lookup = {
         'newest': '-created_at',
         'oldest': 'created_at',
@@ -398,32 +465,64 @@ def shipment_list(request):
         'delivery_newest': '-estimated_delivery_date',
         'delivery_oldest': 'estimated_delivery_date',
     }
-    
     sort_param = request.GET.get('sort', 'newest')
     sort_by = sort_lookup.get(sort_param, '-created_at')
     shipments = shipments.order_by(sort_by)
     
-    # Final count after filters
-    total_count = shipments.count()
-    logger.debug(f"Total shipments after filtering: {total_count}")
+    # Drawer Context
+    user_tenant = request.user.tenant
+    all_companies = Company.plain_objects.all().order_by('name')
     
-    # Pagination
+    # AJAX Rendering
+    if request.GET.get('ajax') == '1':
+        paginator = Paginator(shipments, 25)
+        page = request.GET.get('page')
+        shipments_page = paginator.get_page(page)
+        return render(request, 'shipments/list_partial.html', {'shipments': shipments_page})
+
     paginator = Paginator(shipments, 25)
     page = request.GET.get('page')
-    shipments = paginator.get_page(page)
+    shipments_page = paginator.get_page(page)
     
     context = {
-        'shipments': shipments,
-        'search': search,
-        'status_filter': status,
-        'type_filter': shipment_type,
-        'date_from': date_from,
-        'date_to': date_to,
-        'sort_by': sort_by,
-        'sort_param': sort_param,
+        'shipments': shipments_page,
         'status_choices': Shipment.STATUS_CHOICES,
         'type_choices': Shipment.SHIPMENT_TYPE_CHOICES,
-        'scope': scope,
+        'suppliers': all_companies,
+        'receivers': all_companies,
+        'carriers': all_companies.filter(company_type='carrier'),
+        'warehouses': Warehouse.plain_objects.filter(tenant=user_tenant).order_by('name'),
+        # Unique materials from ShipmentItem names
+        'materials': sorted(list(set(ShipmentItem.objects.all().values_list('material_name', flat=True)))),
+        'material_types': Material.objects.filter(tenant=user_tenant).values_list('material_type', flat=True).distinct().order_by('material_type'),
+        'shipping_terms': ShippingTerm.plain_objects.filter(Q(tenant=user_tenant) | Q(tenant__isnull=True)).order_by('name'),
+        'representatives': User.objects.filter(tenant=user_tenant, is_active=True).order_by('first_name'),
+        'tags': Tag.plain_objects.filter(Q(tenant=user_tenant) | Q(tenant__isnull=True)).order_by('name'),
+        'filters': {
+            'search': search or '',
+            'scope': scope,
+            'status_list': statuses,
+            'type_list': types,
+            'supplier_list': supplier_ids,
+            'receiver_list': receiver_ids,
+            'carrier_list': carrier_ids,
+            'material_list': material_names,
+            'material_type_list': material_types,
+            'pickup_location_text': pickup_loc_text or '',
+            'pickup_radius': pickup_radius,
+            'destination_location_text': dest_loc_text or '',
+            'destination_radius': dest_radius,
+            'shipping_term_list': shipping_term_ids,
+            'representative_list': representative_ids,
+            'tag_list': tag_ids,
+            'pickup_number_mode': request.GET.get('pickup_number_mode', ''),
+            'pickup_number_val': request.GET.get('pickup_number_val', ''),
+            'delivery_number_mode': request.GET.get('delivery_number_mode', ''),
+            'delivery_number_val': request.GET.get('delivery_number_val', ''),
+            'date_from': date_from or '',
+            'date_to': date_to or '',
+            'sort_param': sort_param,
+        }
     }
     return render(request, 'shipments/list.html', context)
 
