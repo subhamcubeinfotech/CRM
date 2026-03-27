@@ -8,7 +8,7 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from .models import Order, ManifestItem, Tag, ShippingTerm, PackagingType
 from apps.accounts.models import Company
-from apps.inventory.models import Warehouse, InventoryItem
+from apps.inventory.models import Warehouse, InventoryItem, Material
 from apps.accounts.utils import filter_by_user_company, check_company_access
 import logging
 
@@ -24,8 +24,93 @@ class OrderListView(LoginRequiredMixin, ListView):
         qs = Order.objects.all().order_by('-created_at')
         # Allow access if user is receiver OR the creator of the order
         if self.request.user.role == 'customer' and self.request.user.company:
-            return qs.filter(Q(receiver=self.request.user.company) | Q(created_by=self.request.user))
-        return filter_by_user_company(qs, self.request.user, company_field='receiver')
+            qs = qs.filter(Q(receiver=self.request.user.company) | Q(created_by=self.request.user))
+        else:
+            qs = filter_by_user_company(qs, self.request.user, company_field='receiver')
+
+        # --- Advanced Filtering ---
+        statuses = self.request.GET.getlist('status')
+        if statuses:
+            status_queries = Q()
+            for status in statuses:
+                if status == 'open':
+                    status_queries |= ~Q(status__in=['delivered', 'closed'])
+                elif status == 'complete':
+                    status_queries |= Q(status__in=['delivered', 'closed'])
+                else:
+                    status_queries |= Q(status=status)
+            qs = qs.filter(status_queries)
+            
+        supplier_ids = [v for v in self.request.GET.getlist('supplier') if v]
+        if supplier_ids:
+            qs = qs.filter(supplier_id__in=supplier_ids)
+            
+        receiver_ids = [v for v in self.request.GET.getlist('receiver') if v]
+        if receiver_ids:
+            qs = qs.filter(receiver_id__in=receiver_ids)
+            
+        materials = [v for v in self.request.GET.getlist('material') if v]
+        if materials:
+            qs = qs.filter(manifest_items__material__in=materials).distinct()
+            
+        material_types = [v for v in self.request.GET.getlist('material_type') if v]
+        if material_types:
+            material_names = Material.objects.filter(tenant=self.request.user.tenant, material_type__in=material_types).values_list('name', flat=True)
+            qs = qs.filter(manifest_items__material__in=material_names).distinct()
+        
+        weight_unit = self.request.GET.get('weight_unit', 'lbs')
+        
+        def to_lbs(val, unit):
+            if not val: return None
+            try:
+                v = float(val)
+                if unit == 'kgs': return v * 2.20462
+                if unit == 'mt': return v * 2204.62
+                if unit == 'st': return v * 2000
+                return v
+            except: return None
+
+        min_weight = to_lbs(self.request.GET.get('min_weight'), weight_unit)
+        if min_weight:
+            qs = qs.filter(total_weight_target__gte=min_weight)
+            
+        max_weight = to_lbs(self.request.GET.get('max_weight'), weight_unit)
+        if max_weight:
+            qs = qs.filter(total_weight_target__lte=max_weight)
+            
+        shipping_term_ids = [v for v in self.request.GET.getlist('shipping_term') if v]
+        if shipping_term_ids:
+            qs = qs.filter(shipping_terms_id__in=shipping_term_ids)
+            
+        packagings = [v for v in self.request.GET.getlist('packaging') if v]
+        if packagings:
+            qs = qs.filter(manifest_items__packaging__in=packagings).distinct()
+            
+        representative_ids = [v for v in self.request.GET.getlist('representative') if v]
+        if representative_ids:
+            qs = qs.filter(representative_id__in=representative_ids)
+            
+        tag_ids = [v for v in self.request.GET.getlist('tag') if v]
+        if tag_ids:
+            qs = qs.filter(tags__id__in=tag_ids)
+
+        # Global Search
+        search_query = self.request.GET.get('search')
+        if search_query:
+            qs = qs.filter(
+                Q(order_number__icontains=search_query) |
+                Q(po_number__icontains=search_query) |
+                Q(so_number__icontains=search_query) |
+                Q(supplier__name__icontains=search_query) |
+                Q(receiver__name__icontains=search_query)
+            ).distinct()
+
+        return qs
+
+    def get_template_names(self):
+        if self.request.GET.get('ajax') == '1':
+            return ['orders/order_list_partial.html']
+        return [self.template_name]
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -48,6 +133,50 @@ class OrderListView(LoginRequiredMixin, ListView):
         for o in orders:
             shipped_weight += o.shipped_weight
         context['total_shipped_weight'] = shipped_weight
+        
+        # --- Context for Advanced Filters Drawer ---
+        user_tenant = self.request.user.tenant
+        # Companies: use all companies (match order_create behavior)
+        all_companies = Company.plain_objects.all().order_by('name')
+        
+        context['status_choices'] = Order.STATUS_CHOICES
+        context['suppliers'] = all_companies
+        context['receivers'] = all_companies
+        
+        # Unique materials from both Material model and existing orders
+        m_model = set(Material.objects.all().values_list('name', flat=True))
+        m_items = set(ManifestItem.objects.all().values_list('material', flat=True))
+        context['materials'] = sorted(list(m_model | m_items))
+        
+        # Unique material types from Material model
+        context['material_types'] = Material.objects.filter(tenant=user_tenant).values_list('material_type', flat=True).distinct().order_by('material_type')
+        
+        # Packaging types from both PackagingType model and existing orders
+        p_model = set(PackagingType.objects.all().values_list('name', flat=True))
+        p_items = set(ManifestItem.objects.all().values_list('packaging', flat=True))
+        context['packagings'] = sorted(list(p_model | p_items))
+        
+        context['tags'] = Tag.plain_objects.filter(Q(tenant=user_tenant) | Q(tenant__isnull=True)).order_by('name')
+        context['shipping_terms'] = ShippingTerm.plain_objects.filter(Q(tenant=user_tenant) | Q(tenant__isnull=True)).order_by('name')
+        context['representatives'] = get_user_model().objects.filter(tenant=user_tenant, is_active=True).order_by('first_name', 'username')
+        
+        # Preserve filter states to pre-fill the drawer inputs
+        context['filters'] = {
+            'status': self.request.GET.get('status', ''),
+            'status_list': self.request.GET.getlist('status'),
+            'supplier_list': self.request.GET.getlist('supplier'),
+            'receiver_list': self.request.GET.getlist('receiver'),
+            'material_list': self.request.GET.getlist('material'),
+            'material_type_list': self.request.GET.getlist('material_type'),
+            'min_weight': self.request.GET.get('min_weight', ''),
+            'max_weight': self.request.GET.get('max_weight', ''),
+            'weight_unit': self.request.GET.get('weight_unit', 'lbs'),
+            'shipping_term_list': self.request.GET.getlist('shipping_term'),
+            'packaging_list': self.request.GET.getlist('packaging'),
+            'representative_list': self.request.GET.getlist('representative'),
+            'tag_list': self.request.GET.getlist('tag'),
+            'search': self.request.GET.get('search', ''),
+        }
         
         return context
 

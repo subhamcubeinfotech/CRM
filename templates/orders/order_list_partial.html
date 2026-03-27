@@ -1,0 +1,163 @@
+{% load humanize %}
+
+<!-- Premium Metrics Hub -->
+<div class="row mb-5" id="metrics-hub">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card metric-card shadow-sm h-100">
+            <div class="card-body d-flex align-items-center">
+                <div class="metric-icon bg-primary-soft text-primary me-3" style="background: rgba(78, 115, 223, 0.1);">
+                    <i class="fas fa-shopping-cart"></i>
+                </div>
+                <div>
+                    <div class="text-xs text-uppercase fw-bold text-muted mb-1">Total Portfolio</div>
+                    <div class="h4 mb-0 fw-bold">{{ total_orders }} <small class="text-muted fst-italic fw-normal">Orders</small></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card metric-card shadow-sm h-100">
+            <div class="card-body d-flex align-items-center">
+                <div class="metric-icon bg-info-soft text-info me-3" style="background: rgba(54, 185, 204, 0.1);">
+                    <i class="fas fa-truck-loading"></i>
+                </div>
+                <div>
+                    <div class="text-xs text-uppercase fw-bold text-muted mb-1">In Transit</div>
+                    <div class="h4 mb-0 fw-bold">{{ in_transit_count }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card metric-card shadow-sm h-100">
+            <div class="card-body d-flex align-items-center">
+                <div class="metric-icon bg-warning-soft text-warning me-3" style="background: rgba(246, 194, 62, 0.1);">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div>
+                    <div class="text-xs text-uppercase fw-bold text-muted mb-1">Unpaid Balance</div>
+                    <div class="h4 mb-0 fw-bold">{{ pending_payment_count }} <small class="text-muted fw-normal">Orders</small></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card metric-card shadow-sm h-100">
+            <div class="card-body d-flex align-items-center">
+                <div class="metric-icon bg-success-soft text-success me-3" style="background: rgba(28, 200, 138, 0.1);">
+                    <i class="fas fa-weight-hanging"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <div class="text-xs text-uppercase fw-bold text-muted mb-1">Weight Fulfillment</div>
+                    <div class="h4 mb-0 fw-bold">{{ total_shipped_weight|intcomma }} / {{ total_target_weight|intcomma }} lbs</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Table Container -->
+<div id="table-container">
+    <div class="table-responsive bg-transparent rounded-3 mt-1">
+        <table class="table order-table align-middle mb-0" id="ordersTable">
+            <thead class="small text-muted" style="background-color: #f8f9fa;">
+                <tr>
+                    <th class="ps-4">ID</th>
+                    <th>Status</th>
+                    <th>PO Number</th>
+                    <th>SO Number</th>
+                    <th>Create Date</th>
+                    <th>Supplier</th>
+                    <th>Pickup</th>
+                    <th>Receiver</th>
+                    <th>Destination</th>
+                    <th class="text-center">Weight</th>
+                    <th class="text-end">Revenue</th>
+                    <th class="text-end">Cost</th>
+                    <th class="text-end pe-4">Margin</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr onclick="window.location='{% url 'orders:order_detail' order.pk %}'" style="cursor: pointer;">
+                    <td class="ps-4">
+                        <a href="{% url 'orders:order_detail' order.pk %}" class="id-link">
+                            {{ order.order_number }}
+                        </a>
+                    </td>
+                    <td>
+                        <span class="status-pill {% if order.simple_status_label == 'Open' %}status-open{% else %}status-complete{% endif %}">
+                            {{ order.simple_status_label }}
+                        </span>
+                    </td>
+                    <td class="sub-text">
+                        {{ order.po_number|default:"-" }}
+                    </td>
+                    <td class="sub-text">
+                        {{ order.so_number|default:"-" }}
+                    </td>
+                    <td class="date-text">
+                        {{ order.created_at|date:"m/d/Y" }}
+                    </td>
+                    <td>
+                        <div class="location-text">{{ order.supplier.name|truncatechars:20 }}</div>
+                    </td>
+                    <td class="sub-text">
+                        {{ order.supplier.city }}, {{ order.supplier.state }}
+                    </td>
+                    <td>
+                        <div class="location-text">{{ order.receiver.name|truncatechars:20 }}</div>
+                    </td>
+                    <td class="sub-text">
+                        {{ order.receiver.city }}, {{ order.receiver.state }}
+                    </td>
+                    <td class="text-center">
+                        <div class="fw-bold mb-1">{{ order.weight_progress_percentage }}%</div>
+                        <div class="progress rounded-pill" style="height: 4px; background-color: #f1f3f9; width: 40px; margin: 0 auto;">
+                            <div class="progress-bar rounded-pill {% if order.weight_progress_percentage > 90 %}bg-success{% elif order.weight_progress_percentage > 50 %}bg-info{% else %}bg-primary{% endif %}" 
+                                 role="progressbar" style="width: {{ order.weight_progress_percentage }}%"></div>
+                        </div>
+                    </td>
+                    <td class="text-end fw-bold text-dark">
+                        ${{ order.total_revenue|floatformat:2|intcomma }}
+                    </td>
+                    <td class="text-end fw-bold text-dark">
+                        ${{ order.total_cost|floatformat:2|intcomma }}
+                    </td>
+                    <td class="text-end pe-4">
+                        <div class="fw-bold {% if order.gross_profit > 0 %}text-success{% else %}text-danger{% endif %}">
+                            ${{ order.gross_profit|floatformat:2|intcomma }}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="13" class="text-center py-5">
+                        <div class="my-3">
+                            <i class="fas fa-box-open fa-3x text-light mb-3"></i>
+                            <h5 class="text-muted">No orders found in your portfolio</h5>
+                            <p class="text-muted small">Start by creating a new order to track your materials and logistics.</p>
+                            <a href="{% url 'orders:order_create' %}" class="btn btn-primary px-4">Create First Order</a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if is_paginated %}
+    <div class="card-footer bg-white py-3 border-0">
+        <nav aria-label="Page navigation">
+            <ul class="pagination pagination-sm justify-content-center mb-0">
+                {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link ajax-page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a></li>
+                {% endif %}
+                <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
+                {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link ajax-page-link" href="?page={{ page_obj.next_page_number }}">Next</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
