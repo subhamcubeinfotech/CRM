@@ -279,13 +279,16 @@ def dashboard(request):
         created_at__date__gte=chart_start_date,
         created_at__date__lt=chart_end_date,
     ).values('status').annotate(count=Count('id'))
-    order_status_counts_dict = {item['status']: item['count'] for item in order_status_counts}
+    open_count = 0
+    complete_count = 0
+    for item in order_status_counts:
+        if item['status'] in ['delivered', 'closed']:
+            complete_count += item['count']
+        else:
+            open_count += item['count']
 
-    order_status_data = []
-    order_status_labels = []
-    for code, label in Order.STATUS_CHOICES:
-        order_status_data.append(order_status_counts_dict.get(code, 0))
-        order_status_labels.append(label)
+    order_status_data = [open_count, complete_count]
+    order_status_labels = ['Open', 'Complete']
     
     # Recent shipments
     recent_shipments = base_qs.select_related('customer').order_by('-created_at')[:10]
@@ -374,8 +377,18 @@ def shipment_list(request):
     if date_to:
         shipments = shipments.filter(pickup_date__lte=date_to)
     
-    # Sorting
-    sort_by = request.GET.get('sort', '-created_at')
+    # Sorting mapping
+    sort_lookup = {
+        'newest': '-created_at',
+        'oldest': 'created_at',
+        'pickup_newest': '-pickup_date',
+        'pickup_oldest': 'pickup_date',
+        'delivery_newest': '-estimated_delivery_date',
+        'delivery_oldest': 'estimated_delivery_date',
+    }
+    
+    sort_param = request.GET.get('sort', 'newest')
+    sort_by = sort_lookup.get(sort_param, '-created_at')
     shipments = shipments.order_by(sort_by)
     
     # Final count after filters
@@ -395,6 +408,7 @@ def shipment_list(request):
         'date_from': date_from,
         'date_to': date_to,
         'sort_by': sort_by,
+        'sort_param': sort_param,
         'status_choices': Shipment.STATUS_CHOICES,
         'type_choices': Shipment.SHIPMENT_TYPE_CHOICES,
     }

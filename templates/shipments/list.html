@@ -161,7 +161,125 @@
         box-shadow: inset 0 -1px 0 #edf2f9;
         white-space: nowrap;
     }
+
+    /* Calendar Styling */
+    #calendar {
+        margin-top: 20px;
+        background: #ffffff;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    .fc-header-toolbar {
+        margin-bottom: 2rem !important;
+    }
+
+    .fc-button-primary {
+        background-color: #ffffff !important;
+        border-color: #e2e8f0 !important;
+        color: #64748b !important;
+        text-transform: capitalize !important;
+        font-weight: 500 !important;
+        padding: 0.4rem 1rem !important;
+    }
+
+    .fc-button-primary:hover {
+        background-color: #f8fafc !important;
+        color: #2563eb !important;
+    }
+
+    .fc-button-primary:not(:disabled):active, 
+    .fc-button-primary:disabled,
+    .fc-button-active {
+        background-color: #2563eb !important;
+        border-color: #2563eb !important;
+        color: #ffffff !important;
+        opacity: 1 !important;
+    }
+
+    .fc-day-today {
+        background-color: #fefce8 !important; /* Light yellow for today highlight */
+    }
+
+    .fc-col-header-cell {
+        background-color: #f8fafc;
+        padding: 12px 0 !important;
+        border-color: #e2e8f0 !important;
+    }
+
+    .fc-col-header-cell-cushion {
+        color: #2563eb !important;
+        text-decoration: underline !important;
+        font-weight: 500 !important;
+        font-size: 0.85rem !important;
+    }
+
+    .view-toggle-btn {
+        padding: 0.5rem 1rem;
+        border: 1px solid #e2e8f0;
+        background: #fff;
+        color: #64748b;
+        transition: all 0.2s;
+    }
+
+    .view-toggle-btn.active {
+        background: #2563eb;
+        color: #fff;
+        border-color: #2563eb;
+    }
+
+    .view-toggle-btn:first-child {
+        border-radius: 8px 0 0 8px;
+    }
+
+    .view-toggle-btn:last-child {
+        border-radius: 0 8px 8px 0;
+    }
+
+    .result-count-badge {
+        background-color: #2563eb;
+        color: #fff;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-right: 12px;
+        display: flex;
+        align-items: center;
+        white-space: nowrap;
+    }
+
+    /* Sort Dropdown Styling */
+    .sort-btn {
+        background-color: #ffffff;
+        border: 1px solid #e2e8f0;
+        color: #64748b;
+        font-size: 0.875rem;
+        font-weight: 500;
+        padding: 0.4rem 1rem;
+        border-radius: 8px;
+        transition: all 0.2s;
+    }
+
+    .sort-btn:hover {
+        background-color: #f8fafc;
+        border-color: #cbd5e1;
+        color: #1e293b;
+    }
+
+    .sort-btn i {
+        font-size: 0.75rem;
+        color: #94a3b8;
+    }
+
+    .dropdown-item.active {
+        background-color: #eff6ff;
+        color: #2563eb;
+        font-weight: 600;
+    }
 </style>
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
 {% endblock %}
 
 {% block content %}
@@ -171,6 +289,36 @@
         <div>
             <h1 class="h3 mb-1 fw-bold text-dark">Shipments Portfolio</h1>
             <p class="text-muted small mb-0">Manage and track your global shipments in real-time.</p>
+        </div>
+        <div class="d-flex align-items-center">
+            <!-- Sort Dropdown -->
+            <div class="dropdown me-3">
+                <button class="btn btn-sm sort-btn dropdown-toggle" type="button" id="sortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    Sort
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 mt-2" aria-labelledby="sortDropdown" style="border-radius: 12px; min-width: 200px;">
+                    <li><a class="dropdown-item px-4 py-2 {% if sort_param == 'newest' %}active{% endif %}" href="#" data-sort="newest">Newest</a></li>
+                    <li><a class="dropdown-item px-4 py-2 {% if sort_param == 'oldest' %}active{% endif %}" href="#" data-sort="oldest">Oldest</a></li>
+                    <li><hr class="dropdown-divider mx-3"></li>
+                    <li><a class="dropdown-item px-4 py-2 {% if sort_param == 'pickup_newest' %}active{% endif %}" href="#" data-sort="pickup_newest">Pickup Date (Newest)</a></li>
+                    <li><a class="dropdown-item px-4 py-2 {% if sort_param == 'pickup_oldest' %}active{% endif %}" href="#" data-sort="pickup_oldest">Pickup Date (Oldest)</a></li>
+                    <li><hr class="dropdown-divider mx-3"></li>
+                    <li><a class="dropdown-item px-4 py-2 {% if sort_param == 'delivery_newest' %}active{% endif %}" href="#" data-sort="delivery_newest">Delivery Date (Newest)</a></li>
+                    <li><a class="dropdown-item px-4 py-2 {% if sort_param == 'delivery_oldest' %}active{% endif %}" href="#" data-sort="delivery_oldest">Delivery Date (Oldest)</a></li>
+                </ul>
+            </div>
+
+            <span class="result-count-badge">
+                {{ shipments.paginator.count }} results
+            </span>
+            <div class="btn-group me-3" role="group">
+                <button type="button" class="btn btn-sm view-toggle-btn active" id="toggleTable" title="Table View">
+                    <i class="fas fa-table"></i>
+                </button>
+                <button type="button" class="btn btn-sm view-toggle-btn" id="toggleCalendar" title="Calendar View">
+                    <i class="fas fa-calendar-alt"></i>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -219,122 +367,194 @@
     </div>
 
     <!-- Table Section -->
-    <div class="table-responsive bg-white rounded-3 shadow-sm border mt-1">
-        <table class="table table-hover align-middle mb-0" style="min-width: 1600px;">
-            <thead class="small text-muted" style="background-color: #f8f9fa;">
-                <tr>
-                    <th class="ps-4">ID</th>
-                    <th>Status</th>
-                    <th>Pickup Date</th>
-                    <th>Delivery Date</th>
-                    <th>Supplier</th>
-                    <th>Pickup Loc.</th>
-                    <th>Receiver</th>
-                    <th>Destination</th>
-                    <th>Order ID</th>
-                    <th>Pickup No.</th>
-                    <th>Delivery No.</th>
-                    <th class="pe-4">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for shipment in shipments %}
-                <tr>
-                    <td class="ps-4">
-                        <a href="{% url 'shipments:shipment_detail' shipment.pk %}" class="shipment-id">
-                            {{ shipment.shipment_number }}
-                        </a>
-                        <div class="sub-text">Type: {{ shipment.get_shipment_type_display }}</div>
-                    </td>
-                    <td>
-                        <span class="status-pill status-{{ shipment.status }}">
-                            {{ shipment.get_status_display }}
-                        </span>
-                    </td>
-                    <td class="date-text">{{ shipment.pickup_date|date:"m/d/Y"|default:"-" }}</td>
-                    <td class="date-text">
-                        {{ shipment.estimated_delivery_date|date:"m/d/Y"|default:"-" }}
-                        {% if shipment.is_overdue %}
-                        <br><span class="badge bg-soft-danger text-danger border border-danger-subtle px-1 py-0"
-                            style="font-size: 0.65rem;">OVERDUE</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        <div class="location-text">{{ shipment.shipper.name|default:"-" }}</div>
-                    </td>
-                    <td>
-                        <div class="location-text">{{ shipment.origin_city }}</div>
-                        <div class="sub-text">{{ shipment.origin_state|default:shipment.origin_country }}</div>
-                    </td>
-                    <td>
-                        <div class="location-text">{{ shipment.consignee.name|default:shipment.customer.name|default:"-" }}</div>
-                    </td>
-                    <td>
-                        <div class="location-text">{{ shipment.destination_city }}</div>
-                        <div class="sub-text">{{ shipment.destination_state|default:shipment.destination_country }}
-                        </div>
-                    </td>
-                    <td><span class="fw-600 text-dark">{{ shipment.order.order_number|default:"-" }}</span></td>
-                    <td><span class="text-muted">{{ shipment.pickup_number|default:"-" }}</span></td>
-                    <td><span class="text-muted">{{ shipment.delivery_number|default:"-" }}</span></td>
-                    <td class="pe-4">
-                        <div class="btn-group shadow-sm" style="border-radius: 8px; overflow: hidden;">
-                            <a href="{% url 'shipments:shipment_detail' shipment.pk %}"
-                                class="btn btn-sm btn-white border" title="View"><i
-                                    class="fas fa-eye text-primary"></i></a>
-                            <a href="{% url 'shipments:shipment_edit' shipment.pk %}"
-                                class="btn btn-sm btn-white border" title="Edit"><i
-                                    class="fas fa-edit text-secondary"></i></a>
-                            <a href="{% url 'shipments:generate_bol' shipment.pk %}" class="btn btn-sm btn-white border"
-                                title="BOL" target="_blank"><i class="fas fa-file-pdf text-danger"></i></a>
-                        </div>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="12" class="text-center py-5">
-                        <div class="py-4">
-                            <i class="fas fa-box-open fa-3x text-light mb-3"></i>
-                            <h5 class="text-muted">No shipments found</h5>
-                        </div>
-                    </td>
-                </tr>
+    <div id="tableView">
+        <div class="table-responsive bg-white rounded-3 shadow-sm border mt-1">
+            <table class="table table-hover align-middle mb-0" style="min-width: 1600px;">
+                <thead class="small text-muted" style="background-color: #f8f9fa;">
+                    <tr>
+                        <th class="ps-4">ID</th>
+                        <th>Status</th>
+                        <th>Pickup Date</th>
+                        <th>Delivery Date</th>
+                        <th>Supplier</th>
+                        <th>Pickup Loc.</th>
+                        <th>Receiver</th>
+                        <th>Destination</th>
+                        <th>Order ID</th>
+                        <th>Pickup No.</th>
+                        <th>Delivery No.</th>
+                        <th class="pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for shipment in shipments %}
+                    <tr>
+                        <td class="ps-4">
+                            <a href="{% url 'shipments:shipment_detail' shipment.pk %}" class="shipment-id">
+                                {{ shipment.shipment_number }}
+                            </a>
+                            <div class="sub-text">Type: {{ shipment.get_shipment_type_display }}</div>
+                        </td>
+                        <td>
+                            <span class="status-pill status-{{ shipment.status }}">
+                                {{ shipment.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="date-text">{{ shipment.pickup_date|date:"m/d/Y"|default:"-" }}</td>
+                        <td class="date-text">
+                            {{ shipment.estimated_delivery_date|date:"m/d/Y"|default:"-" }}
+                            {% if shipment.is_overdue %}
+                            <br><span class="badge bg-soft-danger text-danger border border-danger-subtle px-1 py-0"
+                                style="font-size: 0.65rem;">OVERDUE</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="location-text">{{ shipment.shipper.name|default:"-" }}</div>
+                        </td>
+                        <td>
+                            <div class="location-text">{{ shipment.origin_city }}</div>
+                            <div class="sub-text">{{ shipment.origin_state|default:shipment.origin_country }}</div>
+                        </td>
+                        <td>
+                            <div class="location-text">{{ shipment.consignee.name|default:shipment.customer.name|default:"-" }}</div>
+                        </td>
+                        <td>
+                            <div class="location-text">{{ shipment.destination_city }}</div>
+                            <div class="sub-text">{{ shipment.destination_state|default:shipment.destination_country }}
+                            </div>
+                        </td>
+                        <td><span class="fw-600 text-dark">{{ shipment.order.order_number|default:"-" }}</span></td>
+                        <td><span class="text-muted">{{ shipment.pickup_number|default:"-" }}</span></td>
+                        <td><span class="text-muted">{{ shipment.delivery_number|default:"-" }}</span></td>
+                        <td class="pe-4">
+                            <div class="btn-group shadow-sm" style="border-radius: 8px; overflow: hidden;">
+                                <a href="{% url 'shipments:shipment_detail' shipment.pk %}"
+                                    class="btn btn-sm btn-white border" title="View"><i
+                                        class="fas fa-eye text-primary"></i></a>
+                                <a href="{% url 'shipments:shipment_edit' shipment.pk %}"
+                                    class="btn btn-sm btn-white border" title="Edit"><i
+                                        class="fas fa-edit text-secondary"></i></a>
+                                <a href="{% url 'shipments:generate_bol' shipment.pk %}" class="btn btn-sm btn-white border"
+                                    title="BOL" target="_blank"><i class="fas fa-file-pdf text-danger"></i></a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="12" class="text-center py-5">
+                            <div class="py-4">
+                                <i class="fas fa-box-open fa-3x text-light mb-3"></i>
+                                <h5 class="text-muted">No shipments found</h5>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if shipments.has_other_pages %}
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination pagination-sm justify-content-center">
+                {% if shipments.has_previous %}
+                <li class="page-item">
+                    <a class="page-link shadow-sm border-0 mx-1"
+                        href="?page={{ shipments.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if type_filter %}&type={{ type_filter }}{% endif %}"
+                        style="border-radius: 8px;">Previous</a>
+                </li>
+                {% endif %}
+
+                {% for num in shipments.paginator.page_range %}
+                {% if shipments.number == num %}
+                <li class="page-item active"><span class="page-link shadow-sm border-0 mx-1" style="border-radius: 8px;">{{ num }}</span></li>
+                {% else %}
+                <li class="page-item"><a class="page-link shadow-sm border-0 mx-1"
+                        href="?page={{ num }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if type_filter %}&type={{ type_filter }}{% endif %}"
+                        style="border-radius: 8px;">{{ num }}</a></li>
+                {% endif %}
                 {% endfor %}
-            </tbody>
-        </table>
+
+                {% if shipments.has_next %}
+                <li class="page-item">
+                    <a class="page-link shadow-sm border-0 mx-1"
+                        href="?page={{ shipments.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if type_filter %}&type={{ type_filter }}{% endif %}"
+                        style="border-radius: 8px;">Next</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
     </div>
 
-    <!-- Pagination -->
-    {% if shipments.has_other_pages %}
-    <nav aria-label="Page navigation" class="mt-4">
-        <ul class="pagination pagination-sm justify-content-center">
-            {% if shipments.has_previous %}
-            <li class="page-item">
-                <a class="page-link shadow-sm border-0 mx-1"
-                    href="?page={{ shipments.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if type_filter %}&type={{ type_filter }}{% endif %}"
-                    style="border-radius: 8px;">Previous</a>
-            </li>
-            {% endif %}
+    <!-- Calendar View Container -->
+    <div id="calendarView" style="display: none;">
+        <div id="calendar"></div>
+    </div>
+</div>
 
-            {% for num in shipments.paginator.page_range %}
-            {% if shipments.number == num %}
-            <li class="page-item active"><span class="page-link shadow-sm border-0 mx-1" style="border-radius: 8px;">{{ num }}</span></li>
-            {% else %}
-            <li class="page-item"><a class="page-link shadow-sm border-0 mx-1"
-                    href="?page={{ num }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if type_filter %}&type={{ type_filter }}{% endif %}"
-                    style="border-radius: 8px;">{{ num }}</a></li>
-            {% endif %}
-            {% endfor %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const tableView = document.getElementById('tableView');
+        const calendarView = document.getElementById('calendarView');
+        const toggleTable = document.getElementById('toggleTable');
+        const toggleCalendar = document.getElementById('toggleCalendar');
+        const calendarEl = document.getElementById('calendar');
+        let calendar = null;
 
-            {% if shipments.has_next %}
-            <li class="page-item">
-                <a class="page-link shadow-sm border-0 mx-1"
-                    href="?page={{ shipments.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if type_filter %}&type={{ type_filter }}{% endif %}"
-                    style="border-radius: 8px;">Next</a>
-            </li>
-            {% endif %}
-        </ul>
-    </nav>
-    {% endif %}
+        function initCalendar() {
+            if (calendar) return;
+            
+            calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,dayGridWeek'
+                },
+                height: 'auto'
+            });
+            calendar.render();
+        }
+
+        function switchView(view) {
+            if (view === 'calendar') {
+                tableView.style.display = 'none';
+                calendarView.style.display = 'block';
+                toggleTable.classList.remove('active');
+                toggleCalendar.classList.add('active');
+                initCalendar();
+                localStorage.setItem('shipment_view_pref', 'calendar');
+            } else {
+                tableView.style.display = 'block';
+                calendarView.style.display = 'none';
+                toggleTable.classList.add('active');
+                toggleCalendar.classList.remove('active');
+                localStorage.setItem('shipment_view_pref', 'table');
+            }
+        }
+
+        toggleTable.addEventListener('click', () => switchView('table'));
+        toggleCalendar.addEventListener('click', () => switchView('calendar'));
+
+        // Sorting Logic
+        document.querySelectorAll('.dropdown-item[data-sort]').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                const sortValue = this.getAttribute('data-sort');
+                const url = new URL(window.location.href);
+                url.searchParams.set('sort', sortValue);
+                // Also reset to page 1 on sort change
+                url.searchParams.delete('page');
+                window.location.href = url.toString();
+            });
+        });
+
+        const pref = localStorage.getItem('shipment_view_pref');
+        if (pref === 'calendar') {
+            switchView('calendar');
+        }
+    });
+</script>
 </div>
 {% endblock %}

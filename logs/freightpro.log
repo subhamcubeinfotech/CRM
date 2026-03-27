@@ -303,3 +303,100 @@ django.db.utils.OperationalError: no such column: shipments_shipment.pickup_cont
 [2026-03-26 09:34:10] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
 [2026-03-26 09:34:51] INFO django.utils.autoreload autoreload.trigger_reload:265 — /app/apps/shipments/views.py changed, reloading.
 [2026-03-26 09:34:54] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-27 07:36:37] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-27 07:37:26] INFO django.utils.autoreload autoreload.trigger_reload:265 — /app/apps/orders/views.py changed, reloading.
+[2026-03-27 07:37:28] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-27 07:38:08] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 71020
+[2026-03-27 07:38:09] WARNING django.request log.log_response:253 — Not Found: /favicon.ico
+[2026-03-27 07:38:09] WARNING django.server basehttp.log_message:213 — "GET /favicon.ico HTTP/1.1" 404 7178
+[2026-03-27 07:39:04] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 70694
+[2026-03-27 07:39:04] WARNING django.request log.log_response:253 — Not Found: /favicon.ico
+[2026-03-27 07:39:04] WARNING django.server basehttp.log_message:213 — "GET /favicon.ico HTTP/1.1" 404 7178
+[2026-03-27 07:39:36] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 71626
+[2026-03-27 07:39:37] WARNING django.request log.log_response:253 — Not Found: /favicon.ico
+[2026-03-27 07:39:37] WARNING django.server basehttp.log_message:213 — "GET /favicon.ico HTTP/1.1" 404 7178
+[2026-03-27 07:39:40] INFO django.server basehttp.log_message:213 — "GET /orders/?search=&status=open&supplier=&receiver=&material=&material_type=&min_weight=&max_weight=&shipping_term=&packaging=&representative=&tag= HTTP/1.1" 200 69252
+[2026-03-27 07:39:41] DEBUG apps.shipments views.shipment_list:364 — Shipment list filters: search=None, status=None, type=None, from=None, to=None
+[2026-03-27 07:39:41] DEBUG apps.shipments views.shipment_list:396 — Total shipments after filtering: 10
+[2026-03-27 07:39:41] WARNING django.request log.log_response:253 — The request's session was deleted before the request completed. The user may have logged out in a concurrent request, for example.: /shipments/
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/base/base.py", line 303, in _commit
+    return self.connection.commit()
+sqlite3.OperationalError: disk I/O error
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/django/contrib/sessions/backends/db.py", line 126, in save
+    with transaction.atomic(using=using):
+  File "/usr/local/lib/python3.10/site-packages/django/db/transaction.py", line 263, in __exit__
+    connection.commit()
+  File "/usr/local/lib/python3.10/site-packages/django/utils/asyncio.py", line 26, in inner
+    return func(*args, **kwargs)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/base/base.py", line 327, in commit
+    self._commit()
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/base/base.py", line 302, in _commit
+    with debug_transaction(self, "COMMIT"), self.wrap_database_errors:
+  File "/usr/local/lib/python3.10/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/base/base.py", line 303, in _commit
+    return self.connection.commit()
+django.db.utils.OperationalError: disk I/O error
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/django/contrib/sessions/middleware.py", line 59, in process_response
+    request.session.save()
+  File "/usr/local/lib/python3.10/site-packages/django/contrib/sessions/backends/db.py", line 136, in save
+    raise UpdateError
+django.contrib.sessions.backends.base.UpdateError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/usr/local/lib/python3.10/site-packages/django/utils/deprecation.py", line 122, in __call__
+    response = self.process_response(request, response)
+  File "/usr/local/lib/python3.10/site-packages/django/contrib/sessions/middleware.py", line 61, in process_response
+    raise SessionInterrupted(
+django.contrib.sessions.exceptions.SessionInterrupted: The request's session was deleted before the request completed. The user may have logged out in a concurrent request, for example.
+[2026-03-27 07:39:41] WARNING django.server basehttp.log_message:213 — "GET /shipments/ HTTP/1.1" 400 109946
+[2026-03-27 07:39:43] DEBUG apps.shipments views.shipment_list:364 — Shipment list filters: search=None, status=None, type=None, from=None, to=None
+[2026-03-27 07:39:43] DEBUG apps.shipments views.shipment_list:396 — Total shipments after filtering: 10
+[2026-03-27 07:39:43] INFO django.server basehttp.log_message:213 — "GET /shipments/ HTTP/1.1" 200 78021
+[2026-03-27 07:39:46] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 71626
+[2026-03-27 07:39:50] INFO django.server basehttp.log_message:213 — "GET /orders/?search=&status=open&supplier=&receiver=&material=&material_type=&min_weight=&max_weight=&shipping_term=&packaging=&representative=&tag= HTTP/1.1" 200 69252
+[2026-03-27 07:39:54] INFO django.server basehttp.log_message:213 — "GET /orders/?search=&status=complete&supplier=&receiver=&material=&material_type=&min_weight=&max_weight=&shipping_term=&packaging=&representative=&tag= HTTP/1.1" 200 59724
+[2026-03-27 07:40:02] INFO django.server basehttp.log_message:213 — "GET /orders/?search=&status=complete&supplier=1&receiver=&material=&material_type=&min_weight=&max_weight=&shipping_term=&packaging=&representative=&tag= HTTP/1.1" 200 58011
+[2026-03-27 07:41:15] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 71626
+[2026-03-27 07:41:29] INFO django.server basehttp.log_message:213 — "GET /orders/168/ HTTP/1.1" 200 143444
+[2026-03-27 07:41:39] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 71626
+[2026-03-27 07:41:46] INFO django.server basehttp.log_message:213 — "GET /orders/167/ HTTP/1.1" 200 151616
+[2026-03-27 07:41:46] INFO django.server basehttp.log_message:213 — "GET /orders/167/ HTTP/1.1" 200 151616
+[2026-03-27 07:41:50] INFO django.server basehttp.log_message:213 — "GET /orders/166/ HTTP/1.1" 200 140041
+[2026-03-27 07:41:50] INFO django.server basehttp.log_message:213 — "GET /orders/166/ HTTP/1.1" 200 140041
+[2026-03-27 07:41:53] INFO django.server basehttp.log_message:213 — "GET /orders/164/ HTTP/1.1" 200 139015
+[2026-03-27 07:41:53] INFO django.server basehttp.log_message:213 — "GET /orders/164/ HTTP/1.1" 200 139015
+[2026-03-27 07:41:56] INFO django.server basehttp.log_message:213 — "GET /orders/163/ HTTP/1.1" 200 144848
+[2026-03-27 07:42:00] INFO django.server basehttp.log_message:213 — "GET /orders/164/ HTTP/1.1" 200 139015
+[2026-03-27 07:42:00] INFO django.server basehttp.log_message:213 — "GET /orders/164/ HTTP/1.1" 200 139015
+[2026-03-27 07:45:37] INFO django.utils.autoreload autoreload.trigger_reload:265 — /app/apps/orders/views.py changed, reloading.
+[2026-03-27 07:45:39] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-27 07:45:54] INFO django.server basehttp.log_message:213 — "GET /orders/164/ HTTP/1.1" 200 139015
+[2026-03-27 07:45:55] WARNING django.request log.log_response:253 — Not Found: /favicon.ico
+[2026-03-27 07:45:55] WARNING django.server basehttp.log_message:213 — "GET /favicon.ico HTTP/1.1" 404 7178
+[2026-03-27 07:45:57] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 72274
+[2026-03-27 07:47:03] INFO django.utils.autoreload autoreload.trigger_reload:265 — /app/apps/orders/views.py changed, reloading.
+[2026-03-27 07:47:05] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
+[2026-03-27 07:47:54] INFO django.server basehttp.log_message:213 — "GET /orders/ HTTP/1.1" 200 73004
+[2026-03-27 07:47:54] WARNING django.request log.log_response:253 — Not Found: /favicon.ico
+[2026-03-27 07:47:54] WARNING django.server basehttp.log_message:213 — "GET /favicon.ico HTTP/1.1" 404 7178
+[2026-03-27 07:48:20] INFO django.server basehttp.log_message:213 — "GET /orders/?search=&status=&supplier=&receiver=&material=AMD+Ryzen+9+7950X&material_type=&min_weight=&max_weight=&shipping_term=&packaging=&representative=&tag= HTTP/1.1" 200 61089
+[2026-03-27 07:48:28] INFO django.server basehttp.log_message:213 — "GET /orders/?search=&status=&supplier=&receiver=&material=EVGA+SuperNOVA+850+G6&material_type=&min_weight=&max_weight=&shipping_term=&packaging=&representative=&tag= HTTP/1.1" 200 61102
+[2026-03-27 07:48:34] INFO django.server basehttp.log_message:213 — "GET /orders/168/ HTTP/1.1" 200 143457
+[2026-03-27 07:48:34] INFO django.server basehttp.log_message:213 — "GET /orders/168/ HTTP/1.1" 200 143457
+[2026-03-27 07:48:41] INFO django.server basehttp.log_message:213 — "GET /orders/?search=&status=&supplier=&receiver=&material=&material_type=&min_weight=&max_weight=&shipping_term=&packaging=&representative=&tag= HTTP/1.1" 200 73004
+[2026-03-27 07:49:46] INFO django.utils.autoreload autoreload.trigger_reload:265 — /app/apps/orders/views.py changed, reloading.
+[2026-03-27 07:49:48] INFO django.utils.autoreload autoreload.run_with_reloader:667 — Watching for file changes with StatReloader
