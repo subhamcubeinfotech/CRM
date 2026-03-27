@@ -377,8 +377,18 @@ def shipment_list(request):
     if date_to:
         shipments = shipments.filter(pickup_date__lte=date_to)
     
-    # Sorting
-    sort_by = request.GET.get('sort', '-created_at')
+    # Sorting mapping
+    sort_lookup = {
+        'newest': '-created_at',
+        'oldest': 'created_at',
+        'pickup_newest': '-pickup_date',
+        'pickup_oldest': 'pickup_date',
+        'delivery_newest': '-estimated_delivery_date',
+        'delivery_oldest': 'estimated_delivery_date',
+    }
+    
+    sort_param = request.GET.get('sort', 'newest')
+    sort_by = sort_lookup.get(sort_param, '-created_at')
     shipments = shipments.order_by(sort_by)
     
     # Final count after filters
@@ -398,6 +408,7 @@ def shipment_list(request):
         'date_from': date_from,
         'date_to': date_to,
         'sort_by': sort_by,
+        'sort_param': sort_param,
         'status_choices': Shipment.STATUS_CHOICES,
         'type_choices': Shipment.SHIPMENT_TYPE_CHOICES,
     }

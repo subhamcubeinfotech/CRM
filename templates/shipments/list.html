@@ -236,6 +236,48 @@
     .view-toggle-btn:last-child {
         border-radius: 0 8px 8px 0;
     }
+
+    .result-count-badge {
+        background-color: #2563eb;
+        color: #fff;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-right: 12px;
+        display: flex;
+        align-items: center;
+        white-space: nowrap;
+    }
+
+    /* Sort Dropdown Styling */
+    .sort-btn {
+        background-color: #ffffff;
+        border: 1px solid #e2e8f0;
+        color: #64748b;
+        font-size: 0.875rem;
+        font-weight: 500;
+        padding: 0.4rem 1rem;
+        border-radius: 8px;
+        transition: all 0.2s;
+    }
+
+    .sort-btn:hover {
+        background-color: #f8fafc;
+        border-color: #cbd5e1;
+        color: #1e293b;
+    }
+
+    .sort-btn i {
+        font-size: 0.75rem;
+        color: #94a3b8;
+    }
+
+    .dropdown-item.active {
+        background-color: #eff6ff;
+        color: #2563eb;
+        font-weight: 600;
+    }
 </style>
 <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
 {% endblock %}
@@ -249,6 +291,26 @@
             <p class="text-muted small mb-0">Manage and track your global shipments in real-time.</p>
         </div>
         <div class="d-flex align-items-center">
+            <!-- Sort Dropdown -->
+            <div class="dropdown me-3">
+                <button class="btn btn-sm sort-btn dropdown-toggle" type="button" id="sortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    Sort
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 mt-2" aria-labelledby="sortDropdown" style="border-radius: 12px; min-width: 200px;">
+                    <li><a class="dropdown-item px-4 py-2 {% if sort_param == 'newest' %}active{% endif %}" href="#" data-sort="newest">Newest</a></li>
+                    <li><a class="dropdown-item px-4 py-2 {% if sort_param == 'oldest' %}active{% endif %}" href="#" data-sort="oldest">Oldest</a></li>
+                    <li><hr class="dropdown-divider mx-3"></li>
+                    <li><a class="dropdown-item px-4 py-2 {% if sort_param == 'pickup_newest' %}active{% endif %}" href="#" data-sort="pickup_newest">Pickup Date (Newest)</a></li>
+                    <li><a class="dropdown-item px-4 py-2 {% if sort_param == 'pickup_oldest' %}active{% endif %}" href="#" data-sort="pickup_oldest">Pickup Date (Oldest)</a></li>
+                    <li><hr class="dropdown-divider mx-3"></li>
+                    <li><a class="dropdown-item px-4 py-2 {% if sort_param == 'delivery_newest' %}active{% endif %}" href="#" data-sort="delivery_newest">Delivery Date (Newest)</a></li>
+                    <li><a class="dropdown-item px-4 py-2 {% if sort_param == 'delivery_oldest' %}active{% endif %}" href="#" data-sort="delivery_oldest">Delivery Date (Oldest)</a></li>
+                </ul>
+            </div>
+
+            <span class="result-count-badge">
+                {{ shipments.paginator.count }} results
+            </span>
             <div class="btn-group me-3" role="group">
                 <button type="button" class="btn btn-sm view-toggle-btn active" id="toggleTable" title="Table View">
                     <i class="fas fa-table"></i>
@@ -257,9 +319,6 @@
                     <i class="fas fa-calendar-alt"></i>
                 </button>
             </div>
-            <a href="{% url 'orders:order_list' %}" class="btn btn-primary btn-sm">
-                <i class="fas fa-plus me-2"></i>New Shipment
-            </a>
         </div>
     </div>
 
@@ -477,6 +536,19 @@
 
         toggleTable.addEventListener('click', () => switchView('table'));
         toggleCalendar.addEventListener('click', () => switchView('calendar'));
+
+        // Sorting Logic
+        document.querySelectorAll('.dropdown-item[data-sort]').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                const sortValue = this.getAttribute('data-sort');
+                const url = new URL(window.location.href);
+                url.searchParams.set('sort', sortValue);
+                // Also reset to page 1 on sort change
+                url.searchParams.delete('page');
+                window.location.href = url.toString();
+            });
+        });
 
         const pref = localStorage.getItem('shipment_view_pref');
         if (pref === 'calendar') {
