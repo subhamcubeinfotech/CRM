@@ -133,6 +133,20 @@
         border: 1px solid #2563eb !important;
         box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1) !important;
     }
+
+    /* Radius Slider Styling */
+    .radius-container { gap: 10px; }
+    .radius-slider { 
+        flex: 1; 
+        height: 6px; 
+        background: #e2e8f0; 
+        border-radius: 5px; 
+        appearance: none; 
+        outline: none; 
+        cursor: pointer;
+    }
+    .radius-slider::-webkit-slider-thumb { appearance: none; width: 18px; height: 18px; background: #2563eb; border-radius: 50%; cursor: pointer; border: 3px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .radius-input { width: 70px !important; text-align: center; padding: 0.4rem !important; font-size: 0.85rem !important; border-radius: 8px !important; }
 </style>
 <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
 {% endblock %}
@@ -179,7 +193,7 @@
                 <i class="fas fa-filter me-2 text-primary"></i>Filters
             </button>
 
-            <div class="btn-group" role="group">
+            <div class="btn-group me-3" role="group">
                 <button type="button" class="btn btn-sm view-toggle-btn active" id="toggleTable" title="Table View">
                     <i class="fas fa-table"></i>
                 </button>
@@ -187,6 +201,10 @@
                     <i class="fas fa-calendar-alt"></i>
                 </button>
             </div>
+
+            <a href="{% url 'shipments:shipment_create' %}" class="btn btn-primary btn-sm px-3 shadow-sm" style="border-radius: 8px; height: 38px; display: flex; align-items: center;">
+                <i class="fas fa-plus me-2"></i>Create Shipment
+            </a>
         </div>
     </div>
 
@@ -324,12 +342,22 @@
             <!-- Locations -->
             <div class="filter-group">
                 <label class="filter-section-label">Pickup Location</label>
-                <input type="text" name="pickup_location_text" class="filter-control" placeholder="Type an address" value="{{ filters.pickup_location_text }}">
+                <input type="text" name="pickup_location_text" class="filter-control mb-2" placeholder="Type an address" value="{{ filters.pickup_location_text }}">
+                <div class="d-flex align-items-center radius-container">
+                    <input type="range" class="radius-slider" min="0" max="1500" step="10" id="pickup_radius_slider" name="pickup_radius" value="{{ filters.pickup_radius|default:250 }}">
+                    <input type="number" class="filter-control radius-input" id="pickup_radius_val" value="{{ filters.pickup_radius|default:250 }}">
+                    <span class="text-muted small">Miles</span>
+                </div>
             </div>
 
             <div class="filter-group">
                 <label class="filter-section-label">Destination Location</label>
-                <input type="text" name="destination_location_text" class="filter-control" placeholder="Type an address" value="{{ filters.destination_location_text }}">
+                <input type="text" name="destination_location_text" class="filter-control mb-2" placeholder="Type an address" value="{{ filters.destination_location_text }}">
+                <div class="d-flex align-items-center radius-container">
+                    <input type="range" class="radius-slider" min="0" max="1500" step="10" id="dest_radius_slider" name="destination_radius" value="{{ filters.destination_radius|default:250 }}">
+                    <input type="number" class="filter-control radius-input" id="dest_radius_val" value="{{ filters.destination_radius|default:250 }}">
+                    <span class="text-muted small">Miles</span>
+                </div>
             </div>
 
             <!-- Numbers logic -->
@@ -635,6 +663,36 @@
         setupMultiSelect('mat-type-multiselect', 'Select a value');
         setupMultiSelect('rep-multiselect', 'Select a value');
         setupMultiSelect('tag-multiselect', 'Select a value');
+
+        // --- Radius Sync ---
+        function updateSliderTrack(slider) {
+            const val = slider.value;
+            const max = slider.getAttribute('max') || 1500;
+            const percentage = (val / max) * 100;
+            slider.style.background = `linear-gradient(to right, #2563eb 0%, #2563eb ${percentage}%, #e2e8f0 ${percentage}%, #e2e8f0 100%)`;
+        }
+
+        function setupRadiusSync(sliderId, inputId) {
+            const slider = document.getElementById(sliderId);
+            const input = document.getElementById(inputId);
+            if (!slider || !input) return;
+            
+            updateSliderTrack(slider);
+
+            slider.addEventListener('input', () => {
+                input.value = slider.value;
+                updateSliderTrack(slider);
+                // Manually trigger change on slider to trigger form submit
+                slider.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+            input.addEventListener('input', () => {
+                slider.value = input.value;
+                updateSliderTrack(slider);
+                slider.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+        }
+        setupRadiusSync('pickup_radius_slider', 'pickup_radius_val');
+        setupRadiusSync('dest_radius_slider', 'dest_radius_val');
 
         // --- View Toggling (Calendar/Table) ---
         function initCalendar() {

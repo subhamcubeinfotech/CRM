@@ -415,9 +415,13 @@ def shipment_list(request):
     shipments = filter_number(shipments, 'pickup_number', request.GET.get('pickup_number_mode'), request.GET.get('pickup_number_val'))
     shipments = filter_number(shipments, 'delivery_number', request.GET.get('delivery_number_mode'), request.GET.get('delivery_number_val'))
 
+    pickup_radius = request.GET.get('pickup_radius', '250')
+    dest_radius = request.GET.get('destination_radius', '250')
+
     # Locations (Text Search)
     pickup_loc_text = request.GET.get('pickup_location_text')
     if pickup_loc_text:
+        # For now, we search by text. Radius logic can be added here if geocoding is set up.
         shipments = shipments.filter(
             Q(pickup_location__name__icontains=pickup_loc_text) |
             Q(origin_address__icontains=pickup_loc_text) |
@@ -505,7 +509,9 @@ def shipment_list(request):
             'material_list': material_names,
             'material_type_list': material_types,
             'pickup_location_text': pickup_loc_text or '',
+            'pickup_radius': pickup_radius,
             'destination_location_text': dest_loc_text or '',
+            'destination_radius': dest_radius,
             'shipping_term_list': shipping_term_ids,
             'representative_list': representative_ids,
             'tag_list': tag_ids,
