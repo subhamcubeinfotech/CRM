@@ -420,9 +420,6 @@
                     <option value="">Select a value</option>
                     <option value="open" {% if filters.status == 'open' %}selected{% endif %}>Open</option>
                     <option value="complete" {% if filters.status == 'complete' %}selected{% endif %}>Complete</option>
-                    {% for code, label in status_choices %}
-                    <option value="{{ code }}" {% if filters.status == code %}selected{% endif %}>{{ label }}</option>
-                    {% endfor %}
                 </select>
             </div>
 
