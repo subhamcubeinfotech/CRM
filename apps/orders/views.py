@@ -29,14 +29,17 @@ class OrderListView(LoginRequiredMixin, ListView):
             qs = filter_by_user_company(qs, self.request.user, company_field='receiver')
 
         # --- Advanced Filtering ---
-        status = self.request.GET.get('status')
-        if status:
-            if status == 'open':
-                qs = qs.exclude(status__in=['delivered', 'closed'])
-            elif status == 'complete':
-                qs = qs.filter(status__in=['delivered', 'closed'])
-            else:
-                qs = qs.filter(status=status)
+        statuses = self.request.GET.getlist('status')
+        if statuses:
+            status_queries = Q()
+            for status in statuses:
+                if status == 'open':
+                    status_queries |= ~Q(status__in=['delivered', 'closed'])
+                elif status == 'complete':
+                    status_queries |= Q(status__in=['delivered', 'closed'])
+                else:
+                    status_queries |= Q(status=status)
+            qs = qs.filter(status_queries)
             
         supplier_id = self.request.GET.get('supplier')
         if supplier_id:
@@ -106,6 +109,11 @@ class OrderListView(LoginRequiredMixin, ListView):
 
         return qs
 
+    def get_template_names(self):
+        if self.request.GET.get('ajax') == '1':
+            return ['orders/order_list_partial.html']
+        return [self.template_name]
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         orders = self.get_queryset()
@@ -157,6 +165,7 @@ class OrderListView(LoginRequiredMixin, ListView):
         # Preserve filter states to pre-fill the drawer inputs
         context['filters'] = {
             'status': self.request.GET.get('status', ''),
+            'status_list': self.request.GET.getlist('status'),
             'supplier': self.request.GET.get('supplier', ''),
             'receiver': self.request.GET.get('receiver', ''),
             'material': self.request.GET.get('material', ''),

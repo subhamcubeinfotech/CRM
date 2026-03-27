@@ -160,6 +160,7 @@
     .filter-offcanvas {
         background: #ffffff;
         border-right: 1px solid #eef2f6;
+        border-left: none;
     }
     .filter-section-label {
         font-size: 0.72rem;
@@ -167,7 +168,7 @@
         text-transform: uppercase;
         letter-spacing: 0.04em;
         color: #94a3b8;
-        margin-bottom: 0.6rem;
+        margin-bottom: 0.8rem;
         display: block;
     }
     .filter-select, .filter-control {
@@ -185,7 +186,12 @@
         background-color: #fff;
     }
     .filter-group {
-        margin-bottom: 1.5rem;
+        margin-bottom: 1.8rem;
+        padding-bottom: 1.2rem;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .filter-group:last-child {
+        border-bottom: none;
     }
     .weight-unit-badge {
         font-size: 0.65rem;
@@ -195,6 +201,58 @@
         border-radius: 6px;
         vertical-align: middle;
         margin-left: 6px;
+    }
+    .form-check-input:checked {
+        background-color: #2563eb;
+        border-color: #2563eb;
+    }
+    .filter-loading {
+        opacity: 0.5;
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+    }
+
+    /* Custom Multi-select Dropdown */
+    .dropdown-check-list {
+        display: inline-block;
+        width: 100%;
+    }
+    .dropdown-check-list .dropdown-toggle {
+        width: 100%;
+        text-align: left;
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        padding: 0.6rem 0.85rem;
+        font-size: 0.9rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-radius: 10px;
+        color: #1e293b;
+    }
+    .dropdown-check-list .dropdown-toggle::after {
+        margin-left: auto;
+    }
+    .dropdown-check-list .dropdown-menu {
+        width: 100%;
+        padding: 0.5rem;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        border: 1px solid #f1f3f9;
+        margin-top: 5px;
+    }
+    .dropdown-check-list .form-check {
+        padding: 0.5rem 1rem 0.5rem 2.5rem;
+        margin: 0;
+        cursor: pointer;
+        border-radius: 8px;
+        transition: background 0.2s;
+    }
+    .dropdown-check-list .form-check:hover {
+        background: #f8f9fa;
+    }
+    .dropdown-check-list .form-check-input {
+        cursor: pointer;
     }
 </style>
 
@@ -220,68 +278,12 @@
         </div>
     </div>
 
-    <!-- Premium Metrics Hub -->
-    <div class="row mb-5">
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card metric-card shadow-sm h-100">
-                <div class="card-body d-flex align-items-center">
-                    <div class="metric-icon bg-primary-soft text-primary me-3" style="background: rgba(78, 115, 223, 0.1);">
-                        <i class="fas fa-shopping-cart"></i>
-                    </div>
-                    <div>
-                        <div class="text-xs text-uppercase fw-bold text-muted mb-1">Total Portfolio</div>
-                        <div class="h4 mb-0 fw-bold">{{ total_orders }} <small class="text-muted fst-italic fw-normal">Orders</small></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card metric-card shadow-sm h-100">
-                <div class="card-body d-flex align-items-center">
-                    <div class="metric-icon bg-info-soft text-info me-3" style="background: rgba(54, 185, 204, 0.1);">
-                        <i class="fas fa-truck-loading"></i>
-                    </div>
-                    <div>
-                        <div class="text-xs text-uppercase fw-bold text-muted mb-1">In Transit</div>
-                        <div class="h4 mb-0 fw-bold">{{ in_transit_count }}</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card metric-card shadow-sm h-100">
-                <div class="card-body d-flex align-items-center">
-                    <div class="metric-icon bg-warning-soft text-warning me-3" style="background: rgba(246, 194, 62, 0.1);">
-                        <i class="fas fa-clock"></i>
-                    </div>
-                    <div>
-                        <div class="text-xs text-uppercase fw-bold text-muted mb-1">Unpaid Balance</div>
-                        <div class="h4 mb-0 fw-bold">{{ pending_payment_count }} <small class="text-muted fw-normal">Orders</small></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card metric-card shadow-sm h-100">
-                <div class="card-body d-flex align-items-center">
-                    <div class="metric-icon bg-success-soft text-success me-3" style="background: rgba(28, 200, 138, 0.1);">
-                        <i class="fas fa-weight-hanging"></i>
-                    </div>
-                    <div class="flex-grow-1">
-                        <div class="text-xs text-uppercase fw-bold text-muted mb-1">Weight Fulfillment</div>
-                        <div class="h4 mb-0 fw-bold">{{ total_shipped_weight|intcomma }} / {{ total_target_weight|intcomma }} lbs</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Global Search & Filter integrate -->
+    <!-- Global Search & Filter -->
     <div class="row mb-4 align-items-center">
         <div class="col-lg-5">
             <div class="search-group position-relative">
                 <i class="fas fa-search search-icon"></i>
-                <input type="text" class="form-control" placeholder="Search by Order #, PO, or Carrier...">
+                <input type="text" id="mainSearch" class="form-control" placeholder="Search by Order #, PO, or Carrier..." value="{{ filters.search }}">
             </div>
         </div>
         <div class="col-lg-7 d-flex justify-content-end gap-2">
@@ -291,143 +293,57 @@
         </div>
     </div>
 
-    <!-- Redesigned Orders Board -->
-    <div class="table-responsive bg-transparent rounded-3 mt-1">
-        <table class="table order-table align-middle mb-0" id="ordersTable">
-                <thead class="small text-muted" style="background-color: #f8f9fa;">
-                    <tr>
-                        <th class="ps-4">ID</th>
-                        <th>Status</th>
-                        <th>PO Number</th>
-                        <th>SO Number</th>
-                        <th>Create Date</th>
-                        <th>Supplier</th>
-                        <th>Pickup</th>
-                        <th>Receiver</th>
-                        <th>Destination</th>
-                        <th class="text-center">Weight</th>
-                        <th class="text-end">Revenue</th>
-                        <th class="text-end">Cost</th>
-                        <th class="text-end pe-4">Margin</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for order in orders %}
-                    <tr onclick="window.location='{% url 'orders:order_detail' order.pk %}'" style="cursor: pointer;">
-                        <td class="ps-4">
-                            <a href="{% url 'orders:order_detail' order.pk %}" class="id-link">
-                                {{ order.order_number }}
-                            </a>
-                        </td>
-                        <td>
-                            <span class="status-pill {% if order.simple_status_label == 'Open' %}status-open{% else %}status-complete{% endif %}">
-                                {{ order.simple_status_label }}
-                            </span>
-                        </td>
-                        <td class="sub-text">
-                            {{ order.po_number|default:"-" }}
-                        </td>
-                        <td class="sub-text">
-                            {{ order.so_number|default:"-" }}
-                        </td>
-                        <td class="date-text">
-                            {{ order.created_at|date:"m/d/Y" }}
-                        </td>
-                        <td>
-                            <div class="location-text">{{ order.supplier.name|truncatechars:20 }}</div>
-                        </td>
-                        <td class="sub-text">
-                            {{ order.supplier.city }}, {{ order.supplier.state }}
-                        </td>
-                        <td>
-                            <div class="location-text">{{ order.receiver.name|truncatechars:20 }}</div>
-                        </td>
-                        <td class="sub-text">
-                            {{ order.receiver.city }}, {{ order.receiver.state }}
-                        </td>
-                        <td class="text-center">
-                            <div class="fw-bold mb-1">{{ order.weight_progress_percentage }}%</div>
-                            <div class="progress rounded-pill" style="height: 4px; background-color: #f1f3f9; width: 40px; margin: 0 auto;">
-                                <div class="progress-bar rounded-pill {% if order.weight_progress_percentage > 90 %}bg-success{% elif order.weight_progress_percentage > 50 %}bg-info{% else %}bg-primary{% endif %}" 
-                                     role="progressbar" style="width: {{ order.weight_progress_percentage }}%"></div>
-                            </div>
-                        </td>
-                        <td class="text-end fw-bold text-dark">
-                            ${{ order.total_revenue|floatformat:2|intcomma }}
-                        </td>
-                        <td class="text-end fw-bold text-dark">
-                            ${{ order.total_cost|floatformat:2|intcomma }}
-                        </td>
-                        <td class="text-end pe-4">
-                            <div class="fw-bold {% if order.gross_profit > 0 %}text-success{% else %}text-danger{% endif %}">
-                                ${{ order.gross_profit|floatformat:2|intcomma }}
-                            </div>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="13" class="text-center py-5">
-                            <div class="my-3">
-                                <i class="fas fa-box-open fa-3x text-light mb-3"></i>
-                                <h5 class="text-muted">No orders found in your portfolio</h5>
-                                <p class="text-muted small">Start by creating a new order to track your materials and logistics.</p>
-                                <a href="{% url 'orders:order_create' %}" class="btn btn-primary px-4">Create First Order</a>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% if is_paginated %}
-        <div class="card-footer bg-white py-3">
-            <nav aria-label="Page navigation">
-                <ul class="pagination pagination-sm justify-content-center mb-0">
-                    {% if page_obj.has_previous %}
-                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a></li>
-                    {% endif %}
-                    <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
-                    {% if page_obj.has_next %}
-                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a></li>
-                    {% endif %}
-                </ul>
-            </nav>
-        </div>
-        {% endif %}
+    <!-- Content containers for AJAX -->
+    <div id="filter-content-area">
+        {% include 'orders/order_list_partial.html' %}
+    </div>
     </div>
 </div>
 
 <!-- Advanced Filter Drawer (Offcanvas Start) -->
-<div class="offcanvas offcanvas-start filter-offcanvas border-0 shadow" tabindex="-1" id="filterDrawer" aria-labelledby="filterDrawerLabel" style="width: 420px;">
+<div class="offcanvas offcanvas-start filter-offcanvas border-0 shadow" tabindex="-1" id="filterDrawer" aria-labelledby="filterDrawerLabel" style="width: 400px;">
     <div class="offcanvas-header border-bottom py-3 px-4">
         <h5 class="offcanvas-title fw-bold text-dark" id="filterDrawerLabel">Filters</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        <div class="d-flex align-items-center gap-3">
+            <a href="#" id="clearFilters" class="small text-decoration-none text-primary fw-bold">Clear All</a>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
     </div>
     <div class="offcanvas-body p-4">
-        <form method="get" action="{% url 'orders:order_list' %}">
+        <form method="get" action="{% url 'orders:order_list' %}" id="filterForm">
             <!-- Search within drawer -->
             <div class="filter-group mb-4">
                 <div class="search-group position-relative">
                     <i class="fas fa-search search-icon" style="left: 1rem;"></i>
-                    <input type="text" name="search" class="form-control ps-5 filter-control" placeholder="Search for a filter" value="{{ filters.search }}">
+                    <input type="text" name="search" id="drawerSearch" class="form-control ps-5 filter-control" placeholder="Search by ID, PO, Supplier..." value="{{ filters.search }}">
                 </div>
             </div>
 
-            <!-- Status -->
+            <!-- Status (Multi-select Dropdown) -->
             <div class="filter-group">
                 <label class="filter-section-label">Status</label>
-                <select name="status" class="form-select filter-select">
-                    <option value="">Select a value</option>
-                    <option value="open" {% if filters.status == 'open' %}selected{% endif %}>Open</option>
-                    <option value="complete" {% if filters.status == 'complete' %}selected{% endif %}>Complete</option>
-                </select>
+                <div class="dropdown dropdown-check-list">
+                    <button class="btn dropdown-toggle" type="button" id="statusDropdown" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+                        <span id="statusDropdownLabel">Any Status</span>
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="statusDropdown">
+                        <div class="form-check">
+                            <input class="form-check-input status-filter-check" type="checkbox" name="status" value="open" id="statusOpen" {% if 'open' in filters.status_list %}checked{% endif %}>
+                            <label class="form-check-label w-100" for="statusOpen">Open</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input status-filter-check" type="checkbox" name="status" value="complete" id="statusComplete" {% if 'complete' in filters.status_list %}checked{% endif %}>
+                            <label class="form-check-label w-100" for="statusComplete">Complete</label>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Supplier -->
             <div class="filter-group">
                 <label class="filter-section-label">Supplier</label>
                 <select name="supplier" class="form-select filter-select">
-                    <option value="">Select a value</option>
+                    <option value="">Any Supplier</option>
                     {% for supplier in suppliers %}
                     <option value="{{ supplier.id }}" {% if filters.supplier == supplier.id|stringformat:"i" %}selected{% endif %}>{{ supplier.name }}</option>
                     {% endfor %}
@@ -438,7 +354,7 @@
             <div class="filter-group">
                 <label class="filter-section-label">Receiver</label>
                 <select name="receiver" class="form-select filter-select">
-                    <option value="">Select a value</option>
+                    <option value="">Any Receiver</option>
                     {% for receiver in receivers %}
                     <option value="{{ receiver.id }}" {% if filters.receiver == receiver.id|stringformat:"i" %}selected{% endif %}>{{ receiver.name }}</option>
                     {% endfor %}
@@ -449,7 +365,7 @@
             <div class="filter-group">
                 <label class="filter-section-label">Material</label>
                 <select name="material" class="form-select filter-select">
-                    <option value="">Select a value</option>
+                    <option value="">Any Material</option>
                     {% for mat in materials %}
                     <option value="{{ mat }}" {% if filters.material == mat %}selected{% endif %}>{{ mat }}</option>
                     {% endfor %}
@@ -460,7 +376,7 @@
             <div class="filter-group">
                 <label class="filter-section-label">Material Type</label>
                 <select name="material_type" class="form-select filter-select">
-                    <option value="">Select a value</option>
+                    <option value="">Any Material Type</option>
                     {% for mat_type in material_types %}
                     <option value="{{ mat_type }}" {% if filters.material_type == mat_type %}selected{% endif %}>{{ mat_type }}</option>
                     {% endfor %}
@@ -472,7 +388,7 @@
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <label class="filter-section-label m-0">Total Weight</label>
                     <div class="position-relative">
-                        <select name="weight_unit" class="form-select border-0 bg-transparent text-muted fw-bold p-0 pe-4" style="width: auto; font-size: 0.8rem; box-shadow: none; cursor: pointer;" onchange="this.form.submit()">
+                        <select name="weight_unit" class="form-select border-0 bg-transparent text-muted fw-bold p-0 pe-4" style="width: auto; font-size: 0.8rem; box-shadow: none; cursor: pointer;">
                             <option value="lbs" {% if filters.weight_unit == 'lbs' %}selected{% endif %}>lbs</option>
                             <option value="mt" {% if filters.weight_unit == 'mt' %}selected{% endif %}>MT</option>
                             <option value="st" {% if filters.weight_unit == 'st' %}selected{% endif %}>ST</option>
@@ -482,10 +398,10 @@
                 </div>
                 <div class="row g-2">
                     <div class="col-6">
-                        <input type="number" name="min_weight" class="form-control filter-control" placeholder="Min value" value="{{ filters.min_weight }}">
+                        <input type="number" name="min_weight" class="form-control filter-control" placeholder="Min" value="{{ filters.min_weight }}">
                     </div>
                     <div class="col-6">
-                        <input type="number" name="max_weight" class="form-control filter-control" placeholder="Max value" value="{{ filters.max_weight }}">
+                        <input type="number" name="max_weight" class="form-control filter-control" placeholder="Max" value="{{ filters.max_weight }}">
                     </div>
                 </div>
             </div>
@@ -494,7 +410,7 @@
             <div class="filter-group">
                 <label class="filter-section-label">Shipping Terms</label>
                 <select name="shipping_term" class="form-select filter-select">
-                    <option value="">Select a value</option>
+                    <option value="">Any Term</option>
                     {% for term in shipping_terms %}
                     <option value="{{ term.id }}" {% if filters.shipping_term == term.id|stringformat:"i" %}selected{% endif %}>{{ term.name }}</option>
                     {% endfor %}
@@ -505,7 +421,7 @@
             <div class="filter-group">
                 <label class="filter-section-label">Packaging</label>
                 <select name="packaging" class="form-select filter-select">
-                    <option value="">Select a value</option>
+                    <option value="">Any Packaging</option>
                     {% for pkg in packagings %}
                     <option value="{{ pkg }}" {% if filters.packaging == pkg %}selected{% endif %}>{{ pkg }}</option>
                     {% endfor %}
@@ -516,7 +432,7 @@
             <div class="filter-group">
                 <label class="filter-section-label">Representatives</label>
                 <select name="representative" class="form-select filter-select">
-                    <option value="">Select a value</option>
+                    <option value="">Any Representative</option>
                     {% for rep in representatives %}
                     <option value="{{ rep.id }}" {% if filters.representative == rep.id|stringformat:"i" %}selected{% endif %}>{{ rep.get_full_name|default:rep.username }}</option>
                     {% endfor %}
@@ -527,14 +443,12 @@
             <div class="filter-group">
                 <label class="filter-section-label">Tags</label>
                 <select name="tag" class="form-select filter-select">
-                    <option value="">Select a value</option>
+                    <option value="">Any Tag</option>
                     {% for tag in tags %}
                     <option value="{{ tag.id }}" {% if filters.tag == tag.id|stringformat:"i" %}selected{% endif %}>{{ tag.name }}</option>
                     {% endfor %}
                 </select>
             </div>
-
-
         </form>
     </div>
 </div>
@@ -544,24 +458,118 @@
         const filterDrawer = document.getElementById('filterDrawer');
         if (!filterDrawer) return;
 
-        const filterForm = filterDrawer.querySelector('form');
-        const inputs = filterForm.querySelectorAll('select, input');
+        const filterForm = document.getElementById('filterForm');
+        const contentArea = document.getElementById('filter-content-area');
+        const mainSearch = document.getElementById('mainSearch');
+        const drawerSearch = document.getElementById('drawerSearch');
+        
+        // Handle AJAX pagination
+        contentArea.addEventListener('click', (e) => {
+            if (e.target.classList.contains('ajax-page-link')) {
+                e.preventDefault();
+                const url = e.target.getAttribute('href');
+                const page = new URLSearchParams(url.split('?')[1]).get('page');
+                
+                const formData = new FormData(filterForm);
+                const params = new URLSearchParams(formData);
+                if (page) params.set('page', page);
+                params.set('ajax', '1');
+                
+                updateWithParams(params);
+            }
+        });
 
-        inputs.forEach(input => {
-            input.addEventListener('change', function() {
-                filterForm.submit();
+        const updateWithParams = async (params) => {
+            contentArea.classList.add('filter-loading');
+            try {
+                const url = `${filterForm.action}?${params.toString()}`;
+                const response = await fetch(url);
+                const html = await response.text();
+                contentArea.innerHTML = html;
+                
+                params.delete('ajax');
+                const newUrl = `${window.location.pathname}?${params.toString()}`;
+                window.history.pushState({ path: newUrl }, '', newUrl);
+            } catch (error) {
+                console.error('Filter update failed:', error);
+            } finally {
+                contentArea.classList.remove('filter-loading');
+            }
+        };
+        
+        const updateFilters = () => {
+            const formData = new FormData(filterForm);
+            const params = new URLSearchParams(formData);
+            params.set('ajax', '1');
+            updateWithParams(params);
+        };
+
+        // Sync main search with drawer search
+        mainSearch.addEventListener('input', (e) => {
+            drawerSearch.value = e.target.value;
+            triggerSearch();
+        });
+
+        const triggerSearch = (() => {
+            let timeout;
+            return () => {
+                clearTimeout(timeout);
+                timeout = setTimeout(updateFilters, 500);
+            };
+        })();
+
+        // Drawer search input
+        drawerSearch.addEventListener('input', (e) => {
+            mainSearch.value = e.target.value;
+            triggerSearch();
+        });
+
+        // Manage Status Dropdown Label & Selection
+        const statusChecks = document.querySelectorAll('.status-filter-check');
+        const statusLabel = document.getElementById('statusDropdownLabel');
+
+        const updateStatusLabel = () => {
+            const selected = Array.from(statusChecks)
+                .filter(i => i.checked)
+                .map(i => i.nextElementSibling.textContent.trim());
+            
+            if (selected.length === 0) {
+                statusLabel.textContent = 'Any Status';
+            } else if (selected.length === statusChecks.length) {
+                statusLabel.textContent = 'All Statuses';
+            } else {
+                statusLabel.textContent = selected.join(', ');
+            }
+        };
+
+        statusChecks.forEach(check => {
+            check.addEventListener('change', () => {
+                updateStatusLabel();
+                updateFilters();
             });
         });
-        
-        // Handle search input with a small delay for better UX
-        const searchInput = filterForm.querySelector('input[name="search"]');
-        let timeout = null;
-        if (searchInput) {
-            searchInput.addEventListener('input', function() {
-                clearTimeout(timeout);
-                timeout = setTimeout(() => {
-                    filterForm.submit();
-                }, 800);
+
+        // Initialize label on load
+        updateStatusLabel();
+
+        // Listen for all input changes
+        filterForm.addEventListener('change', (e) => {
+            if (e.target.name !== 'search' && !e.target.classList.contains('status-filter-check')) {
+                updateFilters();
+            }
+        });
+
+        // Handle Clear All
+        const clearBtn = document.getElementById('clearFilters');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                filterForm.querySelectorAll('input[type="text"], input[type="number"]').forEach(i => i.value = '');
+                filterForm.querySelectorAll('input[type="checkbox"]').forEach(i => i.checked = false);
+                filterForm.querySelectorAll('select').forEach(s => s.selectedIndex = 0);
+                mainSearch.value = '';
+                updateStatusLabel();
+                updateFilters();
             });
         }
     });
