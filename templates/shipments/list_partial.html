@@ -1,0 +1,122 @@
+{% load humanize %}
+
+<!-- Table Section -->
+<div id="tableView">
+    <div class="table-responsive bg-white rounded-3 shadow-sm border mt-1" data-count="{{ shipments.paginator.count }}">
+        <table class="table table-hover align-middle mb-0" style="min-width: 1600px;">
+            <thead class="small text-muted" style="background-color: #f8f9fa;">
+                <tr>
+                    <th class="ps-4">ID</th>
+                    <th>Status</th>
+                    <th>Pickup Date</th>
+                    <th>Delivery Date</th>
+                    <th>Supplier</th>
+                    <th>Pickup Loc.</th>
+                    <th>Receiver</th>
+                    <th>Destination</th>
+                    <th>Order ID</th>
+                    <th>Pickup No.</th>
+                    <th>Delivery No.</th>
+                    <th class="pe-4">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for shipment in shipments %}
+                <tr>
+                    <td class="ps-4">
+                        <a href="{% url 'shipments:shipment_detail' shipment.pk %}" class="shipment-id">
+                            {{ shipment.shipment_number }}
+                        </a>
+                        <div class="sub-text">Type: {{ shipment.get_shipment_type_display }}</div>
+                    </td>
+                    <td>
+                        <span class="status-pill status-{{ shipment.status }}">
+                            {{ shipment.get_status_display }}
+                        </span>
+                    </td>
+                    <td class="date-text">{{ shipment.pickup_date|date:"m/d/Y"|default:"-" }}</td>
+                    <td class="date-text">
+                        {{ shipment.estimated_delivery_date|date:"m/d/Y"|default:"-" }}
+                        {% if shipment.is_overdue %}
+                        <br><span class="badge bg-soft-danger text-danger border border-danger-subtle px-1 py-0"
+                            style="font-size: 0.65rem;">OVERDUE</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="location-text">{{ shipment.shipper.name|default:"-" }}</div>
+                    </td>
+                    <td>
+                        <div class="location-text">{{ shipment.origin_city }}</div>
+                        <div class="sub-text">{{ shipment.origin_state|default:shipment.origin_country }}</div>
+                    </td>
+                    <td>
+                        <div class="location-text">{{ shipment.consignee.name|default:shipment.customer.name|default:"-" }}</div>
+                    </td>
+                    <td>
+                        <div class="location-text">{{ shipment.destination_city }}</div>
+                        <div class="sub-text">{{ shipment.destination_state|default:shipment.destination_country }}
+                        </div>
+                    </td>
+                    <td><span class="fw-600 text-dark">{{ shipment.order.order_number|default:"-" }}</span></td>
+                    <td><span class="text-muted">{{ shipment.pickup_number|default:"-" }}</span></td>
+                    <td><span class="text-muted">{{ shipment.delivery_number|default:"-" }}</span></td>
+                    <td class="pe-4">
+                        <div class="btn-group shadow-sm" style="border-radius: 8px; overflow: hidden;">
+                            <a href="{% url 'shipments:shipment_detail' shipment.pk %}"
+                                class="btn btn-sm btn-white border" title="View"><i
+                                    class="fas fa-eye text-primary"></i></a>
+                            <a href="{% url 'shipments:shipment_edit' shipment.pk %}"
+                                class="btn btn-sm btn-white border" title="Edit"><i
+                                    class="fas fa-edit text-secondary"></i></a>
+                            <a href="{% url 'shipments:generate_bol' shipment.pk %}" class="btn btn-sm btn-white border"
+                                title="BOL" target="_blank"><i class="fas fa-file-pdf text-danger"></i></a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="12" class="text-center py-5">
+                        <div class="py-4">
+                            <i class="fas fa-box-open fa-3x text-light mb-3"></i>
+                            <h5 class="text-muted">No shipments found</h5>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if shipments.has_other_pages %}
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination pagination-sm justify-content-center">
+            {% if shipments.has_previous %}
+            <li class="page-item">
+                <a class="page-link shadow-sm border-0 mx-1 ajax-page-link"
+                    href="?page={{ shipments.previous_page_number }}{% for k, v in request.GET.lists %}{% if k != 'page' %}{% for val in v %}&{{ k }}={{ val }}{% endfor %}{% endif %}{% endfor %}"
+                    style="border-radius: 8px;">Previous</a>
+            </li>
+            {% endif %}
+
+            {% for num in shipments.paginator.page_range %}
+            {% if shipments.number == num %}
+            <li class="page-item active"><span class="page-link shadow-sm border-0 mx-1" style="border-radius: 8px;">{{ num }}</span></li>
+            {% else %}
+            <li class="page-item"><a class="page-link shadow-sm border-0 mx-1 ajax-page-link"
+                    href="?page={{ num }}{% for k, v in request.GET.lists %}{% if k != 'page' %}{% for val in v %}&{{ k }}={{ val }}{% endfor %}{% endif %}{% endfor %}"
+                    style="border-radius: 8px;">{{ num }}</a></li>
+            {% endif %}
+            {% endfor %}
+
+            {% if shipments.has_next %}
+            <li class="page-item">
+                <a class="page-link shadow-sm border-0 mx-1 ajax-page-link"
+                    href="?page={{ shipments.next_page_number }}{% for k, v in request.GET.lists %}{% if k != 'page' %}{% for val in v %}&{{ k }}={{ val }}{% endfor %}{% endif %}{% endfor %}"
+                    style="border-radius: 8px;">Next</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
