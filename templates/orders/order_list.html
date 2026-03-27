@@ -163,12 +163,12 @@
         border-left: none;
     }
     .filter-section-label {
-        font-size: 0.72rem;
+        font-size: 0.68rem;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.04em;
         color: #94a3b8;
-        margin-bottom: 0.8rem;
+        margin-bottom: 0.5rem;
         display: block;
     }
     .filter-select, .filter-control {
@@ -186,8 +186,8 @@
         background-color: #fff;
     }
     .filter-group {
-        margin-bottom: 1.8rem;
-        padding-bottom: 1.2rem;
+        margin-bottom: 1.2rem;
+        padding-bottom: 0.8rem;
         border-bottom: 1px solid #f1f5f9;
     }
     .filter-group:last-child {
@@ -342,45 +342,73 @@
             <!-- Supplier -->
             <div class="filter-group">
                 <label class="filter-section-label">Supplier</label>
-                <select name="supplier" class="form-select filter-select">
-                    <option value="">Any Supplier</option>
-                    {% for supplier in suppliers %}
-                    <option value="{{ supplier.id }}" {% if filters.supplier == supplier.id|stringformat:"i" %}selected{% endif %}>{{ supplier.name }}</option>
-                    {% endfor %}
-                </select>
+                <div class="dropdown dropdown-check-list">
+                    <button class="btn dropdown-toggle" type="button" id="supplierDropdown" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+                        <span id="supplierDropdownLabel">Any Supplier</span>
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="supplierDropdown">
+                        {% for supplier in suppliers %}
+                        <div class="form-check">
+                            <input class="form-check-input supplier-filter-check" type="checkbox" name="supplier" value="{{ supplier.id }}" id="supplier{{ supplier.id }}" {% if supplier.id|stringformat:"i" in filters.supplier_list %}checked{% endif %}>
+                            <label class="form-check-label w-100" for="supplier{{ supplier.id }}">{{ supplier.name }}</label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
 
             <!-- Receiver -->
             <div class="filter-group">
                 <label class="filter-section-label">Receiver</label>
-                <select name="receiver" class="form-select filter-select">
-                    <option value="">Any Receiver</option>
-                    {% for receiver in receivers %}
-                    <option value="{{ receiver.id }}" {% if filters.receiver == receiver.id|stringformat:"i" %}selected{% endif %}>{{ receiver.name }}</option>
-                    {% endfor %}
-                </select>
+                <div class="dropdown dropdown-check-list">
+                    <button class="btn dropdown-toggle" type="button" id="receiverDropdown" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+                        <span id="receiverDropdownLabel">Any Receiver</span>
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="receiverDropdown">
+                        {% for receiver in receivers %}
+                        <div class="form-check">
+                            <input class="form-check-input receiver-filter-check" type="checkbox" name="receiver" value="{{ receiver.id }}" id="receiver{{ receiver.id }}" {% if receiver.id|stringformat:"i" in filters.receiver_list %}checked{% endif %}>
+                            <label class="form-check-label w-100" for="receiver{{ receiver.id }}">{{ receiver.name }}</label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
 
             <!-- Material -->
             <div class="filter-group">
                 <label class="filter-section-label">Material</label>
-                <select name="material" class="form-select filter-select">
-                    <option value="">Any Material</option>
-                    {% for mat in materials %}
-                    <option value="{{ mat }}" {% if filters.material == mat %}selected{% endif %}>{{ mat }}</option>
-                    {% endfor %}
-                </select>
+                <div class="dropdown dropdown-check-list">
+                    <button class="btn dropdown-toggle" type="button" id="materialDropdown" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+                        <span id="materialDropdownLabel">Any Material</span>
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="materialDropdown">
+                        {% for mat in materials %}
+                        <div class="form-check">
+                            <input class="form-check-input material-filter-check" type="checkbox" name="material" value="{{ mat }}" id="material{{ forloop.counter }}" {% if mat in filters.material_list %}checked{% endif %}>
+                            <label class="form-check-label w-100" for="material{{ forloop.counter }}">{{ mat }}</label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
 
             <!-- Material Type -->
             <div class="filter-group">
                 <label class="filter-section-label">Material Type</label>
-                <select name="material_type" class="form-select filter-select">
-                    <option value="">Any Material Type</option>
-                    {% for mat_type in material_types %}
-                    <option value="{{ mat_type }}" {% if filters.material_type == mat_type %}selected{% endif %}>{{ mat_type }}</option>
-                    {% endfor %}
-                </select>
+                <div class="dropdown dropdown-check-list">
+                    <button class="btn dropdown-toggle" type="button" id="materialTypeDropdown" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+                        <span id="materialTypeDropdownLabel">Any Material Type</span>
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="materialTypeDropdown">
+                        {% for mat_type in material_types %}
+                        <div class="form-check">
+                            <input class="form-check-input materialType-filter-check" type="checkbox" name="material_type" value="{{ mat_type }}" id="matType{{ forloop.counter }}" {% if mat_type in filters.material_type_list %}checked{% endif %}>
+                            <label class="form-check-label w-100" for="matType{{ forloop.counter }}">{{ mat_type }}</label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
 
             <!-- Total Weight -->
@@ -409,45 +437,73 @@
             <!-- Shipping Terms -->
             <div class="filter-group">
                 <label class="filter-section-label">Shipping Terms</label>
-                <select name="shipping_term" class="form-select filter-select">
-                    <option value="">Any Term</option>
-                    {% for term in shipping_terms %}
-                    <option value="{{ term.id }}" {% if filters.shipping_term == term.id|stringformat:"i" %}selected{% endif %}>{{ term.name }}</option>
-                    {% endfor %}
-                </select>
+                <div class="dropdown dropdown-check-list">
+                    <button class="btn dropdown-toggle" type="button" id="shippingTermDropdown" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+                        <span id="shippingTermDropdownLabel">Any Term</span>
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="shippingTermDropdown">
+                        {% for term in shipping_terms %}
+                        <div class="form-check">
+                            <input class="form-check-input shippingTerm-filter-check" type="checkbox" name="shipping_term" value="{{ term.id }}" id="term{{ term.id }}" {% if term.id|stringformat:"i" in filters.shipping_term_list %}checked{% endif %}>
+                            <label class="form-check-label w-100" for="term{{ term.id }}">{{ term.name }}</label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
 
             <!-- Packaging -->
             <div class="filter-group">
                 <label class="filter-section-label">Packaging</label>
-                <select name="packaging" class="form-select filter-select">
-                    <option value="">Any Packaging</option>
-                    {% for pkg in packagings %}
-                    <option value="{{ pkg }}" {% if filters.packaging == pkg %}selected{% endif %}>{{ pkg }}</option>
-                    {% endfor %}
-                </select>
+                <div class="dropdown dropdown-check-list">
+                    <button class="btn dropdown-toggle" type="button" id="packagingDropdown" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+                        <span id="packagingDropdownLabel">Any Packaging</span>
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="packagingDropdown">
+                        {% for pkg in packagings %}
+                        <div class="form-check">
+                            <input class="form-check-input packaging-filter-check" type="checkbox" name="packaging" value="{{ pkg }}" id="pkg{{ forloop.counter }}" {% if pkg in filters.packaging_list %}checked{% endif %}>
+                            <label class="form-check-label w-100" for="pkg{{ forloop.counter }}">{{ pkg }}</label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
 
             <!-- Representatives -->
             <div class="filter-group">
                 <label class="filter-section-label">Representatives</label>
-                <select name="representative" class="form-select filter-select">
-                    <option value="">Any Representative</option>
-                    {% for rep in representatives %}
-                    <option value="{{ rep.id }}" {% if filters.representative == rep.id|stringformat:"i" %}selected{% endif %}>{{ rep.get_full_name|default:rep.username }}</option>
-                    {% endfor %}
-                </select>
+                <div class="dropdown dropdown-check-list">
+                    <button class="btn dropdown-toggle" type="button" id="representativeDropdown" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+                        <span id="representativeDropdownLabel">Any Representative</span>
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="representativeDropdown">
+                        {% for rep in representatives %}
+                        <div class="form-check">
+                            <input class="form-check-input representative-filter-check" type="checkbox" name="representative" value="{{ rep.id }}" id="rep{{ rep.id }}" {% if rep.id|stringformat:"i" in filters.representative_list %}checked{% endif %}>
+                            <label class="form-check-label w-100" for="rep{{ rep.id }}">{{ rep.get_full_name|default:rep.username }}</label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
 
             <!-- Tags -->
             <div class="filter-group">
                 <label class="filter-section-label">Tags</label>
-                <select name="tag" class="form-select filter-select">
-                    <option value="">Any Tag</option>
-                    {% for tag in tags %}
-                    <option value="{{ tag.id }}" {% if filters.tag == tag.id|stringformat:"i" %}selected{% endif %}>{{ tag.name }}</option>
-                    {% endfor %}
-                </select>
+                <div class="dropdown dropdown-check-list">
+                    <button class="btn dropdown-toggle" type="button" id="tagDropdown" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+                        <span id="tagDropdownLabel">Any Tag</span>
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="tagDropdown">
+                        {% for tag in tags %}
+                        <div class="form-check">
+                            <input class="form-check-input tag-filter-check" type="checkbox" name="tag" value="{{ tag.id }}" id="tag{{ tag.id }}" {% if tag.id|stringformat:"i" in filters.tag_list %}checked{% endif %}>
+                            <label class="form-check-label w-100" for="tag{{ tag.id }}">{{ tag.name }}</label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
         </form>
     </div>
@@ -524,37 +580,58 @@
             triggerSearch();
         });
 
-        // Manage Status Dropdown Label & Selection
-        const statusChecks = document.querySelectorAll('.status-filter-check');
-        const statusLabel = document.getElementById('statusDropdownLabel');
+        // Manage Multi-select Dropdown Labels
+        const setupMultiSelect = (checkClass, labelId, defaultLabel) => {
+            const checks = document.querySelectorAll(`.${checkClass}`);
+            const label = document.getElementById(labelId);
+            if (!checks.length || !label) return;
 
-        const updateStatusLabel = () => {
-            const selected = Array.from(statusChecks)
-                .filter(i => i.checked)
-                .map(i => i.nextElementSibling.textContent.trim());
-            
-            if (selected.length === 0) {
-                statusLabel.textContent = 'Any Status';
-            } else if (selected.length === statusChecks.length) {
-                statusLabel.textContent = 'All Statuses';
-            } else {
-                statusLabel.textContent = selected.join(', ');
-            }
+            const updateLabel = () => {
+                const selected = Array.from(checks)
+                    .filter(i => i.checked)
+                    .map(i => i.nextElementSibling.textContent.trim());
+                
+                if (selected.length === 0) {
+                    label.textContent = defaultLabel;
+                } else if (selected.length === checks.length) {
+                    label.textContent = `All ${defaultLabel.split(' ').pop()}s`;
+                } else {
+                    label.textContent = selected.length > 2 
+                        ? `${selected.length} Selected` 
+                        : selected.join(', ');
+                }
+            };
+
+            checks.forEach(check => {
+                check.addEventListener('change', () => {
+                    updateLabel();
+                    updateFilters();
+                });
+            });
+
+            updateLabel(); // Initial call
+            return updateLabel;
         };
 
-        statusChecks.forEach(check => {
-            check.addEventListener('change', () => {
-                updateStatusLabel();
-                updateFilters();
-            });
-        });
+        const updateStatus = setupMultiSelect('status-filter-check', 'statusDropdownLabel', 'Any Status');
+        const updateSupplier = setupMultiSelect('supplier-filter-check', 'supplierDropdownLabel', 'Any Supplier');
+        const updateReceiver = setupMultiSelect('receiver-filter-check', 'receiverDropdownLabel', 'Any Receiver');
+        const updateMaterial = setupMultiSelect('material-filter-check', 'materialDropdownLabel', 'Any Material');
+        const updateMaterialType = setupMultiSelect('materialType-filter-check', 'materialTypeDropdownLabel', 'Any Material Type');
+        const updateShippingTerm = setupMultiSelect('shippingTerm-filter-check', 'shippingTermDropdownLabel', 'Any Term');
+        const updatePackaging = setupMultiSelect('packaging-filter-check', 'packagingDropdownLabel', 'Any Packaging');
+        const updateRepresentative = setupMultiSelect('representative-filter-check', 'representativeDropdownLabel', 'Any Representative');
+        const updateTag = setupMultiSelect('tag-filter-check', 'tagDropdownLabel', 'Any Tag');
 
-        // Initialize label on load
-        updateStatusLabel();
+        const updateAllLabels = () => {
+            [updateStatus, updateSupplier, updateReceiver, updateMaterial, updateMaterialType, 
+             updateShippingTerm, updatePackaging, updateRepresentative, updateTag].forEach(fn => fn && fn());
+        };
 
-        // Listen for all input changes
+        // Listen for all input changes (excluding multi-selects handled above)
         filterForm.addEventListener('change', (e) => {
-            if (e.target.name !== 'search' && !e.target.classList.contains('status-filter-check')) {
+            const isMulti = e.target.classList.contains('form-check-input');
+            if (e.target.name !== 'search' && !isMulti) {
                 updateFilters();
             }
         });
@@ -568,7 +645,7 @@
                 filterForm.querySelectorAll('input[type="checkbox"]').forEach(i => i.checked = false);
                 filterForm.querySelectorAll('select').forEach(s => s.selectedIndex = 0);
                 mainSearch.value = '';
-                updateStatusLabel();
+                updateAllLabels();
                 updateFilters();
             });
         }

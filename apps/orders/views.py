@@ -41,25 +41,23 @@ class OrderListView(LoginRequiredMixin, ListView):
                     status_queries |= Q(status=status)
             qs = qs.filter(status_queries)
             
-        supplier_id = self.request.GET.get('supplier')
-        if supplier_id:
-            qs = qs.filter(supplier_id=supplier_id)
+        supplier_ids = [v for v in self.request.GET.getlist('supplier') if v]
+        if supplier_ids:
+            qs = qs.filter(supplier_id__in=supplier_ids)
             
-        receiver_id = self.request.GET.get('receiver')
-        if receiver_id:
-            qs = qs.filter(receiver_id=receiver_id)
+        receiver_ids = [v for v in self.request.GET.getlist('receiver') if v]
+        if receiver_ids:
+            qs = qs.filter(receiver_id__in=receiver_ids)
             
-        material = self.request.GET.get('material')
-        if material:
-            # Filter orders that have at least one manifest item with this material
-            qs = qs.filter(manifest_items__material=material).distinct()
+        materials = [v for v in self.request.GET.getlist('material') if v]
+        if materials:
+            qs = qs.filter(manifest_items__material__in=materials).distinct()
             
-        material_type = self.request.GET.get('material_type')
-        if material_type:
-            # Match ManifestItem.material names with Material.name who have this material_type
-            material_names = Material.objects.filter(tenant=self.request.user.tenant, material_type=material_type).values_list('name', flat=True)
+        material_types = [v for v in self.request.GET.getlist('material_type') if v]
+        if material_types:
+            material_names = Material.objects.filter(tenant=self.request.user.tenant, material_type__in=material_types).values_list('name', flat=True)
             qs = qs.filter(manifest_items__material__in=material_names).distinct()
-            
+        
         weight_unit = self.request.GET.get('weight_unit', 'lbs')
         
         def to_lbs(val, unit):
@@ -80,21 +78,21 @@ class OrderListView(LoginRequiredMixin, ListView):
         if max_weight:
             qs = qs.filter(total_weight_target__lte=max_weight)
             
-        shipping_term_id = self.request.GET.get('shipping_term')
-        if shipping_term_id:
-            qs = qs.filter(shipping_terms_id=shipping_term_id)
+        shipping_term_ids = [v for v in self.request.GET.getlist('shipping_term') if v]
+        if shipping_term_ids:
+            qs = qs.filter(shipping_terms_id__in=shipping_term_ids)
             
-        packaging = self.request.GET.get('packaging')
-        if packaging:
-            qs = qs.filter(manifest_items__packaging=packaging).distinct()
+        packagings = [v for v in self.request.GET.getlist('packaging') if v]
+        if packagings:
+            qs = qs.filter(manifest_items__packaging__in=packagings).distinct()
             
-        representative_id = self.request.GET.get('representative')
-        if representative_id:
-            qs = qs.filter(representative_id=representative_id)
+        representative_ids = [v for v in self.request.GET.getlist('representative') if v]
+        if representative_ids:
+            qs = qs.filter(representative_id__in=representative_ids)
             
-        tag_id = self.request.GET.get('tag')
-        if tag_id:
-            qs = qs.filter(tags__id=tag_id)
+        tag_ids = [v for v in self.request.GET.getlist('tag') if v]
+        if tag_ids:
+            qs = qs.filter(tags__id__in=tag_ids)
 
         # Global Search
         search_query = self.request.GET.get('search')
@@ -166,17 +164,17 @@ class OrderListView(LoginRequiredMixin, ListView):
         context['filters'] = {
             'status': self.request.GET.get('status', ''),
             'status_list': self.request.GET.getlist('status'),
-            'supplier': self.request.GET.get('supplier', ''),
-            'receiver': self.request.GET.get('receiver', ''),
-            'material': self.request.GET.get('material', ''),
-            'material_type': self.request.GET.get('material_type', ''),
+            'supplier_list': self.request.GET.getlist('supplier'),
+            'receiver_list': self.request.GET.getlist('receiver'),
+            'material_list': self.request.GET.getlist('material'),
+            'material_type_list': self.request.GET.getlist('material_type'),
             'min_weight': self.request.GET.get('min_weight', ''),
             'max_weight': self.request.GET.get('max_weight', ''),
             'weight_unit': self.request.GET.get('weight_unit', 'lbs'),
-            'shipping_term': self.request.GET.get('shipping_term', ''),
-            'packaging': self.request.GET.get('packaging', ''),
-            'representative': self.request.GET.get('representative', ''),
-            'tag': self.request.GET.get('tag', ''),
+            'shipping_term_list': self.request.GET.getlist('shipping_term'),
+            'packaging_list': self.request.GET.getlist('packaging'),
+            'representative_list': self.request.GET.getlist('representative'),
+            'tag_list': self.request.GET.getlist('tag'),
             'search': self.request.GET.get('search', ''),
         }
         
