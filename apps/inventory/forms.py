@@ -64,7 +64,7 @@ class InventoryItemForm(forms.ModelForm):
             'quantity', 'unit_of_measure', 'lot_number', 'po_number',
             'company', 'shipping_terms', 'representative', 'tags',
             'packaging', 'pieces', 'is_palletized',
-            'unit_cost', 'price_unit', 'reorder_level'
+            'unit_cost', 'price_unit'
         ]
         widgets = {
             'sku': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'SKU / Part Number'}),
@@ -84,5 +84,4 @@ class InventoryItemForm(forms.ModelForm):
             'is_palletized': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'unit_cost': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.0001', 'placeholder': 'Price'}),
             'price_unit': forms.Select(choices=[('per lbs', 'per lbs'), ('per kg', 'per kg'), ('per MT', 'per MT'), ('per unit', 'per unit')], attrs={'class': 'form-select'}),
-            'reorder_level': forms.NumberInput(attrs={'class': 'form-control'}),
         }
