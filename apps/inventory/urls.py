@@ -21,4 +21,5 @@ urlpatterns = [
     path('items/add/', views.inventory_item_add_general, name='inventory_item_add_general'),
     path('items/<int:pk>/', views.inventory_item_detail, name='item_detail'),
     path('items/<int:pk>/edit/', views.inventory_item_edit, name='inventory_item_edit'),
+    path('items/<int:pk>/delete/', views.inventory_item_delete, name='inventory_item_delete'),
 ]

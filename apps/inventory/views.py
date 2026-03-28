@@ -544,6 +544,21 @@ def inventory_item_edit(request, pk):
 
 
 @login_required
+def inventory_item_delete(request, pk):
+    """Delete an inventory item"""
+    item = get_object_or_404(InventoryItem, pk=pk)
+    warehouse_pk = item.warehouse.pk
+    product_name = item.product_name
+    
+    if request.method == 'POST':
+        item.delete()
+        messages.success(request, f"Item '{product_name}' deleted successfully.")
+        return redirect('inventory:warehouse_detail', pk=warehouse_pk)
+    
+    return redirect('inventory:item_detail', pk=pk)
+
+
+@login_required
 def material_detail(request, pk=None):
     """View to display material details, orders, and documents"""
     if pk:
