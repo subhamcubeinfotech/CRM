@@ -43,24 +43,43 @@
             <form method="post" id="inventoryForm">
                 {% csrf_token %}
                 
+                {% if form.errors %}
+                <div class="alert alert-danger mb-4 shadow-sm border-0" style="border-radius: 8px;">
+                    <h6 class="fw-bold mb-2"><i class="fas fa-exclamation-circle me-1"></i> Please fix the following errors:</h6>
+                    <ul class="mb-0 small">
+                        {% for field, errors in form.errors.items %}
+                            {% for error in errors %}
+                                <li><strong>{{ field|title }}:</strong> {{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+                
                 <div class="row g-4">
                     <!-- Company Section -->
                     <div class="col-12">
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <label class="form-label mb-0 text-uppercase fw-bold">Company<span class="text-danger">*</span></label>
+                            {% if not form.company.field.disabled %}
                             <button type="button" class="btn btn-outline-primary btn-add-custom d-flex align-items-center px-2 py-1" title="Add Company">
                                 <i class="fas fa-plus me-1"></i> Add
                             </button>
+                            {% endif %}
                         </div>
                         <div class="d-flex align-items-center gap-2 mb-1">
                             <div class="flex-grow-1">
                                 {{ form.company }}
                             </div>
+                            {% if not form.company.field.disabled %}
                             <button class="btn btn-outline-primary btn-search-custom" type="button"><i class="fas fa-search"></i></button>
+                            {% endif %}
                         </div>
+                        {% if not form.company.field.disabled %}
                         <a href="javascript:void(0)" onclick="assignToCompany()" class="text-decoration-none small text-primary d-flex align-items-center">
                             <span class="me-1">Click to assign to your company.</span>
                         </a>
+                        {% endif %}
                     </div>
 
                     <!-- Location Section -->
@@ -75,14 +94,14 @@
                             <div class="flex-grow-1">
                                 <select name="warehouse" id="id_warehouse" class="form-select" required onchange="syncLocationSelectState('id_warehouse')">
                                     <option value="">Select location</option>
-                                    {% if assign_company %}
+                                    {% if assign_company and not hq_exists %}
                                     <option value="temp_addr_{{ assign_company.full_address }}" data-company-id="{{ assign_company.id }}">
                                         {{ assign_company.full_address }} (Your Address)
                                     </option>
                                     {% endif %}
                                     {% for wh in warehouses %}
                                     <option value="{{ wh.id }}" data-company-id="{{ wh.company_id }}" {% if form.warehouse.value|stringformat:"s" == wh.id|stringformat:"s" %}selected{% endif %}>
-                                        {{ wh.city.title }}, {{ wh.city.upper }}, {{ wh.address }}, {{ wh.state }} {{ wh.postal_code }}
+                                        {{ wh.city|title }}, {{ wh.city|upper }}, {{ wh.address }}, {{ wh.state }} {{ wh.postal_code }}
                                     </option>
                                     {% endfor %}
                                 </select>

@@ -19,6 +19,36 @@ from collections import defaultdict
 logger = logging.getLogger('apps.inventory')
 
 
+def resolve_location(request, warehouse_val):
+    """Helper to resolve temp_addr_ strings into Warehouse objects"""
+    if not warehouse_val or not str(warehouse_val).startswith('temp_addr_'):
+        return warehouse_val
+        
+    company = request.user.company
+    if not company:
+        return warehouse_val
+        
+    raw_address = str(warehouse_val).replace('temp_addr_', '')[:200]
+    import random
+    unique_code = f"LOC-{company.id}-{random.randint(1000, 9999)}"[:20]
+    
+    hq, _ = Warehouse.objects.get_or_create(
+        company=company,
+        tenant=company.tenant,
+        name=raw_address,
+        defaults={
+            'code': unique_code,
+            'address': company.address_line1,
+            'city': company.city[:100],
+            'state': company.state[:100],
+            'country': company.country[:100],
+            'postal_code': company.postal_code[:20],
+            'phone': company.phone[:20],
+            'is_storage': False
+        }
+    )
+    return hq.id
+
 
 @login_required
 def inventory_dashboard(request):
@@ -211,97 +241,52 @@ def warehouse_create(request):
 
 
 @login_required
+@login_required
 def inventory_item_add_general(request):
-    """General view to add inventory item with warehouse selection"""
+    """General view to add an inventory item (not starting from a warehouse)"""
+    user_company = request.user.company
+    from apps.accounts.models import Company
     
-    def resolve_location(val, user):
-        """Resolves temp_addr_ strings to Warehouse objects (matching Order behavior)"""
-        if not val: return None
-        if str(val).startswith('temp_addr_'):
-            company = user.company
-            if not company: return None
+    # Aggressively lock to a company if user has none assigned
+    if not user_company and request.user.tenant:
+        user_company = Company.objects.filter(tenant=request.user.tenant).first()
             
-            raw_address = str(val).replace('temp_addr_', '')[:200]
-            import random
-            unique_code = f"LOC-{company.id}-{random.randint(1000, 9999)}"[:20]
-            
-            hq, created = Warehouse.objects.get_or_create(
-                company=company,
-                tenant=company.tenant,
-                name=raw_address,
-                defaults={
-                    'code': unique_code,
-                    'address': company.address_line1,
-                    'city': company.city[:100],
-                    'state': company.state[:100],
-                    'country': company.country[:100],
-                    'postal_code': company.postal_code[:20],
-                    'phone': company.phone[:20],
-                    'is_storage': False
-                }
-            )
-            return hq
-        try:
-            return Warehouse.objects.get(pk=val)
-        except (Warehouse.DoesNotExist, ValueError):
-            return None
+    assign_company = user_company or Company.objects.filter(tenant=request.user.tenant).first()
 
     if request.method == 'POST':
-        # Manually extract and resolve warehouse since it might be a temp_addr_ string
+        # Manually resolve warehouse since it might be a temp_addr_ string
         warehouse_val = request.POST.get('warehouse')
-        resolved_warehouse = resolve_location(warehouse_val, request.user)
-        
-        # Create a mutable copy of POST data to swap the warehouse value
         post_data = request.POST.copy()
-        if resolved_warehouse:
-            post_data['warehouse'] = resolved_warehouse.id
+        post_data['warehouse'] = resolve_location(request, warehouse_val)
         
-        form = InventoryItemForm(post_data)
+        form = InventoryItemForm(post_data, user=request.user)
         if form.is_valid():
             item = form.save(commit=False)
             item.tenant = request.user.tenant
-            # Set default company if not provided
-            if not item.company and request.user.company:
-                item.company = request.user.company
+            # Set default company if not provided (especially since field is disabled/missing in POST)
+            if user_company:
+                item.company = user_company
             # Set default representative if not provided
             if not item.representative:
                 item.representative = request.user
             item.save()
-            # Save many-to-many relationships
-            form.save_m2m()
+            form.save_m2m() # Important for tags
             messages.success(request, f"Item '{item.product_name}' successfully added to inventory.")
             return redirect('inventory:item_list')
     else:
-        # Filter warehouses and other related objects
-        warehouses = Warehouse.objects.filter(is_active=True, is_storage=True)
-        if request.user.company:
-            warehouses = warehouses.filter(company=request.user.company)
-        
         initial = {
             'representative': request.user,
-            'company': request.user.company,
+            'company': user_company,
         }
+        form = InventoryItemForm(initial=initial, user=request.user)
         
-        if warehouses.count() == 1:
-            initial['warehouse'] = warehouses.first()
-            
-        form = InventoryItemForm(initial=initial)
-        form.fields['warehouse'].queryset = warehouses
-        
-        # Filter representatives, shipping terms, and tags to only show items from the same tenant
-        from django.contrib.auth import get_user_model
-        from apps.orders.models import ShippingTerm, Tag
-        User = get_user_model()
-        
-        tenant = request.user.tenant
-        form.fields['representative'].queryset = User.objects.filter(tenant=tenant, is_active=True)
-        form.fields['shipping_terms'].queryset = ShippingTerm.objects.filter(tenant=tenant)
-        form.fields['tags'].queryset = Tag.objects.filter(tenant=tenant)
-    
-    from apps.accounts.models import Company
-    user_company = request.user.company
-    assign_company = user_company or Company.objects.filter(tenant=request.user.tenant).first()
-    
+        # Lock company choices if user has a company (or we locked it to the tenant's only company)
+        if user_company:
+            form.fields['company'].queryset = Company.objects.filter(id=user_company.id)
+            form.fields['company'].disabled = True
+        elif request.user.tenant:
+            form.fields['company'].queryset = Company.objects.filter(tenant=request.user.tenant)
+
     # Show all warehouses in tenant, prioritize user's company (matching Order page)
     warehouses = Warehouse.plain_objects.filter(tenant=request.user.tenant).annotate(
         priority=Case(
@@ -310,6 +295,11 @@ def inventory_item_add_general(request):
             output_field=IntegerField(),
         )
     ).order_by('priority', 'name')
+    
+    # Check if "Your Address" already exists as a formal warehouse to avoid duplicates
+    hq_exists = False
+    if assign_company:
+        hq_exists = warehouses.filter(name=assign_company.full_address).exists()
         
     context = {
         'form': form,
@@ -317,6 +307,7 @@ def inventory_item_add_general(request):
         'company': user_company or assign_company,
         'assign_company': assign_company,
         'warehouses': warehouses,
+        'hq_exists': hq_exists,
     }
     return render(request, 'inventory/item_form.html', context)
 
@@ -325,38 +316,57 @@ def inventory_item_add_general(request):
 def inventory_item_add(request, pk):
     """Add inventory item to a specific warehouse"""
     warehouse = get_object_or_404(Warehouse, pk=pk)
+    user_company = request.user.company
+    from apps.accounts.models import Company
+    
+    # Aggressively lock company
+    if not user_company and request.user.tenant:
+        user_company = Company.objects.filter(tenant=request.user.tenant).first()
+            
+    assign_company = user_company or Company.objects.filter(tenant=request.user.tenant).first()
+
     if request.method == 'POST':
-        form = InventoryItemForm(request.POST)
+        # Manually resolve warehouse
+        warehouse_val = request.POST.get('warehouse')
+        post_data = request.POST.copy()
+        post_data['warehouse'] = resolve_location(request, warehouse_val)
+        
+        form = InventoryItemForm(post_data, user=request.user)
         if form.is_valid():
             item = form.save(commit=False)
-            item.warehouse = warehouse
+            item.tenant = request.user.tenant
+            if user_company:
+                item.company = user_company
+            if not item.representative:
+                item.representative = request.user
             item.save()
-            messages.success(request, f"Item '{item.product_name}' added to {warehouse.name}.")
+            form.save_m2m()
+            messages.success(request, f"Item '{item.product_name}' successfully added to {warehouse.name}.")
             return redirect('inventory:warehouse_detail', pk=warehouse.pk)
     else:
-        # Pre-fill warehouse
-        form = InventoryItemForm(initial={'warehouse': warehouse})
-    
-    from apps.accounts.models import Company
-    user_company = request.user.company
-    assign_company = user_company or Company.objects.filter(tenant=request.user.tenant).first()
-    
-    # Show all warehouses in tenant
+        initial = {'representative': request.user, 'company': user_company, 'warehouse': warehouse}
+        form = InventoryItemForm(initial=initial, user=request.user)
+        if user_company:
+            form.fields['company'].queryset = Company.objects.filter(id=user_company.id)
+            form.fields['company'].disabled = True
+
+    # Show all warehouses in tenant, prioritize user's company
     warehouses = Warehouse.plain_objects.filter(tenant=request.user.tenant).annotate(
-        priority=Case(
-            When(company=user_company, then=0),
-            default=1,
-            output_field=IntegerField(),
-        )
+        priority=Case(When(company=user_company, then=0), default=1, output_field=IntegerField())
     ).order_by('priority', 'name')
+    
+    hq_exists = False
+    if assign_company:
+        hq_exists = warehouses.filter(name=assign_company.full_address).exists()
         
     context = {
         'form': form,
         'warehouse': warehouse,
-        'company': warehouse.company or assign_company,
+        'company': user_company or assign_company,
         'assign_company': assign_company,
         'warehouses': warehouses,
-        'title': f'Add Item to {warehouse.name}',
+        'hq_exists': hq_exists,
+        'title': f'Add to {warehouse.name}',
     }
     return render(request, 'inventory/item_form.html', context)
 
@@ -366,60 +376,50 @@ def inventory_item_edit(request, pk):
     """Edit an existing inventory item"""
     item = get_object_or_404(InventoryItem, pk=pk)
     warehouse = item.warehouse
+    user_company = request.user.company
+    from apps.accounts.models import Company
+    
+    # Aggressively lock to a company if user has none assigned
+    if not user_company and request.user.tenant:
+        user_company = Company.objects.filter(tenant=request.user.tenant).first()
+        
+    assign_company = user_company or Company.objects.filter(tenant=request.user.tenant).first()
     
     if request.method == 'POST':
-        # Manually resolve warehouse (matching general add)
         warehouse_val = request.POST.get('warehouse')
-        # Here we don't necessarily want to allow creating new warehouses during edit, 
-        # but for consistency with the "Your Address" feature, we support it.
-        from django.db.models import Q # Ensure Q is available if we use it, but here we just use resolve_location helper if redefined or shared.
-        # For simplicity in this edit, I'll repeat the logic or just handle plain IDs since edit usually has a fixed warehouse.
-        # But the user asked for "EXACTLY like order page", so I'll redefine the helper or make it global in the file.
-        
-        # Swapping to resolved ID
         post_data = request.POST.copy()
-        if warehouse_val and str(warehouse_val).startswith('temp_addr_'):
-            # Redefining helper simply for this scope (could be moved to top level later)
-            company = request.user.company
-            if company:
-                raw_address = str(warehouse_val).replace('temp_addr_', '')[:200]
-                import random
-                unique_code = f"LOC-{company.id}-{random.randint(1000, 9999)}"[:20]
-                hq, _ = Warehouse.objects.get_or_create(
-                    company=company, tenant=company.tenant, name=raw_address,
-                    defaults={'code': unique_code, 'address': company.address_line1, 'city': company.city[:100],
-                              'state': company.state[:100], 'country': company.country[:100], 'postal_code': company.postal_code[:20],
-                              'phone': company.phone[:20], 'is_storage': False}
-                )
-                post_data['warehouse'] = hq.id
+        post_data['warehouse'] = resolve_location(request, warehouse_val)
 
-        form = InventoryItemForm(post_data, instance=item)
+        form = InventoryItemForm(post_data, instance=item, user=request.user)
         if form.is_valid():
-            form.save()
+            item = form.save(commit=False)
+            if user_company:
+                item.company = user_company
+            item.save()
+            form.save_m2m()
             messages.success(request, f"Item '{item.product_name}' updated successfully.")
             return redirect('inventory:warehouse_detail', pk=warehouse.pk)
-    else:
-        form = InventoryItemForm(instance=item)
-    
-    from apps.accounts.models import Company
-    user_company = request.user.company
-    assign_company = user_company or Company.objects.filter(tenant=request.user.tenant).first()
+        form = InventoryItemForm(instance=item, user=request.user)
+        if user_company:
+            form.fields['company'].queryset = Company.objects.filter(id=user_company.id)
+            form.fields['company'].disabled = True
     
     # Show all warehouses in tenant
     warehouses = Warehouse.plain_objects.filter(tenant=request.user.tenant).annotate(
-        priority=Case(
-            When(company=user_company, then=0),
-            default=1,
-            output_field=IntegerField(),
-        )
+        priority=Case(When(company=user_company, then=0), default=1, output_field=IntegerField())
     ).order_by('priority', 'name')
+    
+    hq_exists = False
+    if assign_company:
+        hq_exists = warehouses.filter(name=assign_company.full_address).exists()
         
     context = {
         'form': form,
         'warehouse': warehouse,
-        'company': warehouse.company or assign_company,
+        'company': item.company or assign_company,
         'assign_company': assign_company,
         'warehouses': warehouses,
+        'hq_exists': hq_exists,
         'item': item,
         'title': f'Edit {item.product_name}',
     }

@@ -24,6 +24,34 @@ class WarehouseForm(forms.ModelForm):
         }
 
 class InventoryItemForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        
+        # Aggressive company locking
+        if user:
+            from apps.accounts.models import Company
+            user_company = user.company
+            if not user_company and user.tenant:
+                user_company = Company.objects.filter(tenant=user.tenant).first()
+            
+            if user_company:
+                self.fields['company'].queryset = Company.objects.filter(id=user_company.id)
+                self.fields['company'].initial = user_company
+                self.fields['company'].disabled = True
+
+        # Dynamic packaging choices from orders module
+        try:
+            from apps.orders.models import PackagingType
+            p_types = PackagingType.objects.all().order_by('name')
+            self.fields['packaging'].widget = forms.Select(
+                choices=[('', 'Select packaging type')] + [(p.name, p.name) for p in p_types],
+                attrs={'class': 'form-select'}
+            )
+        except (ImportError, Exception):
+            # Fallback if PackagingType is not available
+            pass
+
     class Meta:
         model = InventoryItem
         fields = [
@@ -47,7 +75,6 @@ class InventoryItemForm(forms.ModelForm):
             'shipping_terms': forms.Select(attrs={'class': 'form-select'}),
             'representative': forms.Select(attrs={'class': 'form-select'}),
             'tags': forms.SelectMultiple(attrs={'class': 'form-select select2-basic'}),
-            'packaging': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Select packaging type'}),
             'pieces': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Pieces'}),
             'is_palletized': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'unit_cost': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.0001', 'placeholder': 'Price'}),
