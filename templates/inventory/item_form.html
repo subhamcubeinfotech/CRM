@@ -2,93 +2,334 @@
 
 {% block title %}{{ title }} - FreightPro{% endblock %}
 
+{% block extra_css %}
+<style>
+    #id_warehouse {
+        background-color: #dbe4f0;
+        border-color: #c7d3e3;
+        color: #4b6788;
+    }
+
+    #id_warehouse:focus {
+        background-color: #dbe4f0;
+        border-color: #b8c7da;
+        box-shadow: none;
+    }
+
+    #id_warehouse.has-value {
+        background-color: #ffffff;
+        border-color: var(--bs-border-color, #dee2e6);
+        color: var(--bs-body-color, #212529);
+    }
+
+    #id_warehouse.has-value:focus {
+        background-color: #ffffff;
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
-        <h1 class="h2">{{ title }}</h1>
-        <a href="{% if warehouse %}{% url 'inventory:warehouse_detail' warehouse.pk %}{% else %}{% url 'inventory:dashboard' %}{% endif %}" class="btn btn-outline-secondary btn-sm">Cancel</a>
+<div class="container py-5" style="max-width: 800px;">
+    <!-- Page Header -->
+    <div class="mb-5 pb-3 border-bottom">
+        <h1 class="h2 fw-bold text-dark">New Inventory</h1>
     </div>
 
-    <div class="row justify-content-center">
-        <div class="col-md-10">
-            <div class="card shadow-sm">
-                <div class="card-body p-4">
-                    <form method="post">
-                        {% csrf_token %}
-                        
-                        <div class="row g-4">
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold small text-uppercase">SKU / Part Number</label>
-                                {{ form.sku }}
-                                {% if form.sku.errors %}
-                                    <div class="text-danger small">{{ form.sku.errors }}</div>
-                                {% endif %}
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold small text-uppercase">Product Name</label>
-                                {{ form.product_name }}
-                            </div>
-
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold small text-uppercase">Company</label>
-                                <input type="text" class="form-control bg-light" value="{{ company.name|default:'N/A' }}" readonly disabled>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold small text-uppercase">Description</label>
-                                {{ form.description }}
-                            </div>
-
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold small text-uppercase">Warehouse</label>
-                                {% if warehouse %}
-                                    <input type="text" class="form-control bg-light" value="{{ warehouse.name }}" readonly disabled>
-                                    <div class="d-none">{{ form.warehouse }}</div>
-                                {% else %}
-                                    {{ form.warehouse }}
-                                {% endif %}
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold small text-uppercase">Bin / Location</label>
-                                {{ form.location }}
-                            </div>
-
-                            <div class="col-md-4">
-                                <label class="form-label fw-bold small text-uppercase">Current Quantity</label>
-                                {{ form.quantity }}
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label fw-bold small text-uppercase">Unit of Measure</label>
-                                {{ form.unit_of_measure }}
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label fw-bold small text-uppercase">Reorder Level</label>
-                                {{ form.reorder_level }}
-                                <div class="form-text small">Alert when stock falls below this.</div>
-                            </div>
-
-                            <div class="col-md-4">
-                                <label class="form-label fw-bold small text-uppercase">Unit Cost ($)</label>
-                                {{ form.unit_cost }}
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label fw-bold small text-uppercase">Lot Number</label>
-                                {{ form.lot_number }}
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label fw-bold small text-uppercase">Serial Number</label>
-                                {{ form.serial_number }}
-                            </div>
-                        </div>
-
-                        <div class="d-grid gap-2 mt-5">
-                            <button type="submit" class="btn btn-primary btn-lg">
-                                {% if item %}Update Item{% else %}Add to Inventory{% endif %}
+    <!-- Main Form Card -->
+    <div class="card border-0 shadow-sm" style="border-radius: 12px; background-color: #fff;">
+        <div class="card-body p-4 p-md-5">
+            <form method="post" id="inventoryForm">
+                {% csrf_token %}
+                
+                <div class="row g-4">
+                    <!-- Company Section -->
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label mb-0 text-uppercase fw-bold">Company<span class="text-danger">*</span></label>
+                            <button type="button" class="btn btn-outline-primary btn-add-custom d-flex align-items-center px-2 py-1" title="Add Company">
+                                <i class="fas fa-plus me-1"></i> Add
                             </button>
                         </div>
-                    </form>
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <div class="flex-grow-1">
+                                {{ form.company }}
+                            </div>
+                            <button class="btn btn-outline-primary btn-search-custom" type="button"><i class="fas fa-search"></i></button>
+                        </div>
+                        <a href="javascript:void(0)" onclick="assignToCompany()" class="text-decoration-none small text-primary d-flex align-items-center">
+                            <span class="me-1">Click to assign to your company.</span>
+                        </a>
+                    </div>
+
+                    <!-- Location Section -->
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label mb-0 text-uppercase fw-bold">Location<span class="text-danger">*</span></label>
+                            <button type="button" class="btn btn-outline-primary btn-add-custom d-flex align-items-center px-2 py-1" title="Add Warehouse">
+                                <i class="fas fa-plus me-1"></i> Add
+                            </button>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <div class="flex-grow-1">
+                                <select name="warehouse" id="id_warehouse" class="form-select" required onchange="syncLocationSelectState('id_warehouse')">
+                                    <option value="">Select location</option>
+                                    {% if assign_company %}
+                                    <option value="temp_addr_{{ assign_company.full_address }}" data-company-id="{{ assign_company.id }}">
+                                        {{ assign_company.full_address }} (Your Address)
+                                    </option>
+                                    {% endif %}
+                                    {% for wh in warehouses %}
+                                    <option value="{{ wh.id }}" data-company-id="{{ wh.company_id }}" {% if form.warehouse.value|stringformat:"s" == wh.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ wh.city.title }}, {{ wh.city.upper }}, {{ wh.address }}, {{ wh.state }} {{ wh.postal_code }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <button class="btn btn-outline-primary btn-search-custom" type="button"><i class="fas fa-search"></i></button>
+                        </div>
+                    </div>
+
+                    <!-- Shipping Terms -->
+                    <div class="col-12">
+                        <label class="form-label mb-1 text-uppercase fw-bold">Shipping Terms</label>
+                        {{ form.shipping_terms }}
+                    </div>
+
+                    <!-- Representatives -->
+                    <div class="col-12">
+                        <label class="form-label mb-1 text-uppercase fw-bold">Representatives<span class="text-danger">*</span></label>
+                        {{ form.representative }}
+                        <a href="javascript:void(0)" onclick="assignToMe()" class="text-decoration-none small text-primary d-flex align-items-center mt-1">
+                            <span class="me-1">Click to assign to yourself.</span>
+                        </a>
+                    </div>
+
+                    <!-- Tags -->
+                    <div class="col-12">
+                        <label class="form-label mb-1 text-uppercase fw-bold">Tags</label>
+                        {{ form.tags }}
+                    </div>
+
+                    <!-- SO/PO Number -->
+                    <div class="col-12">
+                        <label class="form-label mb-1 text-uppercase fw-bold">SO/PO Number</label>
+                        {{ form.po_number }}
+                    </div>
+
+                    <!-- Lot Number -->
+                    <div class="col-12">
+                        <label class="form-label mb-1 text-uppercase fw-bold">Lot Number</label>
+                        {{ form.lot_number }}
+                    </div>
+
+                    <!-- Material Section -->
+                    <div class="col-12 border-top pt-4 mt-5">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label class="form-label mb-0 text-uppercase fw-bold">Material<span class="text-danger">*</span></label>
+                            <button type="button" class="btn btn-outline-primary btn-add-custom d-flex align-items-center px-3" title="Add Material">
+                                <i class="fas fa-plus me-2"></i> Add
+                            </button>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <div class="flex-grow-1">
+                                {{ form.product_name }}
+                            </div>
+                            <button class="btn btn-outline-primary btn-search-custom" type="button"><i class="fas fa-search"></i></button>
+                        </div>
+                        
+                        <label class="form-label mb-1 text-uppercase fw-bold">SKU / Part Number<span class="text-danger">*</span></label>
+                        {{ form.sku }}
+                    </div>
+
+                    <!-- Offered Weight & Unit -->
+                    <div class="col-md-7">
+                        <label class="form-label mb-1 text-uppercase fw-bold">Offered Weight<span class="text-danger">*</span></label>
+                        {{ form.quantity }}
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label mb-1 text-uppercase fw-bold">Unit</label>
+                        {{ form.unit_of_measure }}
+                    </div>
+
+                    <!-- Price & Unit -->
+                    <div class="col-md-7">
+                        <label class="form-label mb-1 text-uppercase fw-bold">Price</label>
+                        {{ form.unit_cost }}
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label mb-1 text-uppercase fw-bold">Unit</label>
+                        {{ form.price_unit }}
+                    </div>
+
+                    <!-- Packaging & Pieces -->
+                    <div class="col-md-7">
+                        <label class="form-label mb-1 text-uppercase fw-bold">Packaging</label>
+                        {{ form.packaging }}
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label mb-1 text-uppercase fw-bold">Pieces</label>
+                        {{ form.pieces }}
+                    </div>
+
+                    <!-- Palletized Checkbox -->
+                    <div class="col-12">
+                        <div class="form-check form-check-custom">
+                            {{ form.is_palletized }}
+                            <label class="form-check-label fw-600 ms-2" for="id_is_palletized" style="color: #000;"> Is the packaging palletized? </label>
+                        </div>
+                    </div>
+
+                    <!-- Notes -->
+                    <div class="col-12 mt-4">
+                        <label class="form-label mb-1 text-uppercase fw-bold">Notes</label>
+                        {{ form.description }}
+                    </div>
                 </div>
-            </div>
+
+                <!-- Footer Buttons -->
+                <div class="mt-5 pt-3">
+                    <button type="button" class="btn btn-outline-primary w-100 mb-3 fw-bold rounded-3 py-2 d-flex align-items-center justify-content-center">
+                        <i class="fas fa-plus-circle me-2"></i> Add Grouped Inventory
+                    </button>
+                    
+                    <button type="submit" class="btn btn-primary w-100 fw-bold rounded-3 py-3 shadow">
+                        Submit
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
+
+<style>
+    /* Premium Look Overrides */
+    body { background-color: #f8f9fa; font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+    .fw-600 { font-weight: 600; }
+    .fw-500 { font-weight: 500; }
+    
+    .form-label {
+        color: #000 !important;
+        font-weight: 700 !important;
+        margin-bottom: 0.5rem;
+    }
+
+    .input-group-clean, .shadow-sm.rounded-3 {
+        box-shadow: none !important;
+    }
+
+    .form-control, .form-select {
+        border: 1px solid #dee2e6 !important;
+        border-radius: 6px !important;
+        padding: 0.6rem 0.8rem;
+        background-color: #fff;
+        color: #333;
+        font-size: 0.95rem;
+    }
+    
+    .input-group > .form-control, .input-group > .form-select {
+        border-right: none !important;
+    }
+
+    .input-group > .btn-link {
+        border: 1px solid #dee2e6 !important;
+        border-left: none !important;
+        background-color: #fff;
+        text-decoration: none;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: #0d6efd !important;
+        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1) !important;
+        outline: none;
+    }
+
+    .form-check-input:checked {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+    }
+
+    .btn-primary { 
+        background-color: #0d6efd; 
+        border: none;
+        transition: all 0.2s ease;
+    }
+    .btn-primary:hover {
+        background-color: #0b5ed7;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(13, 110, 253, 0.2);
+    }
+
+    /* Select2 integration for tags/representative appearance */
+    .select2-container--bootstrap-5 .select2-selection {
+        border: 1px solid #dee2e6 !important;
+        border-radius: 6px !important;
+    }
+
+    .btn-add-custom {
+        border: 1px solid #0d6efd !important;
+        border-radius: 6px !important;
+        color: #0d6efd !important;
+        font-weight: 600;
+        font-size: 0.85rem;
+        background: transparent !important;
+        padding: 4px 12px !important;
+    }
+    .btn-add-custom:hover {
+        background-color: rgba(13, 110, 253, 0.05) !important;
+    }
+
+    .btn-search-custom {
+        border: 1px solid #0d6efd !important;
+        border-radius: 6px !important;
+        color: #0d6efd !important;
+        padding: 0.6rem 0.8rem !important;
+        background: transparent !important;
+    }
+    .btn-search-custom:hover {
+        background-color: rgba(13, 110, 253, 0.05) !important;
+    }
+    
+    .bg-light-gray {
+        background-color: #f8f9fa !important;
+    }
+</style>
+
+<script>
+    function syncLocationSelectState(selectId) {
+        const select = document.getElementById(selectId);
+        if (!select) return;
+        select.classList.toggle('has-value', !!select.value);
+    }
+
+    // Initialize state on load
+    document.addEventListener('DOMContentLoaded', () => {
+        syncLocationSelectState('id_warehouse');
+    });
+
+    function assignToMe() {
+        const userId = "{{ request.user.id }}";
+        const repSelect = document.getElementById('id_representative');
+        if (repSelect) {
+            repSelect.value = userId;
+            // Support for Select2 if enabled
+            if (typeof $ !== 'undefined' && $(repSelect).data('select2')) {
+                $(repSelect).trigger('change');
+            }
+        }
+    }
+
+    function assignToCompany() {
+        const companyId = "{{ request.user.company.id }}";
+        const companySelect = document.getElementById('id_company');
+        if (companySelect) {
+            companySelect.value = companyId;
+            // Support for Select2 if enabled
+            if (typeof $ !== 'undefined' && $(companySelect).data('select2')) {
+                $(companySelect).trigger('change');
+            }
+        }
+    }
+</script>
 {% endblock %}

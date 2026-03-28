@@ -1,109 +1,380 @@
 {% extends 'base.html' %}
+{% load humanize %}
+{# Removed custom tags for now #}
 
-{% block title %}Inventory Items - FreightPro{% endblock %}
+{% block title %}Inventory Portfolio - FreightPro{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Premium Table Styling */
+    .inventory-table {
+        border-collapse: separate;
+        border-spacing: 0 8px;
+        background-color: transparent !important;
+    }
+
+    .inventory-table thead th {
+        border: none;
+        color: #64748b;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.025em;
+        padding: 12px 16px;
+        white-space: nowrap;
+    }
+
+    .inventory-table tbody tr {
+        background-color: #ffffff;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        transition: all 0.2s ease;
+    }
+
+    .inventory-table tbody tr:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        background-color: #f8fafc;
+    }
+
+    .inventory-table td {
+        padding: 16px;
+        vertical-align: middle;
+        border: none;
+        font-size: 0.875rem;
+        white-space: nowrap;
+    }
+
+    .inventory-table td:first-child {
+        border-radius: 8px 0 0 8px;
+    }
+
+    .inventory-table td:last-child {
+        border-radius: 0 8px 8px 0;
+    }
+
+    /* Stat Cards */
+    .stat-card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s;
+        background: #fff;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-3px);
+    }
+
+    .stat-label {
+        font-size: 0.875rem;
+        color: #64748b;
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1e293b;
+    }
+
+    /* Tabs Styling */
+    .nav-pills-custom .nav-link {
+        color: #64748b;
+        font-weight: 600;
+        padding: 8px 16px;
+        border-radius: 8px;
+        margin-right: 8px;
+    }
+
+    .nav-pills-custom .nav-link.active {
+        background-color: #eff6ff;
+        color: #2563eb;
+    }
+
+    /* Typography */
+    .item-id {
+        color: #2563eb;
+        font-weight: 700;
+        text-decoration: none;
+    }
+
+    .item-id:hover {
+        text-decoration: underline;
+    }
+
+    .sub-text {
+        font-size: 0.75rem;
+        color: #94a3b8;
+    }
+
+    /* Sticky Header */
+    .table-responsive {
+        max-height: calc(100vh - 350px);
+        overflow-y: auto;
+    }
+
+    .table thead th {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background-color: #f8f9fa !important;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
+<div class="container-fluid py-4">
+    <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h2">Inventory Items</h1>
-    </div>
-
-    <div class="card mb-4">
-        <div class="card-body">
-            <form method="get" class="row g-3">
-                <div class="col-md-4">
-                    <div class="input-group">
-                        <span class="input-group-text"><i class="fas fa-search"></i></span>
-                        <input type="text" name="search" class="form-control" placeholder="Search SKU or Name..." value="{{ search|default:'' }}">
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <select name="warehouse" class="form-select">
-                        <option value="">All Warehouses</option>
-                        {% for warehouse in warehouses %}
-                        <option value="{{ warehouse.id }}" {% if warehouse_filter == warehouse.id|stringformat:"i" %}selected{% endif %}>
-                            {{ warehouse.name }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-check form-switch mt-2">
-                        <input class="form-check-input" type="checkbox" name="low_stock" id="lowStockCheck" {% if low_stock_filter %}checked{% endif %}>
-                        <label class="form-check-label" for="lowStockCheck">Low Stock Only</label>
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary w-100">Filter</button>
-                </div>
-            </form>
+        <h1 class="h3 mb-0 font-weight-bold">Inventory</h1>
+        <div>
+            <a href="{% url 'inventory:inventory_item_add_general' %}" class="btn btn-primary shadow-sm">
+                <i class="fas fa-plus me-2"></i>New Inventory
+            </a>
         </div>
     </div>
 
-    <div class="card">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead>
-                        <tr>
-                            <th>SKU</th>
-                            <th>Product Name</th>
-                            <th>Warehouse</th>
-                            <th>Quantity</th>
-                            <th>Unit Cost</th>
-                            <th>Total Value</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for item in items %}
-                        <tr>
-                            <td><span class="fw-bold">{{ item.sku }}</span></td>
-                            <td>{{ item.product_name }}</td>
-                            <td>{{ item.warehouse.name }}</td>
-                            <td>{{ item.quantity }} {{ item.unit_of_measure }}</td>
-                            <td>${{ item.unit_cost|floatformat:2 }}</td>
-                            <td>${{ item.total_value|floatformat:2 }}</td>
-                            <td>
-                                {% if item.quantity <= 0 %}
-                                    <span class="badge bg-danger">Out of Stock</span>
-                                {% elif item.quantity <= item.reorder_level %}
-                                    <span class="badge bg-warning text-dark">Low Stock</span>
-                                {% else %}
-                                    <span class="badge bg-success">In Stock</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <a href="{% url 'inventory:item_detail' item.pk %}" class="btn btn-sm btn-outline-primary">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="8" class="text-center py-5 text-muted">No items found matching your criteria.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+    <!-- Stats Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card stat-card p-3">
+                <div class="stat-label">Total Weight</div>
+                <div class="stat-value">{{ stats.total_weight|default:0|floatformat:0|intcomma }} lbs</div>
             </div>
         </div>
-        {% if items.has_other_pages %}
-        <div class="card-footer bg-white border-0">
-            <nav>
-                <ul class="pagination justify-content-center mb-0">
-                    {% if items.has_previous %}
-                    <li class="page-item"><a class="page-item" href="?page={{ items.previous_page_number }}">Previous</a></li>
-                    {% endif %}
-                    <li class="page-item active"><span class="page-link">{{ items.number }} of {{ items.paginator.num_pages }}</span></li>
-                    {% if items.has_next %}
-                    <li class="page-item"><a class="page-link" href="?page={{ items.next_page_number }}">Next</a></li>
-                    {% endif %}
-                </ul>
-            </nav>
+        <div class="col-md-4">
+            <div class="card stat-card p-3">
+                <div class="stat-label">Total Value</div>
+                <div class="stat-value font-weight-bold text-success">${{ stats.total_value|default:0|floatformat:2|intcomma }}</div>
+            </div>
         </div>
-        {% endif %}
+        <div class="col-md-4">
+            <div class="card stat-card p-3">
+                <div class="stat-label">Total Count</div>
+                <div class="stat-value">{{ stats.total_count|default:0 }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs & Toolbar -->
+    <div class="card border-0 shadow-sm rounded-lg mb-4">
+        <div class="card-body p-3">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <!-- Scope Tabs -->
+                <ul class="nav nav-pills nav-pills-custom mb-0">
+                    <li class="nav-item">
+                        <a class="nav-link {% if scope == 'all' %}active{% endif %}" href="?scope=all">All</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if scope == 'personal' %}active{% endif %}" href="?scope=personal">Personal</a>
+                    </li>
+                </ul>
+
+                <!-- Toolbar Actions -->
+                <div class="d-flex align-items-center gap-2 flex-grow-1 flex-md-grow-0">
+                    <form method="GET" class="position-relative flex-grow-1" style="min-width: 250px;">
+                        {% if scope %}<input type="hidden" name="scope" value="{{ scope }}">{% endif %}
+                        {% if sort_param %}<input type="hidden" name="sort" value="{{ sort_param }}">{% endif %}
+                        <span class="position-absolute top-50 start-0 translate-middle-y ms-3 text-muted">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        <input type="text" name="search" class="form-control ps-5 border-light" 
+                               placeholder="Search by name or SKU..." value="{{ search|default:'' }}">
+                    </form>
+
+                    <button class="btn btn-light border" title="Export Data">
+                        <i class="fas fa-file-export me-1"></i> Export
+                    </button>
+
+                    <div class="dropdown">
+                        <button class="btn btn-light border dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-sort me-1"></i> Sort
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                            <li><a class="dropdown-item {% if sort_param == 'newest' %}active{% endif %}" href="?sort=newest&scope={{ scope }}&search={{ search|default:'' }}">Newest First</a></li>
+                            <li><a class="dropdown-item {% if sort_param == 'oldest' %}active{% endif %}" href="?sort=oldest&scope={{ scope }}&search={{ search|default:'' }}">Oldest First</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item {% if sort_param == 'weight_desc' %}active{% endif %}" href="?sort=weight_desc&scope={{ scope }}&search={{ search|default:'' }}">Weight: High to Low</a></li>
+                            <li><a class="dropdown-item {% if sort_param == 'weight_asc' %}active{% endif %}" href="?sort=weight_asc&scope={{ scope }}&search={{ search|default:'' }}">Weight: Low to High</a></li>
+                            <li><a class="dropdown-item {% if sort_param == 'val_desc' %}active{% endif %}" href="?sort=val_desc&scope={{ scope }}&search={{ search|default:'' }}">Price: High to Low</a></li>
+                        </ul>
+                    </div>
+
+                    <button class="btn btn-light border" type="button" data-bs-toggle="offcanvas" data-bs-target="#filterDrawer">
+                        <i class="fas fa-filter me-1 text-primary"></i> Filters
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Inventory Table -->
+    <div class="table-responsive">
+        <table class="table inventory-table">
+            <thead>
+                <tr>
+                    <th>SKU / Product</th>
+                    <th>Warehouse</th>
+                    <th>Location</th>
+                    <th>Quantity</th>
+                    <th>Unit Cost</th>
+                    <th>Total Value</th>
+                    <th>Status</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="flex-grow-1">
+                                <a href="{% url 'inventory:item_detail' item.pk %}" class="item-id d-block mb-1">
+                                    {{ item.sku }}
+                                </a>
+                                <span class="fw-bold text-dark">{{ item.product_name }}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="fw-medium">{{ item.warehouse.name }}</div>
+                        <div class="sub-text">{{ item.warehouse.city }}, {{ item.warehouse.state }}</div>
+                    </td>
+                    <td>
+                        <span class="badge bg-light text-dark">{{ item.location|default:"--" }}</span>
+                    </td>
+                    <td>
+                        <div class="fw-bold">{{ item.quantity|intcomma }} {{ item.unit_of_measure }}</div>
+                        {% if item.is_low_stock %}
+                        <div class="text-danger" style="font-size: 0.75rem;">
+                            <i class="fas fa-exclamation-circle me-1"></i>Low Stock
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td class="text-muted">
+                        ${{ item.unit_cost|floatformat:2 }}
+                    </td>
+                    <td>
+                        <div class="fw-bold text-dark">${{ item.total_value|floatformat:2|intcomma }}</div>
+                    </td>
+                    <td>
+                        {% if item.quantity == 0 %}
+                            <span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle px-3">Out of Stock</span>
+                        {% elif item.is_low_stock %}
+                            <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis border border-warning-subtle px-3">Low Stock</span>
+                        {% else %}
+                            <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-3">In Stock</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <div class="btn-group shadow-sm border rounded">
+                            <a href="{% url 'inventory:item_detail' item.pk %}" class="btn btn-sm btn-white px-3" title="View">
+                                <i class="fas fa-eye text-primary"></i>
+                            </a>
+                            <a href="{% url 'inventory:inventory_item_edit' item.pk %}" class="btn btn-sm btn-white px-3" title="Edit">
+                                <i class="fas fa-edit text-muted"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center py-5">
+                        <div class="text-muted mb-3">
+                            <i class="fas fa-box-open fa-3x"></i>
+                        </div>
+                        <h5>No inventory items found</h5>
+                        <p class="text-muted">Try adjusting your filters or search query.</p>
+                        <a href="?scope=all" class="btn btn-outline-primary mt-2">Clear all filters</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if items.has_other_pages %}
+    <nav class="d-flex justify-content-center mt-4">
+        <ul class="pagination pagination-spaced">
+            {% if items.has_previous %}
+            <li class="page-item">
+                <a class="page-link shadow-sm border-0" href="?page={{ items.previous_page_number }}&scope={{ scope }}&search={{ search|default:'' }}&sort={{ sort_param|default:'' }}">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+            </li>
+            {% endif %}
+            
+            <li class="page-item active">
+                <span class="page-link shadow-sm border-0">{{ items.number }}</span>
+            </li>
+            
+            {% if items.has_next %}
+            <li class="page-item">
+                <a class="page-link shadow-sm border-0" href="?page={{ items.next_page_number }}&scope={{ scope }}&search={{ search|default:'' }}&sort={{ sort_param|default:'' }}">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+<!-- Filter Drawer -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="filterDrawer" aria-labelledby="filterDrawerLabel">
+    <div class="offcanvas-header border-bottom">
+        <h5 class="offcanvas-title font-weight-bold" id="filterDrawerLabel">Filter Inventory</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        <form method="GET">
+            {% if scope %}<input type="hidden" name="scope" value="{{ scope }}">{% endif %}
+            {% if sort_param %}<input type="hidden" name="sort" value="{{ sort_param }}">{% endif %}
+            
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase text-muted">Warehouse</label>
+                <select name="warehouse" class="form-select border-light bg-light" onchange="this.form.submit()">
+                    <option value="">All Warehouses</option>
+                    {% for w in warehouses %}
+                    <option value="{{ w.id }}" {% if warehouse_filter == w.id|stringformat:"i" %}selected{% endif %}>
+                        {{ w.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase text-muted">Stock Status</label>
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" name="low_stock" value="1" id="lowStockCheck"
+                           {% if low_stock_filter %}checked{% endif %} onchange="this.form.submit()">
+                    <label class="form-check-label" for="lowStockCheck">
+                        Low Stock Only
+                    </label>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase text-muted">Material Type</label>
+                <div style="max-height: 200px; overflow-y: auto;">
+                    {% for mat in materials %}
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" name="material" value="{{ mat }}" id="mat_{{ forloop.counter }}">
+                        <label class="form-check-label" for="mat_{{ forloop.counter }}">
+                            {{ mat }}
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="d-grid gap-2 mt-auto pt-4">
+                <button type="submit" class="btn btn-primary">Apply Filters</button>
+                <a href="?scope={{ scope }}" class="btn btn-light border text-muted">Reset All</a>
+            </div>
+        </form>
     </div>
 </div>
 {% endblock %}
