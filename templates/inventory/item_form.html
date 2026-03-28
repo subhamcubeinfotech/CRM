@@ -146,77 +146,88 @@
                         {{ form.lot_number }}
                     </div>
 
-                    <!-- Material Section -->
-                    <div class="col-12 border-top pt-4 mt-5">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <label class="form-label mb-0 text-uppercase fw-bold">Material<span class="text-danger">*</span></label>
-                            <button type="button" class="btn btn-outline-primary btn-add-custom d-flex align-items-center px-3" title="Add Material">
-                                <i class="fas fa-plus me-2"></i> Add
+                    <!-- Grouped Inventory Container -->
+                    <div id="inventoryItemsContainer">
+                        <div class="inventory-item-group pt-4 mt-5 position-relative">
+                            <button type="button" class="btn btn-outline-danger position-absolute top-0 end-0 mt-3 me-0 btn-remove-group align-items-center justify-content-center p-0" title="Remove" style="display: none; z-index: 10; width: 32px; height: 32px; border-radius: 6px; transform: translate(0, -45px);">
+                                <i class="fas fa-minus small"></i>
                             </button>
-                        </div>
-                        <div class="d-flex align-items-center gap-2 mb-3">
-                            <div class="flex-grow-1">
-                                {{ form.product_name }}
+
+                            <!-- Material Section -->
+                            <div class="row g-4">
+                                <div class="col-12 mt-4">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <label class="form-label mb-0 text-uppercase fw-bold">Material<span class="text-danger">*</span></label>
+                                        <button type="button" class="btn btn-outline-primary btn-add-custom d-flex align-items-center px-3" title="Add Material">
+                                            <i class="fas fa-plus me-2"></i> Add
+                                        </button>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2 mb-3">
+                                        <div class="flex-grow-1">
+                                            {{ form.product_name }}
+                                        </div>
+                                        <button class="btn btn-outline-primary btn-search-custom" type="button"><i class="fas fa-search"></i></button>
+                                    </div>
+                                    
+                                    <label class="form-label mb-1 text-uppercase fw-bold">SKU / Part Number<span class="text-danger">*</span></label>
+                                    {{ form.sku }}
+                                </div>
+
+                                <!-- Offered Weight & Unit -->
+                                <div class="col-md-7">
+                                    <label class="form-label mb-1 text-uppercase fw-bold">Offered Weight<span class="text-danger">*</span></label>
+                                    {{ form.quantity }}
+                                </div>
+                                <div class="col-md-5">
+                                    <label class="form-label mb-1 text-uppercase fw-bold">Unit</label>
+                                    {{ form.unit_of_measure }}
+                                </div>
+
+                                <!-- Price & Unit -->
+                                <div class="col-md-7">
+                                    <label class="form-label mb-1 text-uppercase fw-bold">Price</label>
+                                    {{ form.unit_cost }}
+                                </div>
+                                <div class="col-md-5">
+                                    <label class="form-label mb-1 text-uppercase fw-bold">Unit</label>
+                                    {{ form.price_unit }}
+                                </div>
+
+                                <!-- Packaging & Pieces -->
+                                <div class="col-md-7">
+                                    <label class="form-label mb-1 text-uppercase fw-bold">Packaging</label>
+                                    {{ form.packaging }}
+                                </div>
+                                <div class="col-md-5">
+                                    <label class="form-label mb-1 text-uppercase fw-bold">Pieces</label>
+                                    {{ form.pieces }}
+                                </div>
+
+                                <!-- Palletized Checkbox -->
+                                <div class="col-12">
+                                    <div class="form-check form-check-custom">
+                                        {{ form.is_palletized }}
+                                        <label class="form-check-label fw-600 ms-2" for="id_is_palletized" style="color: #000;"> Is the packaging palletized? </label>
+                                    </div>
+                                </div>
+
+                                <!-- Notes -->
+                                <div class="col-12 mt-4 mb-4">
+                                    <label class="form-label mb-1 text-uppercase fw-bold">Notes</label>
+                                    {{ form.description }}
+                                </div>
                             </div>
-                            <button class="btn btn-outline-primary btn-search-custom" type="button"><i class="fas fa-search"></i></button>
                         </div>
-                        
-                        <label class="form-label mb-1 text-uppercase fw-bold">SKU / Part Number<span class="text-danger">*</span></label>
-                        {{ form.sku }}
-                    </div>
-
-                    <!-- Offered Weight & Unit -->
-                    <div class="col-md-7">
-                        <label class="form-label mb-1 text-uppercase fw-bold">Offered Weight<span class="text-danger">*</span></label>
-                        {{ form.quantity }}
-                    </div>
-                    <div class="col-md-5">
-                        <label class="form-label mb-1 text-uppercase fw-bold">Unit</label>
-                        {{ form.unit_of_measure }}
-                    </div>
-
-                    <!-- Price & Unit -->
-                    <div class="col-md-7">
-                        <label class="form-label mb-1 text-uppercase fw-bold">Price</label>
-                        {{ form.unit_cost }}
-                    </div>
-                    <div class="col-md-5">
-                        <label class="form-label mb-1 text-uppercase fw-bold">Unit</label>
-                        {{ form.price_unit }}
-                    </div>
-
-                    <!-- Packaging & Pieces -->
-                    <div class="col-md-7">
-                        <label class="form-label mb-1 text-uppercase fw-bold">Packaging</label>
-                        {{ form.packaging }}
-                    </div>
-                    <div class="col-md-5">
-                        <label class="form-label mb-1 text-uppercase fw-bold">Pieces</label>
-                        {{ form.pieces }}
-                    </div>
-
-                    <!-- Palletized Checkbox -->
-                    <div class="col-12">
-                        <div class="form-check form-check-custom">
-                            {{ form.is_palletized }}
-                            <label class="form-check-label fw-600 ms-2" for="id_is_palletized" style="color: #000;"> Is the packaging palletized? </label>
-                        </div>
-                    </div>
-
-                    <!-- Notes -->
-                    <div class="col-12 mt-4">
-                        <label class="form-label mb-1 text-uppercase fw-bold">Notes</label>
-                        {{ form.description }}
                     </div>
                 </div>
 
                 <!-- Footer Buttons -->
                 <div class="mt-5 pt-3">
-                    <button type="button" class="btn btn-outline-primary w-100 mb-3 fw-bold rounded-3 py-2 d-flex align-items-center justify-content-center">
+                    <button type="button" id="addGroupedInventoryBtn" class="btn btn-outline-primary w-100 mb-3 fw-bold rounded-3 py-2 d-flex align-items-center justify-content-center">
                         <i class="fas fa-plus-circle me-2"></i> Add Grouped Inventory
                     </button>
                     
-                    <button type="submit" class="btn btn-primary w-100 fw-bold rounded-3 py-3 shadow">
+                    <button type="submit" id="submitBtnMain" class="btn btn-primary w-100 fw-bold rounded-3 py-3 shadow">
                         Submit
                     </button>
                 </div>
@@ -516,6 +527,98 @@
             submitBtn.disabled = false;
             submitBtn.innerHTML = 'Submit';
         });
+    });
+
+    // Unit Synchronization Logic
+    function setupUnitSync(group) {
+        const weightUnitSelect = group.querySelector('select[name="unit_of_measure"]');
+        const priceUnitSelect = group.querySelector('select[name="price_unit"]');
+        
+        if (!weightUnitSelect || !priceUnitSelect) return;
+
+        weightUnitSelect.addEventListener('change', function() {
+            const val = this.value;
+            // Match 'lbs' with 'per lbs', 'kg' with 'per kg', etc.
+            for (let option of priceUnitSelect.options) {
+                if (option.value === 'per ' + val) {
+                    priceUnitSelect.value = option.value;
+                    break;
+                }
+            }
+        });
+
+        priceUnitSelect.addEventListener('change', function() {
+            const val = this.value;
+            if (val.startsWith('per ')) {
+                const baseUnit = val.replace('per ', '');
+                for (let option of weightUnitSelect.options) {
+                    if (option.value === baseUnit) {
+                        weightUnitSelect.value = option.value;
+                        break;
+                    }
+                }
+            }
+        });
+    }
+
+    // Grouped Inventory Logic
+    const addGroupedInventoryBtn = document.getElementById('addGroupedInventoryBtn');
+    if (addGroupedInventoryBtn) {
+        addGroupedInventoryBtn.addEventListener('click', function() {
+            const container = document.getElementById('inventoryItemsContainer');
+            const groups = container.querySelectorAll('.inventory-item-group');
+            if (groups.length === 0) return;
+            
+            const firstGroup = groups[0];
+            const newGroup = firstGroup.cloneNode(true);
+            
+            // Clear all inputs in cloned group
+            newGroup.querySelectorAll('input, select, textarea').forEach(input => {
+                if (input.type === 'checkbox' || input.type === 'radio') {
+                    input.checked = false;
+                } else {
+                    input.value = '';
+                }
+                input.classList.remove('is-invalid');
+                
+                // Handle uniquely generated IDs for labels
+                if (input.id) {
+                    const uniqueId = input.id + '_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+                    const label = newGroup.querySelector(`label[for="${input.id}"]`);
+                    if (label) label.setAttribute('for', uniqueId);
+                    input.id = uniqueId;
+                }
+            });
+
+            // Show remove button for cloned groups
+            const removeBtn = newGroup.querySelector('.btn-remove-group');
+            if (removeBtn) {
+                removeBtn.style.display = 'flex';
+                removeBtn.classList.add('d-flex');
+                removeBtn.addEventListener('click', function() {
+                    newGroup.remove();
+                });
+            }
+            
+            // Setup unit sync for the new group
+            setupUnitSync(newGroup);
+            
+            container.appendChild(newGroup);
+        });
+    }
+
+    // Initial setup for existing groups
+    document.querySelectorAll('.inventory-item-group').forEach(group => {
+        setupUnitSync(group);
+        
+        const removeBtn = group.querySelector('.btn-remove-group');
+        if (removeBtn) {
+            removeBtn.addEventListener('click', function() {
+                if (document.querySelectorAll('.inventory-item-group').length > 1) {
+                    group.remove();
+                }
+            });
+        }
     });
 </script>
 {% endblock %}

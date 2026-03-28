@@ -308,24 +308,64 @@ def inventory_item_add_general(request):
     assign_company = user_company or Company.objects.filter(tenant=request.user.tenant).first()
 
     if request.method == 'POST':
-        # Manually resolve warehouse since it might be a temp_addr_ string
-        warehouse_val = request.POST.get('warehouse')
-        post_data = request.POST.copy()
-        post_data['warehouse'] = resolve_location(request, warehouse_val)
+        # Handing Grouped Inventory (Multiple Items)
+        product_names = request.POST.getlist('product_name')
+        skus = request.POST.getlist('sku')
         
-        form = InventoryItemForm(post_data, user=request.user)
-        if form.is_valid():
-            item = form.save(commit=False)
-            item.tenant = request.user.tenant
-            # Set default company if not provided (especially since field is disabled/missing in POST)
-            if user_company:
-                item.company = user_company
-            # Set default representative if not provided
-            if not item.representative:
-                item.representative = request.user
-            item.save()
-            form.save_m2m() # Important for tags
-            messages.success(request, f"Item '{item.product_name}' successfully added to inventory.")
+        # Fallback for single item if lists are empty (though frontend should send common names)
+        if not product_names and request.POST.get('product_name'):
+            product_names = [request.POST.get('product_name')]
+            skus = [request.POST.get('sku')]
+
+        # Global fields (shared across all items in this submission)
+        warehouse_val = request.POST.get('warehouse')
+        resolved_warehouse = resolve_location(request, warehouse_val)
+        
+        created_count = 0
+        
+        # Other lists
+        quantities = request.POST.getlist('quantity')
+        uoms = request.POST.getlist('unit_of_measure')
+        unit_costs = request.POST.getlist('unit_cost')
+        price_units = request.POST.getlist('price_unit')
+        packagings = request.POST.getlist('packaging')
+        pieces_list = request.POST.getlist('pieces')
+        notes_list = request.POST.getlist('description')
+
+        for i in range(len(product_names)):
+            item_data = {
+                'warehouse': resolved_warehouse,
+                'product_name': product_names[i],
+                'sku': skus[i] if i < len(skus) else '',
+                'quantity': quantities[i] if i < len(quantities) else 0,
+                'unit_of_measure': uoms[i] if i < len(uoms) else 'lbs',
+                'unit_cost': unit_costs[i] if i < len(unit_costs) else 0,
+                'price_unit': price_units[i] if i < len(price_units) else 'per lbs',
+                'packaging': packagings[i] if i < len(packagings) else '',
+                'pieces': pieces_list[i] if i < len(pieces_list) else 0,
+                'description': notes_list[i] if i < len(notes_list) else '',
+                # Shared fields
+                'po_number': request.POST.get('po_number'),
+                'lot_number': request.POST.get('lot_number'),
+                'shipping_terms': request.POST.get('shipping_terms'),
+                'tags': request.POST.getlist('tags'),
+            }
+            
+            form = InventoryItemForm(item_data, user=request.user)
+            if form.is_valid():
+                item = form.save(commit=False)
+                item.tenant = request.user.tenant
+                if user_company:
+                    item.company = user_company
+                if not item.representative:
+                    item.representative = request.user
+                
+                item.save()
+                form.save_m2m() # Important for tags
+                created_count += 1
+
+        if created_count > 0:
+            messages.success(request, f"Successfully added {created_count} items to inventory.")
             return redirect('inventory:item_list')
     else:
         initial = {
