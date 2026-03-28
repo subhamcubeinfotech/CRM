@@ -132,7 +132,8 @@ class Material(TenantAwareModel):
     product_type = models.CharField(max_length=100, blank=True, help_text="e.g. Film, Flake, Regrind")
     
     description = models.TextField(blank=True)
-    image = models.ImageField(upload_to='materials/', null=True, blank=True)
+    image = models.ImageField(upload_to='materials/images/', null=True, blank=True)
+    document = models.FileField(upload_to='materials/docs/', null=True, blank=True)
     
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)

@@ -12,6 +12,7 @@ urlpatterns = [
     path('warehouses/', views.warehouse_list, name='warehouse_list'),
     path('warehouses/create/', views.warehouse_create, name='warehouse_create'),
     path('warehouses/ajax-create/', views.ajax_warehouse_create, name='ajax_warehouse_create'),
+    path('materials/ajax-create/', views.create_material_ajax, name='create_material_ajax'),
     path('warehouses/<int:pk>/', views.warehouse_detail, name='warehouse_detail'),
     path('warehouses/<int:pk>/edit/', views.warehouse_edit, name='warehouse_edit'),
     path('warehouses/<int:pk>/add-item/', views.inventory_item_add, name='inventory_item_add'),

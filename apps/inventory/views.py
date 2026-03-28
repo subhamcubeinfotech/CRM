@@ -8,7 +8,7 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Sum, F, Q, ExpressionWrapper, DecimalField, Case, When, IntegerField
 from .models import Warehouse, InventoryItem, Material
-from .forms import WarehouseForm, InventoryItemForm
+from .forms import WarehouseForm, InventoryItemForm, MaterialForm
 from apps.accounts.utils import filter_by_user_company, check_company_access
 from apps.orders.models import ManifestItem, Order
 import logging
@@ -295,6 +295,23 @@ def warehouse_create(request):
 
 
 @login_required
+def create_material_ajax(request):
+    """AJAX view to create a new material"""
+    if request.method == 'POST':
+        form = MaterialForm(request.POST, request.FILES)
+        if form.is_valid():
+            material = form.save(commit=False)
+            if hasattr(request.user, 'tenant'):
+                material.tenant = request.user.tenant
+            material.save()
+            return JsonResponse({
+                'status': 'success',
+                'id': material.id,
+                'name': material.name
+            })
+        return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
+
 @login_required
 def inventory_item_add_general(request):
     """General view to add an inventory item (not starting from a warehouse)"""
@@ -397,6 +414,7 @@ def inventory_item_add_general(request):
         
     context = {
         'form': form,
+        'material_form': MaterialForm(),
         'title': 'New Inventory',
         'company': user_company or assign_company,
         'assign_company': assign_company,

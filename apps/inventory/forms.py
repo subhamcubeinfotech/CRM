@@ -1,5 +1,18 @@
 from django import forms
-from .models import Warehouse, InventoryItem
+from .models import Warehouse, InventoryItem, Material
+
+class MaterialForm(forms.ModelForm):
+    class Meta:
+        model = Material
+        fields = ['name', 'material_type', 'product_type', 'description', 'image', 'document']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Custom display name for this material'}),
+            'material_type': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. PE, PP'}),
+            'product_type': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. Film, Flake'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Optional description of this material'}),
+            'image': forms.FileInput(attrs={'class': 'd-none', 'id': 'materialImageInput'}),
+            'document': forms.FileInput(attrs={'class': 'd-none', 'id': 'materialDocumentInput'}),
+        }
 
 class WarehouseForm(forms.ModelForm):
     class Meta:
@@ -27,6 +40,13 @@ class InventoryItemForm(forms.ModelForm):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         
+        # Populate material choices
+        materials = Material.objects.all().order_by('name')
+        self.fields['product_name'].widget = forms.Select(
+            choices=[('', 'Select a material')] + [(m.name, m.name) for m in materials],
+            attrs={'class': 'form-select'}
+        )
+
         # Aggressive company locking
         if user:
             from apps.accounts.models import Company
