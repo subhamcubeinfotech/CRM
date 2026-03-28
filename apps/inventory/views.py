@@ -2,6 +2,7 @@
 Inventory Views
 """
 from django.shortcuts import render, get_object_or_404, redirect
+from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
@@ -48,6 +49,59 @@ def resolve_location(request, warehouse_val):
         }
     )
     return hq.id
+
+
+@login_required
+def ajax_warehouse_create(request):
+    """AJAX view to create a warehouse from the side drawer"""
+    if request.method == 'POST':
+        form = WarehouseForm(request.POST)
+        if form.is_valid():
+            warehouse = form.save(commit=False)
+            
+            # Ensure tenant is set
+            if hasattr(request.user, 'tenant'):
+                warehouse.tenant = request.user.tenant
+            
+            # Assign company from request (likely current user's company)
+            if request.user.company:
+                warehouse.company = request.user.company
+            
+            # Check for existing warehouse with same name AND company/tenant
+            # We check name and company to avoid duplicates for the same entity
+            existing = Warehouse.objects.filter(
+                name=warehouse.name,
+                company=warehouse.company,
+                tenant=warehouse.tenant
+            ).first()
+            
+            if existing:
+                return JsonResponse({
+                    'success': True,
+                    'is_existing': True,
+                    'id': existing.id,
+                    'name': existing.name,
+                    'full_label': str(existing)
+                })
+
+            # Auto-generate a unique code if missing
+            if not warehouse.code:
+                import random
+                warehouse.code = f"W-{random.randint(1000, 9999)}"[:20]
+            
+            warehouse.save()
+            return JsonResponse({
+                'success': True,
+                'id': warehouse.id,
+                'name': warehouse.name,
+                'full_label': str(warehouse)
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'errors': form.errors.get_json_data()
+            })
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
 
 @login_required

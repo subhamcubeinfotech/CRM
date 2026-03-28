@@ -23,6 +23,20 @@ class Warehouse(TenantAwareModel):
     phone = models.CharField(max_length=20, blank=True)
     email = models.EmailField(blank=True)
     
+    # Logistics/Operations
+    shipping_requirements = models.TextField(blank=True, help_text="Specific requirements for this location")
+    delivery_appointment_type = models.CharField(
+        max_length=20, 
+        choices=[('fcfs', 'FCFS'), ('required', 'Required')], 
+        default='fcfs'
+    )
+    pickup_appointment_type = models.CharField(
+        max_length=20, 
+        choices=[('fcfs', 'FCFS'), ('required', 'Required')], 
+        default='fcfs'
+    )
+    is_remit_to = models.BooleanField(default=False, verbose_name="Remit To")
+    
     # Ownership
     company = models.ForeignKey('accounts.Company', on_delete=models.CASCADE, related_name='warehouses', null=True, blank=True, help_text="Company this location belongs to")
     

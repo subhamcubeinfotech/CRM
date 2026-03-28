@@ -5,22 +5,21 @@ class WarehouseForm(forms.ModelForm):
     class Meta:
         model = Warehouse
         fields = [
-            'name', 'code', 'address', 'city', 'state', 
-            'postal_code', 'phone', 'email', 'is_active'
+            'name', 'address', 'city', 'state', 'postal_code', 'phone', 
+            'shipping_requirements', 'delivery_appointment_type', 
+            'pickup_appointment_type', 'is_remit_to'
         ]
         widgets = {
-            'name': forms.TextInput(attrs={'class': 'form-control'}),
-            'code': forms.TextInput(attrs={'class': 'form-control'}),
-            'address': forms.TextInput(attrs={'class': 'form-control'}),
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Name for this location'}),
+            'address': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Start typing to search for a business or address'}),
             'city': forms.TextInput(attrs={'class': 'form-control'}),
             'state': forms.TextInput(attrs={'class': 'form-control'}),
-            'country': forms.TextInput(attrs={'class': 'form-control'}),
             'postal_code': forms.TextInput(attrs={'class': 'form-control'}),
-            'phone': forms.TextInput(attrs={'class': 'form-control'}),
-            'email': forms.EmailInput(attrs={'class': 'form-control'}),
-            'company': forms.Select(attrs={'class': 'form-select'}),
-            'manager': forms.Select(attrs={'class': 'form-select'}),
-            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '(000) 000-0000'}),
+            'shipping_requirements': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Insert Scales, Packing list, etc.'}),
+            'delivery_appointment_type': forms.RadioSelect(attrs={'class': 'form-check-input'}),
+            'pickup_appointment_type': forms.RadioSelect(attrs={'class': 'form-check-input'}),
+            'is_remit_to': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
 class InventoryItemForm(forms.ModelForm):

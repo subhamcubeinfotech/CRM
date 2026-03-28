@@ -86,7 +86,8 @@
                     <div class="col-12">
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <label class="form-label mb-0 text-uppercase fw-bold">Location<span class="text-danger">*</span></label>
-                            <button type="button" class="btn btn-outline-primary btn-add-custom d-flex align-items-center px-2 py-1" title="Add Warehouse">
+                            <button type="button" class="btn btn-outline-primary btn-add-custom d-flex align-items-center px-2 py-1" 
+                                    title="Add Warehouse" data-bs-toggle="offcanvas" data-bs-target="#offcanvasAddWarehouse">
                                 <i class="fas fa-plus me-1"></i> Add
                             </button>
                         </div>
@@ -352,5 +353,169 @@
             }
         }
     }
+</script>
+
+<!-- Add Warehouse Offcanvas -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasAddWarehouse" aria-labelledby="offcanvasAddWarehouseLabel" style="width: 450px; border-left: none; box-shadow: -10px 0 30px rgba(0,0,0,0.1); z-index: 1060;">
+    <div class="offcanvas-header border-bottom p-4">
+        <h5 class="offcanvas-title fw-bold text-primary" id="offcanvasAddWarehouseLabel">Add New Location</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body p-4">
+        <form id="ajaxAddWarehouseForm" method="POST">
+            {% csrf_token %}
+            
+            <!-- Location Name -->
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase mb-1">Location Name <span class="text-danger">*</span></label>
+                <input type="text" name="name" class="form-control rounded-3" placeholder="Name for this location" required>
+            </div>
+
+            <!-- Address -->
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase mb-1">Address <span class="text-danger">*</span></label>
+                <input type="text" name="address" class="form-control rounded-3" placeholder="Address" required>
+            </div>
+
+            <!-- City, State -->
+            <div class="row g-3 mb-4">
+                <div class="col-6">
+                    <label class="form-label fw-bold small text-uppercase mb-1">City <span class="text-danger">*</span></label>
+                    <input type="text" name="city" class="form-control rounded-3" required>
+                </div>
+                <div class="col-6">
+                    <label class="form-label fw-bold small text-uppercase mb-1">State <span class="text-danger">*</span></label>
+                    <input type="text" name="state" class="form-control rounded-3" required>
+                </div>
+            </div>
+
+            <!-- Postal Code -->
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase mb-1">Postal Code <span class="text-danger">*</span></label>
+                <input type="text" name="postal_code" class="form-control rounded-3" required>
+            </div>
+
+            <!-- Phone -->
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase mb-1">Phone Number</label>
+                <input type="text" name="phone" class="form-control rounded-3" placeholder="(000) 000-0000">
+            </div>
+
+            <hr class="my-4 opacity-5">
+
+            <!-- Shipping Requirements -->
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase mb-1">Shipping Requirements</label>
+                <textarea name="shipping_requirements" class="form-control rounded-3" rows="2" placeholder="Insert Scales, Packing list, etc."></textarea>
+            </div>
+
+            <!-- Delivery Appointment Type -->
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase mb-1 d-block">Default Delivery Appointment <span class="text-danger">*</span></label>
+                <div class="d-flex gap-4 mt-2">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="delivery_appointment_type" id="delivery_fcfs" value="fcfs" checked>
+                        <label class="form-check-label small fw-bold text-muted" for="delivery_fcfs">FCFS</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="delivery_appointment_type" id="delivery_required" value="required">
+                        <label class="form-check-label small fw-bold text-muted" for="delivery_required">Required</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pickup Appointment Type -->
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase mb-1 d-block">Default Pickup Appointment <span class="text-danger">*</span></label>
+                <div class="d-flex gap-4 mt-2">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="pickup_appointment_type" id="pickup_fcfs" value="fcfs" checked>
+                        <label class="form-check-label small fw-bold text-muted" for="pickup_fcfs">FCFS</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="pickup_appointment_type" id="pickup_required" value="required">
+                        <label class="form-check-label small fw-bold text-muted" for="pickup_required">Required</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Remit To -->
+            <div class="form-check form-switch mb-4">
+                <input class="form-check-input" type="checkbox" name="is_remit_to" id="id_is_remit_to_drawer">
+                <label class="form-check-label small fw-bold text-muted" for="id_is_remit_to_drawer">Remit To</label>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="mt-4 pt-3 border-top">
+                <button type="submit" class="btn btn-primary w-100 py-2 fw-bold rounded-3 shadow-sm" style="background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%); border: none;">Submit</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.getElementById('ajaxAddWarehouseForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const form = this;
+        const formData = new FormData(form);
+        const submitBtn = form.querySelector('button[type="submit"]');
+        
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+
+        fetch("{% url 'inventory:ajax_warehouse_create' %}", {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Add new option to the warehouse select if not already there
+                const warehouseSelect = document.getElementById('id_warehouse');
+                let found = false;
+                for (let i = 0; i < warehouseSelect.options.length; i++) {
+                    if (warehouseSelect.options[i].value == data.id) {
+                        found = true;
+                        warehouseSelect.selectedIndex = i;
+                        break;
+                    }
+                }
+                if (!found) {
+                    const newOption = new Option(data.full_label, data.id, true, true);
+                    warehouseSelect.add(newOption);
+                }
+                
+                // Trigger change to update UI state if needed
+                warehouseSelect.dispatchEvent(new Event('change'));
+                
+                // Hide offcanvas
+                const offcanvasElement = document.getElementById('offcanvasAddWarehouse');
+                const offcanvas = bootstrap.Offcanvas.getInstance(offcanvasElement);
+                if (offcanvas) offcanvas.hide();
+                
+                // Reset form
+                form.reset();
+            } else {
+                // Handle errors
+                let errorMsg = 'Error creating location:\n';
+                for (const field in data.errors) {
+                    errorMsg += `${field}: ${data.errors[field][0].message}\n`;
+                }
+                alert(errorMsg);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An unexpected error occurred.');
+        })
+        .finally(() => {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = 'Submit';
+        });
+    });
 </script>
 {% endblock %}
