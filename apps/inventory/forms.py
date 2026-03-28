@@ -79,7 +79,7 @@ class InventoryItemForm(forms.ModelForm):
     class Meta:
         model = InventoryItem
         fields = [
-            'sku', 'product_name', 'description', 'warehouse', 'location',
+            'sku', 'product_name', 'description', 'warehouse',
             'quantity', 'unit_of_measure', 'lot_number', 'po_number',
             'company', 'shipping_terms', 'representative', 'tags',
             'packaging', 'pieces', 'is_palletized',
@@ -90,7 +90,6 @@ class InventoryItemForm(forms.ModelForm):
             'product_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Select a material'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Type a note'}),
             'warehouse': forms.Select(attrs={'class': 'form-select'}),
-            'location': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Insert a location'}),
             'quantity': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Weight'}),
             'unit_of_measure': forms.Select(choices=[('lbs', 'lbs'), ('kg', 'kg'), ('mt', 'MT'), ('pcs', 'pcs')], attrs={'class': 'form-select'}),
             'lot_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Insert a number'}),

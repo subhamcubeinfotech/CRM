@@ -28,12 +28,12 @@ class Warehouse(TenantAwareModel):
     delivery_appointment_type = models.CharField(
         max_length=20, 
         choices=[('fcfs', 'FCFS'), ('required', 'Required')], 
-        default='fcfs'
+        null=True, blank=True
     )
     pickup_appointment_type = models.CharField(
         max_length=20, 
         choices=[('fcfs', 'FCFS'), ('required', 'Required')], 
-        default='fcfs'
+        null=True, blank=True
     )
     is_remit_to = models.BooleanField(default=False, verbose_name="Remit To")
     

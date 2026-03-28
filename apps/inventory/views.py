@@ -511,10 +511,14 @@ def inventory_item_edit(request, pk):
             form.save_m2m()
             messages.success(request, f"Item '{item.product_name}' updated successfully.")
             return redirect('inventory:warehouse_detail', pk=warehouse.pk)
+    else:
         form = InventoryItemForm(instance=item, user=request.user)
         if user_company:
             form.fields['company'].queryset = Company.objects.filter(id=user_company.id)
             form.fields['company'].disabled = True
+    
+    # Material Form for offcanvas drawer
+    material_form = MaterialForm()
     
     # Show all warehouses in tenant
     warehouses = Warehouse.plain_objects.filter(tenant=request.user.tenant).annotate(
@@ -527,6 +531,7 @@ def inventory_item_edit(request, pk):
         
     context = {
         'form': form,
+        'material_form': material_form,
         'warehouse': warehouse,
         'company': item.company or assign_company,
         'assign_company': assign_company,
