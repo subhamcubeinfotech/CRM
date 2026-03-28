@@ -40,6 +40,11 @@ class InventoryItemForm(forms.ModelForm):
                 self.fields['company'].initial = user_company
                 self.fields['company'].disabled = True
 
+            # Representative locking
+            self.fields['representative'].queryset = user.__class__.objects.filter(id=user.id)
+            self.fields['representative'].initial = user
+            self.fields['representative'].disabled = True
+
         # Dynamic packaging choices from orders module
         try:
             from apps.orders.models import PackagingType

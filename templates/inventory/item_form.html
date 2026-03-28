@@ -120,9 +120,11 @@
                     <div class="col-12">
                         <label class="form-label mb-1 text-uppercase fw-bold">Representatives<span class="text-danger">*</span></label>
                         {{ form.representative }}
+                        {% if not form.representative.field.disabled %}
                         <a href="javascript:void(0)" onclick="assignToMe()" class="text-decoration-none small text-primary d-flex align-items-center mt-1">
                             <span class="me-1">Click to assign to yourself.</span>
                         </a>
+                        {% endif %}
                     </div>
 
                     <!-- Tags -->
