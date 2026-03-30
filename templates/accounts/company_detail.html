@@ -36,9 +36,16 @@
             </div>
         </div>
         <div class="d-flex gap-2">
-            <button class="btn btn-primary rounded-pill px-4">
-                Actions <i class="fas fa-chevron-down ms-2 small"></i>
-            </button>
+            <div class="dropdown">
+                <button class="btn btn-primary rounded-pill px-4 dropdown-toggle no-caret" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-chevron-down me-2 small rotate-icon"></i>Actions
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg rounded-4 p-2 mt-2" style="min-width: 160px;">
+                    <li><a class="dropdown-item rounded-3 py-2 px-3 small d-flex align-items-center" href="#"><i class="fas fa-pencil-alt me-3 text-muted" style="width: 14px;"></i>Edit</a></li>
+                    <li><hr class="dropdown-divider opacity-50"></li>
+                    <li><a class="dropdown-item rounded-3 py-2 px-3 small d-flex align-items-center text-danger" href="#"><i class="fas fa-trash-alt me-3 text-danger" style="width: 14px;"></i>Archive</a></li>
+                </ul>
+            </div>
         </div>
     </div>
 </div>
@@ -202,7 +209,7 @@
                                 <button class="btn btn-outline-secondary border-0"><i
                                         class="fas fa-chevron-right small"></i></button>
                             </div>
-                            <button class="btn btn-primary btn-xs rounded-pill px-3">Add</button>
+                            <button class="btn btn-primary btn-xs rounded-pill px-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasAddCompanyMaterial">Add</button>
                         </div>
                     </div>
                     <div class="card-body p-0">
@@ -265,9 +272,6 @@
                     <div
                         class="card-header bg-white border-0 px-4 py-3 d-flex justify-content-between align-items-center">
                         <h6 class="fw-bold mb-0">Buy Profiles</h6>
-                        <div class="d-flex align-items-center gap-2">
-                            <button class="btn btn-primary btn-xs rounded-pill px-3">Add</button>
-                        </div>
                     </div>
                     <div class="card-body p-5 text-center text-muted">
                         <i class="fas fa-shopping-cart fa-3x mb-3 opacity-10"></i>
@@ -604,33 +608,33 @@
         transition: transform 0.2s ease;
     }
 
-    /* Custom compact font overrides */
+    /* Custom compact font overrides - matching Shipment Portfolio style */
     .card-body,
     .table,
     .form-control,
     .form-label,
     .btn {
-        font-size: 0.75rem !important;
+        font-size: 0.85rem !important; /* ~13.6px */
     }
 
     .small,
     .sub-text,
     .text-muted:not(h6) {
-        font-size: 0.6875rem !important;
+        font-size: 0.75rem !important; /* 12px */
     }
 
     h6.fw-bold {
-        font-size: 0.8125rem !important;
+        font-size: 0.95rem !important; /* ~15px */
     }
 
     .status-badge,
     .badge:not(.h2 .badge) {
-        font-size: 0.65rem !important;
-        padding: 2px 8px !important;
+        font-size: 0.7rem !important; /* 11.2px */
+        padding: 3px 10px !important;
     }
 
     .material-item h6 {
-        font-size: 0.75rem !important;
+        font-size: 0.85rem !important;
     }
 
     .date-input:focus {
@@ -650,6 +654,13 @@
     .upload-area:hover {
         background-color: #f1f5f9 !important;
         border-color: var(--primary-color) !important;
+    }
+    .no-caret::after {
+        display: none !important;
+    }
+
+    .dropdown-item:active {
+        background-color: var(--primary-color) !important;
     }
 </style>
 
@@ -709,6 +720,96 @@
     </div>
 </div>
 
+
+<!-- Add Company Material Drawer -->
+<div class="offcanvas offcanvas-end border-0 shadow" tabindex="-1" id="offcanvasAddCompanyMaterial" aria-labelledby="offcanvasAddCompanyMaterialLabel" style="width: 400px;">
+    <div class="offcanvas-header bg-white border-bottom py-3">
+        <h5 class="offcanvas-title fw-bold h6 mb-0" id="offcanvasAddCompanyMaterialLabel">Add Company Material</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body p-4">
+        <form>
+            <div class="mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <label class="form-label fw-bold text-dark mb-0 small">Material <span class="text-danger">*</span></label>
+                    <button type="button" class="btn btn-outline-primary btn-xs rounded-pill px-2" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNewMaterial">
+                        <i class="fas fa-plus me-1"></i>Add
+                    </button>
+                </div>
+                <div class="input-group input-group-sm">
+                    <select class="form-select rounded-3 border-light-subtle">
+                        <option value="">Select a material</option>
+                        {% for mat in materials %}
+                        <option value="{{ mat.id }}">{{ mat.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <span class="input-group-text bg-white border-light-subtle rounded-3 ms-n1">
+                        <i class="fas fa-search small text-muted"></i>
+                    </span>
+                </div>
+            </div>
+            
+            <div class="d-grid mt-5">
+                <button type="submit" class="btn btn-primary rounded-pill shadow-sm py-2">Submit</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- New Material Drawer -->
+<div class="offcanvas offcanvas-end border-0 shadow" tabindex="-1" id="offcanvasNewMaterial" aria-labelledby="offcanvasNewMaterialLabel" style="width: 450px; z-index: 1060;">
+    <div class="offcanvas-header bg-white border-bottom py-3">
+        <h5 class="offcanvas-title fw-bold h6 mb-0" id="offcanvasNewMaterialLabel">New Material</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body p-4">
+        <form enctype="multipart/form-data">
+            <div class="mb-3">
+                <label class="form-label fw-bold text-dark mb-1 small">Display Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control form-control-sm rounded-3 border-light-subtle" placeholder="Custom display name for this material">
+                <div class="form-text mt-1" style="font-size: 10px;">Add a clear, descriptive name to help others quickly identify this material.</div>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label fw-bold text-dark mb-1 small">Description</label>
+                <textarea class="form-control form-control-sm rounded-3 border-light-subtle" rows="3" placeholder="Optional description of this material"></textarea>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label fw-bold text-dark mb-1 small">Images and Documents</label>
+                <div class="border rounded-4 p-4 text-center border-light-subtle bg-light bg-opacity-50">
+                    <div class="d-flex justify-content-center gap-2 mb-3">
+                        <button type="button" class="btn btn-primary btn-sm px-3 rounded-pill"><i class="fas fa-plus me-1"></i>Choose</button>
+                        <button type="button" class="btn btn-light btn-sm px-3 rounded-pill border text-muted">Cancel</button>
+                    </div>
+                    <p class="mb-0 small text-muted">Drag and drop files to here to upload</p>
+                </div>
+            </div>
+            
+            <div class="row g-3 mb-4">
+                <div class="col-6">
+                    <label class="form-label fw-bold text-dark mb-1 small">Material <span class="text-danger">*</span></label>
+                    <select class="form-select form-select-sm rounded-3 border-light-subtle">
+                        <option value="plastic">Plastic</option>
+                        <option value="metal">Metal</option>
+                        <option value="paper">Paper</option>
+                    </select>
+                </div>
+                <div class="col-6">
+                    <label class="form-label fw-bold text-dark mb-1 small">Material Type <span class="text-danger">*</span></label>
+                    <select class="form-select form-select-sm rounded-3 border-light-subtle">
+                        <option value="">Select a value</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-center gap-2 mt-5">
+                <button type="submit" class="btn btn-outline-primary btn-sm px-4 rounded-3 fw-bold">Submit</button>
+                <button type="button" class="btn btn-primary btn-sm px-4 rounded-3 fw-bold shadow-sm" style="background: #7ca3ff; border-color: #7ca3ff;">Review</button>
+            </div>
+        </form>
+    </div>
+</div>
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
