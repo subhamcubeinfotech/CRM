@@ -105,14 +105,16 @@
                         </div>
 
                         <div class="mb-4">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h6 class="fw-bold mb-0 small text-uppercase tracking-wider">Touchpoints</h6>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <h6 class="fw-bold mb-0 small text-uppercase tracking-wider">
+                                    <i class="fas fa-chevron-up me-2 small opacity-50"></i>Touchpoints
+                                </h6>
                                 <button class="btn btn-primary btn-xs rounded-pill px-2" type="button"
                                     data-bs-toggle="offcanvas" data-bs-target="#offcanvasTouchpoint">Add</button>
                             </div>
-                            <div class="touchpoints-list bg-light rounded-3 p-3 text-center small text-muted">
-                                <span class="d-block mb-1">Next: Add Date</span>
-                                <span class="d-block">Last: Add Date</span>
+                            <div class="d-flex gap-4 small text-muted align-items-center">
+                                <div>Next: <input type="text" class="flatpickr-date border-0 bg-transparent text-primary text-decoration-underline p-0 w-auto cursor-pointer" style="font-size: 0.85rem;" placeholder="Add Date" readonly></div>
+                                <div>Last: <input type="text" class="flatpickr-date border-0 bg-transparent text-primary text-decoration-underline p-0 w-auto cursor-pointer" style="font-size: 0.85rem;" placeholder="Add Date" readonly></div>
                             </div>
                         </div>
 
@@ -178,17 +180,19 @@
                                     <i class="fas fa-strikethrough"></i>
                                     <i class="fas fa-link"></i>
                                 </div>
-                                <textarea class="form-control border-0 bg-transparent p-0 small"
+                                <textarea id="commentInput" class="form-control border-0 bg-transparent p-0 small"
                                     placeholder="Join the conversation..." rows="3"
                                     style="box-shadow: none; resize: none;"></textarea>
                                 <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top">
                                     <span class="small text-muted">Tip: Notify someone with @</span>
-                                    <button class="btn btn-outline-primary btn-xs rounded-pill px-3">Submit</button>
+                                    <button id="submitComment" class="btn btn-primary btn-xs rounded-pill px-3 shadow-sm">Submit</button>
                                 </div>
                             </div>
-                            <div class="text-center p-4 text-muted border rounded-4 bg-light bg-opacity-50">
-                                <i class="fas fa-comment-slash d-block mb-2 opacity-50"></i>
-                                <span class="small">No comments yet</span>
+                            <div id="commentsList">
+                                <div class="text-center p-4 text-muted border rounded-4 bg-light bg-opacity-50 no-comments-placeholder">
+                                    <i class="fas fa-comment-slash d-block mb-2 opacity-50"></i>
+                                    <span class="small">No comments yet</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -970,6 +974,46 @@
                         }
                     });
                 });
+            });
+        }
+
+        // Conversation submit logic
+        const submitBtn = document.getElementById('submitComment');
+        const commentInput = document.getElementById('commentInput');
+        const commentsList = document.getElementById('commentsList');
+
+        if (submitBtn && commentInput && commentsList) {
+            submitBtn.addEventListener('click', function() {
+                const text = commentInput.value.trim();
+                if (!text) return;
+
+                // Remove placeholder
+                const placeholder = commentsList.querySelector('.no-comments-placeholder');
+                if (placeholder) placeholder.remove();
+
+                // Create comment element
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                
+                const commentHtml = `
+                    <div class="d-flex gap-3 mb-3 animate__animated animate__fadeIn">
+                        <div class="avatar-sm bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px; font-size: 12px;">
+                            ${document.querySelector('.navbar .avatar-sm')?.innerText || 'U'}
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="fw-bold small">${document.querySelector('.navbar .user-name')?.innerText || 'You'}</span>
+                                <span class="text-muted" style="font-size: 10px;">Just now</span>
+                            </div>
+                            <div class="bg-light rounded-3 p-2 small text-dark">
+                                ${text}
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                commentsList.insertAdjacentHTML('afterbegin', commentHtml);
+                commentInput.value = '';
             });
         }
     });
