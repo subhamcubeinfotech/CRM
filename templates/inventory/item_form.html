@@ -694,10 +694,9 @@
         if (!weightUnitSelect || !priceUnitSelect) return;
 
         weightUnitSelect.addEventListener('change', function() {
-            const val = this.value;
-            // Match 'lbs' with 'per lbs', 'kg' with 'per kg', etc.
+            const val = this.value.toLowerCase();
             for (let option of priceUnitSelect.options) {
-                if (option.value === 'per ' + val) {
+                if (option.value.toLowerCase() === 'per ' + val) {
                     priceUnitSelect.value = option.value;
                     break;
                 }
@@ -705,11 +704,11 @@
         });
 
         priceUnitSelect.addEventListener('change', function() {
-            const val = this.value;
+            const val = this.value.toLowerCase();
             if (val.startsWith('per ')) {
                 const baseUnit = val.replace('per ', '');
                 for (let option of weightUnitSelect.options) {
-                    if (option.value === baseUnit) {
+                    if (option.value.toLowerCase() === baseUnit) {
                         weightUnitSelect.value = option.value;
                         break;
                     }

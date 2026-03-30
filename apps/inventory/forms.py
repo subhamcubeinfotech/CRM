@@ -101,5 +101,5 @@ class InventoryItemForm(forms.ModelForm):
             'pieces': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Pieces'}),
             'is_palletized': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'unit_cost': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.0001', 'placeholder': 'Price'}),
-            'price_unit': forms.Select(choices=[('per lbs', 'per lbs'), ('per kg', 'per kg'), ('per MT', 'per MT'), ('per unit', 'per unit')], attrs={'class': 'form-select'}),
+            'price_unit': forms.Select(choices=[('per lbs', 'per lbs'), ('per kg', 'per kg'), ('per mt', 'per MT'), ('per unit', 'per unit')], attrs={'class': 'form-select'}),
         }
