@@ -108,8 +108,14 @@ def company_detail(request, pk):
         check_company_access(company, request.user)
     
     from apps.orders.models import Order
+    from apps.shipments.models import Shipment
+    
     orders = Order.objects.filter(
         Q(supplier=company) | Q(receiver=company)
+    ).order_by('-created_at')[:20]
+
+    shipments = Shipment.objects.filter(
+        Q(customer=company) | Q(carrier=company) | Q(shipper=company) | Q(consignee=company)
     ).order_by('-created_at')[:20]
 
     # Construct locations list (Only Company primary address as per user request)
@@ -127,11 +133,15 @@ def company_detail(request, pk):
             'email': company.email
         })
 
+    from apps.inventory.models import Material
+    materials = Material.objects.all()[:10]  # Placeholder: Get some materials for now
+
     context = {
         'company': company,
-        'invoices': company.invoices.all()[:10] if company.company_type == 'customer' else None,
+        'shipments': shipments,
         'orders': orders,
         'locations': locations,
+        'materials': materials,
     }
     return render(request, 'accounts/company_detail.html', context)
 

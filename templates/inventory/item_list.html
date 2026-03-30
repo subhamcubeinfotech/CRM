@@ -18,9 +18,9 @@
         color: #64748b;
         font-weight: 600;
         text-transform: uppercase;
-        font-size: 0.75rem;
+        font-size: 0.6875rem;
         letter-spacing: 0.025em;
-        padding: 12px 16px;
+        padding: 8px 16px;
         white-space: nowrap;
     }
 
@@ -37,10 +37,10 @@
     }
 
     .inventory-table td {
-        padding: 16px;
+        padding: 12px 16px;
         vertical-align: middle;
-        border: none;
-        font-size: 0.875rem;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 0.75rem;
         white-space: nowrap;
     }
 
@@ -73,9 +73,14 @@
     }
 
     .stat-value {
-        font-size: 1.5rem;
+        font-size: 1.25rem;
         font-weight: 700;
         color: #1e293b;
+    }
+
+    /* Global compact overrides */
+    .card-body, .table, .form-control, .form-select, .btn {
+        font-size: 0.75rem !important;
     }
 
     /* Tabs Styling */
@@ -119,6 +124,124 @@
         top: 0;
         z-index: 10;
         background-color: #f8f9fa !important;
+    }
+
+    /* Filter Drawer Premium Styling */
+    .filter-offcanvas {
+        background-color: #f8fafc;
+        width: 400px !important;
+        border-left: none;
+        box-shadow: -10px 0 30px rgba(0, 0, 0, 0.05);
+    }
+
+    .filter-offcanvas .offcanvas-header {
+        background-color: #fff;
+        padding: 1.5rem;
+    }
+
+    .filter-offcanvas .offcanvas-body {
+        padding: 1.5rem;
+    }
+
+    .filter-card {
+        background: #fff;
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .filter-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+        margin-bottom: 0.75rem;
+        display: block;
+    }
+
+    /* Accordion Customization */
+    .filter-accordion .accordion-item {
+        background: transparent;
+        border: none;
+        margin-bottom: 0.75rem;
+    }
+
+    .filter-accordion .accordion-button {
+        background: #fff;
+        border-radius: 12px !important;
+        padding: 0.875rem 1.25rem;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #1e293b;
+        text-transform: uppercase;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        border: 1px solid transparent;
+        transition: all 0.2s;
+    }
+
+    .filter-accordion .accordion-button:not(.collapsed) {
+        background: #eff6ff;
+        color: #2563eb;
+        border-color: #dbeafe;
+    }
+
+    .filter-accordion .accordion-button:focus {
+        box-shadow: none;
+    }
+
+    .filter-accordion .accordion-body {
+        background: #fff;
+        border-radius: 0 0 12px 12px;
+        margin-top: -10px;
+        padding: 1.5rem 1.25rem 1.25rem 1.25rem;
+        border: 1px solid #f1f5f9;
+    }
+
+    /* Range Slider */
+    .form-range::-webkit-slider-thumb { background: #2563eb; }
+    .form-range::-moz-range-thumb { background: #2563eb; }
+
+    .radius-badge {
+        background-color: #eff6ff;
+        color: #2563eb;
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 20px;
+    }
+
+    /* Search Bar inside drawer */
+    .drawer-search-container {
+        position: relative;
+        margin-bottom: 2rem;
+    }
+
+    .drawer-search-container .fa-search {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
+        font-size: 0.875rem;
+    }
+
+    .drawer-search-input {
+        padding-left: 2.75rem;
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        height: 48px;
+        width: 100%;
+        background-color: #fff;
+    }
+
+    .select2-container--bootstrap-5 .select2-selection {
+        border: 1px solid #f1f5f9 !important;
+        border-radius: 8px !important;
+        background-color: #f8fafc !important;
     }
 </style>
 {% endblock %}
@@ -167,7 +290,8 @@
                         <a class="nav-link {% if scope == 'all' %}active{% endif %}" href="?scope=all">All</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if scope == 'personal' %}active{% endif %}" href="?scope=personal">Personal</a>
+                        <a class="nav-link {% if scope == 'personal' %}active{% endif %}"
+                            href="?scope=personal">Personal</a>
                     </li>
                 </ul>
 
@@ -179,8 +303,8 @@
                         <span class="position-absolute top-50 start-0 translate-middle-y ms-3 text-muted">
                             <i class="fas fa-search"></i>
                         </span>
-                        <input type="text" name="search" class="form-control ps-5 border-light" 
-                               placeholder="Search by name or SKU..." value="{{ search|default:'' }}">
+                        <input type="text" name="search" class="form-control ps-5 border-light"
+                            placeholder="Search by name or SKU..." value="{{ search|default:'' }}">
                     </form>
 
                     <button class="btn btn-light border" title="Export Data">
@@ -192,16 +316,29 @@
                             <i class="fas fa-sort me-1"></i> Sort
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end shadow-sm">
-                            <li><a class="dropdown-item {% if sort_param == 'newest' %}active{% endif %}" href="?sort=newest&scope={{ scope }}&search={{ search|default:'' }}">Newest First</a></li>
-                            <li><a class="dropdown-item {% if sort_param == 'oldest' %}active{% endif %}" href="?sort=oldest&scope={{ scope }}&search={{ search|default:'' }}">Oldest First</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item {% if sort_param == 'weight_desc' %}active{% endif %}" href="?sort=weight_desc&scope={{ scope }}&search={{ search|default:'' }}">Weight: High to Low</a></li>
-                            <li><a class="dropdown-item {% if sort_param == 'weight_asc' %}active{% endif %}" href="?sort=weight_asc&scope={{ scope }}&search={{ search|default:'' }}">Weight: Low to High</a></li>
-                            <li><a class="dropdown-item {% if sort_param == 'val_desc' %}active{% endif %}" href="?sort=val_desc&scope={{ scope }}&search={{ search|default:'' }}">Price: High to Low</a></li>
+                            <li><a class="dropdown-item {% if sort_param == 'newest' %}active{% endif %}"
+                                    href="?sort=newest&scope={{ scope }}&search={{ search|default:'' }}">Newest
+                                    First</a></li>
+                            <li><a class="dropdown-item {% if sort_param == 'oldest' %}active{% endif %}"
+                                    href="?sort=oldest&scope={{ scope }}&search={{ search|default:'' }}">Oldest
+                                    First</a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item {% if sort_param == 'weight_desc' %}active{% endif %}"
+                                    href="?sort=weight_desc&scope={{ scope }}&search={{ search|default:'' }}">Weight:
+                                    High to Low</a></li>
+                            <li><a class="dropdown-item {% if sort_param == 'weight_asc' %}active{% endif %}"
+                                    href="?sort=weight_asc&scope={{ scope }}&search={{ search|default:'' }}">Weight: Low
+                                    to High</a></li>
+                            <li><a class="dropdown-item {% if sort_param == 'val_desc' %}active{% endif %}"
+                                    href="?sort=val_desc&scope={{ scope }}&search={{ search|default:'' }}">Price: High
+                                    to Low</a></li>
                         </ul>
                     </div>
 
-                    <button class="btn btn-light border" type="button" data-bs-toggle="offcanvas" data-bs-target="#filterDrawer">
+                    <button class="btn btn-light border" type="button" data-bs-toggle="offcanvas"
+                        data-bs-target="#filterDrawer">
                         <i class="fas fa-filter me-1 text-primary"></i> Filters
                     </button>
                 </div>
@@ -256,19 +393,27 @@
                     </td>
                     <td>
                         {% if item.quantity == 0 %}
-                            <span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle px-3">Out of Stock</span>
+                        <span
+                            class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle px-3">Out
+                            of Stock</span>
                         {% elif item.is_low_stock %}
-                            <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis border border-warning-subtle px-3">Low Stock</span>
+                        <span
+                            class="badge rounded-pill bg-warning-subtle text-warning-emphasis border border-warning-subtle px-3">Low
+                            Stock</span>
                         {% else %}
-                            <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-3">In Stock</span>
+                        <span
+                            class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-3">In
+                            Stock</span>
                         {% endif %}
                     </td>
                     <td class="text-end">
                         <div class="btn-group shadow-sm border rounded">
-                            <a href="{% url 'inventory:item_detail' item.pk %}" class="btn btn-sm btn-white px-3" title="View">
+                            <a href="{% url 'inventory:item_detail' item.pk %}" class="btn btn-sm btn-white px-3"
+                                title="View">
                                 <i class="fas fa-eye text-primary"></i>
                             </a>
-                            <a href="{% url 'inventory:inventory_item_edit' item.pk %}" class="btn btn-sm btn-white px-3" title="Edit">
+                            <a href="{% url 'inventory:inventory_item_edit' item.pk %}"
+                                class="btn btn-sm btn-white px-3" title="Edit">
                                 <i class="fas fa-edit text-muted"></i>
                             </a>
                         </div>
@@ -296,19 +441,21 @@
         <ul class="pagination pagination-spaced">
             {% if items.has_previous %}
             <li class="page-item">
-                <a class="page-link shadow-sm border-0" href="?page={{ items.previous_page_number }}&scope={{ scope }}&search={{ search|default:'' }}&sort={{ sort_param|default:'' }}">
+                <a class="page-link shadow-sm border-0"
+                    href="?page={{ items.previous_page_number }}&scope={{ scope }}&search={{ search|default:'' }}&sort={{ sort_param|default:'' }}">
                     <i class="fas fa-chevron-left"></i>
                 </a>
             </li>
             {% endif %}
-            
+
             <li class="page-item active">
                 <span class="page-link shadow-sm border-0">{{ items.number }}</span>
             </li>
-            
+
             {% if items.has_next %}
             <li class="page-item">
-                <a class="page-link shadow-sm border-0" href="?page={{ items.next_page_number }}&scope={{ scope }}&search={{ search|default:'' }}&sort={{ sort_param|default:'' }}">
+                <a class="page-link shadow-sm border-0"
+                    href="?page={{ items.next_page_number }}&scope={{ scope }}&search={{ search|default:'' }}&sort={{ sort_param|default:'' }}">
                     <i class="fas fa-chevron-right"></i>
                 </a>
             </li>
@@ -319,9 +466,9 @@
 </div>
 
 <!-- Filter Drawer -->
-<div class="offcanvas offcanvas-end" tabindex="-1" id="filterDrawer" aria-labelledby="filterDrawerLabel">
+<div class="offcanvas offcanvas-end filter-offcanvas" tabindex="-1" id="filterDrawer" aria-labelledby="filterDrawerLabel">
     <div class="offcanvas-header border-bottom">
-        <h5 class="offcanvas-title font-weight-bold" id="filterDrawerLabel">Filter Inventory</h5>
+        <h5 class="offcanvas-title font-weight-bold text-dark" id="filterDrawerLabel">Filter</h5>
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>
     <div class="offcanvas-body">
@@ -329,48 +476,153 @@
             {% if scope %}<input type="hidden" name="scope" value="{{ scope }}">{% endif %}
             {% if sort_param %}<input type="hidden" name="sort" value="{{ sort_param }}">{% endif %}
             
-            <div class="mb-4">
-                <label class="form-label fw-bold small text-uppercase text-muted">Warehouse</label>
-                <select name="warehouse" class="form-select border-light bg-light" onchange="this.form.submit()">
-                    <option value="">All Warehouses</option>
-                    {% for w in warehouses %}
-                    <option value="{{ w.id }}" {% if warehouse_filter == w.id|stringformat:"i" %}selected{% endif %}>
-                        {{ w.name }}
-                    </option>
-                    {% endfor %}
-                </select>
+            <!-- Drawer Search -->
+            <div class="drawer-search-container">
+                <i class="fas fa-search"></i>
+                <input type="text" name="drawer_search" class="drawer-search-input" 
+                       placeholder="Search for a filter..." value="{{ drawer_search|default:'' }}">
             </div>
 
-            <div class="mb-4">
-                <label class="form-label fw-bold small text-uppercase text-muted">Stock Status</label>
-                <div class="form-check mb-2">
-                    <input class="form-check-input" type="checkbox" name="low_stock" value="1" id="lowStockCheck"
-                           {% if low_stock_filter %}checked{% endif %} onchange="this.form.submit()">
-                    <label class="form-check-label" for="lowStockCheck">
-                        Low Stock Only
-                    </label>
+            <!-- Location Section -->
+            <label class="filter-label">Location</label>
+            <div class="filter-card">
+                <div class="mb-3">
+                    <input type="text" name="location_address" class="form-control form-control-sm border-light bg-light" 
+                           placeholder="Type an address" value="{{ location_address|default:'' }}">
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="small fw-bold text-dark">Radius</span>
+                    <span class="radius-badge" id="radiusVal">{{ radius|default:'50' }} mi</span>
+                </div>
+                <input type="range" name="radius" class="form-range" min="0" max="500" step="10" 
+                       id="radiusRange" value="{{ radius|default:'50' }}" oninput="updateRadiusLabel(this.value)">
+            </div>
+
+            <!-- Material Details -->
+            <label class="filter-label">Material Details</label>
+            <div class="filter-card">
+                <div class="mb-3">
+                    <label class="small fw-bold text-dark mb-1">Material Name</label>
+                    <select name="material" class="form-select form-select-sm border-light bg-light select2-basic" multiple>
+                        {% for mat in materials %}
+                        <option value="{{ mat }}" {% if mat in material_filter %}selected{% endif %}>{{ mat }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-1">
+                    <label class="small fw-bold text-dark mb-1">Material Type</label>
+                    <select name="material_type" class="form-select form-select-sm border-light bg-light">
+                        <option value="">Select Type</option>
+                        <option value="PE">PE (Polyethylene)</option>
+                        <option value="PP">PP (Polypropylene)</option>
+                        <option value="PVC">PVC (Polyvinyl Chloride)</option>
+                    </select>
                 </div>
             </div>
 
-            <div class="mb-4">
-                <label class="form-label fw-bold small text-uppercase text-muted">Material Type</label>
-                <div style="max-height: 200px; overflow-y: auto;">
-                    {% for mat in materials %}
-                    <div class="form-check mb-2">
-                        <input class="form-check-input" type="checkbox" name="material" value="{{ mat }}" id="mat_{{ forloop.counter }}">
-                        <label class="form-check-label" for="mat_{{ forloop.counter }}">
-                            {{ mat }}
-                        </label>
+            <!-- Property Accordion -->
+            <div class="accordion filter-accordion" id="propertiesAccordion">
+                <!-- Have Details -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseHave">
+                            Have Details
+                        </button>
+                    </h2>
+                    <div id="collapseHave" class="accordion-collapse collapse" data-bs-parent="#propertiesAccordion">
+                        <div class="accordion-body">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" name="low_stock" value="1" id="lowStockCheck"
+                                       {% if low_stock_filter %}checked{% endif %}>
+                                <label class="form-check-label small" for="lowStockCheck">Low Stock Only</label>
+                            </div>
+                        </div>
                     </div>
-                    {% endfor %}
+                </div>
+
+                <!-- Typical Properties -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTypical">
+                            Typical Properties
+                        </button>
+                    </h2>
+                    <div id="collapseTypical" class="accordion-collapse collapse" data-bs-parent="#propertiesAccordion">
+                        <div class="accordion-body">
+                            <div class="mb-2">
+                                <label class="small text-muted mb-1">Grade</label>
+                                <input type="text" class="form-control form-control-sm" placeholder="e.g. Post-Industrial">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Physical Properties -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePhysical">
+                            Physical Properties
+                        </button>
+                    </h2>
+                    <div id="collapsePhysical" class="accordion-collapse collapse" data-bs-parent="#propertiesAccordion">
+                        <div class="accordion-body">
+                            <div class="mb-2">
+                                <label class="small text-muted mb-1">Melt Flow Rate</label>
+                                <input type="text" class="form-control form-control-sm" placeholder="g/10min">
+                            </div>
+                            <div class="mb-2">
+                                <label class="small text-muted mb-1">Density</label>
+                                <input type="text" class="form-control form-control-sm" placeholder="g/cm³">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mechanical Properties -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMechanical">
+                            Mechanical Properties
+                        </button>
+                    </h2>
+                    <div id="collapseMechanical" class="accordion-collapse collapse" data-bs-parent="#propertiesAccordion">
+                        <div class="accordion-body">
+                            <div class="mb-2">
+                                <label class="small text-muted mb-1">Tensile Strength</label>
+                                <input type="text" class="form-control form-control-sm">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Optical Properties -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOptical">
+                            Optical Properties
+                        </button>
+                    </h2>
+                    <div id="collapseOptical" class="accordion-collapse collapse" data-bs-parent="#propertiesAccordion">
+                        <div class="accordion-body">
+                            <p class="small text-muted">Additional optical property filters.</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="d-grid gap-2 mt-auto pt-4">
-                <button type="submit" class="btn btn-primary">Apply Filters</button>
-                <a href="?scope={{ scope }}" class="btn btn-light border text-muted">Reset All</a>
+            <!-- Action Buttons -->
+            <div class="d-grid gap-2 mt-4 pb-4">
+                <button type="submit" class="btn btn-primary shadow-sm py-2 fw-bold" style="border-radius: 12px; background: #2563eb; border: none;">Apply Filters</button>
+                <a href="?scope={{ scope }}" class="btn btn-light border-0 py-2 fw-bold text-muted" style="border-radius: 12px; background: #f1f5f9;">Reset All</a>
             </div>
         </form>
     </div>
 </div>
+
+<script>
+    function updateRadiusLabel(val) {
+        const radiusVal = document.getElementById('radiusVal');
+        if (radiusVal) radiusVal.innerText = val + ' mi';
+    }
+</script>
 {% endblock %}

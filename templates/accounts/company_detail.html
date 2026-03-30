@@ -3,390 +3,874 @@
 {% block title %}{{ company.name }} - FreightPro{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <a href="{% url 'accounts:company_list' %}" class="btn btn-outline-secondary btn-sm mb-2">
-            <i class="fas fa-arrow-left me-1"></i> Back
+<!-- Page Header -->
+<div class="mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <a href="{% url 'accounts:company_list' %}" class="btn btn-link text-muted p-0 text-decoration-none">
+            <i class="fas fa-arrow-left me-2"></i>Back
         </a>
-        <h2 class="mb-0">{{ company.name }}</h2>
     </div>
-    <div class="d-flex gap-2">
-        <a href="{% url 'accounts:company_edit' company.pk %}" class="btn btn-outline-primary">
-            <i class="fas fa-edit me-1"></i> Edit
-        </a>
-        <a href="{% url 'accounts:company_delete' company.pk %}" class="btn btn-outline-danger" onclick="return confirm('Delete this company?')">
-            <i class="fas fa-trash me-1"></i> Delete
-        </a>
+
+    <div class="d-flex align-items-start gap-4">
+        <div class="company-logo-wrapper">
+            {% if company.logo %}
+            <img src="{{ company.logo.url }}" alt="{{ company.name }}" class="company-logo-img">
+            {% else %}
+            <div class="company-logo-placeholder">
+                <i class="fas fa-building"></i>
+            </div>
+            {% endif %}
+        </div>
+        <div class="flex-grow-1 pt-1">
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <h1 class="h2 mb-0 fw-bold">{{ company.name }}</h1>
+                <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-1 small">AS</span>
+            </div>
+            <div class="d-flex align-items-center gap-3 text-muted small">
+                {% if company.website %}
+                <a href="{{ company.website }}" target="_blank" class="text-primary text-decoration-none">
+                    <i class="fas fa-link me-1"></i>{{ company.website|slice:"8:" }}
+                </a>
+                {% endif %}
+                <span><i class="fas fa-tags me-1"></i>{{ company.get_company_type_display }}</span>
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-primary rounded-pill px-4">
+                Actions <i class="fas fa-chevron-down ms-2 small"></i>
+            </button>
+        </div>
     </div>
 </div>
-<div class="container-fluid">
-    <!-- Breadcrumb -->
-    <nav aria-label="breadcrumb" class="mb-4">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{% url 'accounts:company_list' %}">Directory</a></li>
-            <li class="breadcrumb-item active">{{ company.name }}</li>
-        </ol>
-    </nav>
 
-    <!-- Header -->
-    <div class="d-flex justify-content-between align-items-start mb-4">
-        <div class="d-flex align-items-center">
-            <div class="avatar-lg bg-primary bg-opacity-10 text-primary rounded d-flex align-items-center justify-content-center me-4 overflow-hidden" style="width: 80px; height: 80px; font-size: 2rem;">
-                {% if company.logo %}
-                    <img src="{{ company.logo.url }}" alt="{{ company.name }} logo" style="width: 100%; height: 100%; object-fit: cover;">
-                {% else %}
-                    <i class="fas fa-building"></i>
-                {% endif %}
-            </div>
-            <div>
-                <h1 class="h2 mb-1">{{ company.name }}</h1>
-                <div class="d-flex align-items-center">
-                    <span class="badge {% if company.company_type == 'customer' %}bg-info{% elif company.company_type == 'carrier' %}bg-warning text-dark{% else %}bg-secondary{% endif %} me-2">
-                        {{ company.get_company_type_display }}
-                    </span>
-                    <span class="text-muted"><i class="fas fa-id-badge me-1"></i>Tax ID: {{ company.tax_id|default:"N/A" }}</span>
+<!-- Navigation Tabs -->
+<div class="company-tabs-container mb-4">
+    <ul class="nav nav-tabs border-bottom-0 gap-4" id="companyMainTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active px-0 py-2 border-0 bg-transparent text-muted fw-medium position-relative"
+                id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile-pane" type="button" role="tab">
+                Profile
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link px-0 py-2 border-0 bg-transparent text-muted fw-medium position-relative"
+                id="activity-tab" data-bs-toggle="tab" data-bs-target="#activity-pane" type="button" role="tab">
+                Activity
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link px-0 py-2 border-0 bg-transparent text-muted fw-medium position-relative"
+                id="locations-tab" data-bs-toggle="tab" data-bs-target="#locations-pane" type="button" role="tab">
+                Locations
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link px-0 py-2 border-0 bg-transparent text-muted fw-medium position-relative"
+                id="documents-tab" data-bs-toggle="tab" data-bs-target="#documents-pane" type="button" role="tab">
+                Documents
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link px-0 py-2 border-0 bg-transparent text-muted fw-medium position-relative"
+                id="history-tab" data-bs-toggle="tab" data-bs-target="#history-pane" type="button" role="tab">
+                History
+            </button>
+        </li>
+    </ul>
+</div>
+
+<!-- Tab Content -->
+<div class="tab-content mt-2" id="companyMainTabsContent">
+    <!-- Profile Pane -->
+    <div class="tab-pane fade show active" id="profile-pane" role="tabpanel" tabindex="0">
+        <div class="row g-4">
+            <!-- Left Side: Status & Details -->
+            <div class="col-lg-4">
+                <div class="card mb-4 border-0 shadow-sm rounded-4 overflow-hidden">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h6 class="fw-bold mb-0">Status</h6>
+                            <span
+                                class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">Active</span>
+                        </div>
+                        <div class="small text-muted mb-4">
+                            Last active: {{ company.updated_at|date:"D, M d" }}
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="fw-bold mb-0 small text-uppercase tracking-wider">Touchpoints</h6>
+                                <button class="btn btn-primary btn-xs rounded-pill px-2" type="button"
+                                    data-bs-toggle="offcanvas" data-bs-target="#offcanvasTouchpoint">Add</button>
+                            </div>
+                            <div class="touchpoints-list bg-light rounded-3 p-3 text-center small text-muted">
+                                <span class="d-block mb-1">Next: Add Date</span>
+                                <span class="d-block">Last: Add Date</span>
+                            </div>
+                        </div>
+
+                        <div class="mb-4 about-section" id="aboutSection">
+                            <div class="d-flex justify-content-between align-items-center mb-2 about-view">
+                                <h6 class="fw-bold mb-0 small text-uppercase tracking-wider">About</h6>
+                                <button class="btn btn-link btn-xs p-0 text-decoration-none edit-btn">Edit</button>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-2 about-edit d-none">
+                                <h6 class="fw-bold mb-0 small text-uppercase tracking-wider">About</h6>
+                                <button class="btn btn-light btn-xs rounded px-2 cancel-btn text-primary border-0" style="background-color: #f1f5f9;">Cancel</button>
+                            </div>
+                            
+                            <div class="about-view">
+                                <p class="text-muted small mb-0 about-text">
+                                    {{ company.description|default:"No description provided for this company." }}
+                                </p>
+                            </div>
+                            <div class="about-edit d-none">
+                                <textarea class="form-control form-control-sm mb-2 rounded-3 border-light-subtle" rows="3" placeholder="About">{{ company.description|default:"" }}</textarea>
+                                <div class="d-flex justify-content-center">
+                                    <button class="btn btn-primary btn-sm px-4 rounded-pill save-btn">Save</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="fw-bold mb-0 small text-uppercase tracking-wider">Contacts</h6>
+                                <button class="btn btn-primary btn-xs rounded-pill px-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasAddContact">Add</button>
+                            </div>
+                            <div class="contacts-list">
+                                {% if company.users.all %}
+                                {% for user in company.users.all %}
+                                <div class="d-flex align-items-center gap-3 mb-3">
+                                    <div
+                                        class="avatar-sm bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center">
+                                        {{ user.first_name|first|default:user.username|first }}
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold small">{{ user.get_full_name|default:user.username }}</div>
+                                        <div class="small text-muted">{{ user.email }}</div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                                {% else %}
+                                <div class="text-center py-3 text-muted small border-top border-bottom">
+                                    No contacts found.
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div>
+                            <h6 class="fw-bold mb-3 small text-uppercase tracking-wider">Conversation</h6>
+                            <div class="conversation-input-wrapper bg-light rounded-4 p-3 mb-2 border">
+                                <div class="d-flex gap-2 mb-2 text-muted small">
+                                    <i class="fas fa-at"></i>
+                                    <i class="fas fa-hashtag"></i>
+                                    <i class="fas fa-bold"></i>
+                                    <i class="fas fa-italic"></i>
+                                    <i class="fas fa-underline"></i>
+                                    <i class="fas fa-strikethrough"></i>
+                                    <i class="fas fa-link"></i>
+                                </div>
+                                <textarea class="form-control border-0 bg-transparent p-0 small"
+                                    placeholder="Join the conversation..." rows="3"
+                                    style="box-shadow: none; resize: none;"></textarea>
+                                <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top">
+                                    <span class="small text-muted">Tip: Notify someone with @</span>
+                                    <button class="btn btn-outline-primary btn-xs rounded-pill px-3">Submit</button>
+                                </div>
+                            </div>
+                            <div class="text-center p-4 text-muted border rounded-4 bg-light bg-opacity-50">
+                                <i class="fas fa-comment-slash d-block mb-2 opacity-50"></i>
+                                <span class="small">No comments yet</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="btn-group">
-            <button class="btn btn-outline-primary"><i class="fas fa-edit me-2"></i>Edit Profile</button>
-            <button class="btn btn-primary"><i class="fas fa-plus me-2"></i>New Action</button>
+
+            <!-- Right Side: Materials & Profiles -->
+            <div class="col-lg-8">
+                <div class="card mb-4 border-0 shadow-sm rounded-4 overflow-hidden">
+                    <div
+                        class="card-header bg-white border-0 px-4 py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="fw-bold mb-0">Company Materials</h6>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="small text-muted">Page 1 of 1</span>
+                            <div class="btn-group btn-group-xs">
+                                <button class="btn btn-outline-secondary border-0"><i
+                                        class="fas fa-chevron-left small"></i></button>
+                                <button class="btn btn-outline-secondary border-0"><i
+                                        class="fas fa-chevron-right small"></i></button>
+                            </div>
+                            <button class="btn btn-primary btn-xs rounded-pill px-3">Add</button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="material-list">
+                            {% for material in materials %}
+                            <div class="material-item p-4 border-top">
+                                <div class="d-flex align-items-center gap-4">
+                                    <div class="material-icon bg-light rounded-circle d-flex align-items-center justify-content-center"
+                                        style="width: 60px; height: 60px; font-size: 1.5rem;">
+                                        <i class="fas fa-recycle text-muted opacity-50"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <h6 class="fw-bold mb-0">{{ material.name }}</h6>
+                                            <button class="btn btn-link text-muted p-0"><i
+                                                    class="fas fa-ellipsis-h"></i></button>
+                                        </div>
+                                        <div class="row g-2">
+                                            <div class="col-md-3">
+                                                <div class="small text-muted mb-1">Type</div>
+                                                <div class="small fw-medium">{{ material.material_type|default:"—" }}
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="small text-muted mb-1">Grade</div>
+                                                <div class="small fw-medium">{{ material.grade|default:"—" }}</div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="small text-muted mb-1">Form</div>
+                                                <div class="small fw-medium">{{ material.product_type|default:"—" }}
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3 text-end pt-2">
+                                                <button class="btn btn-outline-secondary btn-xs rounded-pill"
+                                                    type="button" data-bs-toggle="collapse"
+                                                    data-bs-target="#material-{{ material.pk }}">
+                                                    Show More <i class="fas fa-chevron-down ms-1"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="collapse mt-3" id="material-{{ material.pk }}">
+                                            <div class="bg-light p-3 rounded-3 small">
+                                                <p class="mb-0 text-muted">{{ material.description|default:"No additional details available." }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% empty %}
+                            <div class="text-center py-5 text-muted bg-light bg-opacity-50 border-top">
+                                <i class="fas fa-boxes fa-2x mb-3 opacity-25"></i>
+                                <p>No materials found for this company.</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                    <div
+                        class="card-header bg-white border-0 px-4 py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="fw-bold mb-0">Buy Profiles</h6>
+                        <div class="d-flex align-items-center gap-2">
+                            <button class="btn btn-primary btn-xs rounded-pill px-3">Add</button>
+                        </div>
+                    </div>
+                    <div class="card-body p-5 text-center text-muted">
+                        <i class="fas fa-shopping-cart fa-3x mb-3 opacity-10"></i>
+                        <h5 class="fw-bold mb-1">No Buy Profiles found</h5>
+                        <p class="small mb-0">Create a buy profile to start tracking demand.</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="row">
-        <!-- Contact & Address -->
-        <div class="col-lg-4 mb-4">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-header bg-white py-3">
-                    <h5 class="card-title mb-0">Contact Information</h5>
+    <!-- Activity Pane -->
+    <div class="tab-pane fade" id="activity-pane" role="tabpanel" tabindex="0">
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+            <div class="card-header bg-white border-bottom p-4 d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0">Recent Activity</h6>
+                <div class="btn-group btn-group-sm" id="activity-filters">
+                    <button class="btn btn-primary" data-filter="order">Orders</button>
+                    <button class="btn btn-outline-secondary" data-filter="shipment">Shipments</button>
                 </div>
-                <div class="card-body">
-                    <div class="mb-4">
-                        <label class="small text-muted text-uppercase fw-bold mb-2 d-block">Location</label>
-                        <p class="mb-0 fw-medium">{{ company.full_address }}</p>
-                    </div>
-                    <div class="mb-4">
-                        <label class="small text-muted text-uppercase fw-bold mb-2 d-block">Communication</label>
-                        <div class="mb-2"><i class="fas fa-envelope me-2 text-muted"></i>{{ company.email|default:"Not provided" }}</div>
-                        <div class="mb-2"><i class="fas fa-phone me-2 text-muted"></i>{{ company.phone|default:"Not provided" }}</div>
-                        <div><i class="fas fa-globe me-2 text-muted"></i><a href="{{ company.website }}" target="_blank" class="text-decoration-none">{{ company.website|default:"No website" }}</a></div>
-                    </div>
-                    <hr>
-                    <div>
-                        <label class="small text-muted text-uppercase fw-bold mb-2 d-block">Financial Settings</label>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Payment Terms:</span>
-                            <span class="fw-bold">{{ company.payment_terms }} Days</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0" id="activity-table">
+                        <thead class="bg-light small">
+                            <tr>
+                                <th class="ps-4">No.</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th>Role</th>
+                                <th>Value</th>
+                                <th class="text-end pe-4">Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in orders %}
+                            <tr data-activity-type="order">
+                                <td class="ps-4">
+                                    <a href="{% url 'orders:order_detail' order.pk %}" class="fw-bold text-primary">{{ order.order_number }}</a>
+                                </td>
+                                <td><span class="badge bg-primary-subtle text-primary border rounded-pill px-2">Order</span></td>
+                                <td>
+                                    <span class="badge rounded-pill bg-{% if order.status == 'delivered' or order.status == 'closed' %}success{% elif order.status == 'cancelled' %}danger{% elif order.status == 'draft' %}secondary{% else %}info{% endif %}-subtle text-{% if order.status == 'delivered' or order.status == 'closed' %}success{% elif order.status == 'cancelled' %}danger{% elif order.status == 'draft' %}secondary{% else %}info{% endif %} border border-{% if order.status == 'delivered' or order.status == 'closed' %}success{% elif order.status == 'cancelled' %}danger{% elif order.status == 'draft' %}secondary{% else %}info{% endif %}-subtle">
+                                        {{ order.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if order.supplier == company %}
+                                    <span class="small text-muted">Supplier</span>
+                                    {% else %}
+                                    <span class="small text-muted">Receiver</span>
+                                    {% endif %}
+                                </td>
+                                <td class="small fw-bold">{{ order.total_weight_target|floatformat:0 }} lbs</td>
+                                <td class="text-end pe-4 small text-muted">{{ order.created_at|date:"M d, Y" }}</td>
+                            </tr>
+                            {% endfor %}
+                            {% for shipment in shipments %}
+                            <tr data-activity-type="shipment" style="display: none;">
+                                <td class="ps-4">
+                                    <a href="{% url 'shipments:shipment_detail' shipment.pk %}" class="fw-bold text-primary">{{ shipment.shipment_number }}</a>
+                                </td>
+                                <td><span class="badge bg-info-subtle text-info border rounded-pill px-2">Shipment</span></td>
+                                <td>
+                                    <span class="badge rounded-pill bg-{% if shipment.status == 'delivered' or shipment.status == 'paid' %}success{% elif shipment.status == 'rejected' %}danger{% else %}info{% endif %}-subtle text-{% if shipment.status == 'delivered' or shipment.status == 'paid' %}success{% elif shipment.status == 'rejected' %}danger{% else %}info{% endif %} border border-{% if shipment.status == 'delivered' or shipment.status == 'paid' %}success{% elif shipment.status == 'rejected' %}danger{% else %}info{% endif %}-subtle">
+                                        {{ shipment.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if shipment.customer == company %}
+                                    <span class="small text-muted">Customer</span>
+                                    {% elif shipment.carrier == company %}
+                                    <span class="small text-muted">Carrier</span>
+                                    {% elif shipment.shipper == company %}
+                                    <span class="small text-muted">Shipper</span>
+                                    {% else %}
+                                    <span class="small text-muted">Consignee</span>
+                                    {% endif %}
+                                </td>
+                                <td class="small fw-bold">{{ shipment.total_weight|floatformat:0 }} kg</td>
+                                <td class="text-end pe-4 small text-muted">{{ shipment.created_at|date:"M d, Y" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Locations Pane -->
+    <div class="tab-pane fade" id="locations-pane" role="tabpanel" tabindex="0">
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+            <div class="card-body p-0">
+                <div class="row g-0">
+                    <div class="col-md-5 border-end" style="max-height: 650px; overflow-y: auto;">
+                        <div class="p-4 bg-light border-bottom d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0 fw-bold">Warehouses & Offices</h6>
                         </div>
-                        <div class="d-flex justify-content-between">
-                            <span>Credit Limit:</span>
-                            <span class="fw-bold text-success">${{ company.credit_limit|default:"0" }}</span>
+                        <div class="list-group list-group-flush">
+                            {% for loc in locations %}
+                            <div class="list-group-item p-4 location-card" data-address="{{ loc.full_address }}"
+                                data-city="{{ loc.city }}" data-country="{{ loc.country }}" data-name="{{ loc.name }}">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h6 class="mb-0 fw-bold">{{ loc.name }}</h6>
+                                    <div class="d-flex gap-2 align-items-center">
+                                        {% if loc.is_warehouse %}
+                                        <span
+                                            class="badge bg-info-subtle text-info border border-info-subtle rounded-pill small">Warehouse</span>
+                                        {% endif %}
+                                        <span class="badge bg-light text-muted small border rounded-pill">{{ loc.code }}</span>
+                                    </div>
+                                </div>
+                                <p class="small text-muted mb-3">
+                                    <i class="fas fa-map-marker-alt me-2 text-primary opacity-50"></i>{{ loc.full_address }}
+                                </p>
+                                <div class="d-flex gap-4 small text-muted mb-4">
+                                    <span><i class="fas fa-phone me-1 opacity-50"></i>{{ loc.phone|default:"N/A" }}</span>
+                                    <span><i class="fas fa-envelope me-1 opacity-50"></i>{{ loc.email|default:"N/A" }}</span>
+                                </div>
+                                <a href="https://www.google.com/maps/search/?api=1&query={{ loc.full_address|urlencode }}"
+                                    target="_blank" class="btn btn-outline-primary btn-sm w-100 py-2 rounded-pill">
+                                    <i class="fab fa-google me-2"></i>Open in Maps
+                                </a>
+                            </div>
+                            {% empty %}
+                            <div class="p-5 text-center text-muted">
+                                <i class="fas fa-map-marked-alt fa-3x mb-3 opacity-10"></i>
+                                <p>No locations registered for this company.</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="col-md-7">
+                        <div id="map" style="height: 650px; width: 100%;"
+                            class="bg-light d-flex align-items-center justify-content-center">
+                            <div class="text-center text-muted p-4">
+                                <div class="spinner-border spinner-border-sm mb-2" role="status"></div>
+                                <p class="mb-0 small tracking-tight">Loading location map...</p>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Activity/Tables -->
-        <div class="col-lg-8 mb-4">
-            <div class="card shadow-sm border-0 mb-4">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
-                    <h5 class="card-title mb-0">Recent Activity</h5>
-                    <ul class="nav nav-pills card-header-pills" id="companyTabs" role="tablist">
-                        <li class="nav-item">
-                            <button class="nav-link active py-1 px-3" id="orders-tab" data-bs-toggle="tab" data-bs-target="#orders" type="button">Orders</button>
-                        </li>
-                        <li class="nav-item">
-                            <button class="nav-link py-1 px-3" id="locations-tab" data-bs-toggle="tab" data-bs-target="#locations" type="button">Locations</button>
-                        </li>
-                        <li class="nav-item">
-                            <button class="nav-link py-1 px-3" id="invoices-tab" data-bs-toggle="tab" data-bs-target="#invoices" type="button">Invoices</button>
-                        </li>
-                    </ul>
-                </div>
-                <div class="card-body p-0">
-                    <div class="tab-content" id="companyTabsContent">
-                        <!-- Orders Tab -->
-                        <div class="tab-pane fade show active" id="orders" role="tabpanel">
-                            {% if orders %}
-                            <div class="table-responsive">
-                                <table class="table table-hover mb-0">
-                                    <thead class="bg-light small">
-                                        <tr>
-                                            <th class="ps-4">Order No.</th>
-                                            <th>Status</th>
-                                            <th>Role</th>
-                                            <th>Destination</th>
-                                            <th>Weight</th>
-                                            <th class="text-end pe-4">Date</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for order in orders %}
-                                        <tr>
-                                            <td class="ps-4">
-                                                <a href="{% url 'orders:order_detail' order.pk %}" class="fw-bold text-primary">{{ order.order_number }}</a>
-                                            </td>
-                                            <td>
-                                                <span class="badge bg-{% if order.status == 'delivered' or order.status == 'closed' %}success{% elif order.status == 'cancelled' %}danger{% elif order.status == 'draft' %}secondary{% else %}info{% endif %}">
-                                                    {{ order.get_status_display }}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                {% if order.supplier == company %}
-                                                    <span class="text-muted"><i class="fas fa-arrow-up me-1 small"></i>Supplier</span>
-                                                {% else %}
-                                                    <span class="text-muted"><i class="fas fa-arrow-down me-1 small"></i>Receiver</span>
-                                                {% endif %}
-                                            </td>
-                                            <td>{{ order.destination_location.city|default:"—" }}, {{ order.destination_location.state|default:"—" }}</td>
-                                            <td class="fw-medium">{{ order.total_weight_target|floatformat:0 }} lbs</td>
-                                            <td class="text-end pe-4 small text-muted">{{ order.created_at|date:"M d, Y" }}</td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                            {% else %}
-                            <div class="text-center py-5 text-muted">
-                                <i class="fas fa-receipt fa-2x mb-3 opacity-25"></i>
-                                <p>No orders found for this company.</p>
-                            </div>
-                            {% endif %}
-                        </div>
-
-                        <!-- Locations Tab -->
-                        <div class="tab-pane fade" id="locations" role="tabpanel">
-                            <div class="row g-0">
-                                <div class="col-md-5 border-end" style="max-height: 500px; overflow-y: auto;">
-                                    <div class="p-3 bg-light border-bottom d-flex justify-content-between align-items-center">
-                                        <h6 class="mb-0 fw-bold">All Locations</h6>
-                                        <button class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i>Add</button>
-                                    </div>
-                                    <div class="list-group list-group-flush">
-                                        {% for loc in locations %}
-                                        <div class="list-group-item p-3 location-card" 
-                                             data-address="{{ loc.full_address }}" 
-                                             data-city="{{ loc.city }}"
-                                             data-country="{{ loc.country }}"
-                                             data-name="{{ loc.name }}">
-                                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                                <h6 class="mb-0 fw-bold">{{ loc.name }}</h6>
-                                                <div class="d-flex gap-2 align-items-center">
-                                                    {% if loc.is_warehouse %}
-                                                    <span class="badge bg-info-subtle text-info border border-info-subtle small">Warehouse</span>
-                                                    {% endif %}
-                                                    <span class="badge bg-light text-muted small border">{{ loc.code }}</span>
-                                                </div>
-                                            </div>
-                                            <p class="small text-muted mb-2">
-                                                <i class="fas fa-map-marker-alt me-2"></i>{{ loc.full_address }}
-                                            </p>
-                                            <div class="d-flex gap-3 small text-muted mb-2">
-                                                <span><i class="fas fa-phone me-1"></i>{{ loc.phone|default:"N/A" }}</span>
-                                                <span><i class="fas fa-envelope me-1"></i>{{ loc.email|default:"N/A" }}</span>
-                                            </div>
-                                            <a href="https://www.google.com/maps/search/?api=1&query={{ loc.full_address|urlencode }}" target="_blank" class="btn btn-outline-primary btn-sm w-100 py-1">
-                                                <i class="fab fa-google me-1"></i>View on Google Maps
-                                            </a>
-                                        </div>
-                                        {% empty %}
-                                        <div class="p-4 text-center text-muted">
-                                            <i class="fas fa-map-signs fa-2x mb-3 opacity-25"></i>
-                                            <p>No locations registered.</p>
-                                        </div>
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                                <div class="col-md-7">
-                                    <div id="map" style="height: 500px; width: 100%;" class="bg-light d-flex align-items-center justify-content-center">
-                                        <div class="text-center text-muted p-4">
-                                            <div class="spinner-border spinner-border-sm mb-2" role="status"></div>
-                                            <p class="mb-0 small">Initializing map...</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Invoices Tab -->
-                        <div class="tab-pane fade" id="invoices" role="tabpanel">
-                            {% if invoices %}
-                            <div class="table-responsive">
-                                <table class="table table-hover mb-0">
-                                    <thead class="bg-light small">
-                                        <tr>
-                                            <th class="ps-4">No.</th>
-                                            <th>Total</th>
-                                            <th>Status</th>
-                                            <th class="text-end pe-4">Due Date</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for invoice in invoices %}
-                                        <tr>
-                                            <td class="ps-4">
-                                                <a href="{% url 'invoicing:invoice_detail' invoice.pk %}" class="fw-bold text-primary">{{ invoice.invoice_number }}</a>
-                                            </td>
-                                            <td class="fw-bold">${{ invoice.total }}</td>
-                                            <td><span class="badge bg-{% if invoice.status == 'paid' %}success{% elif invoice.status == 'overdue' %}danger{% else %}warning text-dark{% endif %}">{{ invoice.get_status_display }}</span></td>
-                                            <td class="text-end pe-4 small text-muted">{{ invoice.due_date|date:"M d, Y" }}</td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                            {% else %}
-                            <div class="text-center py-5 text-muted">
-                                <i class="fas fa-file-invoice-dollar fa-2x mb-3 opacity-25"></i>
-                                <p>No recent invoices found.</p>
-                            </div>
-                            {% endif %}
-                        </div>
-                        </div>
-                    </div>
-                </div>
+    <!-- Documents Pane -->
+    <div class="tab-pane fade" id="documents-pane" role="tabpanel" tabindex="0">
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden p-5 text-center text-muted">
+            <i class="fas fa-file-alt fa-3x mb-3 opacity-10"></i>
+            <h5 class="fw-bold mb-1">Company Documents</h5>
+            <p class="small mb-4">Manage certifications, contracts, and other shared files.</p>
+            <div class="mx-auto" style="max-width: 400px;">
+                <input type="file" id="directDocUpload" class="d-none">
+                <button class="btn btn-primary rounded-pill px-4" onclick="document.getElementById('directDocUpload').click()">
+                    <i class="fas fa-upload me-2"></i>Upload First Document
+                </button>
             </div>
         </div>
+    </div>
+
+    <!-- History Pane -->
+    <div class="tab-pane fade" id="history-pane" role="tabpanel" tabindex="0">
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden p-5 text-center text-muted">
+            <i class="fas fa-history fa-3x mb-3 opacity-10"></i>
+            <h5 class="fw-bold mb-1">Historical Audit Log</h5>
+            <p class="small mb-0">Track all changes and interactions with this account over time.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Add Touchpoint Offcanvas -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasTouchpoint" aria-labelledby="offcanvasTouchpointLabel"
+    style="width: 400px; border-left: 0; box-shadow: -10px 0 30px rgba(0,0,0,0.05);">
+    <div class="offcanvas-header bg-white border-bottom px-4 py-3">
+        <h5 class="offcanvas-title fw-bold" id="offcanvasTouchpointLabel">Add Touchpoint</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body p-4">
+        <form>
+            <div class="mb-4">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-2">Date *</label>
+                <input type="date" class="form-control rounded-pill bg-light border-0 px-3" value="{% now 'Y-m-d' %}"
+                    required>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-2">Notes</label>
+                <textarea class="form-control rounded-4 bg-light border-0 p-3" rows="8"
+                    placeholder="Enter session notes or follow-up details..."></textarea>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-2">Next Touch</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-0 rounded-start-pill ps-3"><i
+                            class="fas fa-calendar-plus text-primary"></i></span>
+                    <input type="text" class="form-control rounded-end-pill bg-light border-0 px-3"
+                        placeholder="Click to set reminder date...">
+                </div>
+            </div>
+
+            <div class="mt-5 pt-5 d-flex gap-2">
+                <button type="submit" class="btn btn-primary rounded-pill w-100 py-2 fw-bold shadow-sm">Submit</button>
+            </div>
+        </form>
     </div>
 </div>
 {% endblock %}
 
 {% block extra_css %}
 <style>
+    :root {
+        --primary-color: #4a6cf7;
+        --card-border-radius: 1rem;
+    }
+
+    body {
+        background-color: #f8fafc;
+    }
+
+    .company-logo-wrapper {
+        width: 100px;
+        height: 100px;
+        border-radius: 1.5rem;
+        padding: 0.5rem;
+        background: white;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    .company-logo-img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+    .company-logo-placeholder {
+        width: 100%;
+        height: 100%;
+        background: #f1f5f9;
+        color: #94a3b8;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        border-radius: 1rem;
+    }
+
+    .nav-tabs .nav-link {
+        border-bottom: 2px solid transparent !important;
+        transition: all 0.2s ease;
+        font-size: 0.8125rem;
+    }
+
+    .nav-tabs .nav-link.active {
+        color: var(--primary-color) !important;
+        border-bottom-color: var(--primary-color) !important;
+    }
+
+    .nav-tabs .nav-link:not(.active):hover {
+        color: #334155 !important;
+    }
+
+    .btn-xs {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+
+    .tracking-wider {
+        letter-spacing: 0.05em;
+        font-size: 0.65rem !important;
+    }
+
+    .avatar-sm {
+        width: 40px;
+        height: 40px;
+        font-weight: 600;
+    }
+
     .location-card {
         cursor: pointer;
         transition: all 0.2s ease;
         border-left: 4px solid transparent;
     }
+
     .location-card:hover {
-        background-color: #f8f9fa;
+        background-color: #f8fafc;
         border-left-color: var(--primary-color);
     }
+
     .location-card.active {
-        background-color: #eef2ff;
+        background-color: #f1f5f9;
         border-left-color: var(--primary-color);
     }
+
+    .material-item {
+        transition: background-color 0.2s ease;
+    }
+
+    .material-item:hover {
+        background-color: #f8fafc;
+    }
+
+    .rounded-4 {
+        border-radius: 1rem !important;
+    }
+
     #map {
         border-radius: 0;
         z-index: 1;
     }
+
     .leaflet-popup-content-wrapper {
-        border-radius: 8px;
-        padding: 5px;
-    }
-    .leaflet-popup-content {
-        margin: 10px;
-        font-family: inherit;
+        border-radius: 1rem;
+        padding: 0.5rem;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
     }
 
+    /* Tab Indicator line */
+    .nav-tabs .nav-link::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: var(--primary-color);
+        transform: scaleX(0);
+        transition: transform 0.2s ease;
+    }
+
+    /* Custom compact font overrides */
+    .card-body,
+    .table,
+    .form-control,
+    .form-label,
+    .btn {
+        font-size: 0.75rem !important;
+    }
+
+    .small,
+    .sub-text,
+    .text-muted:not(h6) {
+        font-size: 0.6875rem !important;
+    }
+
+    h6.fw-bold {
+        font-size: 0.8125rem !important;
+    }
+
+    .status-badge,
+    .badge:not(.h2 .badge) {
+        font-size: 0.65rem !important;
+        padding: 2px 8px !important;
+    }
+
+    .material-item h6 {
+        font-size: 0.75rem !important;
+    }
+
+    .date-input:focus {
+        color: #2563eb !important;
+    }
+
+    .border-dashed {
+        border-style: dashed !important;
+        border-width: 2px !important;
+    }
+
+    .upload-area {
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .upload-area:hover {
+        background-color: #f1f5f9 !important;
+        border-color: var(--primary-color) !important;
+    }
 </style>
+
+<!-- Add Contact Drawer -->
+<div class="offcanvas offcanvas-end border-0 shadow" tabindex="-1" id="offcanvasAddContact" aria-labelledby="offcanvasAddContactLabel" style="width: 400px;">
+    <div class="offcanvas-header bg-white border-bottom py-3">
+        <h5 class="offcanvas-title fw-bold h6 mb-0" id="offcanvasAddContactLabel">Add Contact</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body p-4">
+        <form>
+            <div class="mb-3">
+                <label class="form-label fw-bold text-dark mb-1 small">Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control form-control-sm rounded-3 border-light-subtle" placeholder="Full name" required>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label fw-bold text-dark mb-1 small">Contact Type</label>
+                <select class="form-select form-select-sm rounded-3 border-light-subtle">
+                    <option value="">Select a contact type</option>
+                    <option value="primary">Primary Contact</option>
+                    <option value="billing">Billing</option>
+                    <option value="shipping">Shipping</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label fw-bold text-dark mb-1 small">Email <span class="text-danger">*</span></label>
+                <input type="email" class="form-control form-control-sm rounded-3 border-light-subtle" placeholder="Insert an email" required>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label fw-bold text-dark mb-1 small">Mobile number</label>
+                <input type="text" class="form-control form-control-sm rounded-3 border-light-subtle" placeholder="(000) 000-0000">
+            </div>
+            
+            <div class="mb-4">
+                <div class="row g-2">
+                    <div class="col-8">
+                        <label class="form-label fw-bold text-dark mb-1 small">Office Number</label>
+                        <input type="text" class="form-control form-control-sm rounded-3 border-light-subtle" placeholder="(000) 000-0000">
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label fw-bold text-dark mb-1 small">Extension</label>
+                        <input type="text" class="form-control form-control-sm rounded-3 border-light-subtle" placeholder="00000">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-grid mt-5">
+                <div class="d-flex justify-content-center">
+                    <button type="submit" class="btn btn-primary px-5 rounded-pill">Submit</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const locationsTab = document.getElementById('locations-tab');
-    let mapInitialized = false;
-    let map;
-    let markers = [];
+    document.addEventListener('DOMContentLoaded', function () {
+        const locationsTab = document.getElementById('locations-tab');
+        let mapInitialized = false;
+        let map;
+        let markers = [];
 
-    function initMap() {
-        if (mapInitialized) return;
-        
-        // Map container div clear
-        document.getElementById('map').innerHTML = '';
-        
-        // Initialize map
-        map = L.map('map').setView([20, 0], 2);
-        L.tileLayer('{{ MAP_TILE_SERVER_URL|safe }}', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-            subdomains: 'abcd',
-            maxZoom: 20
-        }).addTo(map);
+        function initMap() {
+            if (mapInitialized) return;
 
-        const locationCards = document.querySelectorAll('.location-card');
-        const bounds = L.latLngBounds();
+            // Map container div clear
+            const mapContainer = document.getElementById('map');
+            if (!mapContainer) return;
+            mapContainer.innerHTML = '';
 
-        async function geocodeAddress(address, city, country) {
-            // Try 1: Full Address
-            let response = await fetch(`{{ MAP_GEOCODING_API_URL|safe }}?format=json&q=${encodeURIComponent(address)}&limit=1`);
-            let data = await response.json();
-            
-            // Try 2: City, Country
-            if (!data || data.length === 0) {
-                console.warn(`Fallback 1 for: ${address}`);
-                const fallbackQuery = `${city}, ${country}`;
-                response = await fetch(`{{ MAP_GEOCODING_API_URL|safe }}?format=json&q=${encodeURIComponent(fallbackQuery)}&limit=1`);
-                data = await response.json();
+            // Initialize map
+            map = L.map('map').setView([20, 0], 2);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; OpenStreetMap &copy; CARTO',
+                subdomains: 'abcd',
+                maxZoom: 20
+            }).addTo(map);
+
+            const locationCards = document.querySelectorAll('.location-card');
+            const bounds = L.latLngBounds();
+
+            async function geocodeAddress(address, city, country) {
+                try {
+                    const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`);
+                    const data = await response.json();
+
+                    if (!data || data.length === 0) {
+                        const fallbackQuery = `${city}, ${country}`;
+                        const fbResponse = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fallbackQuery)}&limit=1`);
+                        return await fbResponse.json();
+                    }
+                    return data;
+                } catch (err) {
+                    console.error('Geocoding error:', err);
+                    return [];
+                }
             }
 
-            // Try 3: City Only (Most robust for specific city names)
-            if (!data || data.length === 0 || (data[0].type === 'administrative' && data[0].importance < 0.5)) {
-                console.warn(`Fallback 2 for: ${address}`);
-                response = await fetch(`{{ MAP_GEOCODING_API_URL|safe }}?format=json&q=${encodeURIComponent(city)}&limit=1`);
-                data = await response.json();
-            }
-            return data;
-        }
+            locationCards.forEach(async (card) => {
+                const address = card.dataset.address;
+                const city = card.dataset.city;
+                const country = card.dataset.country;
+                const name = card.dataset.name;
 
-        locationCards.forEach(async (card) => {
-            const address = card.dataset.address;
-            const city = card.dataset.city;
-            const country = card.dataset.country;
-            const name = card.dataset.name;
+                try {
+                    const data = await geocodeAddress(address, city, country);
+                    if (data && data.length > 0) {
+                        const lat = parseFloat(data[0].lat);
+                        const lon = parseFloat(data[0].lon);
+                        const marker = L.marker([lat, lon]).addTo(map);
 
-            try {
-                const data = await geocodeAddress(address, city, country);
-                if (data && data.length > 0) {
-                    const lat = parseFloat(data[0].lat);
-                    const lon = parseFloat(data[0].lon);
-                    const marker = L.marker([lat, lon]).addTo(map);
-                    
-                    const gMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
-                    marker.bindPopup(`
-                        <div class="p-1 text-center">
-                            <div class="mb-1">
-                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle small mb-1">Main Office</span>
-                                <h6 class="mb-1 fw-bold">${name}</h6>
-                            </div>
-                            <small class="d-block mb-3 text-muted">${address}</small>
-                            <hr class="my-2 opacity-10">
-                            <a href="${gMapsUrl}" target="_blank" class="btn btn-primary btn-sm text-white w-100 py-1 rounded-pill">
-                                <i class="fab fa-google me-1"></i>Open in Google Maps
+                        marker.bindPopup(`
+                        <div class="p-2">
+                            <div class="fw-bold mb-1">${name}</div>
+                            <div class="small text-muted mb-2">${address}</div>
+                            <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}" target="_blank" class="btn btn-primary btn-xs text-white w-100 rounded-pill">
+                                Open in Google Maps
                             </a>
                         </div>
                     `);
-                    markers.push({marker, card});
-                    bounds.extend([lat, lon]);
+                        markers.push({ marker, card });
+                        bounds.extend([lat, lon]);
 
-                    // Smart centering/zoom
-                    if (markers.length === 1) {
-                        map.setView([lat, lon], 15);
-                    } else {
-                        map.fitBounds(bounds, {padding: [50, 50], maxZoom: 15});
+                        if (markers.length === 1) {
+                            map.setView([lat, lon], 15);
+                        } else {
+                            map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+                        }
+
+                        card.addEventListener('click', () => {
+                            locationCards.forEach(c => c.classList.remove('active'));
+                            card.classList.add('active');
+                            map.setView([lat, lon], 16, { animate: true });
+                            marker.openPopup();
+                        });
                     }
-
-                    card.addEventListener('click', () => {
-                        locationCards.forEach(c => c.classList.remove('active'));
-                        card.classList.add('active');
-                        map.setView([lat, lon], 16, { animate: true });
-                        marker.openPopup();
-                    });
+                } catch (err) {
+                    console.error('Marker error:', err);
                 }
-            } catch (err) {
-                console.error('Geocoding error:', err);
-            }
+            });
+            mapInitialized = true;
+        }
+
+        // Initialize map
+        if (locationsTab) {
+            locationsTab.addEventListener('shown.bs.tab', function () {
+                setTimeout(initMap, 200);
+            });
+        }
+
+        flatpickr(".flatpickr-date", {
+            dateFormat: "D, M j",
+            allowInput: true,
+            altInput: true,
+            altFormat: "F j, Y",
         });
 
-        mapInitialized = true;
-    }
+        // About section toggle
+        const aboutSection = document.getElementById('aboutSection');
+        if (aboutSection) {
+            const editBtn = aboutSection.querySelector('.edit-btn');
+            const cancelBtn = aboutSection.querySelector('.cancel-btn');
+            const saveBtn = aboutSection.querySelector('.save-btn');
+            const views = aboutSection.querySelectorAll('.about-view');
+            const edits = aboutSection.querySelectorAll('.about-edit');
 
-    // Initialize map when tab is shown
-    locationsTab.addEventListener('shown.bs.tab', function() {
-        setTimeout(initMap, 100);
+            editBtn.addEventListener('click', () => {
+                views.forEach(v => v.classList.add('d-none'));
+                edits.forEach(e => e.classList.remove('d-none'));
+            });
+
+            cancelBtn.addEventListener('click', () => {
+                views.forEach(v => v.classList.remove('d-none'));
+                edits.forEach(e => e.classList.add('d-none'));
+            });
+
+            saveBtn.addEventListener('click', () => {
+                views.forEach(v => v.classList.remove('d-none'));
+                edits.forEach(e => e.classList.add('d-none'));
+            });
+        }
+
+        // Activity filter logic
+        const activityFilters = document.getElementById('activity-filters');
+        if (activityFilters) {
+            const buttons = activityFilters.querySelectorAll('button');
+            const rows = document.querySelectorAll('#activity-table tbody tr');
+
+            buttons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const filter = this.getAttribute('data-filter');
+                    
+                    // Update active button
+                    buttons.forEach(b => {
+                        b.classList.remove('active', 'btn-primary');
+                        b.classList.add('btn-outline-secondary');
+                    });
+                    this.classList.add('active', 'btn-primary');
+                    this.classList.remove('btn-outline-secondary');
+
+                    // Filter rows
+                    rows.forEach(row => {
+                        if (row.getAttribute('data-activity-type') === filter) {
+                            row.style.display = '';
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    });
+                });
+            });
+        }
     });
-});
 </script>
 {% endblock %}
