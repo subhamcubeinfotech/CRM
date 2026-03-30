@@ -95,7 +95,7 @@
             <li class="page-item">
                 <a class="page-link shadow-sm border-0 mx-1 ajax-page-link"
                     href="?page={{ shipments.previous_page_number }}{% for k, v in request.GET.lists %}{% if k != 'page' %}{% for val in v %}&{{ k }}={{ val }}{% endfor %}{% endif %}{% endfor %}"
-                    style="border-radius: 8px;">Previous</a>
+                    style="border-radius: 8px;"><i class="fas fa-chevron-left me-1 small"></i>Last</a>
             </li>
             {% endif %}
 
@@ -113,7 +113,7 @@
             <li class="page-item">
                 <a class="page-link shadow-sm border-0 mx-1 ajax-page-link"
                     href="?page={{ shipments.next_page_number }}{% for k, v in request.GET.lists %}{% if k != 'page' %}{% for val in v %}&{{ k }}={{ val }}{% endfor %}{% endif %}{% endfor %}"
-                    style="border-radius: 8px;">Next</a>
+                    style="border-radius: 8px;">Next<i class="fas fa-chevron-right ms-1 small"></i></a>
             </li>
             {% endif %}
         </ul>
