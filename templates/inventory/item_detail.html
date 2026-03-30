@@ -7,7 +7,7 @@
     <div class="mb-4">
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{% url 'inventory:dashboard' %}">Inventory</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'inventory:item_list' %}">Inventory</a></li>
                 <li class="breadcrumb-item"><a href="{% url 'inventory:item_list' %}">Items</a></li>
                 <li class="breadcrumb-item active">{{ item.sku }}</li>
             </ol>
@@ -15,8 +15,9 @@
         <div class="d-flex justify-content-between align-items-center">
             <h1 class="h2">{{ item.product_name }} <small class="text-muted fs-5">({{ item.sku }})</small></h1>
             <div class="btn-group">
-                <button class="btn btn-outline-primary"><i class="fas fa-edit me-1"></i>Edit Item</button>
-                <button class="btn btn-outline-danger"><i class="fas fa-trash me-1"></i>Delete</button>
+                <a href="{% url 'inventory:inventory_item_edit' item.pk %}" class="btn btn-outline-primary">
+                    <i class="fas fa-edit me-1"></i>Edit Item
+                </a>
             </div>
         </div>
     </div>
@@ -34,21 +35,13 @@
                             <label class="small text-muted mb-1">Description</label>
                             <p>{{ item.description|default:"No description provided." }}</p>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-12">
                             <label class="small text-muted mb-1">Warehouse</label>
-                            <p class="fw-bold"><i class="fas fa-warehouse me-2 text-muted"></i>{{ item.warehouse.name }} ({{ item.warehouse.code }})</p>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="small text-muted mb-1">Bin Location</label>
-                            <p class="fw-bold"><i class="fas fa-th me-2 text-muted"></i>{{ item.location|default:"Not specified" }}</p>
+                            <p class="fw-bold"><i class="fas fa-warehouse me-2 text-muted"></i>{{ item.warehouse.name }} ({{ item.warehouse.code|default:item.warehouse.id }})</p>
                         </div>
                         <div class="col-md-4">
                             <label class="small text-muted mb-1">Lot Number</label>
                             <p class="fw-bold">{{ item.lot_number|default:"N/A" }}</p>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="small text-muted mb-1">Serial Number</label>
-                            <p class="fw-bold">{{ item.serial_number|default:"N/A" }}</p>
                         </div>
                         <div class="col-md-4">
                             <label class="small text-muted mb-1">Unit of Measure</label>

@@ -101,7 +101,7 @@
                                         <div class="progress-bar bg-primary" role="progressbar" style="width: {{ shipment.progress_percentage }}%"></div>
                                     </div>
                                     <div class="d-flex justify-content-between align-items-center">
-                                        <small class="text-muted">{{ shipment.progress_percentage }}% complete</small>
+
                                         <small class="text-muted">
                                             {% if shipment.estimated_delivery_date %}
                                                 ETA: {{ shipment.estimated_delivery_date|date:"M d" }}

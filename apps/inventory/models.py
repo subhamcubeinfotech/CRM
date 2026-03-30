@@ -16,12 +16,26 @@ class Warehouse(TenantAwareModel):
     address = models.CharField(max_length=255)
     city = models.CharField(max_length=100)
     state = models.CharField(max_length=100)
-    country = models.CharField(max_length=100, default='USA')
+    country = models.CharField(max_length=100, default='India')
     postal_code = models.CharField(max_length=20)
     
     # Contact
     phone = models.CharField(max_length=20, blank=True)
     email = models.EmailField(blank=True)
+    
+    # Logistics/Operations
+    shipping_requirements = models.TextField(blank=True, help_text="Specific requirements for this location")
+    delivery_appointment_type = models.CharField(
+        max_length=20, 
+        choices=[('fcfs', 'FCFS'), ('required', 'Required')], 
+        null=True, blank=True
+    )
+    pickup_appointment_type = models.CharField(
+        max_length=20, 
+        choices=[('fcfs', 'FCFS'), ('required', 'Required')], 
+        null=True, blank=True
+    )
+    is_remit_to = models.BooleanField(default=False, verbose_name="Remit To")
     
     # Ownership
     company = models.ForeignKey('accounts.Company', on_delete=models.CASCADE, related_name='warehouses', null=True, blank=True, help_text="Company this location belongs to")
@@ -42,7 +56,19 @@ class Warehouse(TenantAwareModel):
         unique_together = ('tenant', 'code')
     
     def __str__(self):
-        return f"{self.name} ({self.code})"
+        city_title = self.city.title() if self.city else ""
+        city_upper = self.city.upper() if self.city else ""
+        address = self.address
+        
+        # Avoid redundancy if address starts with city name
+        if address and city_title and address.lower().startswith(city_title.lower()):
+            # Try to strip the city name from the start of the address
+            import re
+            address = re.sub(f"^{re.escape(city_title)}[\\s,]*", "", address, flags=re.IGNORECASE)
+        
+        parts = [p for p in [city_title, city_upper, address] if p]
+        location_path = ", ".join(parts)
+        return f"{location_path}, {self.state} {self.postal_code}, {self.country}"
     
     @property
     def full_address(self):
@@ -106,7 +132,8 @@ class Material(TenantAwareModel):
     product_type = models.CharField(max_length=100, blank=True, help_text="e.g. Film, Flake, Regrind")
     
     description = models.TextField(blank=True)
-    image = models.ImageField(upload_to='materials/', null=True, blank=True)
+    image = models.ImageField(upload_to='materials/images/', null=True, blank=True)
+    document = models.FileField(upload_to='materials/docs/', null=True, blank=True)
     
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
@@ -131,18 +158,31 @@ class InventoryItem(TenantAwareModel):
     location = models.CharField(max_length=100, blank=True, help_text='Bin or shelf location')
     
     # Quantity
-    quantity = models.IntegerField(default=0)
-    unit_of_measure = models.CharField(max_length=50, default='pcs')
+    quantity = models.DecimalField(max_digits=20, decimal_places=2, default=0)
+    unit_of_measure = models.CharField(max_length=50, default='lbs')
     
     # Tracking
     lot_number = models.CharField(max_length=100, blank=True)
     serial_number = models.CharField(max_length=100, blank=True)
+    po_number = models.CharField(max_length=100, blank=True, verbose_name="PO Number")
+    
+    # Shipment/Logistics
+    company = models.ForeignKey('accounts.Company', on_delete=models.SET_NULL, null=True, blank=True, related_name='inventory_items')
+    shipping_terms = models.ForeignKey('orders.ShippingTerm', on_delete=models.SET_NULL, null=True, blank=True, related_name='inventory_items')
+    representative = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='represented_inventory')
+    tags = models.ManyToManyField('orders.Tag', blank=True, related_name='inventory_items')
+    
+    # Packaging
+    packaging = models.CharField(max_length=100, blank=True)
+    pieces = models.IntegerField(default=1, null=True, blank=True)
+    is_palletized = models.BooleanField(default=False)
     
     # Financial
-    unit_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    unit_cost = models.DecimalField(max_digits=20, decimal_places=2, default=0)
+    price_unit = models.CharField(max_length=20, default='per lbs')
     
     # Reorder
-    reorder_level = models.IntegerField(default=10, help_text='Minimum quantity before reorder')
+    reorder_level = models.DecimalField(max_digits=20, decimal_places=2, default=10, help_text='Minimum quantity before reorder')
     
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)

@@ -51,7 +51,7 @@ class Company(TenantAwareModel):
         ordering = ['name']
     
     def __str__(self):
-        return f"{self.name} ({self.get_company_type_display()})"
+        return self.name
     
     @property
     def full_address(self):
