@@ -362,7 +362,15 @@ def shipment_list(request):
         ).distinct()
     
     # Scope filter (All, Company, Personal)
-    scope = request.GET.get('scope', 'all')
+    # Only admins can see 'all' or 'company' scope. Others default to 'personal'.
+    is_admin = getattr(request.user, 'is_admin', False)
+    default_scope = 'all' if is_admin else 'personal'
+    scope = request.GET.get('scope', default_scope)
+    
+    # Enforce restriction
+    if not is_admin and scope != 'personal':
+        scope = 'personal'
+
     if scope == 'personal':
         shipments = shipments.filter(created_by=request.user)
     elif scope == 'company' and request.user.company_id:
