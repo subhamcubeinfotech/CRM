@@ -1554,58 +1554,140 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr class="pl-item-row">
-                            <td class="text-center align-middle">1</td>
-                            <td>
-                                <select name="item[]" class="form-select form-select-sm border-0 bg-transparent ps-0">
-                                    <option value="">Select Item</option>
-                                    {% if shipment.items.exists %}
-                                        {% for item in shipment.items.all %}
-                                        <option value="{{ item.material_name }}" selected>{{ item.material_name }}</option>
+                        {% if shipment.items.exists %}
+                            {% for item in shipment.items.all %}
+                            <tr class="pl-item-row">
+                                <td class="text-center align-middle">{{ forloop.counter }}</td>
+                                <td>
+                                    <select name="item[]" class="form-select form-select-sm border-0 bg-transparent ps-0">
+                                        <option value="">Select Item</option>
+                                        {% for opt in shipment.items.all %}
+                                        <option value="{{ opt.material_name }}" {% if opt.id == item.id %}selected{% endif %}>{{ opt.material_name }}</option>
                                         {% endfor %}
-                                    {% elif shipment.order %}
-                                        {% for item in shipment.order.manifest_items.all %}
-                                        <option value="{{ item.material }}" selected>{{ item.material }}</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <div class="input-group input-group-sm">
+                                        <input type="number" step="0.1" name="gross[]" class="form-control border-0 bg-transparent pl-gross" placeholder="0" value="{{ item.gross_weight|default:item.weight|floatformat:1 }}" oninput="calculatePlNet(this)">
+                                        <span class="input-group-text border-0 bg-transparent small text-muted px-1 pl-unit-label">{{ item.weight_unit|default:'lbs' }}</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-group input-group-sm">
+                                        <input type="number" step="0.1" name="tare[]" class="form-control border-0 bg-transparent pl-tare" placeholder="0" value="{{ item.tare_weight|default:'0'|floatformat:1 }}" oninput="calculatePlNet(this)">
+                                        <span class="input-group-text border-0 bg-transparent small text-muted px-1 pl-unit-label">{{ item.weight_unit|default:'lbs' }}</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-group input-group-sm">
+                                        <input type="number" step="0.1" name="net[]" class="form-control border-0 bg-light pl-net" placeholder="0" value="{{ item.weight|floatformat:1 }}" readonly>
+                                        <span class="input-group-text border-0 bg-light small text-muted px-1 pl-unit-label">{{ item.weight_unit|default:'lbs' }}</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <select name="packaging[]" class="form-select form-select-sm border-0 bg-transparent ps-0">
+                                        <option value="Select">Select</option>
+                                        <option value="Rolls" {% if item.packaging == "Rolls" %}selected{% endif %}>Rolls</option>
+                                        <option value="Pallets" {% if item.packaging == "Pallets" or item.is_palletized %}selected{% endif %}>Pallets</option>
+                                        <option value="Boxes" {% if item.packaging == "Boxes" %}selected{% endif %}>Boxes</option>
+                                        <option value="Drums" {% if item.packaging == "Drums" %}selected{% endif %}>Drums</option>
+                                        <option value="Bales" {% if item.packaging == "Bales" %}selected{% endif %}>Bales</option>
+                                        <option value="Supersacks" {% if item.packaging == "Supersacks" %}selected{% endif %}>Supersacks</option>
+                                    </select>
+                                </td>
+                                <td class="text-center align-middle">
+                                    <button type="button" class="btn btn-link text-danger p-0 border-0" onclick="removePlRow(this)"><i class="fas fa-trash-alt"></i></button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% elif shipment.order %}
+                            {% for item in shipment.order.manifest_items.all %}
+                            <tr class="pl-item-row">
+                                <td class="text-center align-middle">{{ forloop.counter }}</td>
+                                <td>
+                                    <select name="item[]" class="form-select form-select-sm border-0 bg-transparent ps-0">
+                                        <option value="">Select Item</option>
+                                        {% for opt in shipment.order.manifest_items.all %}
+                                        <option value="{{ opt.material }}" {% if opt.id == item.id %}selected{% endif %}>{{ opt.material }}</option>
                                         {% endfor %}
-                                    {% endif %}
-                                </select>
-                            </td>
-                            <td>
-                                <div class="input-group input-group-sm">
-                                    <input type="number" step="0.1" name="gross[]" class="form-control border-0 bg-transparent pl-gross" placeholder="0" oninput="calculatePlNet(this)">
-                                    <span class="input-group-text border-0 bg-transparent small text-muted px-1 pl-unit-label">lbs</span>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="input-group input-group-sm">
-                                    <input type="number" step="0.1" name="tare[]" class="form-control border-0 bg-transparent pl-tare" placeholder="0" oninput="calculatePlNet(this)">
-                                    <span class="input-group-text border-0 bg-transparent small text-muted px-1 pl-unit-label">lbs</span>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="input-group input-group-sm">
-                                    <input type="number" step="0.1" name="net[]" class="form-control border-0 bg-light pl-net" placeholder="0" readonly>
-                                    <span class="input-group-text border-0 bg-light small text-muted px-1 pl-unit-label">lbs</span>
-                                </div>
-                            </td>
-                            <td>
-                                <select name="packaging[]" class="form-select form-select-sm border-0 bg-transparent ps-0">
-                                    <option value="Select">Select</option>
-                                    <option value="Rolls" {% if item.packaging == "Rolls" %}selected{% endif %}>Rolls</option>
-                                    <option value="Pallets" {% if item.packaging == "Pallets" or item.is_palletized %}selected{% endif %}>Pallets</option>
-                                    <option value="Boxes" {% if item.packaging == "Boxes" %}selected{% endif %}>Boxes</option>
-                                    <option value="Drums" {% if item.packaging == "Drums" %}selected{% endif %}>Drums</option>
-                                    <option value="Bales" {% if item.packaging == "Bales" %}selected{% endif %}>Bales</option>
-                                    <option value="Supersacks" {% if item.packaging == "Supersacks" %}selected{% endif %}>Supersacks</option>
-                                    {% if item.packaging and item.packaging not in "Rolls,Pallets,Boxes,Drums,Bales,Supersacks" %}
-                                    <option value="{{ item.packaging }}" selected>{{ item.packaging }}</option>
-                                    {% endif %}
-                                </select>
-                            </td>
-                            <td class="text-center align-middle">
-                                <button type="button" class="btn btn-link text-danger p-0 border-0" onclick="removePlRow(this)"><i class="fas fa-trash-alt"></i></button>
-                            </td>
-                        </tr>
+                                    </select>
+                                </td>
+                                <td>
+                                    <div class="input-group input-group-sm">
+                                        <input type="number" step="0.1" name="gross[]" class="form-control border-0 bg-transparent pl-gross" placeholder="0" value="{{ item.weight|floatformat:1 }}" oninput="calculatePlNet(this)">
+                                        <span class="input-group-text border-0 bg-transparent small text-muted px-1 pl-unit-label">lbs</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-group input-group-sm">
+                                        <input type="number" step="0.1" name="tare[]" class="form-control border-0 bg-transparent pl-tare" placeholder="0" value="0.0" oninput="calculatePlNet(this)">
+                                        <span class="input-group-text border-0 bg-transparent small text-muted px-1 pl-unit-label">lbs</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-group input-group-sm">
+                                        <input type="number" step="0.1" name="net[]" class="form-control border-0 bg-light pl-net" placeholder="0" value="{{ item.weight|floatformat:1 }}" readonly>
+                                        <span class="input-group-text border-0 bg-light small text-muted px-1 pl-unit-label">lbs</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <select name="packaging[]" class="form-select form-select-sm border-0 bg-transparent ps-0">
+                                        <option value="Select">Select</option>
+                                        <option value="Rolls" {% if item.packaging == "Rolls" %}selected{% endif %}>Rolls</option>
+                                        <option value="Pallets" {% if item.packaging == "Pallets" %}selected{% endif %}>Pallets</option>
+                                        <option value="Boxes" {% if item.packaging == "Boxes" %}selected{% endif %}>Boxes</option>
+                                        <option value="Drums" {% if item.packaging == "Drums" %}selected{% endif %}>Drums</option>
+                                        <option value="Bales" {% if item.packaging == "Bales" %}selected{% endif %}>Bales</option>
+                                        <option value="Supersacks" {% if item.packaging == "Supersacks" %}selected{% endif %}>Supersacks</option>
+                                    </select>
+                                </td>
+                                <td class="text-center align-middle">
+                                    <button type="button" class="btn btn-link text-danger p-0 border-0" onclick="removePlRow(this)"><i class="fas fa-trash-alt"></i></button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr class="pl-item-row">
+                                <td class="text-center align-middle">1</td>
+                                <td>
+                                    <select name="item[]" class="form-select form-select-sm border-0 bg-transparent ps-0">
+                                        <option value="">Select Item</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <div class="input-group input-group-sm">
+                                        <input type="number" step="0.1" name="gross[]" class="form-control border-0 bg-transparent pl-gross" placeholder="0" oninput="calculatePlNet(this)">
+                                        <span class="input-group-text border-0 bg-transparent small text-muted px-1 pl-unit-label">lbs</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-group input-group-sm">
+                                        <input type="number" step="0.1" name="tare[]" class="form-control border-0 bg-transparent pl-tare" placeholder="0" oninput="calculatePlNet(this)">
+                                        <span class="input-group-text border-0 bg-transparent small text-muted px-1 pl-unit-label">lbs</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-group input-group-sm">
+                                        <input type="number" step="0.1" name="net[]" class="form-control border-0 bg-light pl-net" placeholder="0" readonly>
+                                        <span class="input-group-text border-0 bg-light small text-muted px-1 pl-unit-label">lbs</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <select name="packaging[]" class="form-select form-select-sm border-0 bg-transparent ps-0">
+                                        <option value="Select">Select</option>
+                                        <option value="Rolls">Rolls</option>
+                                        <option value="Pallets">Pallets</option>
+                                        <option value="Boxes">Boxes</option>
+                                        <option value="Drums">Drums</option>
+                                        <option value="Bales">Bales</option>
+                                        <option value="Supersacks">Supersacks</option>
+                                    </select>
+                                </td>
+                                <td class="text-center align-middle">
+                                    <button type="button" class="btn btn-link text-danger p-0 border-0" onclick="removePlRow(this)"><i class="fas fa-trash-alt"></i></button>
+                                </td>
+                            </tr>
+                        {% endif %}
                     </tbody>
                 </table>
             </div>
@@ -1963,14 +2045,18 @@
 
     function addPlRow() {
         const tbody = document.querySelector('#plItemsTable tbody');
+        const firstRow = tbody.querySelector('.pl-item-row');
+        if (!firstRow) return;
+
         const rowCount = tbody.querySelectorAll('tr').length;
-        const newRow = tbody.querySelector('.pl-item-row').cloneNode(true);
+        const newRow = firstRow.cloneNode(true);
         
         // Update row number
         newRow.querySelector('td:first-child').innerText = rowCount + 1;
         
-        // Clear inputs
+        // Clear inputs and resets selects
         newRow.querySelectorAll('input').forEach(input => input.value = '');
+        newRow.querySelectorAll('select').forEach(select => select.selectedIndex = 0);
         newRow.querySelector('.pl-net').value = '0';
         
         tbody.appendChild(newRow);
@@ -2627,6 +2713,11 @@
                 // Reset form
                 document.getElementById('locationModalForm')?.reset();
             });
+        }
+        // Packing List Initialization
+        if (document.getElementById('packingListDrawer')) {
+            calculatePlTotals();
+            updatePlUnitLabels();
         }
     });
 </script>

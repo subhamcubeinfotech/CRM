@@ -27,8 +27,8 @@ def custom_logout(request):
 
 @login_required
 def company_list(request):
-    """List all companies — filtered by tenant (handled by TenantManager)"""
-    companies = Company.objects.all().order_by('name')
+    """List all companies — global directory (uses plain_objects)"""
+    companies = Company.plain_objects.all().order_by('name')
     
     # Filter by type
     company_type = request.GET.get('type')
@@ -59,8 +59,8 @@ def company_list(request):
 
 @login_required
 def customer_list(request):
-    """List all customers"""
-    customers = Company.objects.filter(company_type='customer').order_by('name')
+    """List all customers — global (uses plain_objects)"""
+    customers = Company.plain_objects.filter(company_type='customer').order_by('name')
     
     # Search
     search = request.GET.get('search')
@@ -80,8 +80,8 @@ def customer_list(request):
 
 @login_required
 def carrier_list(request):
-    """List all carriers"""
-    carriers = Company.objects.filter(company_type='carrier').order_by('name')
+    """List all carriers — global (uses plain_objects)"""
+    carriers = Company.plain_objects.filter(company_type='carrier').order_by('name')
     
     # Search
     search = request.GET.get('search')
