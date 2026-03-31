@@ -3,6 +3,7 @@ Accounts Models - CustomUser and Company
 """
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.conf import settings
 
 from .models_tenant import Tenant, TenantManager, TenantAwareModel
 
@@ -120,3 +121,26 @@ class SignupOTP(models.Model):
 
     def __str__(self):
         return f"OTP for {self.email} - {self.otp}"
+
+class CompanyDocument(TenantAwareModel):
+    """Company documents (certifications, contracts, etc.)"""
+    DOCUMENT_TYPE_CHOICES = [
+        ('certification', 'Certification'),
+        ('contract', 'Contract'),
+        ('insurance', 'Insurance'),
+        ('tax', 'Tax Document'),
+        ('other', 'Other'),
+    ]
+    
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='documents')
+    document_type = models.CharField(max_length=30, choices=DOCUMENT_TYPE_CHOICES, default='other')
+    title = models.CharField(max_length=200)
+    file = models.FileField(upload_to='company_documents/%Y/%m/')
+    uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-uploaded_at']
+    
+    def __str__(self):
+        return f"{self.title} ({self.get_document_type_display()})"

@@ -140,11 +140,7 @@
                         {{ form.po_number }}
                     </div>
 
-                    <!-- Lot Number -->
-                    <div class="col-12">
-                        <label class="form-label mb-1 text-uppercase fw-bold">Lot Number</label>
-                        {{ form.lot_number }}
-                    </div>
+                    <!-- Lot Number moved inside group -->
 
                     <!-- Grouped Inventory Container -->
                     <div id="inventoryItemsContainer">
@@ -204,12 +200,17 @@
                                     {{ form.pieces }}
                                 </div>
 
-                                <!-- Palletized Checkbox -->
-                                <div class="col-12">
-                                    <div class="form-check form-check-custom">
-                                        {{ form.is_palletized }}
-                                        <label class="form-check-label fw-600 ms-2" for="id_is_palletized" style="color: #000;"> Is the packaging palletized? </label>
-                                    </div>
+                                <!-- Lot Number & Palletized -->
+                                <div class="col-md-7">
+                                    <label class="form-label mb-1 text-uppercase fw-bold">Lot Number</label>
+                                    <input type="text" name="lot_number" class="form-control" placeholder="Lot Number" value="{{ form.lot_number.value|default:'' }}">
+                                </div>
+                                <div class="col-md-5">
+                                    <label class="form-label mb-1 text-uppercase fw-bold">Palletized</label>
+                                    <select name="is_palletized" class="form-select">
+                                        <option value="no" {% if not form.is_palletized.value %}selected{% endif %}>No</option>
+                                        <option value="yes" {% if form.is_palletized.value %}selected{% endif %}>Yes</option>
+                                    </select>
                                 </div>
 
                                 <!-- Notes -->
