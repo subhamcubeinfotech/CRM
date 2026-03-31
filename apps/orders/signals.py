@@ -1,7 +1,18 @@
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from .models import Order, OrderEvent
 from apps.shipments.models import Shipment
+
+@receiver(pre_save, sender=Order)
+def track_order_status_change(sender, instance, **kwargs):
+    if instance.pk:
+        try:
+            old_instance = Order.objects.get(pk=instance.pk)
+            instance._old_status = old_instance.status
+        except Order.DoesNotExist:
+            instance._old_status = None
+    else:
+        instance._old_status = None
 
 @receiver(post_save, sender=Order)
 def log_order_events(sender, instance, created, **kwargs):
@@ -12,14 +23,14 @@ def log_order_events(sender, instance, created, **kwargs):
             description=f"Order #{instance.order_number} was created."
         )
     else:
-        # Simple check for status update vs other field updates
-        # In a full app, you'd use a __init__ tracker, but here we can 
-        # log it as a general update or generic status log.
-        OrderEvent.objects.create(
-            order=instance,
-            event_type='status_updated',
-            description=f"Order status is now {instance.get_status_display()}."
-        )
+        # Check if status has changed using the temporary attribute from pre_save
+        old_status = getattr(instance, '_old_status', None)
+        if old_status and old_status != instance.status:
+            OrderEvent.objects.create(
+                order=instance,
+                event_type='status_updated',
+                description=f"Order status is now {instance.simple_status_label}."
+            )
 
 @receiver(post_save, sender=Shipment)
 def log_shipment_events(sender, instance, created, **kwargs):
