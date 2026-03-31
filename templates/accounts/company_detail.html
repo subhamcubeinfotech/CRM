@@ -425,15 +425,62 @@
 
     <!-- Documents Pane -->
     <div class="tab-pane fade" id="documents-pane" role="tabpanel" tabindex="0">
-        <div class="card border-0 shadow-sm rounded-4 overflow-hidden p-5 text-center text-muted">
-            <i class="fas fa-file-alt fa-3x mb-3 opacity-10"></i>
-            <h5 class="fw-bold mb-1">Company Documents</h5>
-            <p class="small mb-4">Manage certifications, contracts, and other shared files.</p>
-            <div class="mx-auto" style="max-width: 400px;">
-                <input type="file" id="directDocUpload" class="d-none">
-                <button class="btn btn-primary rounded-pill px-4" onclick="document.getElementById('directDocUpload').click()">
-                    <i class="fas fa-upload me-2"></i>Upload First Document
-                </button>
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+            <div class="card-header bg-white border-bottom p-4 d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0">Company Documents</h6>
+                <div class="d-flex gap-2">
+                    <input type="file" id="directDocUpload" class="d-none">
+                    <button class="btn btn-primary btn-sm rounded-pill px-3" onclick="document.getElementById('directDocUpload').click()">
+                        <i class="fas fa-upload me-2"></i>Upload
+                    </button>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0" id="documents-table">
+                        <thead class="bg-light small">
+                            <tr>
+                                <th class="ps-4">Title</th>
+                                <th>Type</th>
+                                <th>Uploaded By</th>
+                                <th>Date</th>
+                                <th class="text-end pe-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="documents-list-body">
+                            {% for doc in documents %}
+                            <tr id="doc-row-{{ doc.id }}">
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i class="fas fa-file-pdf text-danger"></i>
+                                        <a href="{{ doc.file.url }}" target="_blank" class="fw-bold text-dark text-decoration-none">{{ doc.title }}</a>
+                                    </div>
+                                </td>
+                                <td><span class="badge bg-light text-muted border rounded-pill">{{ doc.get_document_type_display }}</span></td>
+                                <td class="small text-muted">{{ doc.uploaded_by.get_full_name|default:doc.uploaded_by.username }}</td>
+                                <td class="small text-muted">{{ doc.uploaded_at|date:"M d, Y" }}</td>
+                                <td class="text-end pe-4">
+                                    <div class="d-flex gap-2 justify-content-end">
+                                        <a href="{{ doc.file.url }}" target="_blank" class="btn btn-outline-secondary btn-xs rounded-pill">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                        <button class="btn btn-outline-danger btn-xs rounded-pill delete-doc-btn" data-id="{{ doc.id }}">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr id="no-docs-row">
+                                <td colspan="5" class="text-center py-5 text-muted">
+                                    <i class="fas fa-file-alt fa-3x mb-3 opacity-10"></i>
+                                    <p class="mb-0">No documents found for this company.</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -1016,6 +1063,125 @@
                 commentInput.value = '';
             });
         }
+
+        // Document upload logic
+        const docInput = document.getElementById('directDocUpload');
+        const docListBody = document.getElementById('documents-list-body');
+        const noDocsRow = () => document.getElementById('no-docs-row');
+
+        if (docInput) {
+            docInput.addEventListener('change', function() {
+                const file = this.files[0];
+                if (!file) return;
+
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('document_type', 'other');
+                formData.append('title', file.name);
+
+                // Show loading state
+                const uploadBtn = document.querySelector('[onclick*="directDocUpload"]');
+                const originalBtnHtml = uploadBtn.innerHTML;
+                uploadBtn.disabled = true;
+                uploadBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Uploading...';
+
+                fetch("{% url 'accounts:company_document_upload' company.pk %}", {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    uploadBtn.disabled = false;
+                    uploadBtn.innerHTML = originalBtnHtml;
+                    docInput.value = '';
+
+                    if (data.success) {
+                        const noDocs = noDocsRow();
+                        if (noDocs) noDocs.remove();
+                        
+                        const doc = data.document;
+                        const rowHtml = `
+                            <tr id="doc-row-${doc.id}" class="animate__animated animate__fadeIn">
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i class="fas fa-file text-primary"></i>
+                                        <a href="${doc.url}" target="_blank" class="fw-bold text-dark text-decoration-none">${doc.title}</a>
+                                    </div>
+                                </td>
+                                <td><span class="badge bg-light text-muted border rounded-pill">${doc.type_display}</span></td>
+                                <td class="small text-muted">${doc.uploaded_by}</td>
+                                <td class="small text-muted">${doc.uploaded_at}</td>
+                                <td class="text-end pe-4">
+                                    <div class="d-flex gap-2 justify-content-end">
+                                        <a href="${doc.url}" target="_blank" class="btn btn-outline-secondary btn-xs rounded-pill">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                        <button class="btn btn-outline-danger btn-xs rounded-pill delete-doc-btn" data-id="${doc.id}">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                        docListBody.insertAdjacentHTML('afterbegin', rowHtml);
+                        attachDeleteHandler(doc.id);
+                    } else {
+                        alert('Upload failed: ' + (data.message || 'Unknown error'));
+                    }
+                })
+                .catch(err => {
+                    uploadBtn.disabled = false;
+                    uploadBtn.innerHTML = originalBtnHtml;
+                    console.error('Upload error:', err);
+                    alert('Error uploading document.');
+                });
+            });
+        }
+
+        function attachDeleteHandler(docId) {
+            const btn = document.querySelector(`.delete-doc-btn[data-id="${docId}"]`);
+            if (btn) {
+                btn.addEventListener('click', function() {
+                    const id = this.dataset.id;
+                    if (!confirm('Are you sure you want to delete this document?')) return;
+
+                    fetch(`/companies/document/${id}/delete/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            document.getElementById(`doc-row-${id}`).remove();
+                            if (docListBody.children.length === 0) {
+                                docListBody.innerHTML = `
+                                    <tr id="no-docs-row">
+                                        <td colspan="5" class="text-center py-5 text-muted">
+                                            <i class="fas fa-file-alt fa-3x mb-3 opacity-10"></i>
+                                            <p class="mb-0">No documents found for this company.</p>
+                                        </td>
+                                    </tr>
+                                `;
+                            }
+                        } else {
+                            alert('Delete failed.');
+                        }
+                    })
+                    .catch(err => console.error('Delete error:', err));
+                });
+            }
+        }
+
+        // Attach initial delete handlers
+        document.querySelectorAll('.delete-doc-btn').forEach(btn => {
+            attachDeleteHandler(btn.dataset.id);
+        });
     });
 </script>
 {% endblock %}
