@@ -348,8 +348,18 @@ def inventory_item_add_general(request):
         packagings = request.POST.getlist('packaging')
         pieces_list = request.POST.getlist('pieces')
         notes_list = request.POST.getlist('description')
+        lot_numbers = request.POST.getlist('lot_number')
+        palletized_choices = request.POST.getlist('is_palletized')
+
+        created_count = 0
+        error_messages = []
 
         for i in range(len(product_names)):
+            # Convert 'yes'/'no' to boolean for the form/model
+            is_palletized = False
+            if i < len(palletized_choices):
+                is_palletized = (palletized_choices[i] == 'yes')
+
             item_data = {
                 'warehouse': resolved_warehouse,
                 'product_name': product_names[i],
@@ -360,10 +370,11 @@ def inventory_item_add_general(request):
                 'price_unit': price_units[i] if i < len(price_units) else 'per lbs',
                 'packaging': packagings[i] if i < len(packagings) else '',
                 'pieces': pieces_list[i] if i < len(pieces_list) else 0,
+                'is_palletized': is_palletized,
                 'description': notes_list[i] if i < len(notes_list) else '',
                 # Shared fields
                 'po_number': request.POST.get('po_number'),
-                'lot_number': request.POST.get('lot_number'),
+                'lot_number': lot_numbers[i] if i < len(lot_numbers) else '',
                 'shipping_terms': request.POST.get('shipping_terms'),
                 'tags': request.POST.getlist('tags'),
             }
@@ -380,10 +391,21 @@ def inventory_item_add_general(request):
                 item.save()
                 form.save_m2m() # Important for tags
                 created_count += 1
+            else:
+                # Collect errors for each invalid item
+                item_label = product_names[i] or f"Item {i+1}"
+                for field, errors in form.errors.items():
+                    for error in errors:
+                        error_messages.append(f"{item_label}: {field.title()} - {error}")
 
         if created_count > 0:
             messages.success(request, f"Successfully added {created_count} items to inventory.")
-            return redirect('inventory:item_list')
+            if not error_messages:
+                return redirect('inventory:item_list')
+        
+        if error_messages:
+            for msg in error_messages:
+                messages.error(request, msg)
     else:
         initial = {
             'representative': request.user,
