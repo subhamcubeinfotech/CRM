@@ -657,6 +657,16 @@ def shipment_tracking_update(request, pk):
         milestone_notes = f"Updated by {request.user.username} from {previous_status}"
         if status == 'delivered' and not shipment.actual_delivery_date:
             shipment.actual_delivery_date = timezone.now().date()
+            
+        # Create OrderEvent if linked to an order
+        if shipment.order_id:
+            from apps.orders.models import OrderEvent
+            OrderEvent.objects.create(
+                order=shipment.order,
+                event_type='status_updated',
+                description=f"Shipment {shipment.shipment_number} status updated to {shipment.get_status_display()}.",
+                created_by=request.user
+            )
 
     if is_customer:
         shipment.save(update_fields=['status', 'actual_delivery_date', 'updated_at'])
@@ -949,6 +959,16 @@ def shipment_create(request):
                 )
 
                 logger.info(f'Shipment created: {shipment.shipment_number} for {shipment.customer} by {request.user}')
+                
+                # Create Lifecycle Event for the Order
+                if order:
+                    from apps.orders.models import OrderEvent
+                    OrderEvent.objects.create(
+                        order=order,
+                        event_type='shipment_created',
+                        description=f"Shipment {shipment.shipment_number} was created and linked to this order.",
+                        created_by=request.user
+                    )
                 messages.success(request, f'Shipment {shipment.shipment_number} created successfully!')
                 next_url = request.GET.get('next') or request.POST.get('next')
                 if next_url:

@@ -314,6 +314,16 @@ def order_update_status(request, pk):
             old_status = order.get_status_display()
             order.status = status
             order.save()
+            
+            # Create Lifecycle Event
+            from .models import OrderEvent
+            OrderEvent.objects.create(
+                order=order,
+                event_type='status_updated',
+                description=f"Status updated from {old_status} to {order.get_status_display()}",
+                created_by=request.user
+            )
+            
             logger.info(f'Order {order.order_number} status: {old_status} → {order.get_status_display()} by {request.user}')
         
         # ── NEW: Handle Payment Status Update ──────────────────────
@@ -322,6 +332,16 @@ def order_update_status(request, pk):
             old_pay = order.get_payment_status_display()
             order.payment_status = pay_status
             order.save()
+
+            # Create Lifecycle Event
+            from .models import OrderEvent
+            OrderEvent.objects.create(
+                order=order,
+                event_type='payment_status_updated',
+                description=f"Payment status updated from {old_pay} to {order.get_payment_status_display()}",
+                created_by=request.user
+            )
+
             logger.info(f'Order {order.order_number} payment: {old_pay} → {order.get_payment_status_display()} by {request.user}')
         # ──────────────────────────────────────────────────────────
     return redirect('orders:order_detail', pk=pk)
@@ -394,6 +414,15 @@ def order_create(request):
             payment_status='pending',
             created_by=request.user,
             tenant=request.user.tenant
+        )
+        
+        # Create Lifecycle Event
+        from .models import OrderEvent
+        OrderEvent.objects.create(
+            order=order,
+            event_type='order_created',
+            description=f"Order #{order.order_number} was created.",
+            created_by=request.user
         )
         
         # Handle Manifest Items
@@ -554,6 +583,16 @@ def order_edit(request, pk):
             order.tags.clear()
             
         order.save()
+        
+        # Create Lifecycle Event
+        from .models import OrderEvent
+        OrderEvent.objects.create(
+            order=order,
+            event_type='status_updated',
+            description="Order parameters (supplier, receiver, or logistics) were updated.",
+            created_by=request.user
+        )
+        
         logger.info(f'Order {order.order_number} parameters updated by {request.user}')
         
         # ── NEW: Return PDF after saving in Edit Order ────────────────
@@ -886,6 +925,16 @@ def order_purchase_order_pdf(request, pk):
     if not file_name.endswith('.pdf'):
         file_name += '.pdf'
         
+        
+    # Create Lifecycle Event
+    from .models import OrderEvent
+    OrderEvent.objects.create(
+        order=order,
+        event_type='document_added', # PDF generation counts as document activity
+        description=f"Purchase Order PDF generated: {file_name}",
+        created_by=request.user
+    )
+        
     return FileResponse(buffer, as_attachment=True, filename=file_name)
 
 @login_required
@@ -954,6 +1003,16 @@ def order_add_item(request, pk):
                 logger.error(f"Error creating manifest item {i} ({material_name}): {e}")
                 continue
                 
+                
+        # Create Lifecycle Event for added items
+        from .models import OrderEvent
+        OrderEvent.objects.create(
+            order=order,
+            event_type='note_added', # or status_updated if we want to be generic
+            description=f"{len(materials)} manifest item(s) added to the order.",
+            created_by=request.user
+        )
+                
         logger.info(f"New manifest items added to Order {order.order_number} by {request.user}")
     
     return redirect('orders:order_detail', pk=pk)
@@ -978,6 +1037,15 @@ def order_upload_document(request, pk):
             title=file_obj.name,
             file=file_obj,
             uploaded_by=request.user
+        )
+        
+        # Create Lifecycle Event
+        from .models import OrderEvent
+        OrderEvent.objects.create(
+            order=order,
+            event_type='document_added',
+            description=f"Document uploaded: {doc.title}",
+            created_by=request.user
         )
         
         return JsonResponse({
