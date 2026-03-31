@@ -576,6 +576,14 @@
                                         </div>
 
                                         <div class="col-md-6">
+                                            <label class="form-label">Pieces</label>
+                                            <div class="input-group">
+                                                <input type="number" name="items_ui[{{ forloop.counter0 }}][pieces]" class="form-control" placeholder="Pcs" step="1" value="{{ item.pieces|default:1 }}">
+                                                <span class="input-group-text">pcs</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-6">
                                             <label class="form-label">Packaging</label>
                                             <select name="items_ui[{{ forloop.counter0 }}][packaging]" class="form-select">
                                                 <option value="">Select packaging type</option>
@@ -700,6 +708,14 @@
                                         </div>
 
                                         <div class="col-md-6">
+                                            <label class="form-label">Pieces</label>
+                                            <div class="input-group">
+                                                <input type="number" name="items_ui[{{ forloop.counter0 }}][pieces]" class="form-control" placeholder="Pcs" step="1" value="{{ item.pieces|default:1 }}">
+                                                <span class="input-group-text">pcs</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-6">
                                             <label class="form-label">Packaging</label>
                                             <select name="items_ui[{{ forloop.counter0 }}][packaging]" class="form-select">
                                                 <option value="">Select packaging type</option>
@@ -814,6 +830,14 @@
                                                     <option value="pcs">pcs</option>
                                                 </select>
                                             </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label">Pieces</label>
+                                        <div class="input-group">
+                                            <input type="number" name="items_ui[0][pieces]" class="form-control" placeholder="Pcs" step="1" value="1">
+                                            <span class="input-group-text">pcs</span>
                                         </div>
                                     </div>
 
@@ -1800,7 +1824,7 @@
                 if (el.type === 'checkbox' || el.type === 'radio') {
                     el.checked = false;
                 } else {
-                    el.value = '';
+                    el.value = el.name && el.name.includes('[pieces]') ? '1' : '';
                 }
             });
             clone.querySelectorAll('select').forEach(function(el) {
