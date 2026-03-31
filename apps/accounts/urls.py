@@ -8,6 +8,7 @@ app_name = 'accounts'
 
 urlpatterns = [
     path('', views.company_list, name='company_list'),
+    path('', views.company_list, name='company_list'),
     path('customers/', views.customer_list, name='customer_list'),
     path('carriers/', views.carrier_list, name='carrier_list'),
     path('team/', views_team.team_list, name='team_list'),
@@ -15,6 +16,8 @@ urlpatterns = [
     path('<int:pk>/', views.company_detail, name='company_detail'),
     path('<int:pk>/edit/', views.company_edit, name='company_edit'),
     path('<int:pk>/delete/', views.company_delete, name='company_delete'),
+    path('<int:pk>/document/upload/', views.company_document_upload, name='company_document_upload'),
+    path('document/<int:doc_pk>/delete/', views.company_document_delete, name='company_document_delete'),
     
     # Profile & Settings
     path('profile/', views_profile.profile_view, name='profile'),

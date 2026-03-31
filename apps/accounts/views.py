@@ -9,7 +9,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.core.mail import EmailMessage
 from django.conf import settings
-from .models import Company
+from .models import Company, CompanyDocument
 from .forms import CompanyForm
 from .geocoding import geocode_company
 from .utils import filter_by_user_company, check_company_access
@@ -136,12 +136,15 @@ def company_detail(request, pk):
     from apps.inventory.models import Material
     materials = Material.objects.all()[:10]  # Placeholder: Get some materials for now
 
+    documents = company.documents.all()
+
     context = {
         'company': company,
         'shipments': shipments,
         'orders': orders,
         'locations': locations,
         'materials': materials,
+        'documents': documents,
     }
     return render(request, 'accounts/company_detail.html', context)
 
@@ -285,3 +288,53 @@ def ajax_help_ticket(request):
         'success': True,
         'message': 'Ticket created and email sent successfully.',
     })
+
+@login_required
+@require_POST
+def company_document_upload(request, pk):
+    """AJAX upload for company documents"""
+    company = get_object_or_404(Company, pk=pk)
+    # Check access
+    if request.user.role == 'customer':
+        check_company_access(company, request.user)
+    
+    if request.FILES.get('file'):
+        file = request.FILES['file']
+        doc_type = request.POST.get('document_type', 'other')
+        title = request.POST.get('title', file.name)
+        
+        document = CompanyDocument.objects.create(
+            company=company,
+            document_type=doc_type,
+            title=title,
+            file=file,
+            uploaded_by=request.user,
+            tenant=company.tenant
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'document': {
+                'id': document.id,
+                'title': document.title,
+                'type_display': document.get_document_type_display(),
+                'url': document.file.url,
+                'uploaded_at': document.uploaded_at.strftime('%b %d, %Y'),
+                'uploaded_by': document.uploaded_by.get_full_name() or document.uploaded_by.username
+            }
+        })
+    return JsonResponse({'success': False, 'message': 'No file provided'}, status=400)
+
+
+@login_required
+@require_POST
+def company_document_delete(request, doc_pk):
+    """AJAX delete for company documents"""
+    document = get_object_or_404(CompanyDocument, pk=doc_pk)
+    
+    # Check access
+    if request.user.role == 'customer':
+        check_company_access(document.company, request.user)
+    
+    document.delete()
+    return JsonResponse({'success': True})
