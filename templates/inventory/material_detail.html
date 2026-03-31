@@ -22,15 +22,6 @@
                         </div>
                     </div>
                 </div>
-                <div class="dropdown">
-                    <button class="btn btn-primary px-4 fw-bold rounded-pill" type="button" data-bs-toggle="dropdown">
-                        Actions <i class="fas fa-chevron-down ms-2 small"></i>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg" style="border-radius: 12px;">
-                        <li><a class="dropdown-item py-2 px-3" href="#"><i class="fas fa-edit me-2 text-muted"></i> Edit Material</a></li>
-                        <li><a class="dropdown-item py-2 px-3 text-danger" href="#"><i class="fas fa-trash me-2"></i> Delete</a></li>
-                    </ul>
-                </div>
             </div>
 
             <!-- Tabs -->
@@ -39,13 +30,10 @@
                     <a class="nav-link {% if active_tab == 'details' %}active{% endif %}" href="?name={{ material.name }}&tab=details">Details</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {% if active_tab == 'haves' %}active{% endif %}" href="?name={{ material.name }}&tab=haves">Haves</a>
+                    <a class="nav-link {% if active_tab == 'haves' %}active{% endif %}" href="?name={{ material.name }}&tab=haves">Companies</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link {% if active_tab == 'orders' %}active{% endif %}" href="?name={{ material.name }}&tab=orders">Orders</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {% if active_tab == 'documents' %}active{% endif %}" href="?name={{ material.name }}&tab=documents">Documents</a>
                 </li>
             </ul>
         </div>
