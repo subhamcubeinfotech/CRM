@@ -29,7 +29,15 @@ class OrderListView(LoginRequiredMixin, ListView):
             qs = filter_by_user_company(qs, self.request.user, company_field='receiver')
 
         # --- Scope Filtering ---
-        scope = self.request.GET.get('scope', 'all')
+        # Only admins can see 'all' scope. Others default to 'personal'.
+        is_admin = getattr(self.request.user, 'is_admin', False)
+        default_scope = 'all' if is_admin else 'personal'
+        scope = self.request.GET.get('scope', default_scope)
+        
+        # Enforce restriction
+        if not is_admin and scope != 'personal':
+            scope = 'personal'
+            
         if scope == 'personal':
             qs = qs.filter(created_by=self.request.user)
 

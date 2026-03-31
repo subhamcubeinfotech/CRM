@@ -293,10 +293,12 @@
         <!-- Scope Tabs synchronized with Shipments -->
         <div class="ms-4">
             <ul class="nav" id="scopeTabs">
+                {% if request.user.is_admin %}
                 <li class="nav-item">
                     <a class="nav-link px-3 {% if filters.scope == 'all' %}active{% endif %}" 
                        href="?scope=all{% for k, v in request.GET.lists %}{% if k != 'scope' %}{% for val in v %}&{{ k }}={{ val }}{% endfor %}{% endif %}{% endfor %}">All</a>
                 </li>
+                {% endif %}
                 <li class="nav-item">
                     <a class="nav-link px-3 {% if filters.scope == 'personal' %}active{% endif %}" 
                        href="?scope=personal{% for k, v in request.GET.lists %}{% if k != 'scope' %}{% for val in v %}&{{ k }}={{ val }}{% endfor %}{% endif %}{% endfor %}">Personal</a>
