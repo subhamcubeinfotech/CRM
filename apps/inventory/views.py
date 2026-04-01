@@ -303,13 +303,22 @@ def create_material_ajax(request):
             material = form.save(commit=False)
             if hasattr(request.user, 'tenant'):
                 material.tenant = request.user.tenant
-            material.save()
-            return JsonResponse({
-                'status': 'success',
-                'id': material.id,
-                'name': material.name
-            })
-        return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
+            
+            from django.db import IntegrityError
+            try:
+                material.save()
+                return JsonResponse({
+                    'status': 'success',
+                    'id': material.id,
+                    'name': material.name
+                })
+            except IntegrityError:
+                return JsonResponse({
+                    'status': 'error',
+                    'errors': {'name': ['A material with this name already exists.']}
+                }, status=400)
+                
+        return JsonResponse({'status': 'error', 'errors': form.errors.get_json_data()}, status=400)
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
 
 @login_required
