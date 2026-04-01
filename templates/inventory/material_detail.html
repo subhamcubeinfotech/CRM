@@ -179,7 +179,7 @@
                                     {% else %}—{% endif %}
                                 </td>
                                 <td class="fw-bold">
-                                    {{ order.total_weight_target|floatformat:"0" }} {{ order.manifest_items.first.weight_unit|default:"lbs" }}
+                                    {{ order.total_weight_target|floatformat:"0" }} {{ order.total_weight_unit }}
                                 </td>
                                 <td class="text-muted small">{{ order.po_number|default:"—" }}</td>
                                 <td class="text-muted small">{{ order.so_number|default:"—" }}</td>

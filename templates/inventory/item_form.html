@@ -95,13 +95,15 @@
                             <div class="flex-grow-1">
                                 <select name="warehouse" id="id_warehouse" class="form-select" required onchange="syncLocationSelectState('id_warehouse')">
                                     <option value="">Select location</option>
-                                    {% if assign_company and not hq_exists %}
-                                    <option value="temp_addr_{{ assign_company.full_address }}" data-company-id="{{ assign_company.id }}">
-                                        {{ assign_company.full_address }} (Your Address)
-                                    </option>
-                                    {% endif %}
+                                    {% for comp in form.fields.company.queryset %}
+                                        {% if comp.full_address %}
+                                        <option value="temp_addr_{{ comp.full_address }}" data-company-id="{{ comp.id }}" data-is-company-address="true" {% if form.warehouse.value|stringformat:"s" == 'temp_addr_'|add:comp.full_address %}selected{% endif %}>
+                                            {{ comp.full_address }}
+                                        </option>
+                                        {% endif %}
+                                    {% endfor %}
                                     {% for wh in warehouses %}
-                                    <option value="{{ wh.id }}" data-company-id="{{ wh.company_id }}" {% if form.warehouse.value|stringformat:"s" == wh.id|stringformat:"s" %}selected{% endif %}>
+                                    <option value="{{ wh.id }}" data-wh-company-id="{{ wh.company_id }}" {% if form.warehouse.value|stringformat:"s" == wh.id|stringformat:"s" %}selected{% endif %} {% if form.company.value %}style="display:none;"{% endif %}>
                                         {{ wh.city|title }}, {{ wh.city|upper }}, {{ wh.address }}, {{ wh.state }} {{ wh.postal_code }}
                                     </option>
                                     {% endfor %}
@@ -341,6 +343,87 @@
     // Initialize state on load
     document.addEventListener('DOMContentLoaded', () => {
         syncLocationSelectState('id_warehouse');
+        
+        // Auto-select and filter location when company changes
+        const companySelect = document.getElementById('id_company');
+        const locationSelect = document.getElementById('id_warehouse');
+        
+        if (companySelect && locationSelect) {
+            function filterLocation() {
+                const selectedCompanyId = companySelect.value;
+                let foundOption = false;
+
+                // Loop through all existing options
+                for (let i = 0; i < locationSelect.options.length; i++) {
+                    const opt = locationSelect.options[i];
+                    
+                    if (opt.value === "") {
+                        opt.style.display = '';
+                        opt.disabled = false;
+                        opt.selected = false;
+                        continue;
+                    }
+
+                    if (!selectedCompanyId) {
+                        // Show generic warehouses, hide company addresses
+                        if (opt.hasAttribute('data-is-company-address')) {
+                            opt.style.display = 'none';
+                            opt.disabled = true;
+                        } else {
+                            opt.style.display = '';
+                            opt.disabled = false;
+                        }
+                        opt.selected = false;
+                    } else {
+                        if (opt.hasAttribute('data-is-company-address')) {
+                            const optCompanyId = opt.getAttribute('data-company-id');
+                            if (String(optCompanyId) === String(selectedCompanyId)) {
+                                opt.style.display = '';
+                                opt.disabled = false;
+                                if (!foundOption) {
+                                    opt.selected = true;
+                                    locationSelect.selectedIndex = i;
+                                    foundOption = true;
+                                } else {
+                                    opt.selected = false;
+                                }
+                            } else {
+                                opt.style.display = 'none';
+                                opt.disabled = true;
+                                opt.selected = false;
+                            }
+                        } else {
+                            // Hide generic warehouses completely
+                            opt.style.display = 'none';
+                            opt.disabled = true;
+                            opt.selected = false;
+                        }
+                    }
+                }
+
+                // If no matching location found, clear the selection
+                if (!foundOption) {
+                    locationSelect.value = '';
+                    if (locationSelect.options.length > 0) {
+                        locationSelect.options[0].selected = true;
+                    }
+                }
+
+                syncLocationSelectState('id_warehouse');
+                if (typeof $ !== 'undefined' && $(locationSelect).data('select2')) {
+                    $(locationSelect).trigger('change');
+                }
+            }
+
+            // Handle both native change and Select2 change events
+            $(companySelect).on('select2:select change', function(e) {
+                filterLocation();
+            });
+
+            // Trigger once on load to filter initial state
+            // Use setTimeout to ensure we run after browser native auto-fills
+            setTimeout(filterLocation, 100);
+        }
     });
 
     function assignToMe() {
@@ -363,6 +446,8 @@
             // Support for Select2 if enabled
             if (typeof $ !== 'undefined' && $(companySelect).data('select2')) {
                 $(companySelect).trigger('change');
+            } else {
+                companySelect.dispatchEvent(new Event('change'));
             }
         }
     }

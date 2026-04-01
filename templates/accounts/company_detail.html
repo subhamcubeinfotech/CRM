@@ -329,7 +329,7 @@
                                     <span class="small text-muted">Receiver</span>
                                     {% endif %}
                                 </td>
-                                <td class="small fw-bold">{{ order.total_weight_target|floatformat:0 }} lbs</td>
+                                <td class="small fw-bold">{{ order.total_weight_target|floatformat:0 }} {{ order.total_weight_unit }}</td>
                                 <td class="text-end pe-4 small text-muted">{{ order.created_at|date:"M d, Y" }}</td>
                             </tr>
                             {% endfor %}
