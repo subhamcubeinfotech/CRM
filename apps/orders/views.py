@@ -270,9 +270,9 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
         context['all_representatives'] = get_user_model().objects.filter(tenant=user_tenant, is_active=True).order_by('first_name', 'username')
             
         context['inventory_items'] = InventoryItem.plain_objects.filter(
-            warehouse__company=self.object.supplier,
+            Q(company=self.object.supplier) | Q(warehouse__company=self.object.supplier),
             tenant=self.object.tenant
-        )
+        ).distinct()
         context['assign_company'] = assign_company
         context['packaging_types'] = PackagingType.objects.all()
         
@@ -543,7 +543,13 @@ def order_create(request):
     suppliers = company_qs
     receivers = company_qs
     
-    inventory_items = InventoryItem.plain_objects.all()
+    if not getattr(request.user, 'is_admin', False):
+        inventory_items = InventoryItem.plain_objects.filter(
+            Q(company__in=company_qs) | Q(warehouse__company__in=company_qs),
+            tenant=request.user.tenant
+        ).distinct()
+    else:
+        inventory_items = InventoryItem.plain_objects.filter(tenant=request.user.tenant)
 
     # Show all warehouses in tenant, prioritize user's company
     from django.db.models import Case, When, IntegerField
