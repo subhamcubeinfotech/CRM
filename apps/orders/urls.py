@@ -12,4 +12,5 @@ urlpatterns = [
     path('<int:pk>/purchase-order/', views.order_purchase_order_pdf, name='order_purchase_order_pdf'),
     path('<int:pk>/add-item/', views.order_add_item, name='order_add_item'),
     path('<int:pk>/upload-document/', views.order_upload_document, name='order_upload_document'),
+    path('<int:pk>/add-note/', views.order_add_note, name='order_add_note'),
 ]

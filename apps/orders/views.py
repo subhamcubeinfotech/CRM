@@ -1,5 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
+from django.http import JsonResponse
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
@@ -1067,4 +1069,44 @@ def order_upload_document(request, pk):
         })
     except Exception as e:
         logger.error(f"Error uploading document: {e}")
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+@login_required
+@require_POST
+def order_add_note(request, pk):
+    """
+    AJAX view to add a note/comment to an order's history.
+    """
+    order = get_object_or_404(Order, pk=pk)
+    
+    # Check access
+    if order.created_by != request.user:
+        check_company_access(order.receiver, request.user)
+        
+    note_content = request.POST.get('note', '').strip()
+    
+    if not note_content:
+        return JsonResponse({'success': False, 'error': 'Note content cannot be empty'}, status=400)
+    
+    try:
+        from .models import OrderEvent
+        event = OrderEvent.objects.create(
+            order=order,
+            event_type='note_added',
+            description=note_content,
+            created_by=request.user
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'event': {
+                'id': event.id,
+                'type_display': event.get_event_type_display(),
+                'description': event.description,
+                'created_at_display': event.created_at.strftime('%b %d, %Y %H:%M'),
+                'created_at_relative': "just now"
+            }
+        })
+    except Exception as e:
+        logger.error(f"Error adding note to order {pk}: {e}")
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
