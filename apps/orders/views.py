@@ -212,7 +212,10 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
         context['manifest_items'] = self.object.manifest_items.all()
         context['shipments'] = self.object.shipments.all()
         context['invoices'] = self.object.invoices.all()
-        context['events'] = self.object.events.all()
+        context['events'] = self.object.events.filter(
+            Q(event_type__in=['order_created', 'shipment_created', 'note_added', 'document_added', 'payment_status_updated']) |
+            Q(event_type='status_updated', description__icontains='Order status is now')
+        )
         context['documents'] = self.object.documents.all()
         
         # Context for Edit Offcanvas
