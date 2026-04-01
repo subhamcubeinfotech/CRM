@@ -220,7 +220,7 @@
                                     {% for item in inventory_items %}
                                     <option value="{{ item.id }}" data-max="{{ item.quantity }}"
                                         data-unit="{{ item.unit_of_measure }}" data-name="{{ item.product_name }}"
-                                        data-company-id="{{ item.warehouse.company_id|default:'' }}" {% if c_item.material == item.product_name %}selected{% endif %}>
+                                        data-company-id="{{ item.company_id|default:item.warehouse.company_id|default:'' }}" {% if c_item.material == item.product_name %}selected{% endif %}>
                                         {{ item.product_name }} - {{ item.display_stock }}
                                     </option>
                                     {% endfor %}
@@ -338,7 +338,7 @@
                                     {% for item in inventory_items %}
                                     <option value="{{ item.id }}" data-max="{{ item.quantity }}"
                                         data-unit="{{ item.unit_of_measure }}" data-name="{{ item.product_name }}"
-                                        data-company-id="{{ item.warehouse.company_id|default:'' }}">
+                                        data-company-id="{{ item.company_id|default:item.warehouse.company_id|default:'' }}">
                                         {{ item.product_name }} - {{ item.display_stock }}
                                     </option>
                                     {% endfor %}
