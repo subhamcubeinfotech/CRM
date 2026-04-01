@@ -106,30 +106,18 @@ def ajax_warehouse_create(request):
 
 @login_required
 def ajax_locations_for_company(request):
-    """AJAX: Return locations (address + warehouses) for a given company_id"""
+    """AJAX: Return only the main address for a given company_id"""
     company_id = request.GET.get('company_id')
     locations = []
     if company_id:
         from apps.accounts.models import Company
         try:
             company = Company.objects.get(pk=company_id, tenant=request.user.tenant)
-            # Company's main address as a virtual option
             if company.full_address:
                 locations.append({
                     'value': f'temp_addr_{company.full_address}',
                     'label': company.full_address,
                     'is_address': True,
-                })
-            # Actual warehouse records belonging to this company
-            warehouses = Warehouse.plain_objects.filter(
-                company=company, tenant=request.user.tenant, is_active=True
-            ).order_by('name')
-            for wh in warehouses:
-                label = f"{wh.city}, {wh.address}, {wh.state} {wh.postal_code}"
-                locations.append({
-                    'value': str(wh.id),
-                    'label': label,
-                    'is_address': False,
                 })
         except Company.DoesNotExist:
             pass
