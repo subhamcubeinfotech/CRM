@@ -225,8 +225,15 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
         user_tenant = self.request.user.tenant
         user_company = self.request.user.company
         assign_company = user_company or Company.objects.filter(tenant=user_tenant).first()
-        # Show all active companies (tenant-specific + global)
+        
+        # Show companies (filtered by creator OR user's own company unless admin)
         all_companies = Company.plain_objects.filter(is_active=True).filter(Q(tenant=user_tenant) | Q(tenant__isnull=True))
+        if not getattr(self.request.user, 'is_admin', False):
+            if user_company:
+                all_companies = all_companies.filter(Q(created_by=self.request.user) | Q(pk=user_company.pk))
+            else:
+                all_companies = all_companies.filter(created_by=self.request.user)
+        
         context['suppliers'] = all_companies
         context['receivers'] = all_companies
         
@@ -263,9 +270,9 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
         context['all_representatives'] = get_user_model().objects.filter(tenant=user_tenant, is_active=True).order_by('first_name', 'username')
             
         context['inventory_items'] = InventoryItem.plain_objects.filter(
-            warehouse__company=self.object.supplier,
+            Q(company=self.object.supplier) | Q(warehouse__company=self.object.supplier),
             tenant=self.object.tenant
-        )
+        ).distinct()
         context['assign_company'] = assign_company
         context['packaging_types'] = PackagingType.objects.all()
         
@@ -525,13 +532,24 @@ def order_create(request):
     user_company = request.user.company
     assign_company = user_company or Company.objects.filter(tenant=request.user.tenant).first()
     
-    # Show all companies in supplier/receiver dropdowns
+    # Filter companies by creator OR user's own company unless admin
     company_qs = Company.plain_objects.all()
+    if not getattr(request.user, 'is_admin', False):
+        if user_company:
+            company_qs = company_qs.filter(Q(created_by=request.user) | Q(pk=user_company.pk))
+        else:
+            company_qs = company_qs.filter(created_by=request.user)
     
     suppliers = company_qs
     receivers = company_qs
     
-    inventory_items = InventoryItem.plain_objects.all()
+    if not getattr(request.user, 'is_admin', False):
+        inventory_items = InventoryItem.plain_objects.filter(
+            Q(company__in=company_qs) | Q(warehouse__company__in=company_qs),
+            tenant=request.user.tenant
+        ).distinct()
+    else:
+        inventory_items = InventoryItem.plain_objects.filter(tenant=request.user.tenant)
 
     # Show all warehouses in tenant, prioritize user's company
     from django.db.models import Case, When, IntegerField
