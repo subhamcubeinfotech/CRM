@@ -339,85 +339,59 @@
     document.addEventListener('DOMContentLoaded', () => {
         syncLocationSelectState('id_warehouse');
         
-        // Auto-select and filter location when company changes
         const companySelect = document.getElementById('id_company');
         const locationSelect = document.getElementById('id_warehouse');
         
         if (companySelect && locationSelect) {
-            function filterLocation() {
-                const selectedCompanyId = companySelect.value;
-                let foundOption = false;
 
-                // Loop through all existing options
-                for (let i = 0; i < locationSelect.options.length; i++) {
-                    const opt = locationSelect.options[i];
-                    
-                    if (opt.value === "") {
-                        opt.style.display = '';
-                        opt.disabled = false;
-                        opt.selected = false;
-                        continue;
-                    }
+            function fetchLocations(companyId, currentValue) {
+                if (!companyId) {
+                    locationSelect.innerHTML = '<option value="">Select location</option>';
+                    syncLocationSelectState('id_warehouse');
+                    return;
+                }
 
-                    if (!selectedCompanyId) {
-                        // Show generic warehouses, hide company addresses
-                        if (opt.hasAttribute('data-is-company-address')) {
-                            opt.style.display = 'none';
-                            opt.disabled = true;
-                        } else {
-                            opt.style.display = '';
-                            opt.disabled = false;
+                fetch(`{% url 'inventory:ajax_locations_for_company' %}?company_id=${companyId}`, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(r => r.json())
+                .then(data => {
+                    locationSelect.innerHTML = '<option value="">Select location</option>';
+                    data.locations.forEach(loc => {
+                        const opt = document.createElement('option');
+                        opt.value = loc.value;
+                        opt.textContent = loc.label;
+                        if (currentValue && loc.value === currentValue) {
+                            opt.selected = true;
                         }
-                        opt.selected = false;
-                    } else {
-                        if (opt.hasAttribute('data-is-company-address')) {
-                            const optCompanyId = opt.getAttribute('data-company-id');
-                            if (String(optCompanyId) === String(selectedCompanyId)) {
-                                opt.style.display = '';
-                                opt.disabled = false;
-                                if (!foundOption) {
-                                    opt.selected = true;
-                                    locationSelect.selectedIndex = i;
-                                    foundOption = true;
-                                } else {
-                                    opt.selected = false;
-                                }
-                            } else {
-                                opt.style.display = 'none';
-                                opt.disabled = true;
-                                opt.selected = false;
-                            }
-                        } else {
-                            // Hide generic warehouses completely
-                            opt.style.display = 'none';
-                            opt.disabled = true;
-                            opt.selected = false;
-                        }
+                        locationSelect.appendChild(opt);
+                    });
+                    // Auto-select first if nothing matched
+                    if (!locationSelect.value && locationSelect.options.length > 1) {
+                        locationSelect.selectedIndex = 1;
                     }
-                }
-
-                // If no matching location found, clear the selection
-                if (!foundOption) {
-                    locationSelect.value = '';
-                    if (locationSelect.options.length > 0) {
-                        locationSelect.options[0].selected = true;
-                    }
-                }
-
-                syncLocationSelectState('id_warehouse');
-                if (typeof $ !== 'undefined' && $(locationSelect).data('select2')) {
-                    $(locationSelect).trigger('change');
-                }
+                    syncLocationSelectState('id_warehouse');
+                })
+                .catch(err => console.warn('Location fetch failed:', err));
             }
 
-            // Handle both native change and Select2 change events
-            $(companySelect).on('select2:select change', function(e) {
-                filterLocation();
+            // Native change event
+            companySelect.addEventListener('change', function() {
+                fetchLocations(this.value, '');
             });
+            // jQuery/Select2 change
+            if (typeof $ !== 'undefined') {
+                $(companySelect).on('select2:select select2:unselect', function() {
+                    fetchLocations(this.value, '');
+                });
+            }
 
-            // Trigger once on load to filter initial state
-            // Use setTimeout to ensure we run after browser native auto-fills
-            setTimeout(filterLocation, 100);
+            // On load: fetch for pre-selected company
+            const preCompany = companySelect.value;
+            const preLoc = locationSelect.value;
+            if (preCompany) {
+                setTimeout(() => fetchLocations(preCompany, preLoc), 50);
+            }
         }
     });
 
