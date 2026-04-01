@@ -762,7 +762,6 @@
                                             <select name="items_ui[0][material]" class="form-select shipment-material-select" required>
                                                 <option value="">Select a material</option>
                                                 {% for item in inventory_items %}
-                                                {% if item.quantity > 0 %}
                                                 <option value="{{ item.id }}"
                                                     data-max="{{ item.quantity }}"
                                                     data-unit="{{ item.unit_of_measure }}"
@@ -770,7 +769,6 @@
                                                     data-company-id="{{ item.warehouse.company_id|default:'' }}">
                                                     {{ item.product_name }} - {{ item.display_stock }}
                                                 </option>
-                                                {% endif %}
                                                 {% endfor %}
                                             </select>
                                             <button class="btn btn-outline-secondary" type="button" title="Search">

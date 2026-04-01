@@ -256,11 +256,9 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
         context['all_shipping_terms'] = ShippingTerm.plain_objects.filter(Q(tenant=user_tenant) | Q(tenant__isnull=True)).order_by('name')
         context['all_representatives'] = get_user_model().objects.filter(tenant=user_tenant, is_active=True).order_by('first_name', 'username')
             
-        # Context for Add Item Offcanvas
         context['inventory_items'] = InventoryItem.plain_objects.filter(
             warehouse__company=self.object.supplier,
-            tenant=self.object.tenant,
-            quantity__gt=0
+            tenant=self.object.tenant
         )
         context['assign_company'] = assign_company
         context['packaging_types'] = PackagingType.objects.all()

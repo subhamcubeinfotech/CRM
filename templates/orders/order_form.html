@@ -218,13 +218,11 @@
                                 <select name="material[]" class="form-select material-select" required>
                                     <option value="" data-max="0">Select Material</option>
                                     {% for item in inventory_items %}
-                                    {% if item.quantity > 0 %}
                                     <option value="{{ item.id }}" data-max="{{ item.quantity }}"
                                         data-unit="{{ item.unit_of_measure }}" data-name="{{ item.product_name }}"
                                         data-company-id="{{ item.warehouse.company_id|default:'' }}" {% if c_item.material == item.product_name %}selected{% endif %}>
                                         {{ item.product_name }} - {{ item.display_stock }}
                                     </option>
-                                    {% endif %}
                                     {% endfor %}
                                 </select>
                             </div>
@@ -335,13 +333,11 @@
                                 <select name="material[]" class="form-select material-select" required>
                                     <option value="" data-max="0">Select Material</option>
                                     {% for item in inventory_items %}
-                                    {% if item.quantity > 0 %}
                                     <option value="{{ item.id }}" data-max="{{ item.quantity }}"
                                         data-unit="{{ item.unit_of_measure }}" data-name="{{ item.product_name }}"
                                         data-company-id="{{ item.warehouse.company_id|default:'' }}">
                                         {{ item.product_name }} - {{ item.display_stock }}
                                     </option>
-                                    {% endif %}
                                     {% endfor %}
                                 </select>
                             </div>
