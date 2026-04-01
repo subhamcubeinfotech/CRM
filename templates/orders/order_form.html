@@ -1037,7 +1037,7 @@
                 } else {
                     let errorMsg = 'Error creating material:\n';
                     for (const field in data.errors) {
-                        errorMsg += `${field}: ${data.errors[field][0]}\n`;
+                        errorMsg += `${field}: ${data.errors[field][0].message}\n`;
                     }
                     alert(errorMsg);
                 }
