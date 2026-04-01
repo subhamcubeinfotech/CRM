@@ -490,11 +490,11 @@
                     <i class="fas fa-strikethrough"></i>
                     <i class="fas fa-link"></i>
                 </div>
-                <textarea class="form-control border-0 p-0 mb-3" rows="3" placeholder="Join the conversation..."
+                <textarea id="historyNoteText" class="form-control border-0 p-0 mb-3" rows="3" placeholder="Join the conversation..."
                     style="box-shadow: none; font-size: 0.850rem;"></textarea>
                 <div class="d-flex justify-content-between align-items-center">
                     <span class="text-muted smaller">Tip: Notify someone with @</span>
-                    <button class="btn btn-outline-primary btn-sm px-4">Submit</button>
+                    <button id="btnSubmitNote" class="btn btn-outline-primary btn-sm px-4">Submit</button>
                 </div>
             </div>
         </div>
@@ -1923,6 +1923,87 @@ document.addEventListener('DOMContentLoaded', function() {
             .finally(() => {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = 'Submit';
+            });
+        });
+    }
+
+    // Lifecycle Events / History Note Submission
+    const btnSubmitNote = document.getElementById('btnSubmitNote');
+    const historyNoteText = document.getElementById('historyNoteText');
+    const eventContainer = document.querySelector('.conversation-sidebar .overflow-auto');
+    const timelineContainer = document.querySelector('.timeline-container');
+
+    if (btnSubmitNote && historyNoteText) {
+        btnSubmitNote.addEventListener('click', function() {
+            const note = historyNoteText.value.trim();
+            if (!note) return;
+
+            btnSubmitNote.disabled = true;
+            btnSubmitNote.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+            const formData = new FormData();
+            formData.append('note', note);
+            formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+            fetch("{% url 'orders:order_add_note' order.pk %}", {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // 1. Add to sidebar
+                    if (eventContainer) {
+                        const emptyState = eventContainer.querySelector('.text-center');
+                        if (emptyState) emptyState.remove();
+
+                        const bubbleHtml = `
+                            <div class="chat-bubble mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span class="fw-bold small text-primary">${data.event.type_display}</span>
+                                    <span class="text-muted smaller">${data.event.created_at_relative}</span>
+                                </div>
+                                <div class="small text-dark">${data.event.description}</div>
+                            </div>`;
+                        eventContainer.insertAdjacentHTML('afterbegin', bubbleHtml);
+                    }
+
+                    // 2. Add to History tab timeline if it exists
+                    if (timelineContainer) {
+                        const emptyTimeline = timelineContainer.querySelector('.text-center');
+                        if (emptyTimeline) emptyTimeline.remove();
+
+                        const timelineHtml = `
+                            <div class="timeline-item d-flex gap-4 mb-4 position-relative">
+                                <div class="timeline-marker bg-primary rounded-circle" style="width: 12px; height: 12px; margin-top: 6px; z-index: 2;"></div>
+                                <div class="timeline-content">
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <h6 class="fw-bold mb-0">${data.event.type_display}</h6>
+                                        <span class="text-muted smaller">${data.event.created_at_display}</span>
+                                    </div>
+                                    <p class="text-muted small mb-0">${data.event.description}</p>
+                                </div>
+                                <div class="timeline-line position-absolute h-100 border-start border-2 border-light" style="left: 5px; top: 18px; z-index: 1;"></div>
+                            </div>`;
+                        timelineContainer.insertAdjacentHTML('afterbegin', timelineHtml);
+                    }
+
+                    // 3. Clear textarea
+                    historyNoteText.value = '';
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An unexpected error occurred.');
+            })
+            .finally(() => {
+                btnSubmitNote.disabled = false;
+                btnSubmitNote.innerHTML = 'Submit';
             });
         });
     }
