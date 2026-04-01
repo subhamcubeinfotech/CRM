@@ -624,36 +624,60 @@ def material_detail(request, pk=None):
             related_orders.append(item.order)
             seen_orders.add(item.order_id)
 
-    # 3. Chart Data (Last 6 months)
-    six_months_ago = timezone.now() - timedelta(days=180)
+    # 3. Chart Data
+    range_days = request.GET.get('range', '180')
+    try:
+        days = int(range_days)
+    except ValueError:
+        days = 180
+        
+    start_date = timezone.now() - timedelta(days=days)
+    end_date = timezone.now()
+    
     history = ManifestItem.objects.filter(
         material__icontains=material.name,
-        order__created_at__gte=six_months_ago
+        order__created_at__gte=start_date
     ).values('order__created_at', 'buy_price', 'sell_price', 'weight')
 
-    # Aggregate by month using a simple dict to avoid type inference issues
-    monthly_buy = defaultdict(list)
-    monthly_sell = defaultdict(list)
-    monthly_weight = defaultdict(float)
+    # Determine grouping granularity based on range
+    if days <= 30:
+        group_format = '%Y-%m-%d'
+    elif days <= 90:
+        # Weekly grouping could be added here, but for now we'll stick to daily for 30 and monthly for higher
+        group_format = '%Y-%m-%d'
+    else:
+        group_format = '%Y-%m'
+        
+    # Aggregate data using the determined granularity
+    grouped_buy = defaultdict(list)
+    grouped_sell = defaultdict(list)
+    grouped_weight = defaultdict(float)
     
     for h in history:
-        month_key = h['order__created_at'].strftime('%Y-%m')
-        monthly_buy[month_key].append(float(h['buy_price']))
-        monthly_sell[month_key].append(float(h['sell_price']))
-        monthly_weight[month_key] += float(h['weight'])
+        key = h['order__created_at'].strftime(group_format)
+        grouped_buy[key].append(float(h['buy_price'] or 0))
+        grouped_sell[key].append(float(h['sell_price'] or 0))
+        grouped_weight[key] += float(h['weight'] or 0)
 
-    # Prepare chart labels and values (sorted by month)
-    sorted_months = sorted(monthly_buy.keys())
+    # Prepare chart labels and values (sorted by key)
+    sorted_keys = sorted(grouped_buy.keys())
     chart_labels = []
     chart_buy_avg = []
     chart_sell_avg = []
     chart_weight = []
     
-    for m in sorted_months:
-        chart_labels.append(timezone.datetime.strptime(m, '%Y-%m').strftime('%b'))
-        chart_buy_avg.append(sum(monthly_buy[m]) / len(monthly_buy[m]) if monthly_buy[m] else 0)
-        chart_sell_avg.append(sum(monthly_sell[m]) / len(monthly_sell[m]) if monthly_sell[m] else 0)
-        chart_weight.append(monthly_weight[m])
+    for k in sorted_keys:
+        if days <= 90:
+            # Display as "Mar 28" for daily/weekly granularity
+            label = timezone.datetime.strptime(k, '%Y-%m-%d').strftime('%b %d')
+        else:
+            # Display as "Mar '26" for monthly granularity
+            label = timezone.datetime.strptime(k, '%Y-%m').strftime("%b '%y")
+            
+        chart_labels.append(label)
+        chart_buy_avg.append(sum(grouped_buy[k]) / len(grouped_buy[k]) if grouped_buy[k] else 0)
+        chart_sell_avg.append(sum(grouped_sell[k]) / len(grouped_sell[k]) if grouped_sell[k] else 0)
+        chart_weight.append(grouped_weight[k])
 
     # Stats
     avg_buy = sum(chart_buy_avg) / len(chart_buy_avg) if chart_buy_avg else 0
@@ -667,6 +691,9 @@ def material_detail(request, pk=None):
         'related_orders': list(related_orders)[:10],  # Ensure it's a list for slicing if needed
         'avg_buy': avg_buy,
         'avg_sell': avg_sell,
+        'current_range': str(days),
+        'start_date': start_date,
+        'end_date': end_date,
         'chart_data': json.dumps({
             'labels': chart_labels,
             'buy': chart_buy_avg,
