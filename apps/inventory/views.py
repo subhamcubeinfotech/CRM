@@ -386,14 +386,14 @@ def inventory_item_add_general(request):
                 'lot_number': lot_numbers[i] if i < len(lot_numbers) else '',
                 'shipping_terms': request.POST.get('shipping_terms'),
                 'tags': request.POST.getlist('tags'),
+                'company': request.POST.get('company'),
+                'representative': request.POST.get('representative'),
             }
             
             form = InventoryItemForm(item_data, user=request.user)
             if form.is_valid():
                 item = form.save(commit=False)
                 item.tenant = request.user.tenant
-                if user_company:
-                    item.company = user_company
                 if not item.representative:
                     item.representative = request.user
                 
@@ -474,8 +474,6 @@ def inventory_item_add(request, pk):
         if form.is_valid():
             item = form.save(commit=False)
             item.tenant = request.user.tenant
-            if user_company:
-                item.company = user_company
             if not item.representative:
                 item.representative = request.user
             item.save()

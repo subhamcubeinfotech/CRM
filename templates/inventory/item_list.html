@@ -358,6 +358,7 @@
                 <tr>
                     <th>SKU / Product</th>
                     <th>Warehouse</th>
+                    <th>Company</th>
                     <th>Quantity</th>
                     <th>Unit Cost</th>
                     <th>Total Value</th>
@@ -381,6 +382,9 @@
                     <td>
                         <div class="fw-medium">{{ item.warehouse.name }}</div>
                         <div class="sub-text">{{ item.warehouse.city }}, {{ item.warehouse.state }}</div>
+                    </td>
+                    <td>
+                        <div class="fw-medium text-dark">{{ item.company.name|default:"-" }}</div>
                     </td>
                     <td>
                         <div class="fw-bold">{{ item.quantity|intcomma }} {{ item.unit_of_measure }}</div>
