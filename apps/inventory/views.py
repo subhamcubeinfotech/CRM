@@ -422,11 +422,7 @@ def inventory_item_add_general(request):
         }
         form = InventoryItemForm(initial=initial, user=request.user)
         
-        # Lock company choices if user has a company (or we locked it to the tenant's only company)
-        if user_company:
-            form.fields['company'].queryset = Company.objects.filter(id=user_company.id)
-            form.fields['company'].disabled = True
-        elif request.user.tenant:
+        if request.user.tenant:
             form.fields['company'].queryset = Company.objects.filter(tenant=request.user.tenant)
 
     # Show all warehouses in tenant, prioritize user's company (matching Order page)
@@ -489,9 +485,6 @@ def inventory_item_add(request, pk):
     else:
         initial = {'representative': request.user, 'company': user_company, 'warehouse': warehouse}
         form = InventoryItemForm(initial=initial, user=request.user)
-        if user_company:
-            form.fields['company'].queryset = Company.objects.filter(id=user_company.id)
-            form.fields['company'].disabled = True
 
     # Show all warehouses in tenant, prioritize user's company
     warehouses = Warehouse.plain_objects.filter(tenant=request.user.tenant).annotate(
@@ -544,9 +537,6 @@ def inventory_item_edit(request, pk):
             return redirect('inventory:warehouse_detail', pk=warehouse.pk)
     else:
         form = InventoryItemForm(instance=item, user=request.user)
-        if user_company:
-            form.fields['company'].queryset = Company.objects.filter(id=user_company.id)
-            form.fields['company'].disabled = True
     
     # Material Form for offcanvas drawer
     material_form = MaterialForm()
