@@ -102,10 +102,7 @@ def carrier_list(request):
 @login_required
 def company_detail(request, pk):
     """View company details"""
-    company = get_object_or_404(Company, pk=pk)
-    # Customer can only view their own company or companies in their tenant
-    if request.user.role == 'customer':
-        check_company_access(company, request.user)
+    company = get_object_or_404(Company.plain_objects, pk=pk)
     
     from apps.orders.models import Order
     from apps.shipments.models import Shipment
@@ -152,7 +149,7 @@ def company_detail(request, pk):
 @login_required
 def company_edit(request, pk):
     """Edit an existing company"""
-    company = get_object_or_404(Company, pk=pk)
+    company = get_object_or_404(Company.plain_objects, pk=pk)
     if request.method == 'POST':
         form = CompanyForm(request.POST, request.FILES, instance=company, user=request.user)
         if form.is_valid():
@@ -176,7 +173,7 @@ def company_edit(request, pk):
 @login_required
 def company_delete(request, pk):
     """Delete a company"""
-    company = get_object_or_404(Company, pk=pk)
+    company = get_object_or_404(Company.plain_objects, pk=pk)
     if request.method == 'POST':
         name = company.name
         company.delete()
