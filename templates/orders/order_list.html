@@ -10,15 +10,20 @@
         --accent-gradient: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
     }
     body {
-        zoom: 0.85;
-        overflow-x: hidden;
+        background-color: #f8fafc;
+        font-size: 0.875rem; /* Standard density */
+    }
+    .container-fluid {
+        max-width: 100%;
+        padding-left: 2rem;
+        padding-right: 2rem;
     }
     .metric-card {
         border: none;
-        border-radius: 16px;
-        transition: all 0.3s cubic-bezier(.25,.8,.25,1);
-        background: var(--glass-bg);
-        overflow: hidden;
+        border-radius: 12px;
+        transition: all 0.2s ease;
+        background: #ffffff;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
     .metric-card:hover {
         transform: translateY(-5px);
