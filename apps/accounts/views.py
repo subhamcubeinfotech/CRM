@@ -27,8 +27,16 @@ def custom_logout(request):
 
 @login_required
 def company_list(request):
-    """List all companies — global directory (uses plain_objects)"""
+    """List companies — filtered by creator unless admin (uses plain_objects)"""
     companies = Company.plain_objects.all().order_by('name')
+    
+    # Restriction: non-admins only see companies they created OR their own company
+    if not getattr(request.user, 'is_admin', False):
+        user_company = request.user.company
+        if user_company:
+            companies = companies.filter(Q(created_by=request.user) | Q(pk=user_company.pk))
+        else:
+            companies = companies.filter(created_by=request.user)
     
     # Filter by type
     company_type = request.GET.get('type')
@@ -59,8 +67,16 @@ def company_list(request):
 
 @login_required
 def customer_list(request):
-    """List all customers — global (uses plain_objects)"""
+    """List customers — filtered by creator unless admin (uses plain_objects)"""
     customers = Company.plain_objects.filter(company_type='customer').order_by('name')
+    
+    # Restriction: non-admins only see companies they created OR their own company
+    if not getattr(request.user, 'is_admin', False):
+        user_company = request.user.company
+        if user_company:
+            customers = customers.filter(Q(created_by=request.user) | Q(pk=user_company.pk))
+        else:
+            customers = customers.filter(created_by=request.user)
     
     # Search
     search = request.GET.get('search')
@@ -80,8 +96,16 @@ def customer_list(request):
 
 @login_required
 def carrier_list(request):
-    """List all carriers — global (uses plain_objects)"""
+    """List carriers — filtered by creator unless admin (uses plain_objects)"""
     carriers = Company.plain_objects.filter(company_type='carrier').order_by('name')
+    
+    # Restriction: non-admins only see companies they created OR their own company
+    if not getattr(request.user, 'is_admin', False):
+        user_company = request.user.company
+        if user_company:
+            carriers = carriers.filter(Q(created_by=request.user) | Q(pk=user_company.pk))
+        else:
+            carriers = carriers.filter(created_by=request.user)
     
     # Search
     search = request.GET.get('search')
@@ -192,6 +216,7 @@ def company_create(request):
             company = form.save(commit=False)
             if hasattr(request.user, 'tenant'):
                 company.tenant = request.user.tenant
+            company.created_by = request.user
             company.save()
             geocode_company(company, save=True)
             

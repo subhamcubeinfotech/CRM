@@ -225,8 +225,15 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
         user_tenant = self.request.user.tenant
         user_company = self.request.user.company
         assign_company = user_company or Company.objects.filter(tenant=user_tenant).first()
-        # Show all active companies (tenant-specific + global)
+        
+        # Show companies (filtered by creator OR user's own company unless admin)
         all_companies = Company.plain_objects.filter(is_active=True).filter(Q(tenant=user_tenant) | Q(tenant__isnull=True))
+        if not getattr(self.request.user, 'is_admin', False):
+            if user_company:
+                all_companies = all_companies.filter(Q(created_by=self.request.user) | Q(pk=user_company.pk))
+            else:
+                all_companies = all_companies.filter(created_by=self.request.user)
+        
         context['suppliers'] = all_companies
         context['receivers'] = all_companies
         
@@ -525,8 +532,13 @@ def order_create(request):
     user_company = request.user.company
     assign_company = user_company or Company.objects.filter(tenant=request.user.tenant).first()
     
-    # Show all companies in supplier/receiver dropdowns
+    # Filter companies by creator OR user's own company unless admin
     company_qs = Company.plain_objects.all()
+    if not getattr(request.user, 'is_admin', False):
+        if user_company:
+            company_qs = company_qs.filter(Q(created_by=request.user) | Q(pk=user_company.pk))
+        else:
+            company_qs = company_qs.filter(created_by=request.user)
     
     suppliers = company_qs
     receivers = company_qs
