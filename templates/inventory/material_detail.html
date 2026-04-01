@@ -69,7 +69,26 @@
                         <div class="h5 fw-bold mb-4 border-bottom pb-2">Pricing</div>
                         
                         <div class="pricing-card bg-white border rounded-4 p-4 mb-4">
-                            <div class="d-flex justify-content-end align-items-center mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="dropdown">
+                                        <button class="btn btn-outline-primary dropdown-toggle rounded-3 px-3 py-2" type="button" id="rangeDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                            {% if current_range == '30' %}Last 30 days
+                                            {% elif current_range == '90' %}Last 3 months
+                                            {% elif current_range == '365' %}Last 12 months
+                                            {% else %}Last 6 months{% endif %}
+                                        </button>
+                                        <ul class="dropdown-menu shadow-sm border-0" aria-labelledby="rangeDropdown">
+                                            <li><a class="dropdown-item {% if current_range == '30' %}active{% endif %}" href="?name={{ material.name }}&tab=details&range=30">Last 30 days</a></li>
+                                            <li><a class="dropdown-item {% if current_range == '90' %}active{% endif %}" href="?name={{ material.name }}&tab=details&range=90">Last 3 months</a></li>
+                                            <li><a class="dropdown-item {% if current_range == '180' or not current_range %}active{% endif %}" href="?name={{ material.name }}&tab=details&range=180">Last 6 months</a></li>
+                                            <li><a class="dropdown-item {% if current_range == '365' %}active{% endif %}" href="?name={{ material.name }}&tab=details&range=365">Last 12 months</a></li>
+                                        </ul>
+                                    </div>
+                                    <div class="fw-bold text-dark small" style="letter-spacing: 0.02em;">
+                                        {{ start_date|date:"m/d/Y" }} - {{ end_date|date:"m/d/Y" }}
+                                    </div>
+                                </div>
                                 <div class="h5 mb-0 fw-bold text-dark">
                                     <span class="text-muted small fw-normal">Avg Buy:</span> ${{ avg_buy|floatformat:"2" }} 
                                     <span class="mx-2 text-muted">|</span>
