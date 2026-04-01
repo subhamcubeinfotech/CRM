@@ -58,7 +58,13 @@ class Order(TenantAwareModel):
         ('overdue', 'Overdue'),
     ]
 
-    
+    WEIGHT_UNIT_CHOICES = [
+        ('lbs', 'lbs'),
+        ('kgs', 'kgs'),
+        ('mt', 'MT'),
+        ('st', 'ST'),
+        ('pcs', 'pcs'),
+    ]
     order_number = models.CharField(max_length=50, unique=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
     payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='pending')
@@ -79,7 +85,8 @@ class Order(TenantAwareModel):
     representative = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='represented_orders')
     
     # Weight tracking
-    total_weight_target = models.DecimalField(max_digits=15, decimal_places=2, help_text="Target weight in lbs")
+    total_weight_target = models.DecimalField(max_digits=15, decimal_places=2, help_text="Target weight in the selected unit")
+    total_weight_unit = models.CharField(max_length=10, choices=WEIGHT_UNIT_CHOICES, default='lbs')
     
     # Financial details
     freight_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0, help_text="Total estimated freight shipment cost")
@@ -110,6 +117,18 @@ class Order(TenantAwareModel):
         return total_kg * Decimal('2.20462')
 
     @property
+    def shipped_weight_in_unit(self):
+        """Calculate total weight shipped across all associated shipments (converted to total_weight_unit)"""
+        from decimal import Decimal
+        lbs = self.shipped_weight
+        unit = self.total_weight_unit.lower()
+        if unit == 'lbs': return lbs
+        if unit in ['kg', 'kgs']: return lbs / Decimal('2.20462')
+        if unit == 'mt': return lbs / Decimal('2204.62')
+        if unit == 'st': return lbs / Decimal('2000.0')
+        return lbs
+
+    @property
     def total_pieces(self):
         """Calculate total pieces from manifest items where unit is pcs"""
         return sum(item.weight for item in self.manifest_items.filter(weight_unit='pcs'))
@@ -120,17 +139,29 @@ class Order(TenantAwareModel):
         return sum(item.normalized_weight for item in self.manifest_items.exclude(weight_unit='pcs'))
 
     @property
+    def total_manifest_weight_in_unit(self):
+        """Calculate total weight from manifest items (converted to total_weight_unit)"""
+        from decimal import Decimal
+        lbs = self.total_manifest_weight
+        unit = self.total_weight_unit.lower()
+        if unit == 'lbs': return lbs
+        if unit in ['kg', 'kgs']: return lbs / Decimal('2.20462')
+        if unit == 'mt': return lbs / Decimal('2204.62')
+        if unit == 'st': return lbs / Decimal('2000.0')
+        return lbs
+
+    @property
     def manifest_progress_percentage(self):
         """Calculate manifested weight progress percentage against target"""
         if self.total_weight_target > 0:
-            return min(int((self.total_manifest_weight / self.total_weight_target) * 100), 100)
+            return min(int((self.total_manifest_weight_in_unit / self.total_weight_target) * 100), 100)
         return 0
 
     @property
     def weight_progress_percentage(self):
         """Calculate shipped weight progress percentage against target"""
         if self.total_weight_target > 0:
-            return min(int((self.shipped_weight / self.total_weight_target) * 100), 100)
+            return min(int((self.shipped_weight_in_unit / self.total_weight_target) * 100), 100)
         return 0
 
     @property
@@ -177,6 +208,7 @@ class Order(TenantAwareModel):
         # Find shipment with highest rank
         best_shipment = None
         max_rank = -1
+        best_shipment = None
         
         for s in shipments:
             rank = ranking.get(s.status, 0)
