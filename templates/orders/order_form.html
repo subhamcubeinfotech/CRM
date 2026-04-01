@@ -611,10 +611,38 @@
         <!-- Total Weight Target -->
         <div class="card bg-light border-0 mb-4">
             <div class="card-body">
-                <label class="form-label fw-bold small text-uppercase">Total Weight Target (lbs)<span
+                <label class="form-label fw-bold small text-uppercase">Total Weight Target<span
                         class="text-danger">*</span></label>
-                <input type="number" name="total_weight_target" class="form-control" placeholder="e.g. 200000" required
-                    value="{{ copied_order.total_weight_target|stringformat:'f'|default:'' }}">
+                <div class="row g-2">
+                    <div class="col-8">
+                        <input type="number" name="total_weight_target" class="form-control" placeholder="e.g. 200000" required
+                            value="{% if order %}{{ order.total_weight_target|stringformat:'f' }}{% elif copied_order %}{{ copied_order.total_weight_target|stringformat:'f' }}{% endif %}">
+                    </div>
+                    <div class="col-4">
+                        <select name="total_weight_unit" class="form-select">
+                            {% if order %}
+                                {% with current_unit=order.total_weight_unit %}
+                                    <option value="lbs" {% if current_unit == 'lbs' %}selected{% endif %}>lbs</option>
+                                    <option value="kgs" {% if current_unit == 'kgs' %}selected{% endif %}>kgs</option>
+                                    <option value="mt" {% if current_unit == 'mt' %}selected{% endif %}>MT</option>
+                                    <option value="st" {% if current_unit == 'st' %}selected{% endif %}>ST</option>
+                                {% endwith %}
+                            {% elif copied_order %}
+                                {% with current_unit=copied_order.total_weight_unit %}
+                                    <option value="lbs" {% if current_unit == 'lbs' %}selected{% endif %}>lbs</option>
+                                    <option value="kgs" {% if current_unit == 'kgs' %}selected{% endif %}>kgs</option>
+                                    <option value="mt" {% if current_unit == 'mt' %}selected{% endif %}>MT</option>
+                                    <option value="st" {% if current_unit == 'st' %}selected{% endif %}>ST</option>
+                                {% endwith %}
+                            {% else %}
+                                <option value="lbs" selected>lbs</option>
+                                <option value="kgs">kgs</option>
+                                <option value="mt">MT</option>
+                                <option value="st">ST</option>
+                            {% endif %}
+                        </select>
+                    </div>
+                </div>
                 <div class="form-text">Used for calculating progress bar in dashboard.</div>
             </div>
         </div>
