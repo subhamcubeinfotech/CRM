@@ -1462,9 +1462,19 @@
             </div>
 
             <div class="mb-4">
-                <div class="form-check form-switch d-flex align-items-center gap-2">
-                    <input class="form-check-input" type="checkbox" role="switch" name="blind_shipment" id="blindSwitch">
-                    <label class="form-check-label small fw-bold text-muted text-uppercase mb-0" for="blindSwitch">Blind Shipment?</label>
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="form-check form-switch d-flex align-items-center gap-2">
+                        <input class="form-check-input" type="checkbox" role="switch" name="blind_shipment" id="blindSwitch">
+                        <label class="form-check-label small fw-bold text-muted text-uppercase mb-0" for="blindSwitch">Blind Shipment?</label>
+                    </div>
+                    
+                    <div id="blindButtonsContainer" style="display: none;">
+                        <input type="hidden" name="bol_type" id="bolTypeInput" value="">
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button type="button" class="btn btn-outline-primary" id="btnBolReceiver" onclick="setBolType('receiver')">Receiver BoL</button>
+                            <button type="button" class="btn btn-outline-primary" id="btnBolShipper" onclick="setBolType('shipper')">Shipper BoL</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -2119,6 +2129,30 @@
         form.target = '_blank';
         form.submit();
         form.target = originalTarget;
+    }
+
+    // Blind Shipment BoL Type Management
+    const blindSwitch = document.getElementById('blindSwitch');
+    if (blindSwitch) {
+        blindSwitch.addEventListener('change', function() {
+            const container = document.getElementById('blindButtonsContainer');
+            container.style.display = this.checked ? 'block' : 'none';
+        });
+    }
+
+    function setBolType(type) {
+        document.getElementById('bolTypeInput').value = type;
+        
+        const btnReceiver = document.getElementById('btnBolReceiver');
+        const btnShipper = document.getElementById('btnBolShipper');
+        
+        if (type === 'receiver') {
+            btnReceiver.classList.add('active');
+            btnShipper.classList.remove('active');
+        } else {
+            btnReceiver.classList.remove('active');
+            btnShipper.classList.add('active');
+        }
     }
 
     // Auto-close offcanvas on form submission for document generation

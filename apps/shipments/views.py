@@ -1336,6 +1336,7 @@ def generate_bol_pdf(request, pk):
         file_name += '.pdf'
     
     is_blind = request.POST.get('blind_shipment') == 'on'
+    bol_type = request.POST.get('bol_type', 'receiver')
     carrier_name = request.POST.get('carrier_name', shipment.carrier.name if shipment.carrier else '')
     trailer_number = request.POST.get('trailer_number', '')
     seal_number = request.POST.get('seal_number', '')
@@ -1390,7 +1391,7 @@ def generate_bol_pdf(request, pk):
 
     # ─── PARTIES ───
     shipper_box = [Paragraph("SHIPPER", label_style), Spacer(1, 1*mm)]
-    if is_blind:
+    if is_blind and bol_type == 'receiver':
         shipper_box.append(Paragraph("CONFIDENTIAL", bold_style))
         shipper_box.append(Paragraph("Shipper information withheld", normal_style))
     else:
@@ -1402,14 +1403,18 @@ def generate_bol_pdf(request, pk):
             shipper_box.append(Paragraph(shipment.origin_country or "", normal_style))
 
     consignee_box = [Paragraph("CONSIGNEE / NOTIFY PARTY", label_style), Spacer(1, 1*mm)]
-    c = shipment.consignee
-    if c:
-        consignee_box.append(Paragraph(c.name, bold_style))
-        consignee_box.append(Paragraph(shipment.destination_address or "", normal_style))
-        consignee_box.append(Paragraph(f"{shipment.destination_city}, {shipment.destination_state} {shipment.destination_postal_code}", normal_style))
-        consignee_box.append(Paragraph(shipment.destination_country or "", normal_style))
+    if is_blind and bol_type == 'shipper':
+        consignee_box.append(Paragraph("CONFIDENTIAL", bold_style))
+        consignee_box.append(Paragraph("Consignee information withheld", normal_style))
     else:
-        consignee_box.append(Paragraph("TO BE NOTIFIED", bold_style))
+        c = shipment.consignee
+        if c:
+            consignee_box.append(Paragraph(c.name, bold_style))
+            consignee_box.append(Paragraph(shipment.destination_address or "", normal_style))
+            consignee_box.append(Paragraph(f"{shipment.destination_city}, {shipment.destination_state} {shipment.destination_postal_code}", normal_style))
+            consignee_box.append(Paragraph(shipment.destination_country or "", normal_style))
+        else:
+            consignee_box.append(Paragraph("TO BE NOTIFIED", bold_style))
 
     carrier_box = [Paragraph("CARRIER", label_style), Spacer(1, 1*mm)]
     carrier_final = carrier_name or (shipment.carrier.name if shipment.carrier else "TO BE ASSIGNED")
