@@ -225,6 +225,9 @@
                                     </option>
                                     {% endfor %}
                                 </select>
+                                <button type="button" class="btn btn-outline-primary" data-bs-toggle="offcanvas" data-bs-target="#offcanvasAddMaterial">
+                                    + Add
+                                </button>
                             </div>
                         </div>
                         <div class="col-md-4">
@@ -340,6 +343,9 @@
                                     </option>
                                     {% endfor %}
                                 </select>
+                                <button type="button" class="btn btn-outline-primary" data-bs-toggle="offcanvas" data-bs-target="#offcanvasAddMaterial">
+                                    + Add
+                                </button>
                             </div>
                         </div>
                         <div class="col-md-4">
@@ -875,5 +881,176 @@
     });
 
     document.getElementById('manifest-items-container').addEventListener('click', function (e) { if (e.target.classList.contains('remove-item-btn')) e.target.closest('.manifest-item').remove(); });
+</script>
+
+<!-- Add Material Offcanvas -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasAddMaterial" aria-labelledby="offcanvasAddMaterialLabel" style="width: 500px; border-left: none; box-shadow: -10px 0 30px rgba(0,0,0,0.1); z-index: 1060;">
+    <div class="offcanvas-header border-bottom p-4">
+        <h5 class="offcanvas-title fw-bold text-primary" id="offcanvasAddMaterialLabel">New Material</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body p-4">
+        <form id="addMaterialForm">
+            {% csrf_token %}
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase mb-2">Usage <span class="text-danger">*</span></label>
+                <div class="d-flex gap-4">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="usage" id="usageOngoing" value="ongoing" checked>
+                        <label class="form-check-label small" for="usageOngoing">Ongoing <span class="text-muted">(reusable)</span></label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="usage" id="usageSpot" value="spot">
+                        <label class="form-check-label small" for="usageSpot">Spot <span class="text-muted">(one-time use)</span></label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase mb-1">Display Name</label>
+                {{ material_form.name }}
+                <div class="form-text mt-1" style="font-size: 0.75rem;">Add a clear, descriptive name to help others quickly identify this material.</div>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase mb-1">Description</label>
+                {{ material_form.description }}
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase mb-2">Images and Documents</label>
+                <div class="border rounded-3 p-4 text-center bg-light" style="border-style: dashed !important; border-width: 2px !important;" id="materialUploadZone">
+                    <div class="mb-3">
+                        <input type="file" id="materialImageInput" name="image" hidden>
+                        <input type="file" id="materialDocumentInput" name="document" hidden>
+                        <button type="button" class="btn btn-primary btn-sm px-3 me-2" id="btnChooseMaterialFile"><i class="fas fa-plus me-1"></i> Choose</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm px-3" id="btnCancelMaterialFile"><i class="fas fa-times me-1"></i> Cancel</button>
+                    </div>
+                    <p class="text-muted small mb-0" id="materialFileStatus">Drag and drop files here to upload</p>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-6">
+                    <label class="form-label fw-bold small text-uppercase mb-1">Material <span class="text-danger">*</span></label>
+                    {{ material_form.material_type }}
+                </div>
+                <div class="col-6">
+                    <label class="form-label fw-bold small text-uppercase mb-1">Material Type <span class="text-danger">*</span></label>
+                    {{ material_form.product_type }}
+                </div>
+            </div>
+
+            <div class="mt-5 d-flex gap-2 pt-3 border-top">
+                <button type="submit" class="btn btn-primary px-4 fw-bold" id="btnSubmitMaterial">Submit</button>
+                <button type="button" class="btn btn-outline-primary px-4 fw-bold">Review</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // New Material File Selection Logic
+    const btnChoose = document.getElementById('btnChooseMaterialFile');
+    const btnCancel = document.getElementById('btnCancelMaterialFile');
+    const imgInput = document.getElementById('materialImageInput');
+    const docInput = document.getElementById('materialDocumentInput');
+    const statusText = document.getElementById('materialFileStatus');
+
+    if (btnChoose) {
+        btnChoose.addEventListener('click', () => {
+            imgInput.click();
+        });
+    }
+
+    if (imgInput) {
+        imgInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                statusText.innerHTML = `<i class="fas fa-image me-1"></i> ${this.files[0].name}`;
+                statusText.classList.remove('text-muted');
+                statusText.classList.add('text-primary', 'fw-bold');
+            }
+        });
+    }
+
+    if (btnCancel) {
+        btnCancel.addEventListener('click', () => {
+            if (imgInput) imgInput.value = '';
+            if (docInput) docInput.value = '';
+            statusText.innerHTML = 'Drag and drop files here to upload';
+            statusText.classList.add('text-muted');
+            statusText.classList.remove('text-primary', 'fw-bold');
+        });
+    }
+
+    // New Material AJAX Submission
+    const addMaterialForm = document.getElementById('addMaterialForm');
+    if (addMaterialForm) {
+        addMaterialForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const form = this;
+            const submitBtn = document.getElementById('btnSubmitMaterial');
+            const formData = new FormData(form);
+            
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+            
+            fetch("{% url 'inventory:create_material_ajax' %}", {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Update ALL material dropdowns in the main form
+                    const materialDropdowns = document.querySelectorAll('.material-select');
+                    materialDropdowns.forEach(dropdown => {
+                        // Create a NEW option for the newly created material
+                        // Value is data.id if available, otherwise data.name
+                        const val = data.id || data.name;
+                        const newOption = new Option(data.name, val, true, true);
+                        
+                        // Set attributes for inventory logic
+                        newOption.dataset.max = "999999"; // Assume high stock for new material if spot or just created
+                        newOption.dataset.unit = "lbs"; // Default or from form
+                        newOption.dataset.name = data.name;
+                        newOption.dataset.companyId = ""; // Not tied to a specific warehouse yet
+                        
+                        dropdown.add(newOption);
+                    });
+                    
+                    // Hide offcanvas
+                    const offcanvasElement = document.getElementById('offcanvasAddMaterial');
+                    const offcanvas = bootstrap.Offcanvas.getInstance(offcanvasElement);
+                    if (offcanvas) offcanvas.hide();
+                    
+                    // Reset form
+                    form.reset();
+                    if (statusText) {
+                        statusText.innerHTML = 'Drag and drop files here to upload';
+                        statusText.classList.add('text-muted');
+                        statusText.classList.remove('text-primary', 'fw-bold');
+                    }
+                } else {
+                    let errorMsg = 'Error creating material:\n';
+                    for (const field in data.errors) {
+                        errorMsg += `${field}: ${data.errors[field][0]}\n`;
+                    }
+                    alert(errorMsg);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An unexpected error occurred.');
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Submit';
+            });
+        });
+    }
 </script>
 {% endblock %}

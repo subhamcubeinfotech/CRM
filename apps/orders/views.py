@@ -9,6 +9,7 @@ from django.utils import timezone
 from .models import Order, ManifestItem, Tag, ShippingTerm, PackagingType
 from apps.accounts.models import Company
 from apps.inventory.models import Warehouse, InventoryItem, Material
+from apps.inventory.forms import MaterialForm
 from apps.accounts.utils import filter_by_user_company, check_company_access
 import logging
 
@@ -296,6 +297,7 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
 
         context['previous_pickup_contacts'] = pickup_contacts
         context['previous_delivery_contacts'] = delivery_contacts
+        context['material_form'] = MaterialForm()
         
         return context
 
@@ -552,6 +554,7 @@ def order_create(request):
         'tags': Tag.plain_objects.filter(Q(tenant=request.user.tenant) | Q(tenant__isnull=True)),
         'team_members': get_user_model().objects.filter(tenant=request.user.tenant),
         'packaging_types': PackagingType.objects.all(),
+        'material_form': MaterialForm(),
     }
     return render(request, 'orders/order_form.html', context)
 
