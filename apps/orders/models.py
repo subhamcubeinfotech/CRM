@@ -107,6 +107,19 @@ class Order(TenantAwareModel):
     def __str__(self):
         return f"{self.order_number} - {self.po_number}"
 
+    def check_payment_status(self):
+        """
+        Check if the payment status should be updated to 'overdue' based on Net 30 terms.
+        This is called during detail view and other key actions to keep stats accurate.
+        """
+        if self.payment_status in ['pending', 'partial']:
+            days_since_creation = (timezone.now() - self.created_at).days
+            if days_since_creation >= 30:
+                self.payment_status = 'overdue'
+                self.save(update_fields=['payment_status'])
+                return True
+        return False
+
     @property
     def shipped_weight(self):
         """Calculate total weight shipped across all associated shipments (converted to lbs)"""
