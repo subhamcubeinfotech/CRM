@@ -204,6 +204,10 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
 
     def get_object(self, queryset=None):
         obj = super().get_object(queryset)
+        
+        # Trigger automatic 'overdue' check (Net 30)
+        obj.check_payment_status()
+        
         # Allow creator to see the order even if they are not the receiver
         if obj.created_by == self.request.user:
             return obj
