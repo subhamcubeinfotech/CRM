@@ -99,8 +99,25 @@
 
     .nav-tabs-premium .nav-link.active {
         color: var(--accent-blue);
+    }
+    
+    .manifest-row {
+        transition: background-color 0.15s ease-in-out;
+    }
+    .manifest-row:hover {
+        background-color: #f8f9fc !important;
+        cursor: pointer;
+    }
+    .manifest-row a {
+        position: relative;
+        z-index: 2;
+    }
+
+    .nav-tabs-premium .nav-link.active {
+        color: var(--accent-blue);
         background: transparent;
     }
+
 
     .nav-tabs-premium .nav-link.active::after {
         content: '';
@@ -289,7 +306,17 @@
                                 </thead>
                                 <tbody>
                                     {% for item in manifest_items %}
-                                    <tr>
+                                    <tr class="manifest-row" 
+                                        data-item-id="{{ item.id }}"
+                                        data-material="{{ item.material }}"
+                                        data-weight="{{ item.weight }}"
+                                        data-weight-unit="{{ item.weight_unit }}"
+                                        data-buy-price="{{ item.buy_price }}"
+                                        data-buy-price-unit="{{ item.buy_price_unit }}"
+                                        data-sell-price="{{ item.sell_price }}"
+                                        data-sell-price-unit="{{ item.sell_price_unit }}"
+                                        data-packaging="{{ item.packaging }}"
+                                        data-palletized="{{ item.is_palletized|yesno:'true,false' }}">
                                         <td class="ps-3"><a href="{% url 'materials:material_lookup' %}?name={{ item.material|urlencode }}" class="text-primary fw-600 text-decoration-none">{{ item.material }}</a></td>
                                         <td>${{ item.buy_price|floatformat:2 }} / {{ item.buy_price_unit|default:"lb" }}</td>
                                         <td>${{ item.sell_price|floatformat:2 }} / {{ item.sell_price_unit|default:"lb" }}</td>
@@ -305,6 +332,7 @@
                                         </td>
                                     </tr>
                                     {% endfor %}
+
                                 </tbody>
                             </table>
                         </div>
@@ -898,9 +926,165 @@
     </div>
 </div>
 
+<!-- Edit Manifest Item Offcanvas -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasEditItem"
+    style="width: 500px; border-left: none; box-shadow: -10px 0 30px rgba(0,0,0,0.1);">
+    <div class="offcanvas-header border-bottom p-4">
+        <h5 class="offcanvas-title fw-bold text-primary">Edit Item: <span id="editItemMaterialName" class="text-dark"></span></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body p-4">
+        <form id="editItemForm" method="POST">
+            {% csrf_token %}
+            
+            <!-- Weight & Unit -->
+            <div class="row g-3 mb-4">
+                <div class="col-8">
+                    <label class="form-label fw-bold small text-uppercase mb-1">Weight<span class="text-danger">*</span></label>
+                    <input type="number" step="0.01" name="weight" id="editItemWeight" class="form-control rounded-3" placeholder="Weight" required>
+                </div>
+                <div class="col-4">
+                    <label class="form-label fw-bold small text-uppercase mb-1">Unit</label>
+                    <select name="weight_unit" id="editItemWeightUnit" class="form-select rounded-3 manifest-unit-select">
+                        <option value="lbs">lbs</option>
+                        <option value="kgs">kgs</option>
+                        <option value="mt">MT</option>
+                        <option value="st">ST</option>
+                        <option value="pcs">pcs</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Buy Price & Unit -->
+            <div class="row g-3 mb-4">
+                <div class="col-8">
+                    <label class="form-label fw-bold small text-uppercase mb-1">Buy Price<span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0 rounded-start-3">$</span>
+                        <input type="number" step="0.0001" name="buy_price" id="editItemBuyPrice" class="form-control border-start-0 rounded-end-3" placeholder="Price" required>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <label class="form-label fw-bold small text-uppercase mb-1">Unit</label>
+                    <select name="buy_price_unit" id="editItemBuyPriceUnit" class="form-select rounded-3 manifest-unit-select">
+                        <option value="per lbs">per lbs</option>
+                        <option value="per kgs">per kgs</option>
+                        <option value="per mt">per MT</option>
+                        <option value="per st">per ST</option>
+                        <option value="per pcs">per pcs</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Sell Price & Unit -->
+            <div class="row g-3 mb-4">
+                <div class="col-8">
+                    <label class="form-label fw-bold small text-uppercase mb-1">Sell Price<span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0 rounded-start-3">$</span>
+                        <input type="number" step="0.0001" name="sell_price" id="editItemSellPrice" class="form-control border-start-0 rounded-end-3" placeholder="Price" required>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <label class="form-label fw-bold small text-uppercase mb-1">Unit</label>
+                    <select name="sell_price_unit" id="editItemSellPriceUnit" class="form-select rounded-3 manifest-unit-select">
+                        <option value="per lbs">per lbs</option>
+                        <option value="per kgs">per kgs</option>
+                        <option value="per mt">per MT</option>
+                        <option value="per st">per ST</option>
+                        <option value="per pcs">per pcs</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Packaging -->
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase mb-1">Packaging</label>
+                <select name="packaging" id="editItemPackaging" class="form-select rounded-3">
+                    <option value="">Select packaging type</option>
+                    {% for ptype in packaging_types %}
+                    <option value="{{ ptype.name }}">{{ ptype.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Palletized Checkbox -->
+            <div class="form-check mb-4">
+                <input class="form-check-input" type="checkbox" name="is_palletized" id="editItemIsPalletized">
+                <label class="form-check-label small fw-bold text-muted" for="editItemIsPalletized">Is the packaging palletized?</label>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="mt-4 pt-3 border-top">
+                <button type="submit" class="btn btn-primary w-100 py-2 fw-bold rounded-3 shadow-sm" style="background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%); border: none; font-size: 0.9rem;">Submit</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Manifest row quick-edit logic
+    document.querySelectorAll('.manifest-row').forEach(row => {
+        row.addEventListener('click', function(e) {
+            // Prevent drawer if clicking a link or interactive element
+            if (e.target.tagName === 'A' || e.target.closest('a') || e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
+            
+            // NEW: Prevent drawer if clicking in the first column (Material column)
+            const td = e.target.closest('td');
+            if (td && td.cellIndex === 0) return;
+
+            const data = this.dataset;
+
+            const offcanvasElement = document.getElementById('offcanvasEditItem');
+            const drawer = new bootstrap.Offcanvas(offcanvasElement);
+
+            // Populate fields
+            document.getElementById('editItemMaterialName').innerText = data.material;
+            document.getElementById('editItemWeight').value = data.weight;
+            document.getElementById('editItemWeightUnit').value = data.weightUnit;
+            document.getElementById('editItemBuyPrice').value = data.buyPrice;
+            document.getElementById('editItemBuyPriceUnit').value = data.buyPriceUnit;
+            document.getElementById('editItemSellPrice').value = data.sellPrice;
+            document.getElementById('editItemSellPriceUnit').value = data.sellPriceUnit;
+            document.getElementById('editItemPackaging').value = data.packaging;
+            document.getElementById('editItemIsPalletized').checked = data.palletized === 'true';
+
+            // Set form action
+            const editUrl = "{% url 'orders:order_edit_manifest_item' 0 %}".replace('0', data.itemId);
+            document.getElementById('editItemForm').action = editUrl;
+
+            drawer.show();
+        });
+    });
+
+    // Unit Synchronization Logic
+    function syncUnits(sourceSelect) {
+        const block = sourceSelect.closest('.item-block') || sourceSelect.closest('form');
+        if (!block) return;
+
+        let selectedVal = sourceSelect.value.replace('per ', '');
+        
+        const weightUnit = block.querySelector('.manifest-unit-select[name*="weight_unit"], #editItemWeightUnit');
+        const buyUnit = block.querySelector('.manifest-unit-select[name*="buy_price_unit"], #editItemBuyPriceUnit');
+        const sellUnit = block.querySelector('.manifest-unit-select[name*="sell_price_unit"], #editItemSellPriceUnit');
+
+        if (weightUnit && weightUnit !== sourceSelect) weightUnit.value = selectedVal;
+        if (buyUnit && buyUnit !== sourceSelect) buyUnit.value = 'per ' + selectedVal;
+        if (sellUnit && sellUnit !== sourceSelect) sellUnit.value = 'per ' + selectedVal;
+    }
+
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('manifest-unit-select') || 
+            ['editItemWeightUnit', 'editItemBuyPriceUnit', 'editItemSellPriceUnit'].includes(e.target.id)) {
+            syncUnits(e.target);
+        }
+    });
+
     document.getElementById('addAnotherItemBtn').addEventListener('click', function() {
+
+
         const container = document.getElementById('itemsContainer');
         const firstItem = container.querySelector('.item-block');
         const newItem = firstItem.cloneNode(true);

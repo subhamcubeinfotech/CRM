@@ -13,4 +13,6 @@ urlpatterns = [
     path('<int:pk>/add-item/', views.order_add_item, name='order_add_item'),
     path('<int:pk>/upload-document/', views.order_upload_document, name='order_upload_document'),
     path('<int:pk>/add-note/', views.order_add_note, name='order_add_note'),
+    path('item/<int:item_pk>/edit/', views.order_edit_manifest_item, name='order_edit_manifest_item'),
 ]
+
