@@ -85,11 +85,13 @@ class InventoryItemForm(forms.ModelForm):
         model = InventoryItem
         fields = [
             'sku', 'product_name', 'description', 'warehouse',
+            'offered_weight', 'offered_weight_unit',
             'quantity', 'unit_of_measure', 'lot_number', 'po_number',
             'company', 'shipping_terms', 'representative', 'tags',
             'packaging', 'pieces', 'is_palletized',
             'unit_cost', 'price_unit'
         ]
+
         widgets = {
             'sku': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'SKU / Part Number'}),
             'product_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Select a material'}),

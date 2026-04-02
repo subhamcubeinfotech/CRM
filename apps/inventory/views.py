@@ -398,6 +398,8 @@ def inventory_item_add_general(request):
                 'warehouse': resolved_warehouse,
                 'product_name': product_names[i],
                 'sku': skus[i] if i < len(skus) else '',
+                'offered_weight': quantities[i] if i < len(quantities) else 0,
+                'offered_weight_unit': uoms[i] if i < len(uoms) else 'lbs',
                 'quantity': quantities[i] if i < len(quantities) else 0,
                 'unit_of_measure': uoms[i] if i < len(uoms) else 'lbs',
                 'unit_cost': unit_costs[i] if i < len(unit_costs) else 0,
@@ -414,6 +416,7 @@ def inventory_item_add_general(request):
                 'company': request.POST.get('company'),
                 'representative': request.POST.get('representative'),
             }
+
             
             form = InventoryItemForm(item_data, user=request.user)
             if form.is_valid():
@@ -501,7 +504,14 @@ def inventory_item_add(request, pk):
             item.tenant = request.user.tenant
             if not item.representative:
                 item.representative = request.user
+            
+            # Sync offered_weight with quantity on creation
+            if not item.pk: # New item
+                item.offered_weight = item.quantity
+                item.offered_weight_unit = item.unit_of_measure
+                
             item.save()
+
             form.save_m2m()
             messages.success(request, f"Item '{item.product_name}' successfully added to {warehouse.name}.")
             return redirect('inventory:warehouse_detail', pk=warehouse.pk)
