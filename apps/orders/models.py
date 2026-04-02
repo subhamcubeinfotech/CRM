@@ -122,12 +122,10 @@ class Order(TenantAwareModel):
 
     @property
     def shipped_weight(self):
-        """Calculate total weight shipped across all associated shipments (converted to lbs)"""
-        # Shipment.total_weight is stored in kg (canonical system unit for shipments)
-        # Convert kg to lbs: kg * 2.20462
+        """Calculate total weight shipped across all associated shipments (canonical unit: lbs)"""
         from decimal import Decimal
-        total_kg = sum(s.total_weight for s in self.shipments.all())
-        return total_kg * Decimal('2.20462')
+        total_val = sum(s.total_weight for s in self.shipments.exclude(status='rejected'))
+        return total_val
 
     @property
     def shipped_weight_in_unit(self):
