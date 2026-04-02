@@ -1,5 +1,7 @@
 {% extends 'base.html' %}
 {% load humanize %}
+{% load inventory_tags %}
+
 
 {% block title %}Order #{{ order.order_number }} Details - FreightPro{% endblock %}
 
@@ -162,7 +164,8 @@
                             style="width: {{ order.manifest_progress_percentage }}%"></div>
                         <div class="position-absolute w-100 text-center fw-bold"
                             style="font-size: 0.75rem; line-height: 22px; color: #2d3748;">
-                            {{ order.total_manifest_weight_in_unit|floatformat:2|intcomma }} / {{ order.total_weight_target|floatformat:2|intcomma }} {{ order.total_weight_unit }}
+                            {{ order.total_manifest_weight_in_unit|format_short }} / {{ order.total_weight_target|format_short }} {{ order.total_weight_unit }}
+
                         </div>
                     </div>
                 </div>
@@ -291,8 +294,9 @@
                                         <td>${{ item.buy_price|floatformat:2 }} / {{ item.buy_price_unit|default:"lb" }}</td>
                                         <td>${{ item.sell_price|floatformat:2 }} / {{ item.sell_price_unit|default:"lb" }}</td>
                                         <td>
-                                            {{ item.weight|intcomma }} {{ item.weight_unit }}
+                                            {{ item.weight|format_short }} {{ item.weight_unit }} / {{ order.total_weight_target|format_short }} {{ item.weight_unit }}
                                         </td>
+
                                         <td class="pe-3">
                                             {{ item.packaging|default:"-" }}
                                             {% if item.is_palletized %}
