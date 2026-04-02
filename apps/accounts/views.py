@@ -53,10 +53,9 @@ def company_list(request):
     paginator = Paginator(companies, 25)
     page = request.GET.get('page')
     companies = paginator.get_page(page)
-    if request.user.role == 'admin':
-        for company in companies:
-            if company.full_address and (company.latitude is None or company.longitude is None):
-                geocode_company(company, save=True)
+    for company in companies:
+        if company.full_address and (company.latitude is None or company.longitude is None):
+            geocode_company(company, save=True)
     context = {
         'companies': companies,
         'company_type': company_type,
