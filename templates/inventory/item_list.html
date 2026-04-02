@@ -388,12 +388,14 @@
                     </td>
                     <td>
                         <div class="fw-bold">{{ item.quantity|intcomma }} {{ item.unit_of_measure }}</div>
+                        <div class="sub-text">Offered: {{ item.offered_weight|intcomma }} {{ item.offered_weight_unit }}</div>
                         {% if item.is_low_stock %}
                         <div class="text-danger" style="font-size: 0.75rem;">
                             <i class="fas fa-exclamation-circle me-1"></i>Low Stock
                         </div>
                         {% endif %}
                     </td>
+
                     <td class="text-muted">
                         ${{ item.unit_cost|floatformat:2 }}
                     </td>
