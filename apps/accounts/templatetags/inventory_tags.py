@@ -20,8 +20,11 @@ def format_short(value):
     try:
         val = float(value)
         if val >= 1000:
-            return f"{val/1000:g}K"
-        return f"{val:g}"
+            return f"{int(round(val / 1000))}K"
+        return f"{int(round(val))}"
+
+
+
     except (ValueError, TypeError):
         return value
 
