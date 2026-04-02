@@ -274,9 +274,9 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
         context['all_representatives'] = get_user_model().objects.filter(tenant=user_tenant, is_active=True).order_by('first_name', 'username')
             
         inventory_items_qs = InventoryItem.plain_objects.filter(
-            Q(company=self.object.supplier) | Q(warehouse__company=self.object.supplier),
+            company=self.object.supplier,
             tenant=self.object.tenant
-        ).distinct()
+        )
 
         # Calculation for remaining manifest balance
         from apps.shipments.models import ShipmentItem
