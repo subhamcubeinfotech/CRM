@@ -72,43 +72,38 @@
                             <div class="d-flex justify-content-between align-items-center mb-4">
                                 <div class="d-flex align-items-center gap-3">
                                     <div class="dropdown">
-                                        <button class="btn btn-outline-primary dropdown-toggle rounded-3 px-3 py-2" type="button" id="rangeDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <button class="btn btn-light btn-sm dropdown-toggle border-0" type="button" id="rangeDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="border-radius: 8px; background: #f8fafc; color: #475569; font-weight: 500;">
                                             {% if current_range == '30' %}Last 30 days
                                             {% elif current_range == '90' %}Last 3 months
                                             {% elif current_range == '365' %}Last 12 months
                                             {% else %}Last 6 months{% endif %}
                                         </button>
-                                        <ul class="dropdown-menu shadow-sm border-0" aria-labelledby="rangeDropdown">
+                                        <ul class="dropdown-menu shadow-sm border-0" aria-labelledby="rangeDropdown" style="font-size: 0.85rem;">
                                             <li><a class="dropdown-item {% if current_range == '30' %}active{% endif %}" href="?name={{ material.name }}&tab=details&range=30">Last 30 days</a></li>
                                             <li><a class="dropdown-item {% if current_range == '90' %}active{% endif %}" href="?name={{ material.name }}&tab=details&range=90">Last 3 months</a></li>
                                             <li><a class="dropdown-item {% if current_range == '180' or not current_range %}active{% endif %}" href="?name={{ material.name }}&tab=details&range=180">Last 6 months</a></li>
                                             <li><a class="dropdown-item {% if current_range == '365' %}active{% endif %}" href="?name={{ material.name }}&tab=details&range=365">Last 12 months</a></li>
                                         </ul>
                                     </div>
-                                    <div class="fw-bold text-dark small" style="letter-spacing: 0.02em;">
+                                    <div class="text-muted small fw-bold" style="letter-spacing: 0.02em;">
                                         {{ start_date|date:"m/d/Y" }} - {{ end_date|date:"m/d/Y" }}
                                     </div>
-                                </div>
-                                <div class="h5 mb-0 fw-bold text-dark">
-                                    <span class="text-muted small fw-normal">Avg Buy:</span> ${{ avg_buy|floatformat:"2" }} 
-                                    <span class="mx-2 text-muted">|</span>
-                                    <span class="text-muted small fw-normal">Avg Sell:</span> ${{ avg_sell|floatformat:"2" }}
                                 </div>
                             </div>
                             
                             <!-- Legend -->
                             <div class="d-flex gap-4 mb-4">
                                 <div class="d-flex align-items-center gap-2">
-                                    <span style="width: 12px; height: 12px; border-radius: 50%; background: #3b82f6; display: inline-block;"></span>
-                                    <span class="small text-muted">Avg Buy Price</span>
+                                    <span style="width: 10px; height: 10px; border-radius: 50%; background: #ef4444; display: inline-block;"></span>
+                                    <span class="small text-muted fw-medium">Buy</span>
                                 </div>
                                 <div class="d-flex align-items-center gap-2">
-                                    <span style="width: 12px; height: 12px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
-                                    <span class="small text-muted">Avg Sell Price</span>
+                                    <span style="width: 10px; height: 10px; border-radius: 50%; background: #14b8a6; display: inline-block;"></span>
+                                    <span class="small text-muted fw-medium">Sell</span>
                                 </div>
                                 <div class="d-flex align-items-center gap-2">
-                                    <span style="width: 12px; height: 12px; border-radius: 50%; background: #e2e8f0; display: inline-block;"></span>
-                                    <span class="small text-muted">Volume (Weight)</span>
+                                    <span style="width: 10px; height: 10px; border-radius: 50%; background: #f1f5f9; border: 1px solid #e2e8f0; display: inline-block;"></span>
+                                    <span class="small text-muted fw-medium">Volume</span>
                                 </div>
                             </div>
 
@@ -283,19 +278,37 @@
                 datasets: [
                     {
                         type: 'line',
-                        label: 'Avg Buy Price',
+                        label: 'Buy',
                         data: chartData.buy,
-                        borderColor: '#3b82f6',
+                        borderColor: '#ef4444',
                         backgroundColor: 'transparent',
+                        borderWidth: 2.5,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#ef4444',
+                        pointBorderWidth: 2,
+                        pointHoverRadius: 6,
+                        pointHoverBackgroundColor: '#ef4444',
+                        pointHoverBorderColor: '#fff',
+                        pointHoverBorderWidth: 2,
                         tension: 0.4,
                         yAxisID: 'y'
                     },
                     {
                         type: 'line',
-                        label: 'Avg Sell Price',
+                        label: 'Sell',
                         data: chartData.sell,
-                        borderColor: '#10b981',
+                        borderColor: '#14b8a6',
                         backgroundColor: 'transparent',
+                        borderWidth: 2.5,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#14b8a6',
+                        pointBorderWidth: 2,
+                        pointHoverRadius: 6,
+                        pointHoverBackgroundColor: '#14b8a6',
+                        pointHoverBorderColor: '#fff',
+                        pointHoverBorderWidth: 2,
                         tension: 0.4,
                         yAxisID: 'y'
                     },
@@ -305,6 +318,7 @@
                         data: chartData.weight,
                         backgroundColor: '#f1f5f9',
                         borderRadius: 4,
+                        maxBarThickness: 40,
                         yAxisID: 'y1'
                     }
                 ]
@@ -313,20 +327,51 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { display: false }
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#1e293b',
+                        padding: 12,
+                        titleFont: { size: 14, weight: 'bold' },
+                        bodyFont: { size: 13 },
+                        cornerRadius: 8,
+                        displayColors: true,
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) label += ': ';
+                                if (context.datasetIndex < 2) {
+                                    label += '$' + context.parsed.y.toFixed(2) + ' / lb';
+                                } else {
+                                    label += context.parsed.y.toLocaleString() + ' lbs';
+                                }
+                                return label;
+                            }
+                        }
+                    }
                 },
                 scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#94a3b8', font: { size: 11, weight: '500' } }
+                    },
                     y: {
                         beginAtZero: true,
                         position: 'left',
-                        grid: { color: '#f1f5f9' },
-                        title: { display: true, text: 'Price ($/lb)', color: '#64748b' }
+                        grid: { color: '#f1f5f9', drawBorder: false },
+                        border: { display: false },
+                        ticks: {
+                            color: '#94a3b8',
+                            font: { size: 11 },
+                            callback: function(value) {
+                                return '$' + value.toFixed(2) + ' / lb';
+                            }
+                        }
                     },
                     y1: {
+                        display: false,
                         beginAtZero: true,
                         position: 'right',
-                        grid: { display: false },
-                        title: { display: true, text: 'Volume (lbs)', color: '#64748b' }
+                        grid: { display: false }
                     }
                 }
             }
