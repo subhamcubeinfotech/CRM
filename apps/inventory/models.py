@@ -157,9 +157,14 @@ class InventoryItem(TenantAwareModel):
     warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, related_name='inventory_items')
     location = models.CharField(max_length=100, blank=True, help_text='Bin or shelf location')
     
+    # Offered vs Current
+    offered_weight = models.DecimalField(max_digits=20, decimal_places=2, default=0)
+    offered_weight_unit = models.CharField(max_length=50, default='lbs')
+
     # Quantity
     quantity = models.DecimalField(max_digits=20, decimal_places=2, default=0)
     unit_of_measure = models.CharField(max_length=50, default='lbs')
+
     
     # Tracking
     lot_number = models.CharField(max_length=100, blank=True)
