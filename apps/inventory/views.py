@@ -127,6 +127,22 @@ def ajax_locations_for_company(request):
         except Company.DoesNotExist:
             pass
     return JsonResponse({'locations': locations})
+    
+    
+@login_required
+def ajax_materials_for_company(request):
+    """AJAX: Return materials filtered by company_id OR global materials"""
+    company_id = request.GET.get('company_id')
+    materials = Material.objects.all()
+    
+    if company_id:
+        materials = materials.filter(company_id=company_id)
+    else:
+        # If no company provided, return nothing to prevent accidental global visibility
+        materials = materials.none()
+        
+    data = [{'value': m.name, 'label': m.name} for m in materials.order_by('name')]
+    return JsonResponse({'materials': data})
 
 
 @login_required
@@ -328,6 +344,18 @@ def create_material_ajax(request):
             material = form.save(commit=False)
             if hasattr(request.user, 'tenant'):
                 material.tenant = request.user.tenant
+            
+            # Associate with company if provided
+            company_id = request.POST.get('company') # From the MaterialForm which we should update
+            if not company_id:
+                # Try getting it from the InventoryItemForm company field (if passed via JS)
+                company_id = request.POST.get('company_id_context')
+                
+            if company_id:
+                from apps.accounts.models import Company
+                material.company = get_object_or_404(Company, id=company_id)
+            elif request.user.company:
+                material.company = request.user.company
             
             from django.db import IntegrityError
             try:

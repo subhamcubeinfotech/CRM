@@ -2,9 +2,18 @@ from django import forms
 from .models import Warehouse, InventoryItem, Material
 
 class MaterialForm(forms.ModelForm):
+    company = forms.ModelChoiceField(queryset=None, required=False, widget=forms.HiddenInput())
+    # Field to pass the current company from the main form to the AJAX creation
+    company_id_context = forms.CharField(required=False, widget=forms.HiddenInput())
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from apps.accounts.models import Company
+        self.fields['company'].queryset = Company.objects.all()
+
     class Meta:
         model = Material
-        fields = ['name', 'material_type', 'product_type', 'description', 'image', 'document']
+        fields = ['name', 'material_type', 'product_type', 'description', 'image', 'document', 'company']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Custom display name for this material'}),
             'material_type': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. PE, PP'}),
@@ -40,8 +49,22 @@ class InventoryItemForm(forms.ModelForm):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         
-        # Populate material choices
-        materials = Material.objects.all().order_by('name')
+        # Populate material choices - Filter by company if possible
+        materials_qs = Material.objects.all().order_by('name')
+        
+        # Determine company for initial filtering
+        item_company = None
+        if self.instance and self.instance.pk:
+            item_company = self.instance.company
+        elif 'initial' in kwargs and 'company' in kwargs['initial']:
+            item_company = kwargs['initial']['company']
+            
+        if item_company:
+            materials_qs = materials_qs.filter(company=item_company)
+        else:
+            materials_qs = materials_qs.none()
+            
+        materials = list(materials_qs)
         self.fields['product_name'].widget = forms.Select(
             choices=[('', 'Select a material')] + [(m.name, m.name) for m in materials],
             attrs={'class': 'form-select'}
