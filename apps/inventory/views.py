@@ -384,6 +384,8 @@ def inventory_item_add_general(request):
         notes_list = request.POST.getlist('description')
         lot_numbers = request.POST.getlist('lot_number')
         palletized_choices = request.POST.getlist('is_palletized')
+        offered_weights = request.POST.getlist('offered_weight')
+        offered_weight_units = request.POST.getlist('offered_weight_unit')
 
         created_count = 0
         error_messages = []
@@ -398,8 +400,8 @@ def inventory_item_add_general(request):
                 'warehouse': resolved_warehouse,
                 'product_name': product_names[i],
                 'sku': skus[i] if i < len(skus) else '',
-                'offered_weight': quantities[i] if i < len(quantities) else 0,
-                'offered_weight_unit': uoms[i] if i < len(uoms) else 'lbs',
+                'offered_weight': offered_weights[i] if i < len(offered_weights) else (quantities[i] if i < len(quantities) else 0),
+                'offered_weight_unit': offered_weight_units[i] if i < len(offered_weight_units) else (uoms[i] if i < len(uoms) else 'lbs'),
                 'quantity': quantities[i] if i < len(quantities) else 0,
                 'unit_of_measure': uoms[i] if i < len(uoms) else 'lbs',
                 'unit_cost': unit_costs[i] if i < len(unit_costs) else 0,
