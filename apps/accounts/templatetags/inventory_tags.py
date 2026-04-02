@@ -11,3 +11,17 @@ def query_transform(context, **kwargs):
         else:
             query.pop(key, None)
     return query.urlencode()
+@register.filter
+def format_short(value):
+    """
+    Formats a number to a short string with K (thousands) suffix.
+    Example: 160000 -> 160K, 2000000 -> 2000K, 500 -> 500
+    """
+    try:
+        val = float(value)
+        if val >= 1000:
+            return f"{val/1000:g}K"
+        return f"{val:g}"
+    except (ValueError, TypeError):
+        return value
+

@@ -1128,3 +1128,41 @@ def order_add_note(request, pk):
     except Exception as e:
         logger.error(f"Error adding note to order {pk}: {e}")
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+@login_required
+@require_POST
+def order_edit_manifest_item(request, item_pk):
+    """
+    Update a single manifest item from the order detail page.
+    """
+    from .models import ManifestItem, OrderEvent
+    item = get_object_or_404(ManifestItem, pk=item_pk)
+    
+    # Check access
+    if item.order.tenant != request.user.tenant:
+        return redirect('orders:order_list')
+        
+    try:
+        item.weight = request.POST.get('weight') or item.weight
+        item.weight_unit = request.POST.get('weight_unit') or item.weight_unit
+        item.buy_price = request.POST.get('buy_price') or item.buy_price
+        item.buy_price_unit = request.POST.get('buy_price_unit') or item.buy_price_unit
+        item.sell_price = request.POST.get('sell_price') or item.sell_price
+        item.sell_price_unit = request.POST.get('sell_price_unit') or item.sell_price_unit
+        item.packaging = request.POST.get('packaging') or ""
+        item.is_palletized = request.POST.get('is_palletized') == 'on' or request.POST.get('is_palletized') == 'true'
+        item.save()
+        
+        # Create Lifecycle Event
+        OrderEvent.objects.create(
+            order=item.order,
+            event_type='status_updated',
+            description=f"Manifest item '{item.material}' updated.",
+            created_by=request.user
+        )
+        
+        logger.info(f"Manifest item {item_pk} updated by {request.user}")
+    except Exception as e:
+        logger.error(f"Error updating manifest item {item_pk}: {e}")
+        
+    return redirect('orders:order_detail', pk=item.order.pk)
