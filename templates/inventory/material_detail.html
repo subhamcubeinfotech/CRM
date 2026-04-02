@@ -120,34 +120,54 @@
                 </div>
                 {% elif active_tab == 'haves' %}
                 <div class="table-responsive">
-                    <table class="table align-middle">
+                    <table class="table align-middle table-hover">
                         <thead>
                             <tr class="text-muted small text-uppercase">
-                                <th>Warehouse</th>
-                                <th>Quantity</th>
-                                <th>Unit Cost</th>
-                                <th>Value</th>
+                                <th class="ps-3">Company</th>
+                                <th>Role</th>
+                                <th>Latest Activity</th>
+                                <th>Current Stock</th>
                                 <th>Status</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for item in inventory_items %}
+                            {% for partner in partner_companies %}
                             <tr>
-                                <td>{{ item.warehouse.name }}</td>
-                                <td class="fw-bold">{{ item.quantity }} {{ item.unit|default:"lbs" }}</td>
-                                <td>${{ item.unit_cost }}</td>
-                                <td>${{ item.total_value }}</td>
+                                <td class="ps-3">
+                                    <a href="{% url 'accounts:company_detail' partner.id %}" class="fw-bold text-primary text-decoration-none" style="font-size: 1.05rem;">{{ partner.name }}</a>
+                                </td>
                                 <td>
-                                    {% if item.is_low_stock %}
-                                    <span class="badge bg-danger-subtle text-danger rounded-pill">Low Stock</span>
+                                    <div class="d-flex flex-wrap gap-1">
+                                        {% for role in partner.roles %}
+                                        <span class="badge {% if role == 'Stockist' %}bg-info-subtle text-info{% elif role == 'Supplier' %}bg-primary-subtle text-primary{% else %}bg-secondary-subtle text-secondary{% endif %} rounded-pill px-2" style="font-size: 0.7rem;">{{ role }}</span>
+                                        {% endfor %}
+                                    </div>
+                                </td>
+                                <td class="text-muted small">
+                                    {% if partner.latest_date %}
+                                    {{ partner.latest_date|date:"M d, Y" }}
+                                    {% else %}Prior History{% endif %}
+                                </td>
+                                <td>
+                                    {% if partner.is_stockist %}
+                                    <span class="fw-bold text-dark">{{ partner.stock_qty|floatformat:2 }} {{ partner.unit }}</span>
+                                    {% else %}—{% endif %}
+                                </td>
+                                <td>
+                                    {% if partner.is_stockist %}
+                                        {% if partner.stock_qty > 0 %}
+                                        <span class="badge bg-success-subtle text-success rounded-pill px-2">Available</span>
+                                        {% else %}
+                                        <span class="badge bg-warning-subtle text-warning rounded-pill px-2">Zero Stock</span>
+                                        {% endif %}
                                     {% else %}
-                                    <span class="badge bg-success-subtle text-success rounded-pill">In Stock</span>
+                                    <span class="badge bg-light text-muted rounded-pill px-2">Past Dealer</span>
                                     {% endif %}
                                 </td>
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="5" class="text-center py-4 text-muted">No inventory found for this material.</td>
+                                <td colspan="5" class="text-center py-4 text-muted">No companies found associated with this material.</td>
                             </tr>
                             {% endfor %}
                         </tbody>

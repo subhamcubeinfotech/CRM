@@ -717,12 +717,66 @@ def material_detail(request, pk=None):
     avg_buy = sum(chart_buy_avg) / len(chart_buy_avg) if chart_buy_avg else 0
     avg_sell = sum(chart_sell_avg) / len(chart_sell_avg) if chart_sell_avg else 0
 
+    # 4. Consolidated Partner Companies (Dealers/Stockists/Historical)
+    partner_map = {} # cid -> data
+    
+    def get_or_create_partner(company):
+        if not company: return None
+        if company.id not in partner_map:
+            partner_map[company.id] = {
+                'id': company.id,
+                'name': company.name,
+                'roles': set(),
+                'stock_qty': 0,
+                'unit': 'lbs',
+                'latest_date': None,
+                'is_stockist': False
+            }
+        return partner_map[company.id]
+
+    # From Inventory
+    for item in inventory_items:
+        p = get_or_create_partner(item.company)
+        if p:
+            p['roles'].add('Stockist')
+            p['is_stockist'] = True
+            p['stock_qty'] += float(item.quantity or 0)
+            p['unit'] = item.unit_of_measure or 'lbs'
+            # Note: We don't have a 'date' on inventory items usually, 
+            # maybe use creation date but not crucial for stockists.
+
+    # From Orders
+    for order in related_orders:
+        s = get_or_create_partner(order.supplier)
+        if s:
+            s['roles'].add('Supplier')
+            if not s['latest_date'] or order.created_at > s['latest_date']:
+                s['latest_date'] = order.created_at
+        
+        r = get_or_create_partner(order.receiver)
+        if r:
+            r['roles'].add('Receiver')
+            if not r['latest_date'] or order.created_at > r['latest_date']:
+                r['latest_date'] = order.created_at
+
+    # Sort partners: Stockists first, then by latest date
+    sorted_partners = sorted(
+        partner_map.values(), 
+        key=lambda x: (1 if x['is_stockist'] else 0, x['latest_date'].timestamp() if x['latest_date'] else 0),
+        reverse=True
+    )
+
+    # Convert roles sets to sorted lists for template use
+    for p in sorted_partners:
+        p['roles'] = sorted(list(p['roles']))
+
     context = {
         'material': material,
         'active_tab': request.GET.get('tab', 'details'),
         'inventory_items': inventory_items,
         'total_stock': total_stock,
         'related_orders': list(related_orders)[:10],  # Ensure it's a list for slicing if needed
+        'partner_companies': sorted_partners,
         'avg_buy': avg_buy,
         'avg_sell': avg_sell,
         'current_range': str(days),
