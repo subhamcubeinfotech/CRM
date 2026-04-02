@@ -1,4 +1,6 @@
 {% extends 'base.html' %}
+{% load inventory_tags %}
+
 
 {% block title %}{{ item.sku }} - {{ item.product_name }} - FreightPro{% endblock %}
 
@@ -98,16 +100,17 @@
             <div class="card mb-4 bg-dark text-white shadow">
                 <div class="card-body text-center py-4">
                     <div class="small text-white-50 mb-1 text-uppercase">Original Offer</div>
-                    <div class="h4 fw-bold mb-4">{{ item.offered_weight }} {{ item.offered_weight_unit }}</div>
+                    <div class="h4 fw-bold mb-4">{{ item.offered_weight|format_short }} {{ item.offered_weight_unit }}</div>
                     
                     <hr class="opacity-25 my-4">
                     
                     <div class="stat-label text-white-50 mb-1 text-uppercase">Current Inventory</div>
-                    <div class="display-3 fw-bold">{{ item.quantity }}</div>
+                    <div class="display-3 fw-bold">{{ item.quantity|format_short }}</div>
                     <div class="text-white-50 mb-4">{{ item.unit_of_measure }} available</div>
                     <button class="btn btn-outline-light px-4">Adjust Stock</button>
                 </div>
             </div>
+
 
 
             <!-- Quick Actions -->
