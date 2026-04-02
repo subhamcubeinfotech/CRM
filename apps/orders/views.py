@@ -269,10 +269,39 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
         context['all_shipping_terms'] = ShippingTerm.plain_objects.filter(Q(tenant=user_tenant) | Q(tenant__isnull=True)).order_by('name')
         context['all_representatives'] = get_user_model().objects.filter(tenant=user_tenant, is_active=True).order_by('first_name', 'username')
             
-        context['inventory_items'] = InventoryItem.plain_objects.filter(
+        inventory_items_qs = InventoryItem.plain_objects.filter(
             Q(company=self.object.supplier) | Q(warehouse__company=self.object.supplier),
             tenant=self.object.tenant
         ).distinct()
+
+        # Calculation for remaining manifest balance
+        from apps.shipments.models import ShipmentItem
+        shipped_weights = ShipmentItem.objects.filter(
+            shipment__order=self.object
+        ).values('material_name').annotate(total_shipped=Sum('weight'))
+        
+        shipped_map = {sw['material_name']: sw['total_shipped'] for sw in shipped_weights}
+        manifest_items = list(context['manifest_items'])
+        manifest_map = {mi.material: mi.weight for mi in manifest_items}
+        
+        # If there's only one manifest item, use the larger of manifest weight or total target
+        if len(manifest_items) == 1:
+            mi = manifest_items[0]
+            manifest_map[mi.material] = max(mi.weight, self.object.total_weight_target)
+        
+        inventory_items = list(inventory_items_qs)
+        for item in inventory_items:
+            m_weight = manifest_map.get(item.product_name, 0)
+            if m_weight > 0:
+                s_weight = shipped_map.get(item.product_name, 0)
+                # Use Decimal for precise subtraction
+                from decimal import Decimal
+                diff = Decimal(str(m_weight)) - Decimal(str(s_weight))
+                item.order_balance = max(0, diff)
+            else:
+                item.order_balance = None
+        
+        context['inventory_items'] = inventory_items
         context['assign_company'] = assign_company
         context['packaging_types'] = PackagingType.objects.all()
         
