@@ -63,12 +63,15 @@ def ajax_warehouse_create(request):
             if hasattr(request.user, 'tenant'):
                 warehouse.tenant = request.user.tenant
             
-            # Assign company from request (likely current user's company)
-            if request.user.company:
+            # Assign company: check POST data first, then fallback to user's company
+            company_id = request.POST.get('company_id')
+            if company_id:
+                from apps.accounts.models import Company
+                warehouse.company = get_object_or_404(Company, id=company_id)
+            elif request.user.company:
                 warehouse.company = request.user.company
             
             # Check for existing warehouse with same name AND company/tenant
-            # We check name and company to avoid duplicates for the same entity
             existing = Warehouse.objects.filter(
                 name=warehouse.name,
                 company=warehouse.company,
@@ -81,6 +84,7 @@ def ajax_warehouse_create(request):
                     'is_existing': True,
                     'id': existing.id,
                     'name': existing.name,
+                    'company_id': existing.company_id,
                     'full_label': str(existing)
                 })
 
@@ -94,6 +98,7 @@ def ajax_warehouse_create(request):
                 'success': True,
                 'id': warehouse.id,
                 'name': warehouse.name,
+                'company_id': warehouse.company_id,
                 'full_label': str(warehouse)
             })
         else:
