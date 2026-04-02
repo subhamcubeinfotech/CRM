@@ -132,6 +132,7 @@ class Material(TenantAwareModel):
     product_type = models.CharField(max_length=100, blank=True, help_text="e.g. Film, Flake, Regrind")
     
     description = models.TextField(blank=True)
+    company = models.ForeignKey('accounts.Company', on_delete=models.CASCADE, related_name='materials', null=True, blank=True, help_text="Company this material belongs to (optional, null means global to tenant)")
     image = models.ImageField(upload_to='materials/images/', null=True, blank=True)
     document = models.FileField(upload_to='materials/docs/', null=True, blank=True)
     
@@ -141,7 +142,7 @@ class Material(TenantAwareModel):
     
     class Meta:
         ordering = ['name']
-        unique_together = ('tenant', 'name')
+        unique_together = ('tenant', 'company', 'name')
     
     def __str__(self):
         return self.name
