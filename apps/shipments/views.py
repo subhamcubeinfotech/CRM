@@ -130,7 +130,7 @@ def _parse_items_from_post(post_data):
     
     for i in sorted(list(indices)):
         weight_val = post_data.get(f'items_ui[{i}][weight]', '0') or '0'
-        pieces_val = post_data.get(f'items_ui[{i}][pieces]', '0') or '0'
+        pieces_val = post_data.get(f'items_ui[{i}][pieces]', '1') or '1'
         buy_val = post_data.get(f'items_ui[{i}][buy_price]', '0') or '0'
         sell_val = post_data.get(f'items_ui[{i}][sell_price]', '0') or '0'
         gross_val = post_data.get(f'items_ui[{i}][gross_weight]', '')
