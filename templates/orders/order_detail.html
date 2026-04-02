@@ -821,7 +821,7 @@
                                 <option value="">Select a material</option>
                                 {% for item in inventory_items %}
                                 <option value="{{ item.id }}" data-unit="{{ item.unit_of_measure }}">
-                                    {{ item.product_name }} - {{ item.display_stock }}
+                                    {{ item.product_name }}
                                 </option>
                                 {% endfor %}
                             </select>
@@ -1543,7 +1543,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <option value="">Select a material</option>
                             {% for item in inventory_items %}
                             <option value="{{ item.id }}" data-unit="{{ item.unit_of_measure }}">
-                                {{ item.product_name }} - {{ item.display_stock }}
+                                {{ item.product_name }}{% if item.order_balance is not None %} - {{ item.order_balance|format_short }}{% endif %}
                             </option>
                             {% endfor %}
                         </select>
