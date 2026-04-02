@@ -177,12 +177,20 @@
                     <div class="progress rounded-pill bg-light"
                         style="height: 24px; position: relative; border: 1px solid #e3e6f0;"
                         title="Manifested: {{ order.total_manifest_weight_in_unit|floatformat:2 }} / Target: {{ order.total_weight_target|floatformat:2 }} {{ order.total_weight_unit }} (Shipped: {{ order.shipped_weight_in_unit|floatformat:2 }} {{ order.total_weight_unit }})">
-                        <div class="progress-bar bg-info opacity-50"
-                            style="width: {{ order.weight_progress_percentage }}%"></div>
+                        <!-- Manifested Progress (Light Blue) -->
+                        <div class="progress-bar bg-info opacity-25 position-absolute h-100"
+                            style="width: {{ order.manifest_progress_percentage }}%; z-index: 1;"></div>
+                        <!-- Shipped Progress (Solid Blue) -->
+                        <div class="progress-bar bg-primary position-absolute h-100"
+                            style="width: {{ order.weight_progress_percentage }}%; z-index: 2;"></div>
+                        
                         <div class="position-absolute w-100 text-center fw-bold"
-                            style="font-size: 0.75rem; line-height: 22px; color: #2d3748;">
-                            {{ order.shipped_weight_in_unit|format_short }} / {{ order.total_weight_target|format_short }} {{ order.total_weight_unit }}
-
+                            style="font-size: 0.75rem; line-height: 22px; color: #1e293b; z-index: 3;">
+                            {% if order.shipped_weight_in_unit > 0 %}
+                                {{ order.shipped_weight_in_unit|format_short }} / {{ order.total_weight_target|format_short }} {{ order.total_weight_unit }}
+                            {% else %}
+                                {{ order.total_manifest_weight_in_unit|format_short }} / {{ order.total_weight_target|format_short }} {{ order.total_weight_unit }}
+                            {% endif %}
                         </div>
                     </div>
                 </div>
