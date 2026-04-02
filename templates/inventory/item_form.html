@@ -385,14 +385,50 @@
                 .catch(err => console.warn('Location fetch failed:', err));
             }
 
+            function fetchMaterials(companyId, currentVal) {
+                if (!companyId) return;
+                fetch(`{% url 'inventory:ajax_materials_for_company' %}?company_id=${companyId}`, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(r => r.json())
+                .then(data => {
+                    const materialDropdowns = document.querySelectorAll('select[name="product_name"]');
+                    materialDropdowns.forEach(dropdown => {
+                        const prevValue = currentVal || dropdown.value;
+                        dropdown.innerHTML = '<option value="">Select a material</option>';
+                        data.materials.forEach(m => {
+                            const opt = document.createElement('option');
+                            opt.value = m.value;
+                            opt.textContent = m.label;
+                            if (prevValue === m.value) opt.selected = true;
+                            dropdown.appendChild(opt);
+                        });
+                    });
+                })
+                .catch(err => console.warn('Material fetch failed:', err));
+            }
+
             // Native change event
             companySelect.addEventListener('change', function() {
                 fetchLocations(this.value, '');
+                fetchMaterials(this.value, '');
+                
+                // Update company context in Material offcanvas
+                const companyIdContext = document.querySelector('input[name="company_id_context"]');
+                if (companyIdContext) companyIdContext.value = this.value;
+                const companyHidden = document.querySelector('#offcanvasAddMaterial input[name="company"]');
+                if (companyHidden) companyHidden.value = this.value;
             });
             // jQuery/Select2 change
             if (typeof $ !== 'undefined') {
                 $(companySelect).on('select2:select select2:unselect', function() {
                     fetchLocations(this.value, '');
+                    fetchMaterials(this.value, '');
+                    
+                    const companyIdContext = document.querySelector('input[name="company_id_context"]');
+                    if (companyIdContext) companyIdContext.value = this.value;
+                    const companyHidden = document.querySelector('#offcanvasAddMaterial input[name="company"]');
+                    if (companyHidden) companyHidden.value = this.value;
                 });
             }
 
@@ -400,7 +436,15 @@
             const preCompany = companySelect.value;
             const preLoc = locationSelect.value;
             if (preCompany) {
-                setTimeout(() => fetchLocations(preCompany, preLoc), 50);
+                setTimeout(() => {
+                    fetchLocations(preCompany, preLoc);
+                    fetchMaterials(preCompany, '');
+                    
+                    const companyIdContext = document.querySelector('input[name="company_id_context"]');
+                    if (companyIdContext) companyIdContext.value = preCompany;
+                    const companyHidden = document.querySelector('#offcanvasAddMaterial input[name="company"]');
+                    if (companyHidden) companyHidden.value = preCompany;
+                }, 50);
             }
         }
     });
@@ -539,6 +583,8 @@
     <div class="offcanvas-body p-4">
         <form id="addMaterialForm">
             {% csrf_token %}
+            {{ material_form.company }}
+            {{ material_form.company_id_context }}
             <div class="mb-4">
                 <label class="form-label fw-bold small text-uppercase mb-2">Usage <span class="text-danger">*</span></label>
                 <div class="d-flex gap-4">
