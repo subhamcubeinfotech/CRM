@@ -389,8 +389,10 @@
                         <div class="fw-medium text-dark">{{ item.company.name|default:"-" }}</div>
                     </td>
                     <td>
-                        <div class="fw-bold">{{ item.quantity|format_short }} {{ item.unit_of_measure }}</div>
-                        <div class="sub-text">Offered: {{ item.offered_weight|intcomma }} {{ item.offered_weight_unit }}</div>
+                        <div class="fw-bold">{{ item.offered_weight|format_short }} {{ item.offered_weight_unit }}</div>
+                        <div class="sub-text">
+                            Offered: {{ item.offered_weight|intcomma }} | Stock: {{ item.quantity|intcomma }} {{ item.unit_of_measure }}
+                        </div>
 
 
                         {% if item.is_low_stock %}
