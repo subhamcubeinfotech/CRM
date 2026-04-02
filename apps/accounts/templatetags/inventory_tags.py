@@ -20,7 +20,10 @@ def format_short(value):
     try:
         val = float(value)
         if val >= 1000:
-            return f"{int(round(val / 1000))}K"
+            short_val = val / 1000
+            if short_val >= 10:
+                return f"{int(round(short_val))}K"
+            return f"{round(short_val, 1)}K"
         return f"{int(round(val))}"
 
 
