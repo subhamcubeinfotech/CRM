@@ -435,14 +435,8 @@
                     <div class="card-body">
                         <div class="mb-3">
                             <label class="form-label">Tags</label>
-                            <select name="tags_ui" class="form-select" multiple>
-                                {% if tags %}
-                                    {% for tag in tags %}
-                                    <option value="{{ tag.pk }}" {% if not is_create %}{% if tag in shipment.order.tags.all %}selected{% endif %}{% elif is_create %}{% if tag in order.tags.all %}selected{% endif %}{% endif %}>{{ tag.name }}</option>
-                                    {% endfor %}
-                                {% else %}
-                                    <option value="" disabled>Select tags</option>
-                                {% endif %}
+                            <select name="tags" id="tags-select" class="form-select select2-basic" multiple style="width: 100%;" autocomplete="off">
+                                <!-- Existing tags removed per user request to keep dropdown empty -->
                             </select>
                         </div>
 
@@ -1109,8 +1103,47 @@
 {% endblock %}
 
 {% block extra_js %}
+<!-- jQuery and Select2 JS -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
 (function() {
+    $(document).ready(function() {
+        // Initialize Select2 for Tags
+        if ($.fn.select2) {
+            $('.select2-basic').select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                placeholder: 'Select or type to create tags...',
+                tags: true,
+                tokenSeparators: [','],
+                createTag: function (params) {
+                    var term = $.trim(params.term);
+                    if (term === '') return null;
+                    return {
+                        id: term,
+                        text: term,
+                        newTag: true
+                    };
+                },
+                templateResult: function (data) {
+                    if (data.newTag) {
+                        return "Hit Enter to create new '" + data.text + "'";
+                    }
+                    return data.text;
+                }
+            });
+
+            // FORCE EMPTY ON LOAD
+            $('#tags-select').val(null).trigger('change');
+        }
+
+        // Clear tags when order changes
+        $('#order-select').on('change', function() {
+            $('#tags-select').val(null).trigger('change');
+        });
+    });
+
     function assignMyCompany(selectId, companyId, companyName, companyAddress) {
         const select = document.getElementById(selectId);
         if (!select || !companyId) return;

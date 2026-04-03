@@ -864,8 +864,7 @@ def shipment_create(request):
 
                 # Save tags
                 tag_ids = request.POST.getlist('tags_ui')
-                if tag_ids:
-                    shipment.tags.set(tag_ids)
+                shipment.tags.set(tag_ids)
 
                 # Save items
                 items_data = _parse_items_from_post(request.POST)
@@ -947,7 +946,8 @@ def shipment_create(request):
                     
                     # Update tags
                     order_tag_ids = request.POST.getlist('tags_ui')
-                    order.tags.set(order_tag_ids)
+                    if order_tag_ids:
+                        order.tags.set(order_tag_ids)
                 
                 # Create initial milestone
                 ShipmentMilestone.objects.create(
@@ -1154,8 +1154,7 @@ def shipment_edit(request, pk):
 
                 # Update tags
                 tag_ids = request.POST.getlist('tags_ui')
-                if tag_ids:
-                    shipment.tags.set(tag_ids)
+                shipment.tags.set(tag_ids)
                 # Sync items if provided in POST
                 if 'items_ui[0][weight]' in request.POST:
                     shipment.items.all().delete()
