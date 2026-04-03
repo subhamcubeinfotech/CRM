@@ -721,7 +721,7 @@
                                                     {{ item.tare_weight|floatformat:2 }} {{ item.tare_weight_unit|default:item.weight_unit }}
                                                 </td>
                                                 <td>
-                                                    {{ item.pieces|default:"-" }} pcs
+                                                    {{ item.pieces|default_if_none:"-" }} pcs
                                                 </td>
                                                 <td>{{ item.packaging|default:"-" }}</td>
                                             </tr>
