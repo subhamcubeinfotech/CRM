@@ -287,6 +287,7 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
         shipped_map = {sw['material_name']: sw['total_shipped'] for sw in shipped_weights}
         manifest_items = list(context['manifest_items'])
         manifest_map = {mi.material: mi.weight for mi in manifest_items}
+        manifest_prices = {mi.material: (mi.buy_price, mi.sell_price, mi.buy_price_unit, mi.sell_price_unit) for mi in manifest_items}
         
         # If there's only one manifest item, use the larger of manifest weight or total target
         if len(manifest_items) == 1:
@@ -304,6 +305,14 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
                 item.order_balance = max(0, diff)
             else:
                 item.order_balance = None
+            
+            # Attach prices from manifest
+            prices = manifest_prices.get(item.product_name)
+            if prices:
+                item.manifest_buy_price = prices[0]
+                item.manifest_sell_price = prices[1]
+                item.manifest_buy_unit = prices[2]
+                item.manifest_sell_unit = prices[3]
         
         context['inventory_items'] = inventory_items
         context['assign_company'] = assign_company
