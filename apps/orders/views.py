@@ -445,22 +445,35 @@ def order_create(request):
             order_number=order_number,
             po_number=request.POST.get('po_number'),
             so_number=request.POST.get('so_number'),
-            supplier_id=request.POST.get('supplier'),
-            receiver_id=request.POST.get('receiver'),
-            source_location_id=resolve_location(source_loc_val, request.user),
-            destination_location_id=resolve_location(dest_loc_val, request.user),
+            supplier_id=request.POST.get('supplier') or None,
+            receiver_id=request.POST.get('receiver') or None,
+            source_location_id=resolve_location(source_loc_val, request.user) or None,
+            destination_location_id=resolve_location(dest_loc_val, request.user) or None,
             total_weight_target=request.POST.get('total_weight_target') or 0,
             total_weight_unit=request.POST.get('total_weight_unit') or 'lbs',
             freight_cost=request.POST.get('freight_cost') or 0,
             expected_pickup_date=request.POST.get('expected_pickup_date') or None,
             expected_delivery_date=request.POST.get('expected_delivery_date') or None,
-            shipping_terms_id=request.POST.get('shipping_terms'),
-            representative_id=request.POST.get('representative'),
+            shipping_terms_id=request.POST.get('shipping_terms') or None,
+            representative_id=request.POST.get('representative') or None,
             status='confirmed', # Default to confirmed for manual entries
             payment_status='pending',
             created_by=request.user,
             tenant=request.user.tenant
         )
+        
+        # Handle Tags (support dynamic creation)
+        tag_input = request.POST.getlist('tags')
+        tag_ids = []
+        for val in tag_input:
+            # Only treat as existing ID if it's numeric AND exists in DB
+            if val.isdigit() and Tag.objects.filter(id=val, tenant=request.user.tenant).exists():
+                tag_ids.append(val)
+            elif val.strip():
+                # Treat as a new tag name (even if numeric)
+                tag, _ = Tag.objects.get_or_create(tenant=request.user.tenant, name=val.strip())
+                tag_ids.append(tag.id)
+        order.tags.set(tag_ids)
         
         # Create Lifecycle Event
         from .models import OrderEvent
@@ -623,21 +636,30 @@ def order_edit(request, pk):
             order.supplier_id = request.POST.get('supplier')
             order.receiver_id = request.POST.get('receiver')
         
-        order.source_location_id = request.POST.get('source_location')
-        order.destination_location_id = request.POST.get('destination_location')
+        order.source_location_id = request.POST.get('source_location') or None
+        order.destination_location_id = request.POST.get('destination_location') or None
         order.po_number = request.POST.get('po_number')
         order.so_number = request.POST.get('so_number')
-        order.shipping_terms_id = request.POST.get('shipping_terms')
-        order.representative_id = request.POST.get('representative')
+        order.shipping_terms_id = request.POST.get('shipping_terms') or None
+        order.representative_id = request.POST.get('representative') or None
         order.freight_cost = request.POST.get('freight_cost') or 0
         order.total_weight_target = request.POST.get('total_weight_target') or 0
         order.total_weight_unit = request.POST.get('total_weight_unit') or 'lbs'
         order.expected_pickup_date = request.POST.get('expected_pickup_date') or None
         order.expected_delivery_date = request.POST.get('expected_delivery_date') or None
         
-        # Handle Tags
-        tag_ids = request.POST.getlist('tags')
-        if tag_ids:
+        # Handle Tags (support dynamic creation)
+        tag_input = request.POST.getlist('tags')
+        if tag_input:
+            tag_ids = []
+            for val in tag_input:
+                # Only treat as existing ID if it's numeric AND exists in DB
+                if val.isdigit() and Tag.objects.filter(id=val, tenant=request.user.tenant).exists():
+                    tag_ids.append(val)
+                elif val.strip():
+                    # Treat as a new tag name (even if numeric)
+                    tag, _ = Tag.objects.get_or_create(tenant=request.user.tenant, name=val.strip())
+                    tag_ids.append(tag.id)
             order.tags.set(tag_ids)
         else:
             order.tags.clear()
