@@ -33,6 +33,7 @@ urlpatterns = [
 
     # Status update
     path('<int:pk>/update-status/', views.update_status, name='update_status'),
+    path('<int:pk>/comment/add/', views.add_comment, name='add_comment'),
 
     # Tracking
     path('track/<str:tracking_number>/', views.public_tracking, name='public_tracking'),

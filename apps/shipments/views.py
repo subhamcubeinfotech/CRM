@@ -18,7 +18,7 @@ import json
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
-from .models import Shipment, Container, ShipmentMilestone, Document, ShipmentItem
+from .models import Shipment, Container, ShipmentMilestone, Document, ShipmentItem, ShipmentComment
 from apps.accounts.models import Company, CustomUser
 from apps.invoicing.models import Invoice
 from apps.orders.models import Order, PackagingType
@@ -546,6 +546,9 @@ def shipment_detail(request, pk):
         shipment_queryset = shipment_queryset.filter(tenant=request.user.tenant)
     
     shipment = get_object_or_404(shipment_queryset, pk=pk)
+    
+    # Get all comments for this shipment
+    comments = shipment.comments.select_related('user').all().order_by('-created_at')
     if shipment.created_by_id == request.user.id or (
         shipment.order_id and getattr(shipment.order, 'created_by_id', None) == request.user.id
     ):
@@ -614,8 +617,43 @@ def shipment_detail(request, pk):
         'shipping_terms': ShippingTerm.plain_objects.filter(Q(tenant=request.user.tenant) | Q(tenant__isnull=True)).order_by('name'),
         'packaging_types': PackagingType.objects.all().order_by('name'),
         'shipment_types': Shipment.SHIPMENT_TYPE_CHOICES,
+        'comments': comments,
     }
     return render(request, 'shipments/detail.html', context)
+
+
+@login_required
+@require_POST
+def add_comment(request, pk):
+    """AJAX view to add a new comment to a shipment"""
+    shipment = get_object_or_404(Shipment, pk=pk)
+    
+    # Check access (similar to shipment_detail)
+    if request.user.tenant and shipment.tenant_id != request.user.tenant_id:
+        return JsonResponse({'error': 'Permission denied'}, status=403)
+        
+    text = request.POST.get('text', '').strip()
+    if not text:
+        return JsonResponse({'error': 'Comment text cannot be empty'}, status=400)
+        
+    comment = ShipmentComment.objects.create(
+        shipment=shipment,
+        user=request.user,
+        text=text
+    )
+    
+    # Return formatted data for frontend
+    return JsonResponse({
+        'ok': True,
+        'comment': {
+            'id': comment.id,
+            'user': comment.user.get_full_name() or comment.user.username,
+            'text': comment.text,
+            'created_at': comment.created_at.strftime('%b %d, %Y %H:%M'),
+            'is_author': True
+        }
+    })
+
 
 
 @login_required
