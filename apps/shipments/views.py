@@ -831,7 +831,7 @@ def shipment_create(request):
                     # Cargo
                     total_weight=request.POST.get('total_weight', 0) or 0,
                     total_volume=request.POST.get('total_volume', 0) or 0,
-                    number_of_pieces=request.POST.get('number_of_pieces', 1) or 1,
+                    number_of_pieces=request.POST.get('number_of_pieces', 0) or 0,
                     commodity_description=request.POST.get('commodity_description', ''),
 
                     # Commercial
@@ -864,8 +864,7 @@ def shipment_create(request):
 
                 # Save tags
                 tag_ids = request.POST.getlist('tags_ui')
-                if tag_ids:
-                    shipment.tags.set(tag_ids)
+                shipment.tags.set(tag_ids)
 
                 # Save items
                 items_data = _parse_items_from_post(request.POST)
@@ -947,7 +946,8 @@ def shipment_create(request):
                     
                     # Update tags
                     order_tag_ids = request.POST.getlist('tags_ui')
-                    order.tags.set(order_tag_ids)
+                    if order_tag_ids:
+                        order.tags.set(order_tag_ids)
                 
                 # Create initial milestone
                 ShipmentMilestone.objects.create(
@@ -1034,7 +1034,7 @@ def shipment_create(request):
         'representatives': representatives,
         'packaging_types': packaging_types,
         'shipment_types': Shipment.SHIPMENT_TYPE_CHOICES,
-        'default_pieces': int(order.total_pieces) if order.total_pieces else 1,
+        'default_pieces': int(order.total_pieces) if order.total_pieces else 0,
         'default_weight': order.total_manifest_weight if order.total_manifest_weight else 0,
         'is_create': True,
         'is_first_shipment': is_first_shipment,
@@ -1053,7 +1053,7 @@ def shipment_edit(request, pk):
     def _first_item_payload(post_data):
         return {
             'weight': post_data.get('items_ui[0][weight]', 0) or 0,
-            'number_of_pieces': post_data.get('items_ui[0][pieces]', 1) or 1,
+            'number_of_pieces': post_data.get('items_ui[0][pieces]', 0) or 0,
         }
     
     if request.method == 'POST':
@@ -1120,7 +1120,7 @@ def shipment_edit(request, pk):
                 # Cargo
                 shipment.total_weight = request.POST.get('total_weight', 0) or 0
                 shipment.total_volume = request.POST.get('total_volume', 0) or 0
-                shipment.number_of_pieces = request.POST.get('number_of_pieces', 1) or 1
+                shipment.number_of_pieces = request.POST.get('number_of_pieces', 0) or 0
                 shipment.commodity_description = request.POST.get('commodity_description', '')
 
                 # Tracking
@@ -1154,8 +1154,7 @@ def shipment_edit(request, pk):
 
                 # Update tags
                 tag_ids = request.POST.getlist('tags_ui')
-                if tag_ids:
-                    shipment.tags.set(tag_ids)
+                shipment.tags.set(tag_ids)
                 # Sync items if provided in POST
                 if 'items_ui[0][weight]' in request.POST:
                     shipment.items.all().delete()

@@ -188,11 +188,8 @@
         <div class="row g-4 mb-5 border-top pt-4">
             <div class="col-md-4">
                 <label class="form-label fw-bold small text-uppercase">Tags</label>
-                <select class="form-select select2-basic" name="tags" multiple>
-                    {% for tag in tags %}
-                    <option value="{{ tag.id }}" {% if tag in copied_order.tags.all %}selected{% endif %}>{{ tag.name }}
-                    </option>
-                    {% endfor %}
+                <select class="form-select select2-basic" id="tags-select" name="tags" multiple>
+                    <!-- Existing tags removed per user request -->
                 </select>
             </div>
             <div class="col-md-4">
@@ -1155,7 +1152,7 @@
 <script>
     $(document).ready(function() {
         if ($.fn.select2) {
-            $('.select2-basic').select2({
+            const $tagsSelect = $('.select2-basic').select2({
                 theme: 'bootstrap-5',
                 width: '100%',
                 placeholder: 'Select or type to create tags...',
@@ -1177,6 +1174,9 @@
                     return data.text;
                 }
             });
+
+            // Force empty on load (Per user request)
+            $tagsSelect.val(null).trigger('change');
         }
     });
 </script>

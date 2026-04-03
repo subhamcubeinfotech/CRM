@@ -668,11 +668,8 @@
 
             <div class="mb-4">
                 <label class="form-label fw-bold small text-uppercase mb-1">Tags</label>
-                <select name="tags" class="form-select select2-basic" multiple>
-                    {% for tag in tags %}
-                    <option value="{{ tag.id }}" {% if tag in order.tags.all %}selected{% endif %}>{{ tag.name }}
-                    </option>
-                    {% endfor %}
+                <select name="tags" id="tags-select-edit-order" class="form-select select2-basic" multiple>
+                    <!-- Existing tags removed per user request -->
                 </select>
             </div>
 
@@ -1530,10 +1527,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
                 <div class="col-md-6">
                     <label class="form-label fw-bold small text-uppercase mb-1">Tags</label>
-                    <select name="tags_ui" class="form-select rounded-3" multiple>
-                        {% for tag in all_tags %}
-                        <option value="{{ tag.id }}" {% if tag in order.tags.all %}selected{% endif %}>{{ tag.name }}</option>
-                        {% endfor %}
+                    <select name="tags_ui" id="tags-select-add-shipment" class="form-select select2-basic" multiple>
+                        <!-- Existing tags removed per user request -->
                     </select>
                 </div>
             </div>
@@ -1797,6 +1792,49 @@ document.addEventListener('DOMContentLoaded', function() {
 {% endblock %}
 
 {% block extra_js %}
+<!-- jQuery and Select2 JS -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(document).ready(function() {
+        if ($.fn.select2) {
+            $('.select2-basic').select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                placeholder: 'Select or type to create tags...',
+                tags: true,
+                tokenSeparators: [','],
+                createTag: function (params) {
+                    var term = $.trim(params.term);
+                    if (term === '') return null;
+                    return {
+                        id: term,
+                        text: term,
+                        newTag: true
+                    };
+                },
+                templateResult: function (data) {
+                    if (data.newTag) {
+                        return "Hit Enter to create new '" + data.text + "'";
+                    }
+                    return data.text;
+                }
+            });
+
+            // Force empty on load for BOTH drawers (Per user request)
+            $('#tags-select-edit-order').val(null).trigger('change');
+            $('#tags-select-add-shipment').val(null).trigger('change');
+            
+            // Re-clear when drawers are shown just to be absolutely sure
+            document.getElementById('offcanvasEditOrder')?.addEventListener('show.bs.offcanvas', function() {
+                $('#tags-select-edit-order').val(null).trigger('change');
+            });
+            document.getElementById('offcanvasAddShipment')?.addEventListener('show.bs.offcanvas', function() {
+                $('#tags-select-add-shipment').val(null).trigger('change');
+            });
+        }
+    });
+</script>
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         // --- Document Upload Logic --- //
