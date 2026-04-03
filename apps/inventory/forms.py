@@ -121,9 +121,9 @@ class InventoryItemForm(forms.ModelForm):
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Type a note'}),
             'warehouse': forms.Select(attrs={'class': 'form-select'}),
             'offered_weight': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Original Weight'}),
-            'offered_weight_unit': forms.Select(choices=[('lbs', 'lbs'), ('kg', 'kg'), ('mt', 'MT'), ('pcs', 'pcs')], attrs={'class': 'form-select'}),
+            'offered_weight_unit': forms.Select(choices=[('lbs', 'lbs'), ('kg', 'kg'), ('mt', 'MT')], attrs={'class': 'form-select'}),
             'quantity': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Current Stock'}),
-            'unit_of_measure': forms.Select(choices=[('lbs', 'lbs'), ('kg', 'kg'), ('mt', 'MT'), ('pcs', 'pcs')], attrs={'class': 'form-select'}),
+            'unit_of_measure': forms.Select(choices=[('lbs', 'lbs'), ('kg', 'kg'), ('mt', 'MT')], attrs={'class': 'form-select'}),
             'lot_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Insert a number'}),
             'po_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Insert a number'}),
             'company': forms.Select(attrs={'class': 'form-select'}),
@@ -133,5 +133,5 @@ class InventoryItemForm(forms.ModelForm):
             'pieces': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Pieces'}),
             'is_palletized': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'unit_cost': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.0001', 'placeholder': 'Price'}),
-            'price_unit': forms.Select(choices=[('per lbs', 'per lbs'), ('per kg', 'per kg'), ('per mt', 'per MT'), ('per unit', 'per unit')], attrs={'class': 'form-select'}),
+            'price_unit': forms.Select(choices=[('per lbs', 'per lbs'), ('per kg', 'per kg'), ('per mt', 'per MT')], attrs={'class': 'form-select'}),
         }
