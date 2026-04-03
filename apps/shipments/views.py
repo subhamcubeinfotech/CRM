@@ -130,7 +130,9 @@ def _parse_items_from_post(post_data):
     
     for i in sorted(list(indices)):
         weight_val = post_data.get(f'items_ui[{i}][weight]', '0') or '0'
-        pieces_val = post_data.get(f'items_ui[{i}][pieces]', '1') or '1'
+        pieces_val = post_data.get(f'items_ui[{i}][pieces]', '0')
+        if not pieces_val.strip():
+            pieces_val = '0'
         buy_val = post_data.get(f'items_ui[{i}][buy_price]', '0') or '0'
         sell_val = post_data.get(f'items_ui[{i}][sell_price]', '0') or '0'
         gross_val = post_data.get(f'items_ui[{i}][gross_weight]', '')
@@ -146,7 +148,7 @@ def _parse_items_from_post(post_data):
             'tare_weight_unit': post_data.get(f'items_ui[{i}][tare_unit]', 'lbs'),
             'packaging': post_data.get(f'items_ui[{i}][packaging]', ''),
             'is_palletized': post_data.get(f'items_ui[{i}][palletized]') == 'on',
-            'pieces': int(pieces_val) if pieces_val else 1,
+            'pieces': int(pieces_val),
             'buy_price': float(buy_val),
             'sell_price': float(sell_val),
             'price_unit': post_data.get(f'items_ui[{i}][buy_unit]', post_data.get(f'items_ui[{i}][price_unit]', 'per lbs')),
