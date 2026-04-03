@@ -267,7 +267,7 @@
         </div>
 
         <div class="row mt-4 g-0">
-            <div class="col-md-4 px-3 border-end">
+            <div class="col-md-4 px-3">
                 <div class="detail-label">Supplier</div>
                 <div class="party-title mb-1">{{ order.supplier.name }}</div>
                 <div class="small text-primary mb-2">
@@ -276,19 +276,6 @@
                 <div class="small text-muted mb-1"><i class="fas fa-file-alt me-2"></i>SO#: {{ order.so_number|default:"-" }}</div>
                 <div class="small text-muted mb-1"><i class="fas fa-handshake me-2"></i>FOB Origin</div>
                 <div class="small text-muted"><i class="fas fa-calendar me-2"></i>{{ order.expected_pickup_date|date:"M d, Y"|default:"-" }}</div>
-            </div>
-            <!-- Tags Column -->
-            <div class="col-md-2 px-3 border-start border-end">
-                <div class="detail-label">Tags</div>
-                <div class="mt-1 d-flex flex-wrap gap-1">
-                    {% for tag in order.tags.all %}
-                    <span class="badge rounded-pill bg-light text-primary border border-primary-subtle px-2 py-1" style="font-size: 0.7rem;">
-                        {{ tag.name }}
-                    </span>
-                    {% empty %}
-                    <span class="text-muted smaller">No tags</span>
-                    {% endfor %}
-                </div>
             </div>
             <div class="col-md-4 px-3">
                 <div class="detail-label">Receiver</div>
