@@ -253,7 +253,7 @@ def inventory_item_list(request):
     
     # Stats before pagination
     stats = items.aggregate(
-        total_weight=Sum('quantity'),
+        total_weight=Sum('offered_weight'),
         total_value=Sum('val'),
         total_count=Count('id')
     )
