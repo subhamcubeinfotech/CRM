@@ -1269,6 +1269,44 @@ document.addEventListener('DOMContentLoaded', function() {
     pickupContactSelect?.addEventListener('change', handleContactChange);
     deliveryContactSelect?.addEventListener('change', handleContactChange);
 
+    // --- Auto-fill Shipment Prices Logic --- //
+    const shipmentContainer = document.getElementById('shipmentItemsContainer');
+    if (shipmentContainer) {
+        shipmentContainer.addEventListener('change', function(e) {
+            // Adjust the check to be more specific to our selection
+            if (e.target && e.target.name && e.target.name.includes('[material]')) {
+                const select = e.target;
+                const option = select.options[select.selectedIndex];
+                if (!option) return;
+
+                const block = select.closest('.shipment-item-block');
+                if (!block) return;
+
+                // Select inputs using partial name match
+                const buyPriceInput = block.querySelector('[name*="[buy_price]"]');
+                const sellPriceInput = block.querySelector('[name*="[sell_price]"]');
+                const buyUnitSelect = block.querySelector('[name*="[buy_unit]"]');
+                const sellUnitSelect = block.querySelector('[name*="[sell_unit]"]');
+
+                if (option.dataset.buyPrice) buyPriceInput.value = option.dataset.buyPrice;
+                if (option.dataset.sellPrice) sellPriceInput.value = option.dataset.sellPrice;
+                if (option.dataset.buyUnit) buyUnitSelect.value = option.dataset.buyUnit;
+                if (option.dataset.sellUnit) sellUnitSelect.value = option.dataset.sellUnit;
+            }
+        });
+    }
+
+    // Pre-fill on drawer open if material is already selected
+    document.getElementById('offcanvasAddShipment')?.addEventListener('shown.bs.offcanvas', function() {
+        if (shipmentContainer) {
+            const firstMaterialSelect = shipmentContainer.querySelector('select[name*="[material]"]');
+            if (firstMaterialSelect && firstMaterialSelect.value) {
+                // Manually trigger change to auto-fill (using plain JS for reliability)
+                firstMaterialSelect.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        }
+    });
+
     // Track active selects for support modals
     document.querySelectorAll('[data-bs-target="#locationModal"]').forEach(btn => {
         btn.addEventListener('click', function() {
@@ -1551,7 +1589,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         <select name="items_ui[0][material]" class="form-select rounded-3" required>
                             <option value="">Select a material</option>
                             {% for item in inventory_items %}
-                            <option value="{{ item.id }}" data-unit="{{ item.unit_of_measure }}">
+                            <option value="{{ item.id }}" data-unit="{{ item.unit_of_measure }}"
+                                    data-buy-price="{{ item.manifest_buy_price|default:'' }}"
+                                    data-sell-price="{{ item.manifest_sell_price|default:'' }}"
+                                    data-buy-unit="{{ item.manifest_buy_unit|default:'per lbs' }}"
+                                    data-sell-unit="{{ item.manifest_sell_unit|default:'per lbs' }}"
+                                    {% if inventory_items|length == 1 %}selected{% endif %}>
                                 {{ item.product_name }}{% if item.order_balance is not None %} - {{ item.order_balance|format_short }}{% endif %}
                             </option>
                             {% endfor %}
