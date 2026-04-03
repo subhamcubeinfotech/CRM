@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
+{% load inventory_tags %}
 {% load humanize %}
-{# Removed custom tags for now #}
+
 
 {% block title %}Inventory Portfolio - FreightPro{% endblock %}
 
@@ -11,6 +12,9 @@
         border-collapse: separate;
         border-spacing: 0 8px;
         background-color: transparent !important;
+    }
+    body {
+        font-size: 0.875rem;
     }
 
     .inventory-table thead th {
@@ -265,7 +269,8 @@
         <div class="col-md-4">
             <div class="card stat-card p-3">
                 <div class="stat-label">Total Weight</div>
-                <div class="stat-value">{{ stats.total_weight|default:0|floatformat:0|intcomma }} lbs</div>
+                <div class="stat-value">{{ stats.total_weight|default:0|format_short }} lbs</div>
+
             </div>
         </div>
         <div class="col-md-4">
@@ -355,7 +360,8 @@
                 <tr>
                     <th>SKU / Product</th>
                     <th>Warehouse</th>
-                    <th>Quantity</th>
+                    <th>Company</th>
+                    <th>Offer Weight</th>
                     <th>Unit Cost</th>
                     <th>Total Value</th>
                     <th>Status</th>
@@ -380,13 +386,22 @@
                         <div class="sub-text">{{ item.warehouse.city }}, {{ item.warehouse.state }}</div>
                     </td>
                     <td>
-                        <div class="fw-bold">{{ item.quantity|intcomma }} {{ item.unit_of_measure }}</div>
+                        <div class="fw-medium text-dark">{{ item.company.name|default:"-" }}</div>
+                    </td>
+                    <td>
+                        <div class="fw-bold">{{ item.offered_weight|format_short }} {{ item.offered_weight_unit }}</div>
+                        <div class="sub-text">
+                            Offered: {{ item.offered_weight|intcomma }} | Stock: {{ item.quantity|intcomma }} {{ item.unit_of_measure }}
+                        </div>
+
+
                         {% if item.is_low_stock %}
                         <div class="text-danger" style="font-size: 0.75rem;">
                             <i class="fas fa-exclamation-circle me-1"></i>Low Stock
                         </div>
                         {% endif %}
                     </td>
+
                     <td class="text-muted">
                         ${{ item.unit_cost|floatformat:2 }}
                     </td>

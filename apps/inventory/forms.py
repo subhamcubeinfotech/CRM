@@ -2,9 +2,18 @@ from django import forms
 from .models import Warehouse, InventoryItem, Material
 
 class MaterialForm(forms.ModelForm):
+    company = forms.ModelChoiceField(queryset=None, required=False, widget=forms.HiddenInput())
+    # Field to pass the current company from the main form to the AJAX creation
+    company_id_context = forms.CharField(required=False, widget=forms.HiddenInput())
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from apps.accounts.models import Company
+        self.fields['company'].queryset = Company.objects.all()
+
     class Meta:
         model = Material
-        fields = ['name', 'material_type', 'product_type', 'description', 'image', 'document']
+        fields = ['name', 'material_type', 'product_type', 'description', 'image', 'document', 'company']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Custom display name for this material'}),
             'material_type': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. PE, PP'}),
@@ -40,8 +49,22 @@ class InventoryItemForm(forms.ModelForm):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         
-        # Populate material choices
-        materials = Material.objects.all().order_by('name')
+        # Populate material choices - Filter by company if possible
+        materials_qs = Material.objects.all().order_by('name')
+        
+        # Determine company for initial filtering
+        item_company = None
+        if self.instance and self.instance.pk:
+            item_company = self.instance.company
+        elif 'initial' in kwargs and 'company' in kwargs['initial']:
+            item_company = kwargs['initial']['company']
+            
+        if item_company:
+            materials_qs = materials_qs.filter(company=item_company)
+        else:
+            materials_qs = materials_qs.none()
+            
+        materials = list(materials_qs)
         self.fields['product_name'].widget = forms.Select(
             choices=[('', 'Select a material')] + [(m.name, m.name) for m in materials],
             attrs={'class': 'form-select'}
@@ -55,9 +78,14 @@ class InventoryItemForm(forms.ModelForm):
                 user_company = Company.objects.filter(tenant=user.tenant).first()
             
             if user_company:
-                self.fields['company'].queryset = Company.objects.filter(id=user_company.id)
+                if getattr(user, 'is_admin', False):
+                    self.fields['company'].queryset = Company.objects.all()
+                else:
+                    from django.db.models import Q
+                    self.fields['company'].queryset = Company.objects.filter(Q(created_by=user) | Q(pk=user_company.pk))
+                
                 self.fields['company'].initial = user_company
-                self.fields['company'].disabled = True
+                self.fields['company'].disabled = False
 
             # Representative locking
             self.fields['representative'].queryset = user.__class__.objects.filter(id=user.id)
@@ -80,18 +108,22 @@ class InventoryItemForm(forms.ModelForm):
         model = InventoryItem
         fields = [
             'sku', 'product_name', 'description', 'warehouse',
+            'offered_weight', 'offered_weight_unit',
             'quantity', 'unit_of_measure', 'lot_number', 'po_number',
             'company', 'shipping_terms', 'representative', 'tags',
             'packaging', 'pieces', 'is_palletized',
             'unit_cost', 'price_unit'
         ]
+
         widgets = {
             'sku': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'SKU / Part Number'}),
             'product_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Select a material'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Type a note'}),
             'warehouse': forms.Select(attrs={'class': 'form-select'}),
-            'quantity': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Weight'}),
-            'unit_of_measure': forms.Select(choices=[('lbs', 'lbs'), ('kg', 'kg'), ('mt', 'MT'), ('pcs', 'pcs')], attrs={'class': 'form-select'}),
+            'offered_weight': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Original Weight'}),
+            'offered_weight_unit': forms.Select(choices=[('lbs', 'lbs'), ('kg', 'kg'), ('mt', 'MT')], attrs={'class': 'form-select'}),
+            'quantity': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Current Stock'}),
+            'unit_of_measure': forms.Select(choices=[('lbs', 'lbs'), ('kg', 'kg'), ('mt', 'MT')], attrs={'class': 'form-select'}),
             'lot_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Insert a number'}),
             'po_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Insert a number'}),
             'company': forms.Select(attrs={'class': 'form-select'}),
@@ -101,5 +133,5 @@ class InventoryItemForm(forms.ModelForm):
             'pieces': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Pieces'}),
             'is_palletized': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'unit_cost': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.0001', 'placeholder': 'Price'}),
-            'price_unit': forms.Select(choices=[('per lbs', 'per lbs'), ('per kg', 'per kg'), ('per mt', 'per MT'), ('per unit', 'per unit')], attrs={'class': 'form-select'}),
+            'price_unit': forms.Select(choices=[('per lbs', 'per lbs'), ('per kg', 'per kg'), ('per mt', 'per MT')], attrs={'class': 'form-select'}),
         }

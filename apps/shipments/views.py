@@ -18,7 +18,7 @@ import json
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
-from .models import Shipment, Container, ShipmentMilestone, Document, ShipmentItem
+from .models import Shipment, Container, ShipmentMilestone, Document, ShipmentItem, ShipmentComment
 from apps.accounts.models import Company, CustomUser
 from apps.invoicing.models import Invoice
 from apps.orders.models import Order, PackagingType
@@ -130,7 +130,9 @@ def _parse_items_from_post(post_data):
     
     for i in sorted(list(indices)):
         weight_val = post_data.get(f'items_ui[{i}][weight]', '0') or '0'
-        pieces_val = post_data.get(f'items_ui[{i}][pieces]', '0') or '0'
+        pieces_val = post_data.get(f'items_ui[{i}][pieces]', '0')
+        if not pieces_val.strip():
+            pieces_val = '0'
         buy_val = post_data.get(f'items_ui[{i}][buy_price]', '0') or '0'
         sell_val = post_data.get(f'items_ui[{i}][sell_price]', '0') or '0'
         gross_val = post_data.get(f'items_ui[{i}][gross_weight]', '')
@@ -146,7 +148,7 @@ def _parse_items_from_post(post_data):
             'tare_weight_unit': post_data.get(f'items_ui[{i}][tare_unit]', 'lbs'),
             'packaging': post_data.get(f'items_ui[{i}][packaging]', ''),
             'is_palletized': post_data.get(f'items_ui[{i}][palletized]') == 'on',
-            'pieces': int(pieces_val) if pieces_val else 1,
+            'pieces': int(pieces_val),
             'buy_price': float(buy_val),
             'sell_price': float(sell_val),
             'price_unit': post_data.get(f'items_ui[{i}][buy_unit]', post_data.get(f'items_ui[{i}][price_unit]', 'per lbs')),
@@ -544,6 +546,9 @@ def shipment_detail(request, pk):
         shipment_queryset = shipment_queryset.filter(tenant=request.user.tenant)
     
     shipment = get_object_or_404(shipment_queryset, pk=pk)
+    
+    # Get all comments for this shipment
+    comments = shipment.comments.select_related('user').all().order_by('-created_at')
     if shipment.created_by_id == request.user.id or (
         shipment.order_id and getattr(shipment.order, 'created_by_id', None) == request.user.id
     ):
@@ -612,8 +617,43 @@ def shipment_detail(request, pk):
         'shipping_terms': ShippingTerm.plain_objects.filter(Q(tenant=request.user.tenant) | Q(tenant__isnull=True)).order_by('name'),
         'packaging_types': PackagingType.objects.all().order_by('name'),
         'shipment_types': Shipment.SHIPMENT_TYPE_CHOICES,
+        'comments': comments,
     }
     return render(request, 'shipments/detail.html', context)
+
+
+@login_required
+@require_POST
+def add_comment(request, pk):
+    """AJAX view to add a new comment to a shipment"""
+    shipment = get_object_or_404(Shipment, pk=pk)
+    
+    # Check access (similar to shipment_detail)
+    if request.user.tenant and shipment.tenant_id != request.user.tenant_id:
+        return JsonResponse({'error': 'Permission denied'}, status=403)
+        
+    text = request.POST.get('text', '').strip()
+    if not text:
+        return JsonResponse({'error': 'Comment text cannot be empty'}, status=400)
+        
+    comment = ShipmentComment.objects.create(
+        shipment=shipment,
+        user=request.user,
+        text=text
+    )
+    
+    # Return formatted data for frontend
+    return JsonResponse({
+        'ok': True,
+        'comment': {
+            'id': comment.id,
+            'user': comment.user.get_full_name() or comment.user.username,
+            'text': comment.text,
+            'created_at': comment.created_at.strftime('%b %d, %Y %H:%M'),
+            'is_author': True
+        }
+    })
+
 
 
 @login_required
@@ -831,7 +871,7 @@ def shipment_create(request):
                     # Cargo
                     total_weight=request.POST.get('total_weight', 0) or 0,
                     total_volume=request.POST.get('total_volume', 0) or 0,
-                    number_of_pieces=request.POST.get('number_of_pieces', 1) or 1,
+                    number_of_pieces=request.POST.get('number_of_pieces', 0) or 0,
                     commodity_description=request.POST.get('commodity_description', ''),
 
                     # Commercial
@@ -864,8 +904,7 @@ def shipment_create(request):
 
                 # Save tags
                 tag_ids = request.POST.getlist('tags_ui')
-                if tag_ids:
-                    shipment.tags.set(tag_ids)
+                shipment.tags.set(tag_ids)
 
                 # Save items
                 items_data = _parse_items_from_post(request.POST)
@@ -947,7 +986,8 @@ def shipment_create(request):
                     
                     # Update tags
                     order_tag_ids = request.POST.getlist('tags_ui')
-                    order.tags.set(order_tag_ids)
+                    if order_tag_ids:
+                        order.tags.set(order_tag_ids)
                 
                 # Create initial milestone
                 ShipmentMilestone.objects.create(
@@ -1034,7 +1074,7 @@ def shipment_create(request):
         'representatives': representatives,
         'packaging_types': packaging_types,
         'shipment_types': Shipment.SHIPMENT_TYPE_CHOICES,
-        'default_pieces': int(order.total_pieces) if order.total_pieces else 1,
+        'default_pieces': int(order.total_pieces) if order.total_pieces else 0,
         'default_weight': order.total_manifest_weight if order.total_manifest_weight else 0,
         'is_create': True,
         'is_first_shipment': is_first_shipment,
@@ -1053,7 +1093,7 @@ def shipment_edit(request, pk):
     def _first_item_payload(post_data):
         return {
             'weight': post_data.get('items_ui[0][weight]', 0) or 0,
-            'number_of_pieces': post_data.get('items_ui[0][pieces]', 1) or 1,
+            'number_of_pieces': post_data.get('items_ui[0][pieces]', 0) or 0,
         }
     
     if request.method == 'POST':
@@ -1120,7 +1160,7 @@ def shipment_edit(request, pk):
                 # Cargo
                 shipment.total_weight = request.POST.get('total_weight', 0) or 0
                 shipment.total_volume = request.POST.get('total_volume', 0) or 0
-                shipment.number_of_pieces = request.POST.get('number_of_pieces', 1) or 1
+                shipment.number_of_pieces = request.POST.get('number_of_pieces', 0) or 0
                 shipment.commodity_description = request.POST.get('commodity_description', '')
 
                 # Tracking
@@ -1154,8 +1194,7 @@ def shipment_edit(request, pk):
 
                 # Update tags
                 tag_ids = request.POST.getlist('tags_ui')
-                if tag_ids:
-                    shipment.tags.set(tag_ids)
+                shipment.tags.set(tag_ids)
                 # Sync items if provided in POST
                 if 'items_ui[0][weight]' in request.POST:
                     shipment.items.all().delete()
@@ -1336,6 +1375,7 @@ def generate_bol_pdf(request, pk):
         file_name += '.pdf'
     
     is_blind = request.POST.get('blind_shipment') == 'on'
+    bol_type = request.POST.get('bol_type', 'receiver')
     carrier_name = request.POST.get('carrier_name', shipment.carrier.name if shipment.carrier else '')
     trailer_number = request.POST.get('trailer_number', '')
     seal_number = request.POST.get('seal_number', '')
@@ -1390,7 +1430,7 @@ def generate_bol_pdf(request, pk):
 
     # ─── PARTIES ───
     shipper_box = [Paragraph("SHIPPER", label_style), Spacer(1, 1*mm)]
-    if is_blind:
+    if is_blind and bol_type == 'receiver':
         shipper_box.append(Paragraph("CONFIDENTIAL", bold_style))
         shipper_box.append(Paragraph("Shipper information withheld", normal_style))
     else:
@@ -1402,14 +1442,18 @@ def generate_bol_pdf(request, pk):
             shipper_box.append(Paragraph(shipment.origin_country or "", normal_style))
 
     consignee_box = [Paragraph("CONSIGNEE / NOTIFY PARTY", label_style), Spacer(1, 1*mm)]
-    c = shipment.consignee
-    if c:
-        consignee_box.append(Paragraph(c.name, bold_style))
-        consignee_box.append(Paragraph(shipment.destination_address or "", normal_style))
-        consignee_box.append(Paragraph(f"{shipment.destination_city}, {shipment.destination_state} {shipment.destination_postal_code}", normal_style))
-        consignee_box.append(Paragraph(shipment.destination_country or "", normal_style))
+    if is_blind and bol_type == 'shipper':
+        consignee_box.append(Paragraph("CONFIDENTIAL", bold_style))
+        consignee_box.append(Paragraph("Consignee information withheld", normal_style))
     else:
-        consignee_box.append(Paragraph("TO BE NOTIFIED", bold_style))
+        c = shipment.consignee
+        if c:
+            consignee_box.append(Paragraph(c.name, bold_style))
+            consignee_box.append(Paragraph(shipment.destination_address or "", normal_style))
+            consignee_box.append(Paragraph(f"{shipment.destination_city}, {shipment.destination_state} {shipment.destination_postal_code}", normal_style))
+            consignee_box.append(Paragraph(shipment.destination_country or "", normal_style))
+        else:
+            consignee_box.append(Paragraph("TO BE NOTIFIED", bold_style))
 
     carrier_box = [Paragraph("CARRIER", label_style), Spacer(1, 1*mm)]
     carrier_final = carrier_name or (shipment.carrier.name if shipment.carrier else "TO BE ASSIGNED")

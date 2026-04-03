@@ -273,41 +273,150 @@
         border-color: #0a58ca !important;
         color: #0a58ca !important;
     }
-    .btn-add-outline i {
-        font-size: 1rem;
-    }
-
-    .tracking-card {
-        border-radius: 14px;
-        overflow: hidden;
-    }
-
-    .tracking-map {
-        height: 220px;
+    .conversation-input-wrapper {
+        border: 1px solid #e9ecef;
         border-radius: 12px;
         overflow: hidden;
-        background: #e9ecef;
+        margin-bottom: 0.5rem;
+        background: #fff;
+        transition: border-color 0.2s;
+    }
+    .conversation-input-wrapper:focus-within {
+        border-color: #1c7ed6;
+        box-shadow: 0 0 0 3px rgba(28, 126, 214, 0.1);
+    }
+    .conversation-toolbar {
+        display: flex;
+        gap: 4px;
+        padding: 8px 12px;
+        background: #f8fafc;
+        border-bottom: 1px solid #f1f5f9;
+        flex-wrap: wrap;
+    }
+    .toolbar-btn {
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        color: #64748b;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+        background: transparent;
+        font-size: 0.85rem;
+    }
+    .toolbar-btn:hover {
+        background: #f1f5f9;
+        color: #1c7ed6;
+    }
+    .conversation-submit-btn:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
     }
 
-    .tracking-stat {
-        background: #f8f9fa;
-        border-radius: 12px;
-        padding: 0.8rem 0.9rem;
+    /* Link Editor */
+    .conversation-link-editor {
+        display: none;
+        padding: 8px 12px;
+        background: #fff;
+        border-top: 1px solid #f1f3f5;
+        align-items: center;
+        gap: 8px;
+    }
+    .conversation-link-input {
+        flex: 1;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 4px 10px;
+        font-size: 0.85rem;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+    .conversation-link-input:focus {
+        border-color: #1c7ed6;
+    }
+    .link-editor-btn {
+        background: none;
+        border: none;
+        padding: 4px;
+        border-radius: 4px;
+        color: #1c7ed6;
+        cursor: pointer;
+        transition: background 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .link-editor-btn:hover {
+        background: #f1f3f5;
+    }
+    .link-editor-btn.cancel {
+        color: #fa5252;
     }
 
-    .tracking-label {
-        font-size: 0.72rem;
-        text-transform: uppercase;
-        color: #868e96;
-        font-weight: 700;
-        letter-spacing: 0.04em;
+    .conversation-editor {
+        width: 100%;
+        min-height: 80px;
+        max-height: 300px;
+        padding: 12px;
+        font-size: 0.9rem;
+        color: #334155;
+        overflow-y: auto;
+        outline: none;
+        line-height: 1.5;
+        background: white;
+    }
+    .conversation-editor:empty:before {
+        content: attr(data-placeholder);
+        color: #94a3b8;
+        cursor: text;
+    }
+    .toolbar-btn.active {
+        background: #e7f5ff;
+        color: #1c7ed6;
+        border-color: #1c7ed6;
     }
 
-    .tracking-value {
-        font-size: 0.95rem;
-        font-weight: 700;
-        color: #212529;
+    .conversation-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-top: 4px;
     }
+    .conversation-tip {
+        font-size: 0.75rem;
+        color: #94a3b8;
+    }
+    .conversation-submit-btn {
+        background: #1c7ed6;
+        color: #fff;
+        border: none;
+        padding: 6px 18px;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+    .conversation-submit-btn:hover {
+        background: #1971c2;
+        box-shadow: 0 2px 8px rgba(28, 126, 214, 0.2);
+    }
+    .conversation-empty {
+        text-align: center;
+        padding: 2rem 0;
+        color: #94a3b8;
+    }
+    .conversation-empty i {
+        font-size: 1.5rem;
+        display: block;
+        margin-bottom: 0.5rem;
+        opacity: 0.5;
+    }
+
+
+
 
     .logistics-section-title {
         font-size: 1.35rem;
@@ -721,7 +830,7 @@
                                                     {{ item.tare_weight|floatformat:2 }} {{ item.tare_weight_unit|default:item.weight_unit }}
                                                 </td>
                                                 <td>
-                                                    {{ item.pieces|default:"-" }} pcs
+                                                    {{ item.pieces|default_if_none:"-" }} pcs
                                                 </td>
                                                 <td>{{ item.packaging|default:"-" }}</td>
                                             </tr>
@@ -1200,81 +1309,73 @@
 
         <!-- Sidebar: Conversation + Shipment Info -->
         <div class="col-lg-4">
-            <div class="card border-0 shadow-sm mb-4 tracking-card">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start mb-3">
-                        <div>
-                            <h5 class="fw-bold mb-1">Live Tracking</h5>
-                            <div class="small text-muted">Free mobile GPS based tracking</div>
-                        </div>
-                        <span class="badge {% if shipment.tracking_active %}bg-success-subtle text-success{% else %}bg-secondary-subtle text-secondary{% endif %}" id="tracking-active-badge">
-                            {% if shipment.tracking_active %}Active{% else %}Idle{% endif %}
-                        </span>
-                    </div>
 
-                    <div id="tracking-map" class="tracking-map mb-3"></div>
-
-                    <div class="row g-2 mb-3">
-                        <div class="col-6">
-                            <div class="tracking-stat">
-                                <div class="tracking-label">Current Location</div>
-                                <div class="tracking-value" id="tracking-current-location">{{ shipment.current_location_display }}</div>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="tracking-stat">
-                                <div class="tracking-label">Last Updated</div>
-                                <div class="tracking-value" id="tracking-last-updated">
-                                    {% if shipment.last_location_updated_at %}{{ shipment.last_location_updated_at|date:"M d, H:i" }}{% else %}Not yet{% endif %}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="tracking-stat">
-                                <div class="tracking-label">Vehicle</div>
-                                <div class="tracking-value" id="tracking-vehicle">{{ shipment.vehicle_number|default:"Not assigned" }}</div>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="tracking-stat">
-                                <div class="tracking-label">Driver</div>
-                                <div class="tracking-value" id="tracking-driver">{{ shipment.driver_name|default:"Not assigned" }}</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="d-grid gap-2">
-                        <a class="btn btn-primary" href="{% url 'shipments:shipment_tracking_mobile' shipment.pk %}">
-                            <i class="fas fa-mobile-screen-button me-2"></i>Open Mobile Tracking
-                        </a>
-                        {% if shipment.driver_phone %}
-                        <a class="btn btn-outline-secondary" href="tel:{{ shipment.driver_phone }}">
-                            <i class="fas fa-phone me-2"></i>{{ shipment.driver_phone }}
-                        </a>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
 
             <!-- Conversation -->
             <div class="card border-0 shadow-sm mb-4" style="border-radius:14px;">
                 <div class="card-body">
                     <h5 class="fw-bold mb-3">Conversation</h5>
-                    {% if shipment.internal_notes %}
-                    <div class="chat-bubble">
-                        <small class="text-muted">Internal Notes</small>
-                        <p class="mb-0 mt-1">{{ shipment.internal_notes }}</p>
+                    
+                    <div class="conversation-input-container mb-4">
+                        <div class="conversation-input-wrapper">
+                            <div class="conversation-toolbar">
+                                <button type="button" class="toolbar-btn" data-command="at" title="Mention"><i class="fas fa-at"></i></button>
+                                <button type="button" class="toolbar-btn" data-command="hash" title="Reference"><i class="fas fa-hashtag"></i></button>
+                                <div class="vr mx-1 my-1 text-muted opacity-25"></div>
+                                <button type="button" class="toolbar-btn" data-command="bold" title="Bold"><i class="fas fa-bold"></i></button>
+                                <button type="button" class="toolbar-btn" data-command="italic" title="Italic"><i class="fas fa-italic"></i></button>
+                                <button type="button" class="toolbar-btn" data-command="underline" title="Underline"><i class="fas fa-underline"></i></button>
+                                <button type="button" class="toolbar-btn" data-command="strikethrough" title="Strikethrough"><i class="fas fa-strikethrough"></i></button>
+                                <button type="button" class="toolbar-btn" data-command="link" title="Link"><i class="fas fa-link"></i></button>
+                            </div>
+                            <div class="conversation-link-editor">
+                                <input type="text" class="conversation-link-input" placeholder="https://" value="https://">
+                                <button type="button" class="link-editor-btn cancel" title="Cancel"><i class="fas fa-trash-alt"></i></button>
+                                <button type="button" class="link-editor-btn confirm" title="Confirm"><i class="fas fa-check"></i></button>
+                            </div>
+                            <div class="conversation-editor" contenteditable="true" data-placeholder="Join the conversation..."></div>
+                        </div>
+                        <div class="conversation-footer">
+                            <div class="conversation-tip text-muted small">Tip: Notify someone with @</div>
+                            <button type="button" class="conversation-submit-btn shadow-none">Submit</button>
+                        </div>
                     </div>
-                    {% else %}
-                    <p class="text-muted small text-center py-2"><i class="fas fa-info-circle me-1"></i>No comments yet
-                    </p>
-                    {% endif %}
-                    {% if shipment.special_instructions %}
-                    <div class="chat-bubble bg-light">
-                        <small class="text-muted">Special Instructions</small>
-                        <p class="mb-0 mt-1">{{ shipment.special_instructions }}</p>
+
+                    <div id="conversation-messages" class="mt-4">
+                        {% for comment in comments %}
+                        <div class="chat-bubble {% if comment.user == request.user %}bg-primary-subtle border-primary-subtle{% else %}bg-light border{% endif %} mb-3 shadow-sm" 
+                             style="border-radius: 12px; transition: all 0.2s;">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="small fw-bold {% if comment.user == request.user %}text-primary{% else %}text-dark{% endif %}">
+                                    {{ comment.user.get_full_name|default:comment.user.username }}
+                                </span>
+                                <span class="text-muted" style="font-size: 0.7rem;">{{ comment.created_at|date:"M d, H:i" }}</span>
+                            </div>
+                            <p class="mb-0 small text-dark" style="line-height: 1.4;">{{ comment.text|safe }}</p>
+                        </div>
+                        {% endfor %}
+
+                        {% if not comments and not shipment.internal_notes and not shipment.special_instructions %}
+                            <div class="conversation-empty py-4">
+                                <i class="far fa-comments fa-2x mb-2 text-muted opacity-25"></i>
+                                <p class="small text-muted mb-0">No comments yet</p>
+                            </div>
+                        {% endif %}
+
+                        {% if shipment.internal_notes %}
+                        <div class="chat-bubble bg-light-subtle border mb-3">
+                            <span class="d-block small fw-bold text-primary mb-1">Internal Notes</span>
+                            <p class="mb-0 small">{{ shipment.internal_notes }}</p>
+                        </div>
+                        {% endif %}
+                        
+                        {% if shipment.special_instructions %}
+                        <div class="chat-bubble bg-light-subtle border mb-3">
+                            <span class="d-block small fw-bold text-secondary mb-1">Special Instructions</span>
+                            <p class="mb-0 small">{{ shipment.special_instructions }}</p>
+                        </div>
+                        {% endif %}
                     </div>
-                    {% endif %}
                 </div>
             </div>
 
@@ -1462,9 +1563,19 @@
             </div>
 
             <div class="mb-4">
-                <div class="form-check form-switch d-flex align-items-center gap-2">
-                    <input class="form-check-input" type="checkbox" role="switch" name="blind_shipment" id="blindSwitch">
-                    <label class="form-check-label small fw-bold text-muted text-uppercase mb-0" for="blindSwitch">Blind Shipment?</label>
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="form-check form-switch d-flex align-items-center gap-2">
+                        <input class="form-check-input" type="checkbox" role="switch" name="blind_shipment" id="blindSwitch">
+                        <label class="form-check-label small fw-bold text-muted text-uppercase mb-0" for="blindSwitch">Blind Shipment?</label>
+                    </div>
+                    
+                    <div id="blindButtonsContainer" style="display: none;">
+                        <input type="hidden" name="bol_type" id="bolTypeInput" value="">
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button type="button" class="btn btn-outline-primary" id="btnBolReceiver" onclick="setBolType('receiver')">Receiver BoL</button>
+                            <button type="button" class="btn btn-outline-primary" id="btnBolShipper" onclick="setBolType('shipper')">Shipper BoL</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -1805,130 +1916,7 @@
         'customs': 'Customs Document',
         'pod': 'Proof of Delivery',
     };
-    const TRACKING_API_URL = "{% url 'api_shipment_tracking' shipment.pk %}";
-    const INITIAL_MAP_DATA = JSON.parse('{{ map_data|escapejs }}');
-    let trackingMap;
-    let trackingMarkers = {};
 
-    function formatTrackingTime(value) {
-        if (!value) return 'Not yet';
-        const date = new Date(value);
-        if (Number.isNaN(date.getTime())) return value;
-        return date.toLocaleString([], { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' });
-    }
-
-    function initTrackingMap() {
-        const mapElement = document.getElementById('tracking-map');
-        if (!mapElement || trackingMap) return;
-
-        trackingMap = L.map(mapElement).setView([20.5937, 78.9629], 4);
-        L.tileLayer('{{ request.map_tile_server_url|default:"https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" }}', {
-            maxZoom: 19,
-            attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(trackingMap);
-
-        updateTrackingMap(INITIAL_MAP_DATA);
-    }
-
-    function updateTrackingMap(mapData) {
-        if (!trackingMap || !mapData) return;
-
-        ['origin', 'destination', 'current'].forEach((key) => {
-            const point = mapData[key];
-            if (!point || point.lat === null || point.lng === null) return;
-
-            const latLng = [point.lat, point.lng];
-            if (!trackingMarkers[key]) {
-                trackingMarkers[key] = L.marker(latLng).addTo(trackingMap);
-            } else {
-                trackingMarkers[key].setLatLng(latLng);
-            }
-
-            let label = point.city || point.label || key;
-            if (key === 'current') label = point.label || 'Current vehicle position';
-            trackingMarkers[key].bindPopup(label);
-        });
-
-        const bounds = [];
-        Object.values(trackingMarkers).forEach((marker) => bounds.push(marker.getLatLng()));
-        if (bounds.length) {
-            trackingMap.fitBounds(bounds, { padding: [30, 30], maxZoom: bounds.length === 1 ? 12 : 8 });
-        }
-    }
-
-    function renderTrackingHistory(history) {
-        const historyList = document.getElementById('tracking-history-list');
-        if (!historyList) return;
-
-        if (!history || !history.length) {
-            historyList.innerHTML = `
-                <div class="text-center py-5 text-muted">
-                    <div class="mb-3 opacity-25">
-                        <i class="fas fa-history fa-3x"></i>
-                    </div>
-                    <p class="mb-0">No history history recorded yet</p>
-                    <small>Activity and updates will appear here</small>
-                </div>
-            `;
-            return;
-        }
-
-        historyList.innerHTML = history.map((item) => {
-            const iconClass = item.icon || 'fas fa-map-marker-alt';
-            const iconBg = item.icon ? 'bg-primary-subtle text-primary' : 'bg-light text-secondary';
-            const title = item.action || item.status;
-            const description = item.description || item.notes || '';
-            const locationLine = item.location ? `<div class="text-primary mt-1" style="font-size: 0.75rem; font-weight: 600;"><i class="fas fa-map-marker-alt me-1"></i>${item.location}</div>` : '';
-            const userName = item.user_name || 'System';
-            const timeStr = item.timestamp || item.created_at;
-            
-            return `
-                <div class="history-item d-flex">
-                    <div class="history-icon-wrapper me-3">
-                        <div class="history-icon ${iconBg}">
-                            <i class="${iconClass}"></i>
-                        </div>
-                        <div class="history-line"></div>
-                    </div>
-                    <div class="history-content flex-grow-1">
-                        <div class="d-flex justify-content-between align-items-start mb-1">
-                            <div>
-                                <div class="fw-bold text-dark" style="font-size: 0.95rem;">${title}</div>
-                                <div class="text-secondary small">${description}</div>
-                                ${locationLine}
-                            </div>
-                            <div class="text-end ms-3" style="min-width: 100px;">
-                                <div class="small fw-bold text-dark mb-0">${userName}</div>
-                                <div class="text-muted" style="font-size: 0.75rem;">just now</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }).join('');
-    }
-
-    function updateTrackingSummary(data) {
-        document.getElementById('tracking-current-location').innerText = data.current_location || 'Awaiting live update';
-        document.getElementById('tracking-last-updated').innerText = formatTrackingTime(data.last_location_updated_at);
-        document.getElementById('tracking-vehicle').innerText = data.vehicle_number || 'Not assigned';
-        document.getElementById('tracking-driver').innerText = data.driver_name || 'Not assigned';
-
-        const badge = document.getElementById('tracking-active-badge');
-        badge.innerText = data.tracking_active ? 'Active' : 'Idle';
-        badge.className = `badge ${data.tracking_active ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary'}`;
-    }
-
-    function refreshTrackingPanel() {
-        fetch(TRACKING_API_URL, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-            .then((response) => response.json())
-            .then((data) => {
-                updateTrackingSummary(data);
-                updateTrackingMap(data.map_data);
-                renderTrackingHistory(data.milestones);
-            })
-            .catch(() => {});
-    }
 
     function triggerUpload(docType = 'other') {
         const input = document.getElementById('upload-file-input');
@@ -2121,11 +2109,33 @@
         form.target = originalTarget;
     }
 
+    // Blind Shipment BoL Type Management
+    const blindSwitch = document.getElementById('blindSwitch');
+    if (blindSwitch) {
+        blindSwitch.addEventListener('change', function() {
+            const container = document.getElementById('blindButtonsContainer');
+            container.style.display = this.checked ? 'block' : 'none';
+        });
+    }
+
+    function setBolType(type) {
+        document.getElementById('bolTypeInput').value = type;
+        
+        const btnReceiver = document.getElementById('btnBolReceiver');
+        const btnShipper = document.getElementById('btnBolShipper');
+        
+        if (type === 'receiver') {
+            btnReceiver.classList.add('active');
+            btnShipper.classList.remove('active');
+        } else {
+            btnReceiver.classList.remove('active');
+            btnShipper.classList.add('active');
+        }
+    }
+
     // Auto-close offcanvas on form submission for document generation
     document.addEventListener('DOMContentLoaded', function() {
-        initTrackingMap();
-        refreshTrackingPanel();
-        setInterval(refreshTrackingPanel, 30000);
+
 
         const formsToCloseCanvas = ['bolForm', 'shipConfirmForm', 'packingListForm'];
         formsToCloseCanvas.forEach(formId => {
@@ -2143,6 +2153,152 @@
                 });
             }
         });
+
+        // Conversation Submission Logic
+        const conversationBtn = document.querySelector('.conversation-submit-btn');
+        const conversationEditor = document.querySelector('.conversation-editor');
+        const messagesContainer = document.getElementById('conversation-messages');
+        const toolbarBtns = document.querySelectorAll('.toolbar-btn');
+        const linkEditor = document.querySelector('.conversation-link-editor');
+        const linkInput = document.querySelector('.conversation-link-input');
+        const linkConfirmBtn = document.querySelector('.link-editor-btn.confirm');
+        const linkCancelBtn = document.querySelector('.link-editor-btn.cancel');
+
+        if (conversationBtn && conversationEditor) {
+            // Toolbar Button Logic
+            toolbarBtns.forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const command = this.getAttribute('data-command');
+
+                    if (command === 'link') {
+                        linkEditor.style.display = 'flex';
+                        linkInput.focus();
+                        return;
+                    } else if (command === 'at') {
+                        insertTextAtCursor('@');
+                        return;
+                    } else if (command === 'hash') {
+                        insertTextAtCursor('#');
+                        return;
+                    }
+
+                    // Apply native browser formatting
+                    document.execCommand(command, false, null);
+                    updateToolbarActiveStates();
+                    conversationEditor.focus();
+                });
+            });
+
+            function insertTextAtCursor(text) {
+                const sel = window.getSelection();
+                if (sel.getRangeAt && sel.rangeCount) {
+                    const range = sel.getRangeAt(0);
+                    range.deleteContents();
+                    range.insertNode(document.createTextNode(text));
+                    // Move cursor after inserted text
+                    range.collapse(false);
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                } else {
+                    conversationEditor.innerText += text;
+                }
+                conversationEditor.focus();
+            }
+
+            function updateToolbarActiveStates() {
+                toolbarBtns.forEach(btn => {
+                    const cmd = btn.getAttribute('data-command');
+                    if (['bold', 'italic', 'underline', 'strikethrough'].includes(cmd)) {
+                        if (document.queryCommandState(cmd)) {
+                            btn.classList.add('active');
+                        } else {
+                            btn.classList.remove('active');
+                        }
+                    }
+                });
+            }
+
+            // Update active states on selection or click
+            conversationEditor.addEventListener('keyup', updateToolbarActiveStates);
+            conversationEditor.addEventListener('mouseup', updateToolbarActiveStates);
+
+            // Inline Link Editor Logic
+            if (linkConfirmBtn && linkCancelBtn) {
+                linkConfirmBtn.addEventListener('click', function() {
+                    const url = linkInput.value.trim() || 'https://';
+                    conversationEditor.focus();
+                    document.execCommand('createLink', false, url);
+                    linkEditor.style.display = 'none';
+                });
+
+                linkCancelBtn.addEventListener('click', function() {
+                    linkEditor.style.display = 'none';
+                    conversationEditor.focus();
+                });
+
+                linkInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        linkConfirmBtn.click();
+                    }
+                });
+            }
+
+            conversationBtn.addEventListener('click', function() {
+                const text = conversationEditor.innerHTML.trim();
+                // Check if empty (or just tags)
+                if (!text || text === '<br>') return;
+
+                conversationBtn.disabled = true;
+                conversationBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+                const formData = new FormData();
+                formData.append('text', text);
+                formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+                fetch("{% url 'shipments:add_comment' shipment.pk %}", {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.ok) {
+                        // Prepend new comment
+                        const commentHtml = `
+                            <div class="chat-bubble bg-primary-subtle border-primary-subtle mb-3 shadow-sm animate__animated animate__fadeIn" 
+                                 style="border-radius: 12px;">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="small fw-bold text-primary">${data.comment.user}</span>
+                                    <span class="text-muted" style="font-size: 0.7rem;">Just now</span>
+                                </div>
+                                <div class="mb-0 small text-dark" style="line-height: 1.4;">${data.comment.text}</div>
+                            </div>
+                        `;
+                        
+                        // Remove empty state if present
+                        const emptyState = messagesContainer.querySelector('.conversation-empty');
+                        if (emptyState) emptyState.remove();
+
+                        messagesContainer.insertAdjacentHTML('afterbegin', commentHtml);
+                        conversationEditor.innerHTML = '';
+                    } else {
+                        alert('Error: ' + (data.error || 'Could not post comment'));
+                    }
+                })
+                .catch(err => {
+                    console.error('Error posting comment:', err);
+                    alert('An error occurred. Please try again.');
+                })
+                .finally(() => {
+                    conversationBtn.disabled = false;
+                    conversationBtn.innerText = 'Submit';
+                });
+            });
+        }
 
         {% if download_invoice_id %}
         // Auto-download invoice PDF

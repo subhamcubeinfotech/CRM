@@ -378,3 +378,19 @@ class ShipmentHistory(models.Model):
 
     def __str__(self):
         return f"{self.shipment.shipment_number} - {self.action} at {self.created_at}"
+
+
+class ShipmentComment(models.Model):
+    """Real-time conversation comments for a shipment"""
+    shipment = models.ForeignKey(Shipment, on_delete=models.CASCADE, related_name='comments')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='shipment_comments')
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Shipment Comment'
+        verbose_name_plural = 'Shipment Comments'
+
+    def __str__(self):
+        return f"Comment by {self.user.username} on {self.shipment.shipment_number}"

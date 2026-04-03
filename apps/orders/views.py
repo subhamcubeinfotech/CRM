@@ -1,5 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
+from django.http import JsonResponse
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
@@ -9,6 +11,7 @@ from django.utils import timezone
 from .models import Order, ManifestItem, Tag, ShippingTerm, PackagingType
 from apps.accounts.models import Company
 from apps.inventory.models import Warehouse, InventoryItem, Material
+from apps.inventory.forms import MaterialForm
 from apps.accounts.utils import filter_by_user_company, check_company_access
 import logging
 
@@ -201,6 +204,10 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
 
     def get_object(self, queryset=None):
         obj = super().get_object(queryset)
+        
+        # Trigger automatic 'overdue' check (Net 30)
+        obj.check_payment_status()
+        
         # Allow creator to see the order even if they are not the receiver
         if obj.created_by == self.request.user:
             return obj
@@ -212,15 +219,25 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
         context['manifest_items'] = self.object.manifest_items.all()
         context['shipments'] = self.object.shipments.all()
         context['invoices'] = self.object.invoices.all()
-        context['events'] = self.object.events.all()
+        context['events'] = self.object.events.filter(
+            Q(event_type__in=['order_created', 'shipment_created', 'note_added', 'document_added', 'payment_status_updated']) |
+            Q(event_type='status_updated', description__icontains='Order status is now')
+        )
         context['documents'] = self.object.documents.all()
         
         # Context for Edit Offcanvas
         user_tenant = self.request.user.tenant
         user_company = self.request.user.company
         assign_company = user_company or Company.objects.filter(tenant=user_tenant).first()
-        # Show all active companies (tenant-specific + global)
+        
+        # Show companies (filtered by creator OR user's own company unless admin)
         all_companies = Company.plain_objects.filter(is_active=True).filter(Q(tenant=user_tenant) | Q(tenant__isnull=True))
+        if not getattr(self.request.user, 'is_admin', False):
+            if user_company:
+                all_companies = all_companies.filter(Q(created_by=self.request.user) | Q(pk=user_company.pk))
+            else:
+                all_companies = all_companies.filter(created_by=self.request.user)
+        
         context['suppliers'] = all_companies
         context['receivers'] = all_companies
         
@@ -256,12 +273,39 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
         context['all_shipping_terms'] = ShippingTerm.plain_objects.filter(Q(tenant=user_tenant) | Q(tenant__isnull=True)).order_by('name')
         context['all_representatives'] = get_user_model().objects.filter(tenant=user_tenant, is_active=True).order_by('first_name', 'username')
             
-        # Context for Add Item Offcanvas
-        context['inventory_items'] = InventoryItem.plain_objects.filter(
-            warehouse__company=self.object.supplier,
-            tenant=self.object.tenant,
-            quantity__gt=0
+        inventory_items_qs = InventoryItem.plain_objects.filter(
+            company=self.object.supplier,
+            tenant=self.object.tenant
         )
+
+        # Calculation for remaining manifest balance
+        from apps.shipments.models import ShipmentItem
+        shipped_weights = ShipmentItem.objects.filter(
+            shipment__order=self.object
+        ).values('material_name').annotate(total_shipped=Sum('weight'))
+        
+        shipped_map = {sw['material_name']: sw['total_shipped'] for sw in shipped_weights}
+        manifest_items = list(context['manifest_items'])
+        manifest_map = {mi.material: mi.weight for mi in manifest_items}
+        
+        # If there's only one manifest item, use the larger of manifest weight or total target
+        if len(manifest_items) == 1:
+            mi = manifest_items[0]
+            manifest_map[mi.material] = max(mi.weight, self.object.total_weight_target)
+        
+        inventory_items = list(inventory_items_qs)
+        for item in inventory_items:
+            m_weight = manifest_map.get(item.product_name, 0)
+            if m_weight > 0:
+                s_weight = shipped_map.get(item.product_name, 0)
+                # Use Decimal for precise subtraction
+                from decimal import Decimal
+                diff = Decimal(str(m_weight)) - Decimal(str(s_weight))
+                item.order_balance = max(0, diff)
+            else:
+                item.order_balance = None
+        
+        context['inventory_items'] = inventory_items
         context['assign_company'] = assign_company
         context['packaging_types'] = PackagingType.objects.all()
         
@@ -295,6 +339,7 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
 
         context['previous_pickup_contacts'] = pickup_contacts
         context['previous_delivery_contacts'] = delivery_contacts
+        context['material_form'] = MaterialForm()
         
         return context
 
@@ -400,21 +445,35 @@ def order_create(request):
             order_number=order_number,
             po_number=request.POST.get('po_number'),
             so_number=request.POST.get('so_number'),
-            supplier_id=request.POST.get('supplier'),
-            receiver_id=request.POST.get('receiver'),
-            source_location_id=resolve_location(source_loc_val, request.user),
-            destination_location_id=resolve_location(dest_loc_val, request.user),
+            supplier_id=request.POST.get('supplier') or None,
+            receiver_id=request.POST.get('receiver') or None,
+            source_location_id=resolve_location(source_loc_val, request.user) or None,
+            destination_location_id=resolve_location(dest_loc_val, request.user) or None,
             total_weight_target=request.POST.get('total_weight_target') or 0,
+            total_weight_unit=request.POST.get('total_weight_unit') or 'lbs',
             freight_cost=request.POST.get('freight_cost') or 0,
             expected_pickup_date=request.POST.get('expected_pickup_date') or None,
             expected_delivery_date=request.POST.get('expected_delivery_date') or None,
-            shipping_terms_id=request.POST.get('shipping_terms'),
-            representative_id=request.POST.get('representative'),
+            shipping_terms_id=request.POST.get('shipping_terms') or None,
+            representative_id=request.POST.get('representative') or None,
             status='confirmed', # Default to confirmed for manual entries
             payment_status='pending',
             created_by=request.user,
             tenant=request.user.tenant
         )
+        
+        # Handle Tags (support dynamic creation)
+        tag_input = request.POST.getlist('tags')
+        tag_ids = []
+        for val in tag_input:
+            # Only treat as existing ID if it's numeric AND exists in DB
+            if val.isdigit() and Tag.objects.filter(id=val, tenant=request.user.tenant).exists():
+                tag_ids.append(val)
+            elif val.strip():
+                # Treat as a new tag name (even if numeric)
+                tag, _ = Tag.objects.get_or_create(tenant=request.user.tenant, name=val.strip())
+                tag_ids.append(tag.id)
+        order.tags.set(tag_ids)
         
         # Create Lifecycle Event
         from .models import OrderEvent
@@ -519,13 +578,24 @@ def order_create(request):
     user_company = request.user.company
     assign_company = user_company or Company.objects.filter(tenant=request.user.tenant).first()
     
-    # Show all companies in supplier/receiver dropdowns
+    # Filter companies by creator OR user's own company unless admin
     company_qs = Company.plain_objects.all()
+    if not getattr(request.user, 'is_admin', False):
+        if user_company:
+            company_qs = company_qs.filter(Q(created_by=request.user) | Q(pk=user_company.pk))
+        else:
+            company_qs = company_qs.filter(created_by=request.user)
     
     suppliers = company_qs
     receivers = company_qs
     
-    inventory_items = InventoryItem.plain_objects.all()
+    if not getattr(request.user, 'is_admin', False):
+        inventory_items = InventoryItem.plain_objects.filter(
+            Q(company__in=company_qs) | Q(warehouse__company__in=company_qs),
+            tenant=request.user.tenant
+        ).distinct()
+    else:
+        inventory_items = InventoryItem.plain_objects.filter(tenant=request.user.tenant)
 
     # Show all warehouses in tenant, prioritize user's company
     from django.db.models import Case, When, IntegerField
@@ -550,6 +620,7 @@ def order_create(request):
         'tags': Tag.plain_objects.filter(Q(tenant=request.user.tenant) | Q(tenant__isnull=True)),
         'team_members': get_user_model().objects.filter(tenant=request.user.tenant),
         'packaging_types': PackagingType.objects.all(),
+        'material_form': MaterialForm(),
     }
     return render(request, 'orders/order_form.html', context)
 
@@ -565,19 +636,30 @@ def order_edit(request, pk):
             order.supplier_id = request.POST.get('supplier')
             order.receiver_id = request.POST.get('receiver')
         
-        order.source_location_id = request.POST.get('source_location')
-        order.destination_location_id = request.POST.get('destination_location')
+        order.source_location_id = request.POST.get('source_location') or None
+        order.destination_location_id = request.POST.get('destination_location') or None
         order.po_number = request.POST.get('po_number')
         order.so_number = request.POST.get('so_number')
-        order.shipping_terms_id = request.POST.get('shipping_terms')
-        order.representative_id = request.POST.get('representative')
+        order.shipping_terms_id = request.POST.get('shipping_terms') or None
+        order.representative_id = request.POST.get('representative') or None
         order.freight_cost = request.POST.get('freight_cost') or 0
+        order.total_weight_target = request.POST.get('total_weight_target') or 0
+        order.total_weight_unit = request.POST.get('total_weight_unit') or 'lbs'
         order.expected_pickup_date = request.POST.get('expected_pickup_date') or None
         order.expected_delivery_date = request.POST.get('expected_delivery_date') or None
         
-        # Handle Tags
-        tag_ids = request.POST.getlist('tags')
-        if tag_ids:
+        # Handle Tags (support dynamic creation)
+        tag_input = request.POST.getlist('tags')
+        if tag_input:
+            tag_ids = []
+            for val in tag_input:
+                # Only treat as existing ID if it's numeric AND exists in DB
+                if val.isdigit() and Tag.objects.filter(id=val, tenant=request.user.tenant).exists():
+                    tag_ids.append(val)
+                elif val.strip():
+                    # Treat as a new tag name (even if numeric)
+                    tag, _ = Tag.objects.get_or_create(tenant=request.user.tenant, name=val.strip())
+                    tag_ids.append(tag.id)
             order.tags.set(tag_ids)
         else:
             order.tags.clear()
@@ -1061,3 +1143,81 @@ def order_upload_document(request, pk):
     except Exception as e:
         logger.error(f"Error uploading document: {e}")
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+@login_required
+@require_POST
+def order_add_note(request, pk):
+    """
+    AJAX view to add a note/comment to an order's history.
+    """
+    order = get_object_or_404(Order, pk=pk)
+    
+    # Check access
+    if order.created_by != request.user:
+        check_company_access(order.receiver, request.user)
+        
+    note_content = request.POST.get('note', '').strip()
+    
+    if not note_content:
+        return JsonResponse({'success': False, 'error': 'Note content cannot be empty'}, status=400)
+    
+    try:
+        from .models import OrderEvent
+        event = OrderEvent.objects.create(
+            order=order,
+            event_type='note_added',
+            description=note_content,
+            created_by=request.user
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'event': {
+                'id': event.id,
+                'type_display': event.get_event_type_display(),
+                'description': event.description,
+                'created_at_display': event.created_at.strftime('%b %d, %Y %H:%M'),
+                'created_at_relative': "just now"
+            }
+        })
+    except Exception as e:
+        logger.error(f"Error adding note to order {pk}: {e}")
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+@login_required
+@require_POST
+def order_edit_manifest_item(request, item_pk):
+    """
+    Update a single manifest item from the order detail page.
+    """
+    from .models import ManifestItem, OrderEvent
+    item = get_object_or_404(ManifestItem, pk=item_pk)
+    
+    # Check access
+    if item.order.tenant != request.user.tenant:
+        return redirect('orders:order_list')
+        
+    try:
+        item.weight = request.POST.get('weight') or item.weight
+        item.weight_unit = request.POST.get('weight_unit') or item.weight_unit
+        item.buy_price = request.POST.get('buy_price') or item.buy_price
+        item.buy_price_unit = request.POST.get('buy_price_unit') or item.buy_price_unit
+        item.sell_price = request.POST.get('sell_price') or item.sell_price
+        item.sell_price_unit = request.POST.get('sell_price_unit') or item.sell_price_unit
+        item.packaging = request.POST.get('packaging') or ""
+        item.is_palletized = request.POST.get('is_palletized') == 'on' or request.POST.get('is_palletized') == 'true'
+        item.save()
+        
+        # Create Lifecycle Event
+        OrderEvent.objects.create(
+            order=item.order,
+            event_type='status_updated',
+            description=f"Manifest item '{item.material}' updated.",
+            created_by=request.user
+        )
+        
+        logger.info(f"Manifest item {item_pk} updated by {request.user}")
+    except Exception as e:
+        logger.error(f"Error updating manifest item {item_pk}: {e}")
+        
+    return redirect('orders:order_detail', pk=item.order.pk)

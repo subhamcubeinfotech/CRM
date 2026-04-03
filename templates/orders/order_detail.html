@@ -1,5 +1,7 @@
 {% extends 'base.html' %}
 {% load humanize %}
+{% load inventory_tags %}
+
 
 {% block title %}Order #{{ order.order_number }} Details - FreightPro{% endblock %}
 
@@ -97,8 +99,25 @@
 
     .nav-tabs-premium .nav-link.active {
         color: var(--accent-blue);
+    }
+    
+    .manifest-row {
+        transition: background-color 0.15s ease-in-out;
+    }
+    .manifest-row:hover {
+        background-color: #f8f9fc !important;
+        cursor: pointer;
+    }
+    .manifest-row a {
+        position: relative;
+        z-index: 2;
+    }
+
+    .nav-tabs-premium .nav-link.active {
+        color: var(--accent-blue);
         background: transparent;
     }
+
 
     .nav-tabs-premium .nav-link.active::after {
         content: '';
@@ -145,7 +164,21 @@
         text-transform: uppercase;
         border: none;
     }
+
+    /* Select2 Bootstrap 5 Theme Adjustments */
+    .select2-container--bootstrap-5 .select2-selection {
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        min-height: 38px;
+    }
+    .select2-container--bootstrap-5.select2-container--focus .select2-selection {
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
 </style>
+<!-- Select2 CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
 
 <div class="container-fluid p-0">
     <!-- Header Section -->
@@ -157,12 +190,21 @@
                 <div class="ms-4 mt-1" style="width: 300px;">
                     <div class="progress rounded-pill bg-light"
                         style="height: 24px; position: relative; border: 1px solid #e3e6f0;"
-                        title="Manifested: {{ order.total_manifest_weight|floatformat:2 }} / Target: {{ order.total_weight_target|floatformat:2 }} lbs (Shipped: {{ order.shipped_weight|floatformat:2 }} lbs)">
-                        <div class="progress-bar bg-info opacity-50"
-                            style="width: {{ order.manifest_progress_percentage }}%"></div>
+                        title="Manifested: {{ order.total_manifest_weight_in_unit|floatformat:2 }} / Target: {{ order.total_weight_target|floatformat:2 }} {{ order.total_weight_unit }} (Shipped: {{ order.shipped_weight_in_unit|floatformat:2 }} {{ order.total_weight_unit }})">
+                        <!-- Manifested Progress (Light Blue) -->
+                        <div class="progress-bar bg-info opacity-25 position-absolute h-100"
+                            style="width: {{ order.manifest_progress_percentage }}%; z-index: 1;"></div>
+                        <!-- Shipped Progress (Solid Blue) -->
+                        <div class="progress-bar bg-primary position-absolute h-100"
+                            style="width: {{ order.weight_progress_percentage }}%; z-index: 2;"></div>
+                        
                         <div class="position-absolute w-100 text-center fw-bold"
-                            style="font-size: 0.75rem; line-height: 22px; color: #2d3748;">
-                            {{ order.total_manifest_weight|intcomma }} / {{ order.total_weight_target|intcomma }} lbs
+                            style="font-size: 0.75rem; line-height: 22px; color: #1e293b; z-index: 3;">
+                            {% if order.shipped_weight_in_unit > 0 %}
+                                {{ order.shipped_weight_in_unit|format_short }} / {{ order.total_weight_target|format_short }} {{ order.total_weight_unit }}
+                            {% else %}
+                                {{ order.total_manifest_weight_in_unit|format_short }} / {{ order.total_weight_target|format_short }} {{ order.total_weight_unit }}
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -225,7 +267,7 @@
         </div>
 
         <div class="row mt-4 g-0">
-            <div class="col-md-4 px-3 border-end">
+            <div class="col-md-4 px-3">
                 <div class="detail-label">Supplier</div>
                 <div class="party-title mb-1">{{ order.supplier.name }}</div>
                 <div class="small text-primary mb-2">
@@ -286,13 +328,24 @@
                                 </thead>
                                 <tbody>
                                     {% for item in manifest_items %}
-                                    <tr>
+                                    <tr class="manifest-row" 
+                                        data-item-id="{{ item.id }}"
+                                        data-material="{{ item.material }}"
+                                        data-weight="{{ item.weight }}"
+                                        data-weight-unit="{{ item.weight_unit }}"
+                                        data-buy-price="{{ item.buy_price }}"
+                                        data-buy-price-unit="{{ item.buy_price_unit }}"
+                                        data-sell-price="{{ item.sell_price }}"
+                                        data-sell-price-unit="{{ item.sell_price_unit }}"
+                                        data-packaging="{{ item.packaging }}"
+                                        data-palletized="{{ item.is_palletized|yesno:'true,false' }}">
                                         <td class="ps-3"><a href="{% url 'materials:material_lookup' %}?name={{ item.material|urlencode }}" class="text-primary fw-600 text-decoration-none">{{ item.material }}</a></td>
                                         <td>${{ item.buy_price|floatformat:2 }} / {{ item.buy_price_unit|default:"lb" }}</td>
                                         <td>${{ item.sell_price|floatformat:2 }} / {{ item.sell_price_unit|default:"lb" }}</td>
                                         <td>
-                                            {{ item.weight|intcomma }} {{ item.weight_unit }}
+                                            {{ item.weight|format_short }} {{ item.weight_unit }} / {{ order.total_weight_target|format_short }} {{ item.weight_unit }}
                                         </td>
+
                                         <td class="pe-3">
                                             {{ item.packaging|default:"-" }}
                                             {% if item.is_palletized %}
@@ -301,6 +354,7 @@
                                         </td>
                                     </tr>
                                     {% endfor %}
+
                                 </tbody>
                             </table>
                         </div>
@@ -490,11 +544,11 @@
                     <i class="fas fa-strikethrough"></i>
                     <i class="fas fa-link"></i>
                 </div>
-                <textarea class="form-control border-0 p-0 mb-3" rows="3" placeholder="Join the conversation..."
+                <textarea id="historyNoteText" class="form-control border-0 p-0 mb-3" rows="3" placeholder="Join the conversation..."
                     style="box-shadow: none; font-size: 0.850rem;"></textarea>
                 <div class="d-flex justify-content-between align-items-center">
                     <span class="text-muted smaller">Tip: Notify someone with @</span>
-                    <button class="btn btn-outline-primary btn-sm px-4">Submit</button>
+                    <button id="btnSubmitNote" class="btn btn-outline-primary btn-sm px-4">Submit</button>
                 </div>
             </div>
         </div>
@@ -612,16 +666,11 @@
                 </div>
             </div>
 
-            <!-- Tags -->
             <div class="mb-4">
                 <label class="form-label fw-bold small text-uppercase mb-1">Tags</label>
-                <select name="tags" class="form-select" multiple style="height: 100px;">
-                    {% for tag in tags %}
-                    <option value="{{ tag.id }}" {% if tag in order.tags.all %}selected{% endif %}>{{ tag.name }}
-                    </option>
-                    {% endfor %}
+                <select name="tags" id="tags-select-edit-order" class="form-select select2-basic" multiple>
+                    <!-- Existing tags removed per user request -->
                 </select>
-                <div class="smaller text-muted mt-1">Hold Ctrl/Cmd to select multiple</div>
             </div>
 
             <!-- Shipping Terms -->
@@ -784,18 +833,18 @@
                     <!-- Material -->
                     <div class="mb-4">
                         <label class="form-label fw-bold small text-uppercase mb-1">Material <span class="text-danger">*</span></label>
-                        <div class="d-flex gap-2 align-items-center">
-                            <select name="material[]" class="form-select border-primary-subtle rounded-3" required>
+                        <div class="input-group input-group-sm">
+                            <select name="material[]" class="form-select border-primary-subtle rounded-3 material-select" required>
                                 <option value="">Select a material</option>
                                 {% for item in inventory_items %}
                                 <option value="{{ item.id }}" data-unit="{{ item.unit_of_measure }}">
-                                    {{ item.product_name }} - {{ item.display_stock }}
+                                    {{ item.product_name }}
                                 </option>
                                 {% endfor %}
                             </select>
-                            <div class="bg-primary-subtle p-2 rounded-3 text-primary">
-                                <i class="fas fa-search"></i>
-                            </div>
+                            <button type="button" class="btn btn-outline-primary" data-bs-toggle="offcanvas" data-bs-target="#offcanvasAddMaterial">
+                                + Add
+                            </button>
                         </div>
                     </div>
 
@@ -812,7 +861,6 @@
                                 <option value="kgs">kgs</option>
                                 <option value="mt">MT</option>
                                 <option value="st">ST</option>
-                                <option value="pcs">pcs</option>
                             </select>
                         </div>
                     </div>
@@ -833,7 +881,6 @@
                                 <option value="per kgs">per kgs</option>
                                 <option value="per mt">per MT</option>
                                 <option value="per st">per ST</option>
-                                <option value="per pcs">per pcs</option>
                             </select>
                         </div>
                     </div>
@@ -854,7 +901,6 @@
                                 <option value="per kgs">per kgs</option>
                                 <option value="per mt">per MT</option>
                                 <option value="per st">per ST</option>
-                                <option value="per pcs">per pcs</option>
                             </select>
                         </div>
                     </div>
@@ -894,9 +940,162 @@
     </div>
 </div>
 
+<!-- Edit Manifest Item Offcanvas -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasEditItem"
+    style="width: 500px; border-left: none; box-shadow: -10px 0 30px rgba(0,0,0,0.1);">
+    <div class="offcanvas-header border-bottom p-4">
+        <h5 class="offcanvas-title fw-bold text-primary">Edit Item: <span id="editItemMaterialName" class="text-dark"></span></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body p-4">
+        <form id="editItemForm" method="POST">
+            {% csrf_token %}
+            
+            <!-- Weight & Unit -->
+            <div class="row g-3 mb-4">
+                <div class="col-8">
+                    <label class="form-label fw-bold small text-uppercase mb-1">Weight<span class="text-danger">*</span></label>
+                    <input type="number" step="0.01" name="weight" id="editItemWeight" class="form-control rounded-3" placeholder="Weight" required>
+                </div>
+                <div class="col-4">
+                    <label class="form-label fw-bold small text-uppercase mb-1">Unit</label>
+                    <select name="weight_unit" id="editItemWeightUnit" class="form-select rounded-3 manifest-unit-select">
+                        <option value="lbs">lbs</option>
+                        <option value="kgs">kgs</option>
+                        <option value="mt">MT</option>
+                        <option value="st">ST</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Buy Price & Unit -->
+            <div class="row g-3 mb-4">
+                <div class="col-8">
+                    <label class="form-label fw-bold small text-uppercase mb-1">Buy Price<span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0 rounded-start-3">$</span>
+                        <input type="number" step="0.0001" name="buy_price" id="editItemBuyPrice" class="form-control border-start-0 rounded-end-3" placeholder="Price" required>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <label class="form-label fw-bold small text-uppercase mb-1">Unit</label>
+                    <select name="buy_price_unit" id="editItemBuyPriceUnit" class="form-select rounded-3 manifest-unit-select">
+                        <option value="per lbs">per lbs</option>
+                        <option value="per kgs">per kgs</option>
+                        <option value="per mt">per MT</option>
+                        <option value="per st">per ST</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Sell Price & Unit -->
+            <div class="row g-3 mb-4">
+                <div class="col-8">
+                    <label class="form-label fw-bold small text-uppercase mb-1">Sell Price<span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0 rounded-start-3">$</span>
+                        <input type="number" step="0.0001" name="sell_price" id="editItemSellPrice" class="form-control border-start-0 rounded-end-3" placeholder="Price" required>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <label class="form-label fw-bold small text-uppercase mb-1">Unit</label>
+                    <select name="sell_price_unit" id="editItemSellPriceUnit" class="form-select rounded-3 manifest-unit-select">
+                        <option value="per lbs">per lbs</option>
+                        <option value="per kgs">per kgs</option>
+                        <option value="per mt">per MT</option>
+                        <option value="per st">per ST</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Packaging -->
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase mb-1">Packaging</label>
+                <select name="packaging" id="editItemPackaging" class="form-select rounded-3">
+                    <option value="">Select packaging type</option>
+                    {% for ptype in packaging_types %}
+                    <option value="{{ ptype.name }}">{{ ptype.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Palletized Checkbox -->
+            <div class="form-check mb-4">
+                <input class="form-check-input" type="checkbox" name="is_palletized" id="editItemIsPalletized">
+                <label class="form-check-label small fw-bold text-muted" for="editItemIsPalletized">Is the packaging palletized?</label>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="mt-4 pt-3 border-top">
+                <button type="submit" class="btn btn-primary w-100 py-2 fw-bold rounded-3 shadow-sm" style="background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%); border: none; font-size: 0.9rem;">Submit</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Manifest row quick-edit logic
+    document.querySelectorAll('.manifest-row').forEach(row => {
+        row.addEventListener('click', function(e) {
+            // Prevent drawer if clicking a link or interactive element
+            if (e.target.tagName === 'A' || e.target.closest('a') || e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
+            
+            // NEW: Prevent drawer if clicking in the first column (Material column)
+            const td = e.target.closest('td');
+            if (td && td.cellIndex === 0) return;
+
+            const data = this.dataset;
+
+            const offcanvasElement = document.getElementById('offcanvasEditItem');
+            const drawer = new bootstrap.Offcanvas(offcanvasElement);
+
+            // Populate fields
+            document.getElementById('editItemMaterialName').innerText = data.material;
+            document.getElementById('editItemWeight').value = data.weight;
+            document.getElementById('editItemWeightUnit').value = data.weightUnit;
+            document.getElementById('editItemBuyPrice').value = data.buyPrice;
+            document.getElementById('editItemBuyPriceUnit').value = data.buyPriceUnit;
+            document.getElementById('editItemSellPrice').value = data.sellPrice;
+            document.getElementById('editItemSellPriceUnit').value = data.sellPriceUnit;
+            document.getElementById('editItemPackaging').value = data.packaging;
+            document.getElementById('editItemIsPalletized').checked = data.palletized === 'true';
+
+            // Set form action
+            const editUrl = "{% url 'orders:order_edit_manifest_item' 0 %}".replace('0', data.itemId);
+            document.getElementById('editItemForm').action = editUrl;
+
+            drawer.show();
+        });
+    });
+
+    // Unit Synchronization Logic
+    function syncUnits(sourceSelect) {
+        const block = sourceSelect.closest('.item-block') || sourceSelect.closest('form');
+        if (!block) return;
+
+        let selectedVal = sourceSelect.value.replace('per ', '');
+        
+        const weightUnit = block.querySelector('.manifest-unit-select[name*="weight_unit"], #editItemWeightUnit');
+        const buyUnit = block.querySelector('.manifest-unit-select[name*="buy_price_unit"], #editItemBuyPriceUnit');
+        const sellUnit = block.querySelector('.manifest-unit-select[name*="sell_price_unit"], #editItemSellPriceUnit');
+
+        if (weightUnit && weightUnit !== sourceSelect) weightUnit.value = selectedVal;
+        if (buyUnit && buyUnit !== sourceSelect) buyUnit.value = 'per ' + selectedVal;
+        if (sellUnit && sellUnit !== sourceSelect) sellUnit.value = 'per ' + selectedVal;
+    }
+
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('manifest-unit-select') || 
+            ['editItemWeightUnit', 'editItemBuyPriceUnit', 'editItemSellPriceUnit'].includes(e.target.id)) {
+            syncUnits(e.target);
+        }
+    });
+
     document.getElementById('addAnotherItemBtn').addEventListener('click', function() {
+
+
         const container = document.getElementById('itemsContainer');
         const firstItem = container.querySelector('.item-block');
         const newItem = firstItem.cloneNode(true);
@@ -1328,10 +1527,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
                 <div class="col-md-6">
                     <label class="form-label fw-bold small text-uppercase mb-1">Tags</label>
-                    <select name="tags_ui" class="form-select rounded-3" multiple>
-                        {% for tag in all_tags %}
-                        <option value="{{ tag.id }}" {% if tag in order.tags.all %}selected{% endif %}>{{ tag.name }}</option>
-                        {% endfor %}
+                    <select name="tags_ui" id="tags-select-add-shipment" class="form-select select2-basic" multiple>
+                        <!-- Existing tags removed per user request -->
                     </select>
                 </div>
             </div>
@@ -1355,7 +1552,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <option value="">Select a material</option>
                             {% for item in inventory_items %}
                             <option value="{{ item.id }}" data-unit="{{ item.unit_of_measure }}">
-                                {{ item.product_name }} - {{ item.display_stock }}
+                                {{ item.product_name }}{% if item.order_balance is not None %} - {{ item.order_balance|format_short }}{% endif %}
                             </option>
                             {% endfor %}
                         </select>
@@ -1374,7 +1571,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <option value="kgs">kgs</option>
                                 <option value="mt">MT</option>
                                 <option value="st">ST</option>
-                                <option value="pcs">pcs</option>
                             </select>
                         </div>
                     </div>
@@ -1392,7 +1588,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <option value="kgs">kgs</option>
                                 <option value="mt">MT</option>
                                 <option value="st">ST</option>
-                                <option value="pcs">pcs</option>
                             </select>
                         </div>
                     </div>
@@ -1410,14 +1605,13 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <option value="kgs">kgs</option>
                                 <option value="mt">MT</option>
                                 <option value="st">ST</option>
-                                <option value="pcs">pcs</option>
                             </select>
                         </div>
                     </div>
 
-                    <!-- Packaging & Pieces -->
+                    <!-- Packaging -->
                     <div class="row g-3 mb-4">
-                        <div class="col-8">
+                        <div class="col-12">
                             <label class="form-label fw-bold small text-uppercase mb-1">Packaging</label>
                             <select name="items_ui[0][packaging]" class="form-select rounded-3">
                                 <option value="">Select packaging type</option>
@@ -1425,10 +1619,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <option value="{{ ptype.name }}">{{ ptype.name }}</option>
                                 {% endfor %}
                             </select>
-                        </div>
-                        <div class="col-4">
-                            <label class="form-label fw-bold small text-uppercase mb-1">Pieces</label>
-                            <input type="number" name="items_ui[0][pieces]" class="form-control rounded-3" value="1">
                         </div>
                     </div>
 
@@ -1454,7 +1644,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <option value="per kgs">per kgs</option>
                                 <option value="per mt">per MT</option>
                                 <option value="per st">per ST</option>
-                                <option value="per pcs">per pcs</option>
                             </select>
                         </div>
                     </div>
@@ -1475,7 +1664,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <option value="per kgs">per kgs</option>
                                 <option value="per mt">per MT</option>
                                 <option value="per st">per ST</option>
-                                <option value="per pcs">per pcs</option>
                             </select>
                         </div>
                     </div>
@@ -1604,6 +1792,49 @@ document.addEventListener('DOMContentLoaded', function() {
 {% endblock %}
 
 {% block extra_js %}
+<!-- jQuery and Select2 JS -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(document).ready(function() {
+        if ($.fn.select2) {
+            $('.select2-basic').select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                placeholder: 'Select or type to create tags...',
+                tags: true,
+                tokenSeparators: [','],
+                createTag: function (params) {
+                    var term = $.trim(params.term);
+                    if (term === '') return null;
+                    return {
+                        id: term,
+                        text: term,
+                        newTag: true
+                    };
+                },
+                templateResult: function (data) {
+                    if (data.newTag) {
+                        return "Hit Enter to create new '" + data.text + "'";
+                    }
+                    return data.text;
+                }
+            });
+
+            // Force empty on load for BOTH drawers (Per user request)
+            $('#tags-select-edit-order').val(null).trigger('change');
+            $('#tags-select-add-shipment').val(null).trigger('change');
+            
+            // Re-clear when drawers are shown just to be absolutely sure
+            document.getElementById('offcanvasEditOrder')?.addEventListener('show.bs.offcanvas', function() {
+                $('#tags-select-edit-order').val(null).trigger('change');
+            });
+            document.getElementById('offcanvasAddShipment')?.addEventListener('show.bs.offcanvas', function() {
+                $('#tags-select-add-shipment').val(null).trigger('change');
+            });
+        }
+    });
+</script>
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         // --- Document Upload Logic --- //
@@ -1756,6 +1987,314 @@ document.addEventListener('DOMContentLoaded', function() {
                 setUploadingState(false);
             });
         }
+    });
+</script>
+
+<!-- Add Material Offcanvas -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasAddMaterial" aria-labelledby="offcanvasAddMaterialLabel" style="width: 500px; border-left: none; box-shadow: -10px 0 30px rgba(0,0,0,0.1); z-index: 1060;">
+    <div class="offcanvas-header border-bottom p-4">
+        <h5 class="offcanvas-title fw-bold text-primary" id="offcanvasAddMaterialLabel">New Material</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body p-4">
+        <form id="addMaterialForm">
+            {% csrf_token %}
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase mb-2">Usage <span class="text-danger">*</span></label>
+                <div class="d-flex gap-4">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="usage" id="usageOngoing" value="ongoing" checked>
+                        <label class="form-check-label small" for="usageOngoing">Ongoing <span class="text-muted">(reusable)</span></label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="usage" id="usageSpot" value="spot">
+                        <label class="form-check-label small" for="usageSpot">Spot <span class="text-muted">(one-time use)</span></label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase mb-1">Display Name</label>
+                {{ material_form.name }}
+                <div class="form-text mt-1" style="font-size: 0.75rem;">Add a clear, descriptive name to help others quickly identify this material.</div>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase mb-1">Description</label>
+                {{ material_form.description }}
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase mb-2">Images and Documents</label>
+                <div class="border rounded-3 p-4 text-center bg-light" style="border-style: dashed !important; border-width: 2px !important;" id="materialUploadZone">
+                    <div class="mb-3">
+                        <input type="file" id="materialImageInput" name="image" hidden>
+                        <input type="file" id="materialDocumentInput" name="document" hidden>
+                        <button type="button" class="btn btn-primary btn-sm px-3 me-2" id="btnChooseMaterialFile"><i class="fas fa-plus me-1"></i> Choose</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm px-3" id="btnCancelMaterialFile"><i class="fas fa-times me-1"></i> Cancel</button>
+                    </div>
+                    <p class="text-muted small mb-0" id="materialFileStatus">Drag and drop files here to upload</p>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-6">
+                    <label class="form-label fw-bold small text-uppercase mb-1">Material <span class="text-danger">*</span></label>
+                    {{ material_form.material_type }}
+                </div>
+                <div class="col-6">
+                    <label class="form-label fw-bold small text-uppercase mb-1">Material Type <span class="text-danger">*</span></label>
+                    {{ material_form.product_type }}
+                </div>
+            </div>
+
+            <div class="mt-5 d-flex gap-2 pt-3 border-top">
+                <button type="submit" class="btn btn-primary px-4 fw-bold" id="btnSubmitMaterial">Submit</button>
+                <button type="button" class="btn btn-outline-primary px-4 fw-bold">Review</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // New Material File Selection Logic
+    const btnChoose = document.getElementById('btnChooseMaterialFile');
+    const btnCancel = document.getElementById('btnCancelMaterialFile');
+    const imgInput = document.getElementById('materialImageInput');
+    const docInput = document.getElementById('materialDocumentInput');
+    const statusText = document.getElementById('materialFileStatus');
+
+    if (btnChoose) {
+        btnChoose.addEventListener('click', () => {
+            imgInput.click();
+        });
+    }
+
+    if (imgInput) {
+        imgInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                statusText.innerHTML = `<i class="fas fa-image me-1"></i> ${this.files[0].name}`;
+                statusText.classList.remove('text-muted');
+                statusText.classList.add('text-primary', 'fw-bold');
+            }
+        });
+    }
+
+    if (btnCancel) {
+        btnCancel.addEventListener('click', () => {
+            if (imgInput) imgInput.value = '';
+            if (docInput) docInput.value = '';
+            statusText.innerHTML = 'Drag and drop files here to upload';
+            statusText.classList.add('text-muted');
+            statusText.classList.remove('text-primary', 'fw-bold');
+        });
+    }
+
+    // New Material AJAX Submission
+    const addMaterialForm = document.getElementById('addMaterialForm');
+    if (addMaterialForm) {
+        addMaterialForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const form = this;
+            const submitBtn = document.getElementById('btnSubmitMaterial');
+            const formData = new FormData(form);
+            
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+            
+            fetch("{% url 'inventory:create_material_ajax' %}", {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Update ALL material dropdowns in the main form (both drawers)
+                    const materialSelectors = [
+                        'select[name="material[]"]',
+                        'select[name^="items_ui"][name$="[material]"]'
+                    ];
+                    
+                    materialSelectors.forEach(selector => {
+                        document.querySelectorAll(selector).forEach(dropdown => {
+                            const val = data.id || data.name;
+                            const newOption = new Option(data.name, val, true, true);
+                            newOption.dataset.unit = "lbs"; // Default
+                            dropdown.add(newOption);
+                        });
+                    });
+                    
+                    // Hide offcanvas
+                    const offcanvasElement = document.getElementById('offcanvasAddMaterial');
+                    const offcanvas = bootstrap.Offcanvas.getInstance(offcanvasElement);
+                    if (offcanvas) offcanvas.hide();
+                    
+                    // Reset form
+                    form.reset();
+                    if (statusText) {
+                        statusText.innerHTML = 'Drag and drop files here to upload';
+                        statusText.classList.add('text-muted');
+                        statusText.classList.remove('text-primary', 'fw-bold');
+                    }
+                } else {
+                    let errorMsg = 'Error creating material:\n';
+                    for (const field in data.errors) {
+                        errorMsg += `${field}: ${data.errors[field][0].message}\n`;
+                    }
+                    alert(errorMsg);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An unexpected error occurred.');
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Submit';
+            });
+        });
+    }
+
+    // Lifecycle Events / History Note Submission
+    const btnSubmitNote = document.getElementById('btnSubmitNote');
+    const historyNoteText = document.getElementById('historyNoteText');
+    const eventContainer = document.querySelector('.conversation-sidebar .overflow-auto');
+    const timelineContainer = document.querySelector('.timeline-container');
+
+    if (btnSubmitNote && historyNoteText) {
+        btnSubmitNote.addEventListener('click', function() {
+            const note = historyNoteText.value.trim();
+            if (!note) return;
+
+            btnSubmitNote.disabled = true;
+            btnSubmitNote.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+            const formData = new FormData();
+            formData.append('note', note);
+            formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+            fetch("{% url 'orders:order_add_note' order.pk %}", {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // 1. Add to sidebar
+                    if (eventContainer) {
+                        const emptyState = eventContainer.querySelector('.text-center');
+                        if (emptyState) emptyState.remove();
+
+                        const bubbleHtml = `
+                            <div class="chat-bubble mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span class="fw-bold small text-primary">${data.event.type_display}</span>
+                                    <span class="text-muted smaller">${data.event.created_at_relative}</span>
+                                </div>
+                                <div class="small text-dark">${data.event.description}</div>
+                            </div>`;
+                        eventContainer.insertAdjacentHTML('afterbegin', bubbleHtml);
+                    }
+
+                    // 2. Add to History tab timeline if it exists
+                    if (timelineContainer) {
+                        const emptyTimeline = timelineContainer.querySelector('.text-center');
+                        if (emptyTimeline) emptyTimeline.remove();
+
+                        const timelineHtml = `
+                            <div class="timeline-item d-flex gap-4 mb-4 position-relative">
+                                <div class="timeline-marker bg-primary rounded-circle" style="width: 12px; height: 12px; margin-top: 6px; z-index: 2;"></div>
+                                <div class="timeline-content">
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <h6 class="fw-bold mb-0">${data.event.type_display}</h6>
+                                        <span class="text-muted smaller">${data.event.created_at_display}</span>
+                                    </div>
+                                    <p class="text-muted small mb-0">${data.event.description}</p>
+                                </div>
+                                <div class="timeline-line position-absolute h-100 border-start border-2 border-light" style="left: 5px; top: 18px; z-index: 1;"></div>
+                            </div>`;
+                        timelineContainer.insertAdjacentHTML('afterbegin', timelineHtml);
+                    }
+
+                    // 3. Clear textarea
+                    historyNoteText.value = '';
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An unexpected error occurred.');
+            })
+            .finally(() => {
+                btnSubmitNote.disabled = false;
+                btnSubmitNote.innerHTML = 'Submit';
+            });
+        });
+    }
+</script>
+
+<!-- jQuery and Select2 JS -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(document).ready(function() {
+        if ($.fn.select2) {
+            $('.select2-basic').select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                placeholder: 'Select or type to create tags...',
+                tags: true,
+                tokenSeparators: [','],
+                createTag: function (params) {
+                    var term = $.trim(params.term);
+                    if (term === '') return null;
+                    return {
+                        id: term,
+                        text: term,
+                        newTag: true
+                    };
+                },
+                templateResult: function (data) {
+                    if (data.newTag) {
+                        return "Hit Enter to create new '" + data.text + "'";
+                    }
+                    return data.text;
+                }
+            });
+        }
+    });
+
+    // Make sure Select2 initializes when offcanvas is shown (just in case)
+    $('#offcanvasEditOrder').on('shown.bs.offcanvas', function () {
+        $('.select2-basic').select2({
+            theme: 'bootstrap-5',
+            width: '100%',
+            placeholder: 'Select or type to create tags...',
+            tags: true,
+            tokenSeparators: [','],
+            createTag: function (params) {
+                var term = $.trim(params.term);
+                if (term === '') return null;
+                return {
+                    id: term,
+                    text: term,
+                    newTag: true
+                };
+            },
+            templateResult: function (data) {
+                if (data.newTag) {
+                    return "Hit Enter to create new '" + data.text + "'";
+                }
+                return data.text;
+            }
+        });
     });
 </script>
 {% endblock %}

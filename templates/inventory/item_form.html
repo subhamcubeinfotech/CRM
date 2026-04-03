@@ -61,11 +61,6 @@
                     <div class="col-12">
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <label class="form-label mb-0 text-uppercase fw-bold">Company<span class="text-danger">*</span></label>
-                            {% if not form.company.field.disabled %}
-                            <button type="button" class="btn btn-outline-primary btn-add-custom d-flex align-items-center px-2 py-1" title="Add Company">
-                                <i class="fas fa-plus me-1"></i> Add
-                            </button>
-                            {% endif %}
                         </div>
                         <div class="d-flex align-items-center gap-2 mb-1">
                             <div class="flex-grow-1">
@@ -95,13 +90,15 @@
                             <div class="flex-grow-1">
                                 <select name="warehouse" id="id_warehouse" class="form-select" required onchange="syncLocationSelectState('id_warehouse')">
                                     <option value="">Select location</option>
-                                    {% if assign_company and not hq_exists %}
-                                    <option value="temp_addr_{{ assign_company.full_address }}" data-company-id="{{ assign_company.id }}">
-                                        {{ assign_company.full_address }} (Your Address)
-                                    </option>
-                                    {% endif %}
+                                    {% for comp in form.fields.company.queryset %}
+                                        {% if comp.full_address %}
+                                        <option value="temp_addr_{{ comp.full_address }}" data-company-id="{{ comp.id }}" data-is-company-address="true" {% if form.warehouse.value|stringformat:"s" == 'temp_addr_'|add:comp.full_address %}selected{% endif %}>
+                                            {{ comp.full_address }}
+                                        </option>
+                                        {% endif %}
+                                    {% endfor %}
                                     {% for wh in warehouses %}
-                                    <option value="{{ wh.id }}" data-company-id="{{ wh.company_id }}" {% if form.warehouse.value|stringformat:"s" == wh.id|stringformat:"s" %}selected{% endif %}>
+                                    <option value="{{ wh.id }}" data-wh-company-id="{{ wh.company_id }}" {% if form.warehouse.value|stringformat:"s" == wh.id|stringformat:"s" %}selected{% endif %} {% if form.company.value %}style="display:none;"{% endif %}>
                                         {{ wh.city|title }}, {{ wh.city|upper }}, {{ wh.address }}, {{ wh.state }} {{ wh.postal_code }}
                                     </option>
                                     {% endfor %}
@@ -173,6 +170,16 @@
                                 <!-- Offered Weight & Unit -->
                                 <div class="col-md-7">
                                     <label class="form-label mb-1 text-uppercase fw-bold">Offered Weight<span class="text-danger">*</span></label>
+                                    {{ form.offered_weight }}
+                                </div>
+                                <div class="col-md-5">
+                                    <label class="form-label mb-1 text-uppercase fw-bold">Unit</label>
+                                    {{ form.offered_weight_unit }}
+                                </div>
+
+                                <!-- Current Stock & Unit -->
+                                <div class="col-md-7">
+                                    <label class="form-label mb-1 text-uppercase fw-bold">Current Stock<span class="text-danger">*</span></label>
                                     {{ form.quantity }}
                                 </div>
                                 <div class="col-md-5">
@@ -341,6 +348,105 @@
     // Initialize state on load
     document.addEventListener('DOMContentLoaded', () => {
         syncLocationSelectState('id_warehouse');
+        
+        const companySelect = document.getElementById('id_company');
+        const locationSelect = document.getElementById('id_warehouse');
+        
+        if (companySelect && locationSelect) {
+
+            function fetchLocations(companyId, currentValue) {
+                if (!companyId) {
+                    locationSelect.innerHTML = '<option value="">Select location</option>';
+                    syncLocationSelectState('id_warehouse');
+                    return;
+                }
+
+                fetch(`{% url 'inventory:ajax_locations_for_company' %}?company_id=${companyId}`, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(r => r.json())
+                .then(data => {
+                    locationSelect.innerHTML = '<option value="">Select location</option>';
+                    data.locations.forEach(loc => {
+                        const opt = document.createElement('option');
+                        opt.value = loc.value;
+                        opt.textContent = loc.label;
+                        if (currentValue && loc.value === currentValue) {
+                            opt.selected = true;
+                        }
+                        locationSelect.appendChild(opt);
+                    });
+                    // Auto-select first if nothing matched
+                    if (!locationSelect.value && locationSelect.options.length > 1) {
+                        locationSelect.selectedIndex = 1;
+                    }
+                    syncLocationSelectState('id_warehouse');
+                })
+                .catch(err => console.warn('Location fetch failed:', err));
+            }
+
+            function fetchMaterials(companyId, currentVal) {
+                if (!companyId) return;
+                fetch(`{% url 'inventory:ajax_materials_for_company' %}?company_id=${companyId}`, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(r => r.json())
+                .then(data => {
+                    const materialDropdowns = document.querySelectorAll('select[name="product_name"]');
+                    materialDropdowns.forEach(dropdown => {
+                        const prevValue = currentVal || dropdown.value;
+                        dropdown.innerHTML = '<option value="">Select a material</option>';
+                        data.materials.forEach(m => {
+                            const opt = document.createElement('option');
+                            opt.value = m.value;
+                            opt.textContent = m.label;
+                            if (prevValue === m.value) opt.selected = true;
+                            dropdown.appendChild(opt);
+                        });
+                    });
+                })
+                .catch(err => console.warn('Material fetch failed:', err));
+            }
+
+            // Native change event
+            companySelect.addEventListener('change', function() {
+                fetchLocations(this.value, '');
+                fetchMaterials(this.value, '');
+                
+                // Update company context in Material offcanvas
+                const companyIdContext = document.querySelector('input[name="company_id_context"]');
+                if (companyIdContext) companyIdContext.value = this.value;
+                const companyHidden = document.querySelector('#offcanvasAddMaterial input[name="company"]');
+                if (companyHidden) companyHidden.value = this.value;
+            });
+            // jQuery/Select2 change
+            if (typeof $ !== 'undefined') {
+                $(companySelect).on('select2:select select2:unselect', function() {
+                    fetchLocations(this.value, '');
+                    fetchMaterials(this.value, '');
+                    
+                    const companyIdContext = document.querySelector('input[name="company_id_context"]');
+                    if (companyIdContext) companyIdContext.value = this.value;
+                    const companyHidden = document.querySelector('#offcanvasAddMaterial input[name="company"]');
+                    if (companyHidden) companyHidden.value = this.value;
+                });
+            }
+
+            // On load: fetch for pre-selected company
+            const preCompany = companySelect.value;
+            const preLoc = locationSelect.value;
+            if (preCompany) {
+                setTimeout(() => {
+                    fetchLocations(preCompany, preLoc);
+                    fetchMaterials(preCompany, '');
+                    
+                    const companyIdContext = document.querySelector('input[name="company_id_context"]');
+                    if (companyIdContext) companyIdContext.value = preCompany;
+                    const companyHidden = document.querySelector('#offcanvasAddMaterial input[name="company"]');
+                    if (companyHidden) companyHidden.value = preCompany;
+                }, 50);
+            }
+        }
     });
 
     function assignToMe() {
@@ -363,6 +469,8 @@
             // Support for Select2 if enabled
             if (typeof $ !== 'undefined' && $(companySelect).data('select2')) {
                 $(companySelect).trigger('change');
+            } else {
+                companySelect.dispatchEvent(new Event('change'));
             }
         }
     }
@@ -475,6 +583,8 @@
     <div class="offcanvas-body p-4">
         <form id="addMaterialForm">
             {% csrf_token %}
+            {{ material_form.company }}
+            {{ material_form.company_id_context }}
             <div class="mb-4">
                 <label class="form-label fw-bold small text-uppercase mb-2">Usage <span class="text-danger">*</span></label>
                 <div class="d-flex gap-4">
@@ -671,7 +781,7 @@
                 } else {
                     let errorMsg = 'Error creating material:\n';
                     for (const field in data.errors) {
-                        errorMsg += `${field}: ${data.errors[field][0]}\n`;
+                        errorMsg += `${field}: ${data.errors[field][0].message}\n`;
                     }
                     alert(errorMsg);
                 }
@@ -689,10 +799,25 @@
 
     // Unit Synchronization Logic
     function setupUnitSync(group) {
+        const offeredUnitSelect = group.querySelector('select[name="offered_weight_unit"]');
         const weightUnitSelect = group.querySelector('select[name="unit_of_measure"]');
         const priceUnitSelect = group.querySelector('select[name="price_unit"]');
         
         if (!weightUnitSelect || !priceUnitSelect) return;
+
+        // Auto-sync offered unit with quantity unit
+        if (offeredUnitSelect && weightUnitSelect) {
+            weightUnitSelect.addEventListener('change', function() {
+                if (!offeredUnitSelect.value || offeredUnitSelect.value === 'lbs') {
+                    offeredUnitSelect.value = this.value;
+                }
+            });
+            offeredUnitSelect.addEventListener('change', function() {
+                if (!weightUnitSelect.value || weightUnitSelect.value === 'lbs') {
+                    weightUnitSelect.value = this.value;
+                }
+            });
+        }
 
         weightUnitSelect.addEventListener('change', function() {
             const val = this.value.toLowerCase();
@@ -711,11 +836,27 @@
                 for (let option of weightUnitSelect.options) {
                     if (option.value.toLowerCase() === baseUnit) {
                         weightUnitSelect.value = option.value;
+                        if (offeredUnitSelect) offeredUnitSelect.value = option.value;
                         break;
                     }
                 }
             }
         });
+
+        // For Creation: Sync weight and quantity if one is changed and the other is empty
+        const offeredWeightInput = group.querySelector('input[name="offered_weight"]');
+        const quantityInput = group.querySelector('input[name="quantity"]');
+        if (offeredWeightInput && quantityInput) {
+            quantityInput.addEventListener('input', function() {
+                if (!offeredWeightInput.value || offeredWeightInput.getAttribute('data-synced') === 'true') {
+                    offeredWeightInput.value = this.value;
+                    offeredWeightInput.setAttribute('data-synced', 'true');
+                }
+            });
+            offeredWeightInput.addEventListener('input', function() {
+                offeredWeightInput.setAttribute('data-synced', 'false');
+            });
+        }
     }
 
     // Grouped Inventory Logic

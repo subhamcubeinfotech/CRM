@@ -63,12 +63,15 @@ def ajax_warehouse_create(request):
             if hasattr(request.user, 'tenant'):
                 warehouse.tenant = request.user.tenant
             
-            # Assign company from request (likely current user's company)
-            if request.user.company:
+            # Assign company: check POST data first, then fallback to user's company
+            company_id = request.POST.get('company_id')
+            if company_id:
+                from apps.accounts.models import Company
+                warehouse.company = get_object_or_404(Company, id=company_id)
+            elif request.user.company:
                 warehouse.company = request.user.company
             
             # Check for existing warehouse with same name AND company/tenant
-            # We check name and company to avoid duplicates for the same entity
             existing = Warehouse.objects.filter(
                 name=warehouse.name,
                 company=warehouse.company,
@@ -81,6 +84,7 @@ def ajax_warehouse_create(request):
                     'is_existing': True,
                     'id': existing.id,
                     'name': existing.name,
+                    'company_id': existing.company_id,
                     'full_label': str(existing)
                 })
 
@@ -94,6 +98,7 @@ def ajax_warehouse_create(request):
                 'success': True,
                 'id': warehouse.id,
                 'name': warehouse.name,
+                'company_id': warehouse.company_id,
                 'full_label': str(warehouse)
             })
         else:
@@ -102,6 +107,42 @@ def ajax_warehouse_create(request):
                 'errors': form.errors.get_json_data()
             })
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
+@login_required
+def ajax_locations_for_company(request):
+    """AJAX: Return only the main address for a given company_id"""
+    company_id = request.GET.get('company_id')
+    locations = []
+    if company_id:
+        from apps.accounts.models import Company
+        try:
+            company = Company.objects.get(pk=company_id, tenant=request.user.tenant)
+            if company.full_address:
+                locations.append({
+                    'value': f'temp_addr_{company.full_address}',
+                    'label': company.full_address,
+                    'is_address': True,
+                })
+        except Company.DoesNotExist:
+            pass
+    return JsonResponse({'locations': locations})
+    
+    
+@login_required
+def ajax_materials_for_company(request):
+    """AJAX: Return materials filtered by company_id OR global materials"""
+    company_id = request.GET.get('company_id')
+    materials = Material.objects.all()
+    
+    if company_id:
+        materials = materials.filter(company_id=company_id)
+    else:
+        # If no company provided, return nothing to prevent accidental global visibility
+        materials = materials.none()
+        
+    data = [{'value': m.name, 'label': m.name} for m in materials.order_by('name')]
+    return JsonResponse({'materials': data})
 
 
 @login_required
@@ -212,7 +253,7 @@ def inventory_item_list(request):
     
     # Stats before pagination
     stats = items.aggregate(
-        total_weight=Sum('quantity'),
+        total_weight=Sum('offered_weight'),
         total_value=Sum('val'),
         total_count=Count('id')
     )
@@ -303,13 +344,34 @@ def create_material_ajax(request):
             material = form.save(commit=False)
             if hasattr(request.user, 'tenant'):
                 material.tenant = request.user.tenant
-            material.save()
-            return JsonResponse({
-                'status': 'success',
-                'id': material.id,
-                'name': material.name
-            })
-        return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
+            
+            # Associate with company if provided
+            company_id = request.POST.get('company') # From the MaterialForm which we should update
+            if not company_id:
+                # Try getting it from the InventoryItemForm company field (if passed via JS)
+                company_id = request.POST.get('company_id_context')
+                
+            if company_id:
+                from apps.accounts.models import Company
+                material.company = get_object_or_404(Company, id=company_id)
+            elif request.user.company:
+                material.company = request.user.company
+            
+            from django.db import IntegrityError
+            try:
+                material.save()
+                return JsonResponse({
+                    'status': 'success',
+                    'id': material.id,
+                    'name': material.name
+                })
+            except IntegrityError:
+                return JsonResponse({
+                    'status': 'error',
+                    'errors': {'name': ['A material with this name already exists.']}
+                }, status=400)
+                
+        return JsonResponse({'status': 'error', 'errors': form.errors.get_json_data()}, status=400)
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
 
 @login_required
@@ -350,6 +412,8 @@ def inventory_item_add_general(request):
         notes_list = request.POST.getlist('description')
         lot_numbers = request.POST.getlist('lot_number')
         palletized_choices = request.POST.getlist('is_palletized')
+        offered_weights = request.POST.getlist('offered_weight')
+        offered_weight_units = request.POST.getlist('offered_weight_unit')
 
         created_count = 0
         error_messages = []
@@ -364,6 +428,8 @@ def inventory_item_add_general(request):
                 'warehouse': resolved_warehouse,
                 'product_name': product_names[i],
                 'sku': skus[i] if i < len(skus) else '',
+                'offered_weight': offered_weights[i] if i < len(offered_weights) else (quantities[i] if i < len(quantities) else 0),
+                'offered_weight_unit': offered_weight_units[i] if i < len(offered_weight_units) else (uoms[i] if i < len(uoms) else 'lbs'),
                 'quantity': quantities[i] if i < len(quantities) else 0,
                 'unit_of_measure': uoms[i] if i < len(uoms) else 'lbs',
                 'unit_cost': unit_costs[i] if i < len(unit_costs) else 0,
@@ -377,14 +443,15 @@ def inventory_item_add_general(request):
                 'lot_number': lot_numbers[i] if i < len(lot_numbers) else '',
                 'shipping_terms': request.POST.get('shipping_terms'),
                 'tags': request.POST.getlist('tags'),
+                'company': request.POST.get('company'),
+                'representative': request.POST.get('representative'),
             }
+
             
             form = InventoryItemForm(item_data, user=request.user)
             if form.is_valid():
                 item = form.save(commit=False)
                 item.tenant = request.user.tenant
-                if user_company:
-                    item.company = user_company
                 if not item.representative:
                     item.representative = request.user
                 
@@ -413,11 +480,7 @@ def inventory_item_add_general(request):
         }
         form = InventoryItemForm(initial=initial, user=request.user)
         
-        # Lock company choices if user has a company (or we locked it to the tenant's only company)
-        if user_company:
-            form.fields['company'].queryset = Company.objects.filter(id=user_company.id)
-            form.fields['company'].disabled = True
-        elif request.user.tenant:
+        if request.user.tenant:
             form.fields['company'].queryset = Company.objects.filter(tenant=request.user.tenant)
 
     # Show all warehouses in tenant, prioritize user's company (matching Order page)
@@ -469,20 +532,22 @@ def inventory_item_add(request, pk):
         if form.is_valid():
             item = form.save(commit=False)
             item.tenant = request.user.tenant
-            if user_company:
-                item.company = user_company
             if not item.representative:
                 item.representative = request.user
+            
+            # Sync offered_weight with quantity on creation
+            if not item.pk: # New item
+                item.offered_weight = item.quantity
+                item.offered_weight_unit = item.unit_of_measure
+                
             item.save()
+
             form.save_m2m()
             messages.success(request, f"Item '{item.product_name}' successfully added to {warehouse.name}.")
             return redirect('inventory:warehouse_detail', pk=warehouse.pk)
     else:
         initial = {'representative': request.user, 'company': user_company, 'warehouse': warehouse}
         form = InventoryItemForm(initial=initial, user=request.user)
-        if user_company:
-            form.fields['company'].queryset = Company.objects.filter(id=user_company.id)
-            form.fields['company'].disabled = True
 
     # Show all warehouses in tenant, prioritize user's company
     warehouses = Warehouse.plain_objects.filter(tenant=request.user.tenant).annotate(
@@ -535,9 +600,6 @@ def inventory_item_edit(request, pk):
             return redirect('inventory:warehouse_detail', pk=warehouse.pk)
     else:
         form = InventoryItemForm(instance=item, user=request.user)
-        if user_company:
-            form.fields['company'].queryset = Company.objects.filter(id=user_company.id)
-            form.fields['company'].disabled = True
     
     # Material Form for offcanvas drawer
     material_form = MaterialForm()
@@ -624,40 +686,117 @@ def material_detail(request, pk=None):
             related_orders.append(item.order)
             seen_orders.add(item.order_id)
 
-    # 3. Chart Data (Last 6 months)
-    six_months_ago = timezone.now() - timedelta(days=180)
+    # 3. Chart Data
+    range_days = request.GET.get('range', '180')
+    try:
+        days = int(range_days)
+    except ValueError:
+        days = 180
+        
+    start_date = timezone.now() - timedelta(days=days)
+    end_date = timezone.now()
+    
     history = ManifestItem.objects.filter(
         material__icontains=material.name,
-        order__created_at__gte=six_months_ago
+        order__created_at__gte=start_date
     ).values('order__created_at', 'buy_price', 'sell_price', 'weight')
 
-    # Aggregate by month using a simple dict to avoid type inference issues
-    monthly_buy = defaultdict(list)
-    monthly_sell = defaultdict(list)
-    monthly_weight = defaultdict(float)
+    # Determine grouping granularity based on range
+    if days <= 30:
+        group_format = '%Y-%m-%d'
+    elif days <= 90:
+        # Weekly grouping could be added here, but for now we'll stick to daily for 30 and monthly for higher
+        group_format = '%Y-%m-%d'
+    else:
+        group_format = '%Y-%m'
+        
+    # Aggregate data using the determined granularity
+    grouped_buy = defaultdict(list)
+    grouped_sell = defaultdict(list)
+    grouped_weight = defaultdict(float)
     
     for h in history:
-        month_key = h['order__created_at'].strftime('%Y-%m')
-        monthly_buy[month_key].append(float(h['buy_price']))
-        monthly_sell[month_key].append(float(h['sell_price']))
-        monthly_weight[month_key] += float(h['weight'])
+        key = h['order__created_at'].strftime(group_format)
+        grouped_buy[key].append(float(h['buy_price'] or 0))
+        grouped_sell[key].append(float(h['sell_price'] or 0))
+        grouped_weight[key] += float(h['weight'] or 0)
 
-    # Prepare chart labels and values (sorted by month)
-    sorted_months = sorted(monthly_buy.keys())
+    # Prepare chart labels and values (sorted by key)
+    sorted_keys = sorted(grouped_buy.keys())
     chart_labels = []
     chart_buy_avg = []
     chart_sell_avg = []
     chart_weight = []
     
-    for m in sorted_months:
-        chart_labels.append(timezone.datetime.strptime(m, '%Y-%m').strftime('%b'))
-        chart_buy_avg.append(sum(monthly_buy[m]) / len(monthly_buy[m]) if monthly_buy[m] else 0)
-        chart_sell_avg.append(sum(monthly_sell[m]) / len(monthly_sell[m]) if monthly_sell[m] else 0)
-        chart_weight.append(monthly_weight[m])
+    for k in sorted_keys:
+        if days <= 90:
+            # Display as "Mar 28" for daily/weekly granularity
+            label = timezone.datetime.strptime(k, '%Y-%m-%d').strftime('%b %d')
+        else:
+            # Display as "Mar '26" for monthly granularity
+            label = timezone.datetime.strptime(k, '%Y-%m').strftime("%b '%y")
+            
+        chart_labels.append(label)
+        chart_buy_avg.append(sum(grouped_buy[k]) / len(grouped_buy[k]) if grouped_buy[k] else 0)
+        chart_sell_avg.append(sum(grouped_sell[k]) / len(grouped_sell[k]) if grouped_sell[k] else 0)
+        chart_weight.append(grouped_weight[k])
 
     # Stats
     avg_buy = sum(chart_buy_avg) / len(chart_buy_avg) if chart_buy_avg else 0
     avg_sell = sum(chart_sell_avg) / len(chart_sell_avg) if chart_sell_avg else 0
+
+    # 4. Consolidated Partner Companies (Dealers/Stockists/Historical)
+    partner_map = {} # cid -> data
+    
+    def get_or_create_partner(company):
+        if not company: return None
+        if company.id not in partner_map:
+            partner_map[company.id] = {
+                'id': company.id,
+                'name': company.name,
+                'roles': set(),
+                'stock_qty': 0,
+                'unit': 'lbs',
+                'latest_date': None,
+                'is_stockist': False
+            }
+        return partner_map[company.id]
+
+    # From Inventory
+    for item in inventory_items:
+        p = get_or_create_partner(item.company)
+        if p:
+            p['roles'].add('Stockist')
+            p['is_stockist'] = True
+            p['stock_qty'] += float(item.quantity or 0)
+            p['unit'] = item.unit_of_measure or 'lbs'
+            # Note: We don't have a 'date' on inventory items usually, 
+            # maybe use creation date but not crucial for stockists.
+
+    # From Orders
+    for order in related_orders:
+        s = get_or_create_partner(order.supplier)
+        if s:
+            s['roles'].add('Supplier')
+            if not s['latest_date'] or order.created_at > s['latest_date']:
+                s['latest_date'] = order.created_at
+        
+        r = get_or_create_partner(order.receiver)
+        if r:
+            r['roles'].add('Receiver')
+            if not r['latest_date'] or order.created_at > r['latest_date']:
+                r['latest_date'] = order.created_at
+
+    # Sort partners: Stockists first, then by latest date
+    sorted_partners = sorted(
+        partner_map.values(), 
+        key=lambda x: (1 if x['is_stockist'] else 0, x['latest_date'].timestamp() if x['latest_date'] else 0),
+        reverse=True
+    )
+
+    # Convert roles sets to sorted lists for template use
+    for p in sorted_partners:
+        p['roles'] = sorted(list(p['roles']))
 
     context = {
         'material': material,
@@ -665,8 +804,12 @@ def material_detail(request, pk=None):
         'inventory_items': inventory_items,
         'total_stock': total_stock,
         'related_orders': list(related_orders)[:10],  # Ensure it's a list for slicing if needed
+        'partner_companies': sorted_partners,
         'avg_buy': avg_buy,
         'avg_sell': avg_sell,
+        'current_range': str(days),
+        'start_date': start_date,
+        'end_date': end_date,
         'chart_data': json.dumps({
             'labels': chart_labels,
             'buy': chart_buy_avg,
