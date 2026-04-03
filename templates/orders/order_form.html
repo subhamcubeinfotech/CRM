@@ -260,8 +260,6 @@
                                         </option>
                                         <option value="st" {% if c_item.weight_unit == "st" %}selected{% endif %}>ST
                                         </option>
-                                        <option value="pcs" {% if c_item.weight_unit == "pcs" %}selected{% endif %}>pcs
-                                        </option>
                                     </select>
                                 </div>
                             </div>
@@ -286,7 +284,6 @@
                                         <option value="per kgs" {% if c_item.buy_price_unit == "per kgs" %}selected{% endif %}>per kgs</option>
                                         <option value="per mt" {% if c_item.buy_price_unit == "per mt" %}selected{% endif %}>per MT</option>
                                         <option value="per st" {% if c_item.buy_price_unit == "per st" %}selected{% endif %}>per ST</option>
-                                        <option value="per pcs" {% if c_item.buy_price_unit == "per pcs" %}selected{% endif %}>per pcs</option>
                                     </select>
                                 </div>
                             </div>
@@ -309,7 +306,6 @@
                                         <option value="per kgs" {% if c_item.sell_price_unit == "per kgs" %}selected{% endif %}>per kgs</option>
                                         <option value="per mt" {% if c_item.sell_price_unit == "per mt" %}selected{% endif %}>per MT</option>
                                         <option value="per st" {% if c_item.sell_price_unit == "per st" %}selected{% endif %}>per ST</option>
-                                        <option value="per pcs" {% if c_item.sell_price_unit == "per pcs" %}selected{% endif %}>per pcs</option>
                                     </select>
                                 </div>
                             </div>
@@ -374,7 +370,6 @@
                                         <option value="kgs">kgs</option>
                                         <option value="mt">MT</option>
                                         <option value="st">ST</option>
-                                        <option value="pcs">pcs</option>
                                     </select>
                                 </div>
                             </div>
@@ -398,7 +393,6 @@
                                         <option value="per kgs">per kgs</option>
                                         <option value="per mt">per MT</option>
                                         <option value="per st">per ST</option>
-                                        <option value="per pcs">per pcs</option>
                                     </select>
                                 </div>
                             </div>
@@ -420,7 +414,6 @@
                                         <option value="per kgs">per kgs</option>
                                         <option value="per mt">per MT</option>
                                         <option value="per st">per ST</option>
-                                        <option value="per pcs">per pcs</option>
                                     </select>
                                 </div>
                             </div>
@@ -522,7 +515,7 @@
             </div>
 
             <!-- KPI Stats Row -->
-            <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; border-bottom: 1px solid #f0f2f8;">
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; border-bottom: 1px solid #f0f2f8;">
                 <div style="padding: 18px 22px; border-right: 1px solid #f0f2f8;">
                     <div style="display:flex; align-items:center; gap:7px; margin-bottom:6px;">
                         <div
@@ -563,19 +556,7 @@
                     </div>
                     <div style="font-size:0.7rem;color:#9ca3af;margin-top:3px;" id="est-margin-text">Margin: —</div>
                 </div>
-                <div style="padding: 18px 22px;">
-                    <div style="display:flex; align-items:center; gap:7px; margin-bottom:6px;">
-                        <div
-                            style="width:28px;height:28px;border-radius:7px;background:#e0f2fe;display:flex;align-items:center;justify-content:center;">
-                            <i class="fas fa-cubes" style="font-size:0.7rem;color:#0ea5e9;"></i>
-                        </div>
-                        <span
-                            style="font-size:0.72rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">Total
-                            Pieces</span>
-                    </div>
-                    <div id="est-pieces" style="font-size:1.45rem;font-weight:800;color:#1a1f36;line-height:1;">0</div>
-                    <div style="font-size:0.7rem;color:#9ca3af;margin-top:3px;">From manifest</div>
-                </div>
+
             </div>
 
             <!-- Margin Bar -->
@@ -794,7 +775,7 @@
             const material = materialSelect?.selectedOptions[0]?.dataset.name || materialSelect?.value || `Item ${idx + 1}`;
             if (!materialSelect?.value || qty === 0 || (buyP === 0 && sellP === 0)) return;
             hasAny = true;
-            if (unit === 'pcs') totalPieces += qty;
+
             const cost = buyP * qty, revenue = sellP * qty, profit = revenue - cost;
             totalRevenue += revenue; totalCost += cost;
             const isPos = profit >= 0, sign = isPos ? '+' : '';
