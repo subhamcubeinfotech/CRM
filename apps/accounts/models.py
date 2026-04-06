@@ -82,6 +82,7 @@ class CustomUser(AbstractUser):
     company = models.ForeignKey(Company, on_delete=models.SET_NULL, null=True, blank=True, related_name='users')
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
     is_verified = models.BooleanField(default=False)
+    is_contact_archived = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     

@@ -7,6 +7,7 @@ from django.contrib.auth import logout
 from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
 from django.core.mail import EmailMessage
 from django.conf import settings
 from .models import Company, CompanyDocument
@@ -543,7 +544,7 @@ def ajax_archive_contact(request):
          return JsonResponse({'success': False, 'message': 'Permission denied'}, status=403)
          
     try:
-        contact.is_active = False
+        contact.is_contact_archived = True
         contact.save()
         
         # Log History
@@ -560,3 +561,4 @@ def ajax_archive_contact(request):
     except Exception as e:
         logger.exception('Failed to archive contact: %s', e)
         return JsonResponse({'success': False, 'message': f'Error: {str(e)}'}, status=500)
+
