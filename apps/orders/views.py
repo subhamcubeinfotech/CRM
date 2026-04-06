@@ -284,21 +284,23 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
             shipment__order=self.object
         ).values('material_name').annotate(total_shipped=Sum('weight'))
         
-        shipped_map = {sw['material_name']: sw['total_shipped'] for sw in shipped_weights}
+        shipped_map = {sw['material_name'].lower(): sw['total_shipped'] for sw in shipped_weights if sw['material_name']}
         manifest_items = list(context['manifest_items'])
-        manifest_map = {mi.material: mi.weight for mi in manifest_items}
-        manifest_prices = {mi.material: (mi.buy_price, mi.sell_price, mi.buy_price_unit, mi.sell_price_unit) for mi in manifest_items}
+        manifest_map = {mi.material.lower(): mi.weight for mi in manifest_items if mi.material}
+        manifest_prices = {mi.material.lower(): (mi.buy_price, mi.sell_price, mi.buy_price_unit, mi.sell_price_unit) for mi in manifest_items if mi.material}
         
         # If there's only one manifest item, use the larger of manifest weight or total target
         if len(manifest_items) == 1:
             mi = manifest_items[0]
-            manifest_map[mi.material] = max(mi.weight, self.object.total_weight_target)
+            if mi.material:
+                manifest_map[mi.material.lower()] = max(mi.weight, self.object.total_weight_target)
         
         inventory_items = list(inventory_items_qs)
         for item in inventory_items:
-            m_weight = manifest_map.get(item.product_name, 0)
+            product_lower = item.product_name.lower() if item.product_name else ""
+            m_weight = manifest_map.get(product_lower, 0)
             if m_weight > 0:
-                s_weight = shipped_map.get(item.product_name, 0)
+                s_weight = shipped_map.get(product_lower, 0)
                 # Use Decimal for precise subtraction
                 from decimal import Decimal
                 diff = Decimal(str(m_weight)) - Decimal(str(s_weight))
@@ -307,7 +309,7 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
                 item.order_balance = None
             
             # Attach prices from manifest
-            prices = manifest_prices.get(item.product_name)
+            prices = manifest_prices.get(product_lower)
             if prices:
                 item.manifest_buy_price = prices[0]
                 item.manifest_sell_price = prices[1]
