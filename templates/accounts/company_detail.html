@@ -136,21 +136,26 @@
                             </div>
                             <div class="contacts-list">
                                 {% if company.users.all %}
-                                {% for user in company.users.all %}
-                                <div class="d-flex align-items-center gap-3 mb-3">
-                                    <div
-                                        class="avatar-sm bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center">
-                                        {{ user.first_name|first|default:user.username|first }}
+                                    {% for contact in company.users.all %}
+                                    <div class="contact-item mb-3">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="flex-grow-1">
+                                                <div class="fw-bold text-dark" style="font-size: 0.8rem;">{{ contact.get_full_name|default:contact.username }}</div>
+                                                <div class="text-primary small mb-1" style="font-size: 0.7rem;">{{ contact.email }}</div>
+                                                <div class="text-muted small" style="font-size: 0.7rem;">
+                                                    Mobile: <span class="text-dark">{{ contact.phone|default:"(---) --- ----" }}</span>
+                                                </div>
+                                            </div>
+                                            <div class="ms-2">
+                                                <i class="far fa-circle text-primary" style="font-size: 10px;"></i>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <div class="fw-bold small">{{ user.get_full_name|default:user.username }}</div>
-                                        <div class="small text-muted">{{ user.email }}</div>
-                                    </div>
-                                </div>
-                                {% endfor %}
+                                    {% endfor %}
                                 {% else %}
-                                <div class="text-center py-3 text-muted small border-top border-bottom">
-                                    No contacts found.
+                                <div class="text-center py-4 text-muted bg-light bg-opacity-50 border rounded-3 mb-3">
+                                    <i class="fas fa-user-friends d-block mb-2 opacity-50"></i>
+                                    <span style="font-size: 0.7rem;">No contacts linked yet.</span>
                                 </div>
                                 {% endif %}
                             </div>
@@ -741,15 +746,17 @@
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>
     <div class="offcanvas-body p-4">
-        <form>
+        <form id="addContactForm">
+            {% csrf_token %}
+            <input type="hidden" name="company_id" value="{{ company.id }}">
             <div class="mb-3">
                 <label class="form-label fw-bold text-dark mb-1 small">Name <span class="text-danger">*</span></label>
-                <input type="text" class="form-control form-control-sm rounded-3 border-light-subtle" placeholder="Full name" required>
+                <input type="text" name="name" class="form-control form-control-sm rounded-3 border-light-subtle" placeholder="Full name" required>
             </div>
             
             <div class="mb-3">
                 <label class="form-label fw-bold text-dark mb-1 small">Contact Type</label>
-                <select class="form-select form-select-sm rounded-3 border-light-subtle">
+                <select name="contact_type" class="form-select form-select-sm rounded-3 border-light-subtle">
                     <option value="">Select a contact type</option>
                     <option value="primary">Primary Contact</option>
                     <option value="billing">Billing</option>
@@ -760,30 +767,30 @@
             
             <div class="mb-3">
                 <label class="form-label fw-bold text-dark mb-1 small">Email <span class="text-danger">*</span></label>
-                <input type="email" class="form-control form-control-sm rounded-3 border-light-subtle" placeholder="Insert an email" required>
+                <input type="email" name="email" class="form-control form-control-sm rounded-3 border-light-subtle" placeholder="Insert an email" required>
             </div>
             
             <div class="mb-3">
                 <label class="form-label fw-bold text-dark mb-1 small">Mobile number</label>
-                <input type="text" class="form-control form-control-sm rounded-3 border-light-subtle" placeholder="(000) 000-0000">
+                <input type="text" name="phone" class="form-control form-control-sm rounded-3 border-light-subtle" placeholder="(000) 000-0000">
             </div>
             
             <div class="mb-4">
                 <div class="row g-2">
                     <div class="col-8">
                         <label class="form-label fw-bold text-dark mb-1 small">Office Number</label>
-                        <input type="text" class="form-control form-control-sm rounded-3 border-light-subtle" placeholder="(000) 000-0000">
+                        <input type="text" name="office_phone" class="form-control form-control-sm rounded-3 border-light-subtle" placeholder="(000) 000-0000">
                     </div>
                     <div class="col-4">
                         <label class="form-label fw-bold text-dark mb-1 small">Extension</label>
-                        <input type="text" class="form-control form-control-sm rounded-3 border-light-subtle" placeholder="00000">
+                        <input type="text" name="extension" class="form-control form-control-sm rounded-3 border-light-subtle" placeholder="00000">
                     </div>
                 </div>
             </div>
             
             <div class="d-grid mt-5">
                 <div class="d-flex justify-content-center">
-                    <button type="submit" class="btn btn-primary px-5 rounded-pill">Submit</button>
+                    <button type="submit" class="btn btn-primary px-5 rounded-pill" id="submitContactBtn">Submit</button>
                 </div>
             </div>
         </form>
@@ -1361,8 +1368,76 @@
                 } else {
                     fileStatus.innerText = 'No image selected';
                     fileStatus.classList.remove('text-primary', 'fw-bold');
-                    fileStatus.classList.add('text-muted');
                 }
+            });
+        }
+
+        // --- AJAX for Add Contact ---
+        const contactForm = document.getElementById('addContactForm');
+        if (contactForm) {
+            contactForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const btn = document.getElementById('submitContactBtn');
+                const originalHtml = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+
+                const formData = new FormData(this);
+                fetch('{% url "accounts:ajax_add_contact" %}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const contact = data.contact;
+                        const list = document.querySelector('.contacts-list');
+                        
+                        // Remove placeholder if it exists
+                        const placeholder = list.querySelector('.text-center.py-4');
+                        if (placeholder) placeholder.remove();
+
+                        const contactHtml = `
+                            <div class="contact-item mb-3 animate__animated animate__fadeIn">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <div class="fw-bold text-dark" style="font-size: 0.8rem;">${contact.name}</div>
+                                        <div class="text-primary small mb-1" style="font-size: 0.7rem;">${contact.email}</div>
+                                        <div class="text-muted small" style="font-size: 0.7rem;">
+                                            Mobile: <span class="text-dark">${contact.phone}</span>
+                                        </div>
+                                    </div>
+                                    <div class="ms-2">
+                                        <i class="far fa-circle text-primary" style="font-size: 10px;"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        list.insertAdjacentHTML('afterbegin', contactHtml);
+                        
+                        // Close offcanvas
+                        const offcanvas = bootstrap.Offcanvas.getInstance(document.getElementById('offcanvasAddContact'));
+                        offcanvas.hide();
+                        
+                        // Reset form
+                        contactForm.reset();
+                        btn.disabled = false;
+                        btn.innerHTML = originalHtml;
+                    } else {
+                        btn.disabled = false;
+                        btn.innerHTML = originalHtml;
+                        alert(data.message || 'Error adding contact.');
+                    }
+                })
+                .catch(err => {
+                    btn.disabled = false;
+                    btn.innerHTML = originalHtml;
+                    console.error('Error:', err);
+                });
             });
         }
     });
