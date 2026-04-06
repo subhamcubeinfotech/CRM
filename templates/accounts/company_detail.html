@@ -374,6 +374,7 @@
                     <div class="col-md-5 border-end" style="max-height: 650px; overflow-y: auto;">
                         <div class="p-4 bg-light border-bottom d-flex justify-content-between align-items-center">
                             <h6 class="mb-0 fw-bold">Warehouses & Offices</h6>
+                            <button class="btn btn-primary btn-xs rounded-pill px-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasAddLocation">Add</button>
                         </div>
                         <div class="list-group list-group-flush">
                             {% for loc in locations %}
@@ -595,6 +596,36 @@
         padding: 0.25rem 0.5rem;
         font-size: 0.75rem;
     }
+
+    .segmented-control-wrapper {
+        display: flex;
+        gap: 10px;
+    }
+
+    .segmented-control-wrapper .btn {
+        border: 1px solid #e2e8f0 !important;
+        background-color: #fff;
+        color: #64748b;
+        border-radius: 0.5rem !important;
+        font-size: 0.75rem;
+        padding: 5px 25px;
+        font-weight: 600;
+        transition: all 0.2s ease;
+        min-width: 100px;
+    }
+
+    .segmented-control-wrapper .btn:hover {
+        background-color: #f8fafc;
+        border-color: #cbd5e1 !important;
+    }
+
+    .segmented-control-wrapper .btn-check:checked + .btn {
+        background-color: #0061f2 !important;
+        border-color: #0061f2 !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 97, 242, 0.1);
+    }
+
 
     .tracking-wider {
         letter-spacing: 0.05em;
@@ -870,6 +901,14 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const locationsTab = document.getElementById('locations-tab');
+        
+        // Handle tab switching from URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const tabParam = urlParams.get('tab');
+        if (tabParam === 'locations' && locationsTab) {
+            bootstrap.Tab.getOrCreateInstance(locationsTab).show();
+        }
+
         let mapInitialized = false;
         let map;
         let markers = [];
@@ -1182,6 +1221,119 @@
         document.querySelectorAll('.delete-doc-btn').forEach(btn => {
             attachDeleteHandler(btn.dataset.id);
         });
+        // Handle Add Location Form
+        const locationForm = document.getElementById('addLocationForm');
+        if (locationForm) {
+            locationForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const btn = document.getElementById('submitLocationBtn');
+                const originalHtml = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+
+                const formData = new FormData(this);
+                fetch('{% url "inventory:ajax_warehouse_create" %}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload(); 
+                    } else {
+                        btn.disabled = false;
+                        btn.innerHTML = originalHtml;
+                        console.error('Form Errors:', data.errors);
+                        let errorMsg = 'Failed to add location. ';
+                        if (data.errors) {
+                            const firstField = Object.keys(data.errors)[0];
+                            const firstError = data.errors[firstField][0].message;
+                            errorMsg += `(${firstField}: ${firstError})`;
+                        }
+                        alert(errorMsg);
+                    }
+                })
+                .catch(err => {
+                    btn.disabled = false;
+                    btn.innerHTML = originalHtml;
+                    console.error('Error:', err);
+                    alert('An error occurred.');
+                });
+            });
+        }
     });
 </script>
-{% endblock %}
+
+<!-- Offcanvas: Add New Location -->
+<div class="offcanvas offcanvas-end border-0 shadow" tabindex="-1" id="offcanvasAddLocation" aria-labelledby="offcanvasAddLocationLabel" style="width: 480px;">
+    <div class="offcanvas-header bg-white border-bottom px-4 py-3">
+        <h5 class="offcanvas-title fw-bold" id="offcanvasAddLocationLabel">Add New Location</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body p-4">
+        <form id="addLocationForm" method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="company_id" value="{{ company.id }}">
+            
+            <div class="mb-4">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-2" style="font-size: 0.7rem; letter-spacing: 0.5px;">Address <span class="text-danger">*</span></label>
+                {{ location_form.address }}
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-md-7">
+                    <label class="form-label small fw-bold text-muted text-uppercase mb-2" style="font-size: 0.7rem; letter-spacing: 0.5px;">Location Name</label>
+                    {{ location_form.name }}
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label small fw-bold text-muted text-uppercase mb-2" style="font-size: 0.7rem; letter-spacing: 0.5px;">Phone Number</label>
+                    {{ location_form.phone }}
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-2" style="font-size: 0.7rem; letter-spacing: 0.5px;">Shipping Requirements</label>
+                {{ location_form.shipping_requirements }}
+            </div>
+
+            <div class="mb-4 border-top pt-4">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-3 d-block" style="font-size: 0.7rem; letter-spacing: 0.5px;">Default Delivery Appointment</label>
+                <div class="segmented-control-wrapper" role="group">
+                    {% for radio in location_form.delivery_appointment_type %}
+                    <input type="radio" class="btn-check" name="{{ radio.name }}" id="{{ radio.id_for_label }}_v2" value="{{ radio.data.value }}" {% if radio.data.selected %}checked{% endif %}>
+                    <label class="btn" for="{{ radio.id_for_label }}_v2">{{ radio.choice_label }}</label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-3 d-block" style="font-size: 0.7rem; letter-spacing: 0.5px;">Default Pickup Appointment</label>
+                <div class="segmented-control-wrapper" role="group">
+                    {% for radio in location_form.pickup_appointment_type %}
+                    <input type="radio" class="btn-check" name="{{ radio.name }}" id="{{ radio.id_for_label }}_v2" value="{{ radio.data.value }}" {% if radio.data.selected %}checked{% endif %}>
+                    <label class="btn" for="{{ radio.id_for_label }}_v2">{{ radio.choice_label }}</label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="mb-4 border-top pt-4">
+                <div class="form-check p-0">
+                    <input class="form-check-input ms-0 border-light-subtle rounded-1" type="checkbox" name="{{ location_form.is_remit_to.name }}" id="{{ location_form.is_remit_to.id_for_label }}" style="width: 1.2rem; height: 1.2rem; cursor: pointer; float: none; vertical-align: middle;">
+                    <label class="form-check-label fw-bold text-dark small ms-2" for="{{ location_form.is_remit_to.id_for_label }}" style="vertical-align: middle;">Remit To</label>
+                </div>
+                <div class="mt-2 text-muted" style="font-size: 0.65rem; line-height: 1.4;">
+                    Note: a company can only have one remittance location at a time, so adding a new remittance location will unset any previously set one.
+                </div>
+            </div>
+
+            <div class="mt-5 pb-3 d-flex justify-content-center">
+                <button type="submit" class="btn btn-primary rounded-pill py-2 px-5 fw-bold shadow-sm border-0" id="submitLocationBtn" style="background: #0061f2; min-width: 180px;">Submit</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

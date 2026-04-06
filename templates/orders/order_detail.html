@@ -331,7 +331,8 @@
                        data-shipping-req="{% if loc and loc.shipping_requirements %}{{ loc.shipping_requirements }}{% else %}-{% endif %}"
                        data-pickup-appt="{% if loc and loc.pickup_appointment_type %}{{ loc.get_pickup_appointment_type_display }}{% elif ship %}{{ ship.get_pickup_appointment_type_display }}{% else %}FCFS{% endif %}"
                        data-delivery-appt="{% if loc and loc.delivery_appointment_type %}{{ loc.get_delivery_appointment_type_display }}{% elif ship %}{{ ship.get_delivery_appointment_type_display }}{% else %}FCFS{% endif %}"
-                       data-id="{% if loc %}{{ loc.pk }}{% endif %}">
+                       data-id="{% if loc %}{{ loc.pk }}{% endif %}"
+                       data-company-id="{{ supp.id }}">
                         <i class="fas fa-map-marker-alt me-1"></i> {{ supp.full_address }}
                     </a>
                     {% endwith %}
@@ -352,7 +353,8 @@
                        data-shipping-req="{% if loc and loc.shipping_requirements %}{{ loc.shipping_requirements }}{% else %}-{% endif %}"
                        data-pickup-appt="{% if loc and loc.pickup_appointment_type %}{{ loc.get_pickup_appointment_type_display }}{% elif ship %}{{ ship.get_pickup_appointment_type_display }}{% else %}FCFS{% endif %}"
                        data-delivery-appt="{% if loc and loc.delivery_appointment_type %}{{ loc.get_delivery_appointment_type_display }}{% elif ship %}{{ ship.get_delivery_appointment_type_display }}{% else %}FCFS{% endif %}"
-                       data-id="{% if loc %}{{ loc.pk }}{% endif %}">
+                       data-id="{% if loc %}{{ loc.pk }}{% endif %}"
+                       data-company-id="{{ rec.id }}">
                         <i class="fas fa-map-marker-alt me-1"></i> {{ rec.full_address }}
                     </a>
                     {% endwith %}
@@ -2403,7 +2405,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('locModalDeliveryAppt').innerText = data.deliveryAppt;
                 
                 const viewMoreBtn = document.getElementById('locModalViewMore');
-                if (data.id) {
+                if (data.companyId) {
+                    viewMoreBtn.href = `/companies/${data.companyId}/?tab=locations`;
+                    viewMoreBtn.style.display = 'flex';
+                } else if (data.id) {
                     viewMoreBtn.href = `/inventory/warehouses/${data.id}/`;
                     viewMoreBtn.style.display = 'flex';
                 } else {
