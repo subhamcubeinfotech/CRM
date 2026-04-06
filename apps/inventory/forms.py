@@ -118,6 +118,13 @@ class InventoryItemForm(forms.ModelForm):
             # Fallback if PackagingType is not available
             pass
 
+        # Filter tags to exclude strictly numeric ones in the dropdown (clean up UI)
+        from apps.orders.models import Tag
+        from django.db.models import Q
+        tenant_q = Q(tenant=user.tenant) if user and user.tenant else Q(tenant__isnull=True)
+        tag_qs = Tag.objects.filter(tenant_q).exclude(name__regex=r'^\d+$')
+        self.fields['tags'].queryset = tag_qs.order_by('name')
+
     class Meta:
         model = InventoryItem
         fields = [
@@ -143,7 +150,7 @@ class InventoryItemForm(forms.ModelForm):
             'company': forms.Select(attrs={'class': 'form-select'}),
             'shipping_terms': forms.Select(attrs={'class': 'form-select'}),
             'representative': forms.Select(attrs={'class': 'form-select'}),
-            'tags': forms.SelectMultiple(attrs={'class': 'form-select select2-basic'}),
+            'tags': forms.SelectMultiple(attrs={'class': 'form-select select2-basic', 'id': 'tags-select-inventory'}),
             'pieces': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Pieces'}),
             'is_palletized': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'unit_cost': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.0001', 'placeholder': 'Price'}),
