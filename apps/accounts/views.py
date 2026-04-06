@@ -379,11 +379,55 @@ def ajax_associate_material(request, pk):
     company = get_object_or_404(Company, pk=pk)
     material_id = request.POST.get('material_id')
     
-    if material_id:
-        from apps.inventory.models import Material
-        material = get_object_or_404(Material, id=material_id, tenant=request.user.tenant)
-        material.company = company
-        material.save()
-        return JsonResponse({'success': True})
-        
     return JsonResponse({'success': False, 'message': 'No material selected'}, status=400)
+
+
+@login_required
+@require_POST
+def ajax_add_contact(request):
+    """AJAX create and associate a contact (CustomUser) with a company"""
+    company_id = request.POST.get('company_id')
+    name = request.POST.get('name')
+    email = request.POST.get('email')
+    phone = request.POST.get('phone')
+    
+    if not all([company_id, name, email]):
+        return JsonResponse({'success': False, 'message': 'Required fields missing'}, status=400)
+    
+    company = get_object_or_404(Company, pk=company_id)
+    
+    # Check if user already exists
+    from .models import CustomUser
+    if CustomUser.objects.filter(email__iexact=email).exists():
+        return JsonResponse({'success': False, 'message': 'A contact with this email already exists.'}, status=400)
+    
+    # Create simple username from email
+    username = email.split('@')[0]
+    import uuid
+    if CustomUser.objects.filter(username=username).exists():
+        username = f"{username}_{str(uuid.uuid4())[:4]}"
+        
+    try:
+        user = CustomUser.objects.create(
+            username=username,
+            email=email,
+            first_name=name.split(' ')[0],
+            last_name=' '.join(name.split(' ')[1:]) if ' ' in name else '',
+            phone=phone,
+            company=company,
+            role='customer',
+            tenant=company.tenant,
+            is_active=True
+        )
+        return JsonResponse({
+            'success': True,
+            'contact': {
+                'id': user.id,
+                'name': user.get_full_name() or user.username,
+                'email': user.email,
+                'phone': user.phone or "(---) --- ----"
+            }
+        })
+    except Exception as e:
+        logger.exception('Failed to create contact: %s', e)
+        return JsonResponse({'success': False, 'message': f'Error: {str(e)}'}, status=500)
