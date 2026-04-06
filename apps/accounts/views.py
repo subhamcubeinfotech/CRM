@@ -156,7 +156,7 @@ def company_detail(request, pk):
         })
 
     from apps.inventory.models import Material
-    materials = Material.objects.all()[:10]  # Placeholder: Get some materials for now
+    materials = company.materials.all()
 
     documents = company.documents.all()
 
@@ -166,6 +166,7 @@ def company_detail(request, pk):
         'orders': orders,
         'locations': locations,
         'materials': materials,
+        'available_materials': Material.objects.filter(company__isnull=True),
         'documents': documents,
         'location_form': WarehouseForm(initial={'company': company}),
     }
@@ -362,3 +363,20 @@ def company_document_delete(request, doc_pk):
     
     document.delete()
     return JsonResponse({'success': True})
+
+
+@login_required
+@require_POST
+def ajax_associate_material(request, pk):
+    """Associate an existing material with a company via AJAX"""
+    company = get_object_or_404(Company, pk=pk)
+    material_id = request.POST.get('material_id')
+    
+    if material_id:
+        from apps.inventory.models import Material
+        material = get_object_or_404(Material, id=material_id, tenant=request.user.tenant)
+        material.company = company
+        material.save()
+        return JsonResponse({'success': True})
+        
+    return JsonResponse({'success': False, 'message': 'No material selected'}, status=400)
