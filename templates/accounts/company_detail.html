@@ -849,13 +849,15 @@
             </div>
             
             <div class="mb-3">
-                <label class="form-label fw-bold text-dark mb-1 small">Images and Documents</label>
+                <label class="form-label fw-bold text-dark mb-1 small">Material Image</label>
                 <div class="border rounded-4 p-4 text-center border-light-subtle bg-light bg-opacity-50">
-                    <div class="d-flex justify-content-center gap-2 mb-3">
-                        <button type="button" class="btn btn-primary btn-sm px-3 rounded-pill"><i class="fas fa-plus me-1"></i>Choose</button>
-                        <button type="button" class="btn btn-light btn-sm px-3 rounded-pill border text-muted">Cancel</button>
+                    <input type="file" name="image" id="materialImageInput" class="d-none" accept="image/*">
+                    <div class="d-flex justify-content-center mb-2">
+                        <button type="button" class="btn btn-primary btn-sm px-4 rounded-pill" onclick="document.getElementById('materialImageInput').click()">
+                            <i class="fas fa-camera me-1"></i>Choose Image
+                        </button>
                     </div>
-                    <p class="mb-0 small text-muted">Drag and drop files to here to upload</p>
+                    <div id="fileStatus" class="small text-muted mb-0" style="font-size: 10px;">No image selected</div>
                 </div>
             </div>
             
@@ -1343,6 +1345,24 @@
                     btn.innerHTML = originalHtml;
                     console.error('Error:', err);
                 });
+            });
+        }
+
+        // Image selection feedback
+        const materialImgInput = document.getElementById('materialImageInput');
+        const fileStatus = document.getElementById('fileStatus');
+
+        if (materialImgInput && fileStatus) {
+            materialImgInput.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    fileStatus.innerText = 'Selected: ' + this.files[0].name;
+                    fileStatus.classList.remove('text-muted');
+                    fileStatus.classList.add('text-primary', 'fw-bold');
+                } else {
+                    fileStatus.innerText = 'No image selected';
+                    fileStatus.classList.remove('text-primary', 'fw-bold');
+                    fileStatus.classList.add('text-muted');
+                }
             });
         }
     });
