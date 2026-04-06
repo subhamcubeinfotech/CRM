@@ -439,15 +439,10 @@
                     <!-- Shipments Section -->
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h4 class="fw-bold mb-0">Shipments</h4>
-                        {% if shipments %}
                         <button type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasAddShipment"
                             class="btn btn-outline-primary btn-sm px-3 rounded-3" style="border-width: 2px;">Add
                             Shipment</button>
-                        {% else %}
-                        <a href="{% url 'shipments:shipment_create' %}?order_id={{ order.pk }}&next={{ request.path }}"
-                            class="btn btn-outline-primary btn-sm px-3 rounded-3" style="border-width: 2px; text-decoration: none; display: inline-flex; align-items: center;">Add
-                            Shipment</a>
-                        {% endif %}
+
                     </div>
                     <div class="card border-0 bg-white mb-4" style="border-radius: 12px; overflow: hidden;">
                         <div class="table-responsive">
@@ -918,9 +913,10 @@
                                 </option>
                                 {% endfor %}
                             </select>
-                            <button type="button" class="btn btn-outline-primary" data-bs-toggle="offcanvas" data-bs-target="#offcanvasAddMaterial">
+                            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#materialModal">
                                 + Add
                             </button>
+
                         </div>
                     </div>
 
@@ -2109,71 +2105,75 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 </script>
 
-<!-- Add Material Offcanvas -->
-<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasAddMaterial" aria-labelledby="offcanvasAddMaterialLabel" style="width: 500px; border-left: none; box-shadow: -10px 0 30px rgba(0,0,0,0.1); z-index: 1060;">
-    <div class="offcanvas-header border-bottom p-4">
-        <h5 class="offcanvas-title fw-bold text-primary" id="offcanvasAddMaterialLabel">New Material</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-    </div>
-    <div class="offcanvas-body p-4">
-        <form id="addMaterialForm">
-            {% csrf_token %}
-            <div class="mb-4">
-                <label class="form-label fw-bold small text-uppercase mb-2">Usage <span class="text-danger">*</span></label>
-                <div class="d-flex gap-4">
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="usage" id="usageOngoing" value="ongoing" checked>
-                        <label class="form-check-label small" for="usageOngoing">Ongoing <span class="text-muted">(reusable)</span></label>
+<!-- Add Material Modal -->
+<div class="modal fade" id="materialModal" tabindex="-1" aria-labelledby="materialModalLabel" aria-hidden="true" style="z-index: 1070;">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 500px;">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-bottom p-4">
+                <h5 class="modal-title fw-bold text-primary" id="materialModalLabel">New Material</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="addMaterialForm">
+                    {% csrf_token %}
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small text-uppercase mb-2">Usage <span class="text-danger">*</span></label>
+                        <div class="d-flex gap-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="usage" id="usageOngoing" value="ongoing" checked>
+                                <label class="form-check-label small" for="usageOngoing">Ongoing <span class="text-muted">(reusable)</span></label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="usage" id="usageSpot" value="spot">
+                                <label class="form-check-label small" for="usageSpot">Spot <span class="text-muted">(one-time use)</span></label>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="usage" id="usageSpot" value="spot">
-                        <label class="form-check-label small" for="usageSpot">Spot <span class="text-muted">(one-time use)</span></label>
+        
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small text-uppercase mb-1">Display Name</label>
+                        {{ material_form.name }}
+                        <div class="form-text mt-1" style="font-size: 0.75rem;">Add a clear, descriptive name to help others quickly identify this material.</div>
                     </div>
-                </div>
-            </div>
-
-            <div class="mb-4">
-                <label class="form-label fw-bold small text-uppercase mb-1">Display Name</label>
-                {{ material_form.name }}
-                <div class="form-text mt-1" style="font-size: 0.75rem;">Add a clear, descriptive name to help others quickly identify this material.</div>
-            </div>
-
-            <div class="mb-4">
-                <label class="form-label fw-bold small text-uppercase mb-1">Description</label>
-                {{ material_form.description }}
-            </div>
-
-            <div class="mb-4">
-                <label class="form-label fw-bold small text-uppercase mb-2">Images and Documents</label>
-                <div class="border rounded-3 p-4 text-center bg-light" style="border-style: dashed !important; border-width: 2px !important;" id="materialUploadZone">
-                    <div class="mb-3">
-                        <input type="file" id="materialImageInput" name="image" hidden>
-                        <input type="file" id="materialDocumentInput" name="document" hidden>
-                        <button type="button" class="btn btn-primary btn-sm px-3 me-2" id="btnChooseMaterialFile"><i class="fas fa-plus me-1"></i> Choose</button>
-                        <button type="button" class="btn btn-outline-secondary btn-sm px-3" id="btnCancelMaterialFile"><i class="fas fa-times me-1"></i> Cancel</button>
+        
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small text-uppercase mb-1">Description</label>
+                        {{ material_form.description }}
                     </div>
-                    <p class="text-muted small mb-0" id="materialFileStatus">Drag and drop files here to upload</p>
-                </div>
+        
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small text-uppercase mb-2">Images and Documents</label>
+                        <div class="border rounded-3 p-4 text-center bg-light" style="border-style: dashed !important; border-width: 2px !important;" id="materialUploadZone">
+                            <div class="mb-3">
+                                <input type="file" id="materialImageInput" name="image" hidden>
+                                <input type="file" id="materialDocumentInput" name="document" hidden>
+                                <button type="button" class="btn btn-primary btn-sm px-3 me-2" id="btnChooseMaterialFile"><i class="fas fa-plus me-1"></i> Choose</button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm px-3" id="btnCancelMaterialFile"><i class="fas fa-times me-1"></i> Cancel</button>
+                            </div>
+                            <p class="text-muted small mb-0" id="materialFileStatus">Drag and drop files here to upload</p>
+                        </div>
+                    </div>
+        
+                    <div class="row g-3 mb-4">
+                        <div class="col-6">
+                            <label class="form-label fw-bold small text-uppercase mb-1">Material <span class="text-danger">*</span></label>
+                            {{ material_form.material_type }}
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold small text-uppercase mb-1">Material Type <span class="text-danger">*</span></label>
+                            {{ material_form.product_type }}
+                        </div>
+                    </div>
+        
+                    <div class="mt-4 pt-3 border-top">
+                        <button type="submit" class="btn btn-primary w-100 py-2 fw-bold rounded-3 shadow-sm" id="btnSubmitMaterial">Submit</button>
+                    </div>
+                </form>
             </div>
-
-            <div class="row g-3 mb-4">
-                <div class="col-6">
-                    <label class="form-label fw-bold small text-uppercase mb-1">Material <span class="text-danger">*</span></label>
-                    {{ material_form.material_type }}
-                </div>
-                <div class="col-6">
-                    <label class="form-label fw-bold small text-uppercase mb-1">Material Type <span class="text-danger">*</span></label>
-                    {{ material_form.product_type }}
-                </div>
-            </div>
-
-            <div class="mt-5 d-flex gap-2 pt-3 border-top">
-                <button type="submit" class="btn btn-primary px-4 fw-bold" id="btnSubmitMaterial">Submit</button>
-                <button type="button" class="btn btn-outline-primary px-4 fw-bold">Review</button>
-            </div>
-        </form>
+        </div>
     </div>
 </div>
+
 
 <script>
     // New Material File Selection Logic
@@ -2246,10 +2246,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         });
                     });
                     
-                    // Hide offcanvas
-                    const offcanvasElement = document.getElementById('offcanvasAddMaterial');
-                    const offcanvas = bootstrap.Offcanvas.getInstance(offcanvasElement);
-                    if (offcanvas) offcanvas.hide();
+                    // Hide modal
+                    const modalElement = document.getElementById('materialModal');
+                    const modal = bootstrap.Modal.getInstance(modalElement);
+                    if (modal) modal.hide();
+
                     
                     // Reset form
                     form.reset();
