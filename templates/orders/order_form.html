@@ -797,7 +797,8 @@
         document.getElementById('est-cost').textContent = '$' + totalCost.toFixed(2);
         document.getElementById('est-profit').textContent = (isProfit ? '+' : '') + '$' + totalProfit.toFixed(2);
         document.getElementById('est-profit').style.color = profitColor;
-        document.getElementById('est-pieces').textContent = Math.round(totalPieces);
+        const piecesEl = document.getElementById('est-pieces');
+        if (piecesEl) piecesEl.textContent = Math.round(totalPieces);
         document.getElementById('est-margin-text').textContent = totalRevenue > 0 ? `Margin: ${marginVal.toFixed(1)}%` : 'Margin: —';
         const iconBg = document.getElementById('profit-icon-bg'), icon = document.getElementById('profit-icon');
         if (iconBg && icon) { iconBg.style.background = isProfit ? '#dcfce7' : '#fee2e2'; icon.style.color = profitColor; icon.className = isProfit ? 'fas fa-star' : 'fas fa-exclamation-triangle'; }
