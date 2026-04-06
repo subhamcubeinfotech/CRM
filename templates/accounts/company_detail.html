@@ -145,7 +145,7 @@
                             <div class="contacts-list">
                                 {% if company.users.all %}
                                     {% for contact in company.users.all %}
-                                    <div class="contact-item mb-3 {% if not contact.is_active %}d-none archived-contact opacity-75{% endif %}">
+                                    <div class="contact-item mb-3 {% if not contact.is_active %}archived-contact opacity-75{% endif %}" {% if not contact.is_active %}style="display: none !important;"{% endif %}>
                                         <div class="d-flex justify-content-between align-items-start">
                                             <div class="flex-grow-1">
                                                 <div class="fw-bold text-dark" style="font-size: 0.8rem;">{{ contact.get_full_name|default:contact.username }}</div>
@@ -235,7 +235,7 @@
                         </div>
                     </div>
                     <div class="card-body p-0">
-                        <div class="material-list">
+                        <div class="material-list" id="company-material-list">
                             {% for material in materials %}
                             <div class="material-item p-4 border-top">
                                 <div class="d-flex align-items-center gap-4">
@@ -504,12 +504,43 @@
         </div>
     </div>
 
-    <!-- History Pane -->
     <div class="tab-pane fade" id="history-pane" role="tabpanel" tabindex="0">
-        <div class="card border-0 shadow-sm rounded-4 overflow-hidden p-5 text-center text-muted">
-            <i class="fas fa-history fa-3x mb-3 opacity-10"></i>
-            <h5 class="fw-bold mb-1">Historical Audit Log</h5>
-            <p class="small mb-0">Track all changes and interactions with this account over time.</p>
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+            <div class="card-header bg-white border-bottom p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold mb-0">Activity Timeline</h6>
+                    <span class="badge bg-light text-muted border rounded-pill small">{{ history|length }} Events</span>
+                </div>
+            </div>
+            <div class="card-body p-4">
+                <div class="timeline-container pe-2" style="max-height: 600px; overflow-y: auto;">
+                    {% for record in history %}
+                    <div class="timeline-item d-flex gap-3 mb-4 position-relative">
+                        {% if not forloop.last %}
+                        <div class="timeline-line position-absolute start-0 top-0 h-100 border-start border-light-subtle" style="left: 15px !important; z-index: 0; margin-top: 32px;"></div>
+                        {% endif %}
+                        <div class="timeline-icon flex-shrink-0 bg-white border rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 32px; height: 32px; z-index: 1;">
+                            <i class="{{ record.icon|default:'fas fa-circle' }} text-primary" style="font-size: 0.75rem;"></i>
+                        </div>
+                        <div class="timeline-content flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-start mb-1">
+                                <h6 class="fw-bold mb-0 small">{{ record.action }}</h6>
+                                <span class="text-muted extra-small">{{ record.created_at|date:"M d, Y H:i" }}</span>
+                            </div>
+                            <p class="text-muted small mb-0">{{ record.description }}</p>
+                            <div class="text-muted extra-small mt-1 italic">
+                                <i class="fas fa-user me-1 opacity-50"></i>{{ record.user.get_full_name|default:record.user.username }}
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-5 text-muted">
+                        <i class="fas fa-history fa-3x mb-3 opacity-10"></i>
+                        <p class="mb-0">No history records found for this company.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -761,6 +792,27 @@
 
     .dropdown-item:active {
         background-color: var(--primary-color) !important;
+    }
+
+    /* Timeline Utilities */
+    .extra-small {
+        font-size: 0.7rem !important;
+    }
+    .italic {
+        font-style: italic;
+    }
+    .timeline-container::-webkit-scrollbar {
+        width: 4px;
+    }
+    .timeline-container::-webkit-scrollbar-track {
+        background: #f1f5f9;
+    }
+    .timeline-container::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 10px;
+    }
+    .timeline-container::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
     }
 </style>
 
@@ -1395,6 +1447,16 @@
                         const option = new Option(data.name, data.id, true, true);
                         select.add(option);
                         
+                        // Also add to the Company Material list if associated
+                        addMaterialToUI({
+                            id: data.id,
+                            name: data.name,
+                            type: data.type,
+                            grade: data.grade,
+                            form: data.form,
+                            description: data.description
+                        });
+                        
                         // Close modal
                         const modal = bootstrap.Modal.getInstance(document.getElementById('materialModal'));
                         modal.hide();
@@ -1439,7 +1501,16 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        location.reload(); // Reload to show new material in list
+                        addMaterialToUI(data.material);
+                        
+                        // Close offcanvas
+                        const offcanvas = bootstrap.Offcanvas.getInstance(document.getElementById('offcanvasAddCompanyMaterial'));
+                        offcanvas.hide();
+                        
+                        // Reset form
+                        associateForm.reset();
+                        btn.disabled = false;
+                        btn.innerHTML = originalHtml;
                     } else {
                         btn.disabled = false;
                         btn.innerHTML = originalHtml;
@@ -1452,6 +1523,59 @@
                     console.error('Error:', err);
                 });
             });
+        }
+
+        function addMaterialToUI(material) {
+            const list = document.getElementById('company-material-list');
+            
+            // Remove placeholder if it exists
+            const placeholder = list.querySelector('.text-center.py-5.text-muted');
+            if (placeholder) placeholder.remove();
+
+            const materialHtml = `
+                <div class="material-item p-4 border-top animate__animated animate__fadeIn">
+                    <div class="d-flex align-items-center gap-4">
+                        <div class="material-icon bg-light rounded-circle d-flex align-items-center justify-content-center"
+                            style="width: 60px; height: 60px; font-size: 1.5rem;">
+                            <i class="fas fa-recycle text-muted opacity-50"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6 class="fw-bold mb-0">${material.name}</h6>
+                                <button class="btn btn-link text-muted p-0"><i
+                                        class="fas fa-ellipsis-h"></i></button>
+                            </div>
+                            <div class="row g-2">
+                                <div class="col-md-3">
+                                    <div class="small text-muted mb-1">Type</div>
+                                    <div class="small fw-medium">${material.type}</div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="small text-muted mb-1">Grade</div>
+                                    <div class="small fw-medium">${material.grade}</div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="small text-muted mb-1">Form</div>
+                                    <div class="small fw-medium">${material.form}</div>
+                                </div>
+                                <div class="col-md-3 text-end pt-2">
+                                    <button class="btn btn-outline-secondary btn-xs rounded-pill"
+                                        type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#material-new-${material.id}">
+                                        Show More <i class="fas fa-chevron-down ms-1"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="collapse mt-3" id="material-new-${material.id}">
+                                <div class="bg-light p-3 rounded-3 small">
+                                    <p class="mb-0 text-muted">${material.description || "No additional details available."}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            list.insertAdjacentHTML('afterbegin', materialHtml);
         }
 
         // Image selection feedback
@@ -1561,14 +1685,16 @@
         const archivedToggle = document.getElementById('showArchivedContacts');
         if (archivedToggle) {
             archivedToggle.addEventListener('change', function() {
-                const archivedContacts = document.querySelectorAll('.archived-contact');
-                archivedContacts.forEach(contact => {
-                    if (this.checked) {
-                        contact.classList.remove('d-none');
-                        contact.classList.add('animate__fadeIn');
+                const archivedItems = document.querySelectorAll('.contact-item.archived-contact');
+                const isVisible = this.checked;
+                
+                archivedItems.forEach(item => {
+                    if (isVisible) {
+                        item.style.setProperty('display', 'block', 'important');
+                        item.classList.add('animate__fadeIn');
                     } else {
-                        contact.classList.add('d-none');
-                        contact.classList.remove('animate__fadeIn');
+                        item.style.setProperty('display', 'none', 'important');
+                        item.classList.remove('animate__fadeIn');
                     }
                 });
             });
@@ -1629,12 +1755,16 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        // Find and remove the contact item
+                        // Update the contact item instead of removing it
                         const items = document.querySelectorAll('.contact-item');
+                        const isToggleOn = document.getElementById('showArchivedContacts')?.checked;
                         items.forEach(item => {
                             const archiveBtn = item.querySelector('.archive-contact-btn');
                             if (archiveBtn && archiveBtn.dataset.id == id) {
-                                item.remove();
+                                item.classList.add('archived-contact', 'opacity-75');
+                                if (!isToggleOn) {
+                                    item.style.setProperty('display', 'none', 'important');
+                                }
                             }
                         });
 
