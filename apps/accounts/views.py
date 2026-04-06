@@ -129,6 +129,7 @@ def company_detail(request, pk):
     """View company details"""
     company = get_object_or_404(Company.plain_objects, pk=pk)
     
+    from django.db.models import Q
     from apps.orders.models import Order
     from apps.shipments.models import Shipment
     
@@ -156,7 +157,11 @@ def company_detail(request, pk):
         })
 
     from apps.inventory.models import Material
-    materials = company.materials.all()
+    materials = Material.plain_objects.filter(
+        Q(tenant=request.user.tenant) | Q(tenant__isnull=True)
+    ).filter(
+        Q(company=company) | Q(company__isnull=True)
+    ).order_by('name')
 
     documents = company.documents.all()
 
@@ -166,7 +171,9 @@ def company_detail(request, pk):
         'orders': orders,
         'locations': locations,
         'materials': materials,
-        'available_materials': Material.objects.filter(company__isnull=True),
+        'available_materials': Material.plain_objects.filter(
+            Q(tenant=request.user.tenant) | Q(tenant__isnull=True)
+        ).filter(company__isnull=True),
         'documents': documents,
         'location_form': WarehouseForm(initial={'company': company}),
     }
