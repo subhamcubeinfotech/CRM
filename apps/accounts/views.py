@@ -11,6 +11,8 @@ from django.core.mail import EmailMessage
 from django.conf import settings
 from .models import Company, CompanyDocument
 from .forms import CompanyForm
+from apps.inventory.forms import WarehouseForm
+
 from .geocoding import geocode_company
 from .utils import filter_by_user_company, check_company_access
 from django.db.models import Q
@@ -165,6 +167,7 @@ def company_detail(request, pk):
         'locations': locations,
         'materials': materials,
         'documents': documents,
+        'location_form': WarehouseForm(initial={'company': company}),
     }
     return render(request, 'accounts/company_detail.html', context)
 

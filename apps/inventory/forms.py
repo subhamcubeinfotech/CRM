@@ -32,17 +32,31 @@ class WarehouseForm(forms.ModelForm):
             'pickup_appointment_type', 'is_remit_to'
         ]
         widgets = {
-            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Name for this location'}),
-            'address': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Start typing to search for a business or address'}),
-            'city': forms.TextInput(attrs={'class': 'form-control'}),
-            'state': forms.TextInput(attrs={'class': 'form-control'}),
-            'postal_code': forms.TextInput(attrs={'class': 'form-control'}),
-            'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '(000) 000-0000'}),
-            'shipping_requirements': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Insert Scales, Packing list, etc.'}),
+            'name': forms.TextInput(attrs={'class': 'form-control border-light-subtle rounded-3', 'placeholder': 'Name for this location'}),
+            'address': forms.TextInput(attrs={'class': 'form-control border-light-subtle rounded-3', 'placeholder': 'Start typing to search for a business or address'}),
+            'city': forms.TextInput(attrs={'class': 'form-control border-light-subtle rounded-3'}),
+            'state': forms.TextInput(attrs={'class': 'form-control border-light-subtle rounded-3'}),
+            'postal_code': forms.TextInput(attrs={'class': 'form-control border-light-subtle rounded-3'}),
+            'phone': forms.TextInput(attrs={'class': 'form-control border-light-subtle rounded-3', 'placeholder': '(000) 000-0000'}),
+            'shipping_requirements': forms.Textarea(attrs={'class': 'form-control border-light-subtle rounded-3', 'rows': 2, 'placeholder': 'Insert Scales, Packing list, etc.'}),
             'delivery_appointment_type': forms.RadioSelect(attrs={'class': 'form-check-input'}),
             'pickup_appointment_type': forms.RadioSelect(attrs={'class': 'form-check-input'}),
             'is_remit_to': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Make these optional for quick-add (handled by view parsing)
+        self.fields['city'].required = False
+        self.fields['state'].required = False
+        self.fields['postal_code'].required = False
+        
+        # Remove empty choice but don't set initial (user wants no blue by default)
+        self.fields['delivery_appointment_type'].choices = [('fcfs', 'FCFS'), ('required', 'Required')]
+        self.fields['pickup_appointment_type'].choices = [('fcfs', 'FCFS'), ('required', 'Required')]
+
+
+
 
 class InventoryItemForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
