@@ -175,6 +175,58 @@
         border-color: #86b7fe;
         box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
     }
+
+    /* Location Modal UI matching Matium */
+    .location-modal .modal-content {
+        border-radius: 12px;
+        border: none;
+        overflow: hidden;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+    }
+    .location-modal .modal-header {
+        background-color: #f8fafc;
+        border-bottom: 1px solid #f1f5f9;
+        padding: 1.5rem 2rem;
+    }
+    .location-modal .modal-body {
+        padding: 2rem;
+    }
+    .location-modal .modal-footer {
+        background-color: #f8fafc;
+        border-top: none;
+        padding: 1rem 2rem 2rem;
+        justify-content: center;
+    }
+    .location-modal .detail-item {
+        margin-bottom: 1.5rem;
+    }
+    .location-modal .detail-label {
+        color: #64748b;
+        font-size: 0.75rem;
+        text-transform: none;
+        letter-spacing: normal;
+        margin-bottom: 0.25rem;
+        font-weight: 500;
+    }
+    .location-modal .detail-value {
+        color: #1e293b;
+        font-weight: 700;
+        font-size: 0.95rem;
+    }
+    .location-modal .btn-view-more {
+        background-color: #2563eb;
+        color: white;
+        font-weight: 600;
+        border-radius: 6px;
+        padding: 0.6rem 2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .location-modal .btn-view-more:hover {
+        background-color: #1d4ed8;
+        color: white;
+    }
 </style>
 <!-- Select2 CSS -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
@@ -270,8 +322,19 @@
             <div class="col-md-4 px-3">
                 <div class="detail-label">Supplier</div>
                 <div class="party-title mb-1">{{ order.supplier.name }}</div>
-                <div class="small text-primary mb-2">
-                    <i class="fas fa-map-marker-alt me-1"></i> {{ order.supplier.full_address }}
+                <div class="small mb-2">
+                    {% with loc=order.source_location supp=order.supplier ship=order.shipments.first %}
+                    <a href="javascript:void(0)" class="text-primary text-decoration-none location-modal-trigger fw-semibold" 
+                       data-address="{% if loc %}{{ loc.address }}, {{ loc.city }}, {{ loc.state }} {{ loc.postal_code }}, {{ loc.country }}{% else %}{{ supp.full_address }}{% endif %}"
+                       data-name="{% if loc and loc.name %}{{ loc.name }}{% else %}{{ supp.name }}{% endif %}"
+                       data-phone="{% if loc and loc.phone %}{{ loc.phone }}{% else %}{{ supp.phone|default:'-' }}{% endif %}"
+                       data-shipping-req="{% if loc and loc.shipping_requirements %}{{ loc.shipping_requirements }}{% else %}-{% endif %}"
+                       data-pickup-appt="{% if loc and loc.pickup_appointment_type %}{{ loc.get_pickup_appointment_type_display }}{% elif ship %}{{ ship.get_pickup_appointment_type_display }}{% else %}FCFS{% endif %}"
+                       data-delivery-appt="{% if loc and loc.delivery_appointment_type %}{{ loc.get_delivery_appointment_type_display }}{% elif ship %}{{ ship.get_delivery_appointment_type_display }}{% else %}FCFS{% endif %}"
+                       data-id="{% if loc %}{{ loc.pk }}{% endif %}">
+                        <i class="fas fa-map-marker-alt me-1"></i> {{ supp.full_address }}
+                    </a>
+                    {% endwith %}
                 </div>
                 <div class="small text-muted mb-1"><i class="fas fa-file-alt me-2"></i>SO#: {{ order.so_number|default:"-" }}</div>
                 <div class="small text-muted mb-1"><i class="fas fa-handshake me-2"></i>FOB Origin</div>
@@ -280,8 +343,19 @@
             <div class="col-md-4 px-3">
                 <div class="detail-label">Receiver</div>
                 <div class="party-title mb-1">{{ order.receiver.name }}</div>
-                <div class="small text-primary mb-2">
-                    <i class="fas fa-map-marker-alt me-1"></i> {{ order.receiver.full_address }}
+                <div class="small mb-2">
+                    {% with loc=order.destination_location rec=order.receiver ship=order.shipments.first %}
+                    <a href="javascript:void(0)" class="text-primary text-decoration-none location-modal-trigger fw-semibold" 
+                       data-address="{% if loc %}{{ loc.address }}, {{ loc.city }}, {{ loc.state }} {{ loc.postal_code }}, {{ loc.country }}{% else %}{{ rec.full_address }}{% endif %}"
+                       data-name="{% if loc and loc.name %}{{ loc.name }}{% else %}{{ rec.name }}{% endif %}"
+                       data-phone="{% if loc and loc.phone %}{{ loc.phone }}{% else %}{{ rec.phone|default:'-' }}{% endif %}"
+                       data-shipping-req="{% if loc and loc.shipping_requirements %}{{ loc.shipping_requirements }}{% else %}-{% endif %}"
+                       data-pickup-appt="{% if loc and loc.pickup_appointment_type %}{{ loc.get_pickup_appointment_type_display }}{% elif ship %}{{ ship.get_pickup_appointment_type_display }}{% else %}FCFS{% endif %}"
+                       data-delivery-appt="{% if loc and loc.delivery_appointment_type %}{{ loc.get_delivery_appointment_type_display }}{% elif ship %}{{ ship.get_delivery_appointment_type_display }}{% else %}FCFS{% endif %}"
+                       data-id="{% if loc %}{{ loc.pk }}{% endif %}">
+                        <i class="fas fa-map-marker-alt me-1"></i> {{ rec.full_address }}
+                    </a>
+                    {% endwith %}
                 </div>
                 <div class="small text-muted mb-1"><i class="fas fa-file-invoice me-2"></i>PO#: {{ order.po_number|default:"-" }}</div>
                 <div class="small text-muted mb-1"><i class="fas fa-handshake me-2"></i>FOB Origin</div>
@@ -2312,32 +2386,85 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         }
-    });
-
-    // Make sure Select2 initializes when offcanvas is shown (just in case)
-    $('#offcanvasEditOrder').on('shown.bs.offcanvas', function () {
-        $('.select2-basic').select2({
-            theme: 'bootstrap-5',
-            width: '100%',
-            placeholder: 'Select or type to create tags...',
-            tags: true,
-            tokenSeparators: [','],
-            createTag: function (params) {
-                var term = $.trim(params.term);
-                if (term === '') return null;
-                return {
-                    id: term,
-                    text: term,
-                    newTag: true
-                };
-            },
-            templateResult: function (data) {
-                if (data.newTag) {
-                    return "Hit Enter to create new '" + data.text + "'";
+        
+        // Location Modal Logic
+        const modalTriggers = document.querySelectorAll('.location-modal-trigger');
+        const locModal = new bootstrap.Modal(document.getElementById('locationDetailModal'));
+        
+        modalTriggers.forEach(el => {
+            el.addEventListener('click', function() {
+                const data = this.dataset;
+                document.getElementById('locModalTitle').innerText = data.address;
+                document.getElementById('locModalAddress').innerText = data.address;
+                document.getElementById('locModalName').innerText = data.name;
+                document.getElementById('locModalPhone').innerText = data.phone;
+                document.getElementById('locModalShippingReq').innerText = data.shippingReq;
+                document.getElementById('locModalPickupAppt').innerText = data.pickupAppt;
+                document.getElementById('locModalDeliveryAppt').innerText = data.deliveryAppt;
+                
+                const viewMoreBtn = document.getElementById('locModalViewMore');
+                if (data.id) {
+                    viewMoreBtn.href = `/inventory/warehouses/${data.id}/`;
+                    viewMoreBtn.style.display = 'flex';
+                } else {
+                    viewMoreBtn.style.display = 'none';
                 }
-                return data.text;
-            }
+                
+                locModal.show();
+            });
         });
     });
 </script>
+
+<!-- Location Detail Modal -->
+<div class="modal fade location-modal" id="locationDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header d-block position-relative">
+                <button type="button" class="btn btn-outline-secondary rounded-circle p-0 position-absolute d-flex align-items-center justify-content-center bg-white" 
+                        style="top: 24px; right: 24px; width: 36px; height: 36px; border-color: #cbd5e1;" data-bs-dismiss="modal">
+                    <i class="fas fa-times" style="font-size: 1rem; color: #475569;"></i>
+                </button>
+                <div class="d-flex align-items-center text-muted mb-2 fw-medium" style="font-size: 1rem;">
+                    <i class="far fa-paper-plane me-2"></i> Location
+                </div>
+                <h3 class="modal-title fw-bold text-dark pe-5" id="locModalTitle" style="font-size: 1.75rem; line-height: 1.2;">-</h3>
+            </div>
+            <div class="modal-body">
+                <div class="detail-item">
+                    <div class="detail-label">Address</div>
+                    <div class="detail-value d-flex align-items-start">
+                        <i class="fas fa-map-marker-alt text-muted mt-1 me-2" style="font-size: 0.9rem;"></i>
+                        <span id="locModalAddress">-</span>
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Name</div>
+                    <div class="detail-value" id="locModalName">-</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Phone Number</div>
+                    <div class="detail-value" id="locModalPhone">-</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Shipping Requirements</div>
+                    <div class="detail-value" id="locModalShippingReq">-</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Pickup Appointment</div>
+                    <div class="detail-value text-uppercase" id="locModalPickupAppt">-</div>
+                </div>
+                <div class="detail-item mb-0">
+                    <div class="detail-label">Delivery Appointment</div>
+                    <div class="detail-value text-uppercase" id="locModalDeliveryAppt">-</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a href="#" class="btn btn-view-more" id="locModalViewMore">
+                    View more <i class="fas fa-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
