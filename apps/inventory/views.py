@@ -360,18 +360,32 @@ def create_material_ajax(request):
             from django.db import IntegrityError
             try:
                 material.save()
+                
+                # Log History if company is associated
+                if material.company:
+                    from apps.accounts.models import CompanyHistory
+                    CompanyHistory.objects.create(
+                        company=material.company,
+                        user=request.user,
+                        action="Added a new Company Material",
+                        description=f"Created and associated new material {material.name}.",
+                        icon="fas fa-plus-circle"
+                    )
+                
                 return JsonResponse({
                     'status': 'success',
                     'id': material.id,
-                    'name': material.name
+                    'name': material.name,
+                    'type': material.material_type or "—",
+                    'grade': material.grade or "—",
+                    'form': material.product_type or "—",
+                    'description': material.description or ""
                 })
             except IntegrityError:
                 return JsonResponse({
                     'status': 'error',
                     'errors': {'name': ['A material with this name already exists.']}
                 }, status=400)
-                
-        return JsonResponse({'status': 'error', 'errors': form.errors.get_json_data()}, status=400)
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
 
 @login_required

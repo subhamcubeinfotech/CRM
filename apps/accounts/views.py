@@ -7,6 +7,7 @@ from django.contrib.auth import logout
 from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
 from django.core.mail import EmailMessage
 from django.conf import settings
 from .models import Company, CompanyDocument
@@ -175,6 +176,7 @@ def company_detail(request, pk):
             Q(tenant=request.user.tenant) | Q(tenant__isnull=True)
         ).filter(company__isnull=True),
         'documents': documents,
+        'history': company.history.all()[:50],  # Get last 50 history records
         'location_form': WarehouseForm(initial={'company': company}),
     }
     return render(request, 'accounts/company_detail.html', context)
@@ -378,8 +380,37 @@ def ajax_associate_material(request, pk):
     """Associate an existing material with a company via AJAX"""
     company = get_object_or_404(Company, pk=pk)
     material_id = request.POST.get('material_id')
+    if not material_id:
+        return JsonResponse({'success': False, 'message': 'No material selected'}, status=400)
     
-    return JsonResponse({'success': False, 'message': 'No material selected'}, status=400)
+    from apps.inventory.models import Material
+    material = get_object_or_404(Material, pk=material_id)
+    
+    # Associate material with company
+    material.company = company
+    material.save()
+    
+    # Log History
+    from .models import CompanyHistory
+    CompanyHistory.objects.create(
+        company=company,
+        user=request.user,
+        action="Added a new Company Material",
+        description=f"Associated material {material.name} with the company.",
+        icon="fas fa-plus-circle"
+    )
+    
+    return JsonResponse({
+        'success': True,
+        'material': {
+            'id': material.id,
+            'name': material.name,
+            'type': material.material_type or "—",
+            'grade': material.grade or "—",
+            'form': material.product_type or "—",
+            'description': material.description or ""
+        }
+    })
 
 
 @login_required
@@ -419,6 +450,17 @@ def ajax_add_contact(request):
             tenant=company.tenant,
             is_active=True
         )
+        
+        # Log History
+        from .models import CompanyHistory
+        CompanyHistory.objects.create(
+            company=company,
+            user=request.user,
+            action="Added a new Contact",
+            description=f"Added {user.get_full_name() or user.username} as a contact.",
+            icon="fas fa-user-plus"
+        )
+        
         return JsonResponse({
             'success': True,
             'contact': {
@@ -459,6 +501,16 @@ def ajax_edit_contact(request):
         contact.phone = phone
         contact.save()
         
+        # Log History
+        from .models import CompanyHistory
+        CompanyHistory.objects.create(
+            company=contact.company,
+            user=request.user,
+            action="Changed Contact Details",
+            description=f"Updated details for {contact.get_full_name() or contact.username}.",
+            icon="fas fa-user-edit"
+        )
+        
         return JsonResponse({
             'success': True,
             'contact': {
@@ -492,9 +544,21 @@ def ajax_archive_contact(request):
          return JsonResponse({'success': False, 'message': 'Permission denied'}, status=403)
          
     try:
-        contact.is_active = False
+        contact.is_contact_archived = True
         contact.save()
+        
+        # Log History
+        from .models import CompanyHistory
+        CompanyHistory.objects.create(
+            company=contact.company,
+            user=request.user,
+            action="Archived Contact",
+            description=f"Archived contact {contact.get_full_name() or contact.username}.",
+            icon="fas fa-user-slash"
+        )
+        
         return JsonResponse({'success': True})
     except Exception as e:
         logger.exception('Failed to archive contact: %s', e)
         return JsonResponse({'success': False, 'message': f'Error: {str(e)}'}, status=500)
+
