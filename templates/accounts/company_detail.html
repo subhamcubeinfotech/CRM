@@ -870,6 +870,14 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const locationsTab = document.getElementById('locations-tab');
+        
+        // Handle tab switching from URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const tabParam = urlParams.get('tab');
+        if (tabParam === 'locations' && locationsTab) {
+            bootstrap.Tab.getOrCreateInstance(locationsTab).show();
+        }
+
         let mapInitialized = false;
         let map;
         let markers = [];
