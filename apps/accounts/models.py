@@ -82,6 +82,7 @@ class CustomUser(AbstractUser):
     company = models.ForeignKey(Company, on_delete=models.SET_NULL, null=True, blank=True, related_name='users')
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
     is_verified = models.BooleanField(default=False)
+    is_contact_archived = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -143,5 +144,19 @@ class CompanyDocument(TenantAwareModel):
     class Meta:
         ordering = ['-uploaded_at']
     
+class CompanyHistory(models.Model):
+    """Activity log for company changes"""
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='history')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    action = models.CharField(max_length=255) # e.g., "Added a new Contact"
+    description = models.TextField(blank=True)
+    icon = models.CharField(max_length=50, default='fas fa-info-circle')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Company History'
+        verbose_name_plural = 'Company History'
+
     def __str__(self):
-        return f"{self.title} ({self.get_document_type_display()})"
+        return f"{self.company.name} - {self.action} at {self.created_at}"
