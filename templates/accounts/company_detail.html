@@ -134,10 +134,18 @@
                                 <h6 class="fw-bold mb-0 small text-uppercase tracking-wider">Contacts</h6>
                                 <button class="btn btn-primary btn-xs rounded-pill px-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasAddContact">Add</button>
                             </div>
+
+                            <div class="d-flex justify-content-end align-items-center mb-3">
+                                <span class="text-muted fw-bold me-2" style="font-size: 0.65rem;">Archived</span>
+                                <div class="form-check form-switch p-0 m-0 d-flex align-items-center">
+                                    <input class="form-check-input ms-0" type="checkbox" id="showArchivedContacts" style="width: 25px; height: 14px; cursor: pointer;">
+                                </div>
+                            </div>
+
                             <div class="contacts-list">
                                 {% if company.users.all %}
                                     {% for contact in company.users.all %}
-                                    <div class="contact-item mb-3">
+                                    <div class="contact-item mb-3 {% if not contact.is_active %}d-none archived-contact opacity-75{% endif %}">
                                         <div class="d-flex justify-content-between align-items-start">
                                             <div class="flex-grow-1">
                                                 <div class="fw-bold text-dark" style="font-size: 0.8rem;">{{ contact.get_full_name|default:contact.username }}</div>
@@ -147,7 +155,24 @@
                                                 </div>
                                             </div>
                                             <div class="ms-2">
-                                                <i class="far fa-circle text-primary" style="font-size: 10px;"></i>
+                                                <div class="dropdown">
+                                                    <button class="btn btn-light btn-sm rounded-circle p-0 d-flex align-items-center justify-content-center no-caret" 
+                                                            type="button" data-bs-toggle="dropdown" aria-expanded="false" 
+                                                            style="width: 24px; height: 24px; background-color: #f0f4f8; border: none;">
+                                                        <i class="fas fa-ellipsis-h text-primary" style="font-size: 10px;"></i>
+                                                    </button>
+                                                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 py-2 animate__animated animate__fadeIn animate__faster" 
+                                                        style="font-size: 0.75rem; border-radius: 10px; min-width: 110px; box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;">
+                                                        <li><a class="dropdown-item edit-contact-btn py-2 d-flex align-items-center" href="javascript:void(0)" 
+                                                            data-id="{{ contact.id }}" 
+                                                            data-name="{{ contact.get_full_name|default:contact.username }}" 
+                                                            data-email="{{ contact.email }}" 
+                                                            data-phone="{{ contact.phone|default:'' }}">
+                                                            <i class="fas fa-edit me-2 opacity-50" style="width: 14px;"></i>Edit</a></li>
+                                                        <li><a class="dropdown-item archive-contact-btn py-2 text-danger d-flex align-items-center" href="javascript:void(0)" data-id="{{ contact.id }}">
+                                                            <i class="fas fa-trash-alt me-2 opacity-50" style="width: 14px;"></i>Archive</a></li>
+                                                    </ul>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -798,7 +823,81 @@
 </div>
 
 
-<!-- Add Company Material Drawer -->
+<!-- Edit Contact Drawer -->
+<div class="offcanvas offcanvas-end border-0 shadow" tabindex="-1" id="offcanvasEditContact" aria-labelledby="offcanvasEditContactLabel" style="width: 400px;">
+    <div class="offcanvas-header bg-white border-bottom py-3">
+        <h5 class="offcanvas-title fw-bold h6 mb-0" id="offcanvasEditContactLabel">Edit Contact</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body p-4">
+        <form id="editContactForm">
+            {% csrf_token %}
+            <input type="hidden" name="contact_id" id="edit_contact_id">
+            <div class="mb-3">
+                <label class="form-label fw-bold text-dark mb-1 small">Name <span class="text-danger">*</span></label>
+                <input type="text" name="name" id="edit_contact_name" class="form-control form-control-sm rounded-3 border-light-subtle" placeholder="Full name" required>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label fw-bold text-dark mb-1 small">Contact Type</label>
+                <select name="contact_type" id="edit_contact_type" class="form-select form-select-sm rounded-3 border-light-subtle">
+                    <option value="">Select a contact type</option>
+                    <option value="primary">Primary Contact</option>
+                    <option value="billing">Billing</option>
+                    <option value="shipping">Shipping</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label fw-bold text-dark mb-1 small">Email <span class="text-danger">*</span></label>
+                <input type="email" name="email" id="edit_contact_email" class="form-control form-control-sm rounded-3 border-light-subtle" placeholder="Insert an email" required>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label fw-bold text-dark mb-1 small">Mobile number</label>
+                <input type="text" name="phone" id="edit_contact_phone" class="form-control form-control-sm rounded-3 border-light-subtle" placeholder="(000) 000-0000">
+            </div>
+            
+            <div class="mb-4">
+                <div class="row g-2">
+                    <div class="col-8">
+                        <label class="form-label fw-bold text-dark mb-1 small">Office Number</label>
+                        <input type="text" name="office_phone" id="edit_contact_office" class="form-control form-control-sm rounded-3 border-light-subtle" placeholder="(000) 000-0000">
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label fw-bold text-dark mb-1 small">Extension</label>
+                        <input type="text" name="extension" id="edit_contact_extension" class="form-control form-control-sm rounded-3 border-light-subtle" placeholder="00000">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-grid mt-5">
+                <div class="d-flex justify-content-center">
+                    <button type="submit" class="btn btn-primary px-5 rounded-pill" id="submitEditContactBtn">Submit</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<!-- Archive Contact Modal -->
+<div class="modal fade" id="archiveContactModal" tabindex="-1" aria-labelledby="archiveContactModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 380px;">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+            <div class="modal-body p-4 text-center">
+                <h5 class="modal-title fw-bold mb-3" id="archiveContactModalLabel">Archive Contact</h5>
+                <p class="text-muted small mb-4">Are you sure you want to archive this contact?</p>
+                <input type="hidden" id="archive_contact_id">
+                <div class="d-flex justify-content-center gap-2">
+                    <button type="button" class="btn btn-outline-primary px-4 rounded-pill small" data-bs-dismiss="modal" style="font-size: 0.75rem;">Cancel</button>
+                    <button type="button" class="btn btn-danger px-4 rounded-pill small" id="confirmArchiveBtn" style="font-size: 0.75rem; background-color: #dc3545; border: none;">Submit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 <div class="offcanvas offcanvas-end border-0 shadow" tabindex="-1" id="offcanvasAddCompanyMaterial" aria-labelledby="offcanvasAddCompanyMaterialLabel" style="width: 400px;">
     <div class="offcanvas-header bg-white border-bottom py-3">
         <h5 class="offcanvas-title fw-bold h6 mb-0" id="offcanvasAddCompanyMaterialLabel">Add Company Material</h5>
@@ -1412,7 +1511,24 @@
                                         </div>
                                     </div>
                                     <div class="ms-2">
-                                        <i class="far fa-circle text-primary" style="font-size: 10px;"></i>
+                                        <div class="dropdown">
+                                            <button class="btn btn-light btn-sm rounded-circle p-0 d-flex align-items-center justify-content-center no-caret" 
+                                                    type="button" data-bs-toggle="dropdown" aria-expanded="false" 
+                                                    style="width: 24px; height: 24px; background-color: #f0f4f8; border: none;">
+                                                <i class="fas fa-ellipsis-h text-primary" style="font-size: 10px;"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end shadow border-0 py-2 animate__animated animate__fadeIn animate__faster" 
+                                                style="font-size: 0.75rem; border-radius: 10px; min-width: 110px; box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;">
+                                                <li><a class="dropdown-item edit-contact-btn py-2 d-flex align-items-center" href="javascript:void(0)" 
+                                                    data-id="${contact.id}" 
+                                                    data-name="${contact.name}" 
+                                                    data-email="${contact.email}" 
+                                                    data-phone="${contact.phone}">
+                                                    <i class="fas fa-edit me-2 opacity-50" style="width: 14px;"></i>Edit</a></li>
+                                                <li><a class="dropdown-item archive-contact-btn py-2 text-danger d-flex align-items-center" href="javascript:void(0)" data-id="${contact.id}">
+                                                    <i class="fas fa-trash-alt me-2 opacity-50" style="width: 14px;"></i>Archive</a></li>
+                                            </ul>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -1431,6 +1547,173 @@
                         btn.disabled = false;
                         btn.innerHTML = originalHtml;
                         alert(data.message || 'Error adding contact.');
+                    }
+                })
+                .catch(err => {
+                    btn.disabled = false;
+                    btn.innerHTML = originalHtml;
+                    console.error('Error:', err);
+                });
+            });
+        }
+
+        // --- ARCHIVED CONTACTS TOGGLE ---
+        const archivedToggle = document.getElementById('showArchivedContacts');
+        if (archivedToggle) {
+            archivedToggle.addEventListener('change', function() {
+                const archivedContacts = document.querySelectorAll('.archived-contact');
+                archivedContacts.forEach(contact => {
+                    if (this.checked) {
+                        contact.classList.remove('d-none');
+                        contact.classList.add('animate__fadeIn');
+                    } else {
+                        contact.classList.add('d-none');
+                        contact.classList.remove('animate__fadeIn');
+                    }
+                });
+            });
+        }
+
+        // --- CONTACT EDIT/ARCHIVE HANDLERS ---
+        
+        // Handle Edit Button Click
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.edit-contact-btn')) {
+                const btn = e.target.closest('.edit-contact-btn');
+                const id = btn.dataset.id;
+                const name = btn.dataset.name;
+                const email = btn.dataset.email;
+                const phone = btn.dataset.phone;
+
+                document.getElementById('edit_contact_id').value = id;
+                document.getElementById('edit_contact_name').value = name;
+                document.getElementById('edit_contact_email').value = email;
+                document.getElementById('edit_contact_phone').value = phone;
+
+                // Open the offcanvas (Bootstrap 5)
+                const editOffcanvas = new bootstrap.Offcanvas(document.getElementById('offcanvasEditContact'));
+                editOffcanvas.show();
+            }
+
+            if (e.target.closest('.archive-contact-btn')) {
+                const btn = e.target.closest('.archive-contact-btn');
+                const id = btn.dataset.id;
+                
+                // Store ID and show custom modal
+                document.getElementById('archive_contact_id').value = id;
+                const archiveModal = new bootstrap.Modal(document.getElementById('archiveContactModal'));
+                archiveModal.show();
+            }
+        });
+
+        // Handle Confirm Archive Button Click
+        const confirmArchiveBtn = document.getElementById('confirmArchiveBtn');
+        if (confirmArchiveBtn) {
+            confirmArchiveBtn.addEventListener('click', function() {
+                const id = document.getElementById('archive_contact_id').value;
+                const btn = this;
+                const originalHtml = btn.innerHTML;
+                
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Archiving...';
+                
+                fetch('{% url "accounts:ajax_archive_contact" %}', {
+                    method: 'POST',
+                    body: JSON.stringify({ contact_id: id }),
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Find and remove the contact item
+                        const items = document.querySelectorAll('.contact-item');
+                        items.forEach(item => {
+                            const archiveBtn = item.querySelector('.archive-contact-btn');
+                            if (archiveBtn && archiveBtn.dataset.id == id) {
+                                item.remove();
+                            }
+                        });
+
+                        // If no contacts left, show placeholder
+                        const list = document.querySelector('.contacts-list');
+                        if (list && document.querySelectorAll('.contact-item').length === 0) {
+                            list.innerHTML = `
+                                <div class="text-center py-4 text-muted bg-light bg-opacity-50 border rounded-3 mb-3">
+                                    <i class="fas fa-user-friends d-block mb-2 opacity-50"></i>
+                                    <span style="font-size: 0.7rem;">No contacts linked yet.</span>
+                                </div>
+                            `;
+                        }
+
+                        bootstrap.Modal.getInstance(document.getElementById('archiveContactModal')).hide();
+                        btn.disabled = false;
+                        btn.innerHTML = originalHtml;
+                    } else {
+                        btn.disabled = false;
+                        btn.innerHTML = originalHtml;
+                        alert(data.message || 'Error archiving contact.');
+                    }
+                })
+                .catch(err => {
+                    btn.disabled = false;
+                    btn.innerHTML = originalHtml;
+                    console.error('Error:', err);
+                });
+            });
+        }
+
+        // Handle Edit Form Submission
+        const editContactForm = document.getElementById('editContactForm');
+        if (editContactForm) {
+            editContactForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const btn = document.getElementById('submitEditContactBtn');
+                const originalHtml = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Updating...';
+
+                const formData = new FormData(this);
+                fetch('{% url "accounts:ajax_edit_contact" %}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Refresh the page or update the specific contact item
+                        // For simplicity and accuracy of joined data, let's refresh or update the specific item
+                        const contact = data.contact;
+                        // Find the contact item and update its content
+                        const items = document.querySelectorAll('.contact-item');
+                        items.forEach(item => {
+                            const editBtn = item.querySelector('.edit-contact-btn');
+                            if (editBtn && editBtn.dataset.id == contact.id) {
+                                item.querySelector('.text-dark.fw-bold').innerText = contact.name;
+                                item.querySelector('.text-primary.small').innerText = contact.email;
+                                item.querySelector('.text-muted.small span').innerText = contact.phone;
+                                
+                                // Update dataset
+                                editBtn.dataset.name = contact.name;
+                                editBtn.dataset.email = contact.email;
+                                editBtn.dataset.phone = contact.phone;
+                            }
+                        });
+
+                        bootstrap.Offcanvas.getInstance(document.getElementById('offcanvasEditContact')).hide();
+                        btn.disabled = false;
+                        btn.innerHTML = originalHtml;
+                    } else {
+                        btn.disabled = false;
+                        btn.innerHTML = originalHtml;
+                        alert(data.message || 'Error updating contact.');
                     }
                 })
                 .catch(err => {

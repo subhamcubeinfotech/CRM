@@ -26,6 +26,8 @@ urlpatterns = [
     # AJAX OTP Endpoints
     path('ajax/send-otp/', views_auth.ajax_send_otp, name='ajax_send_otp'),
     path('ajax/verify-otp/', views_auth.ajax_verify_otp, name='ajax_verify_otp'),
+    path('ajax/edit-contact/', views.ajax_edit_contact, name='ajax_edit_contact'),
+    path('ajax/archive-contact/', views.ajax_archive_contact, name='ajax_archive_contact'),
     path('ajax/add-contact/', views.ajax_add_contact, name='ajax_add_contact'),
     path('ajax/help-ticket/', views.ajax_help_ticket, name='ajax_help_ticket'),
     path('<int:pk>/ajax/associate-material/', views.ajax_associate_material, name='ajax_associate_material'),

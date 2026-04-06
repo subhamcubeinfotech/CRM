@@ -431,3 +431,70 @@ def ajax_add_contact(request):
     except Exception as e:
         logger.exception('Failed to create contact: %s', e)
         return JsonResponse({'success': False, 'message': f'Error: {str(e)}'}, status=500)
+
+
+@login_required
+@require_POST
+def ajax_edit_contact(request):
+    """AJAX update a contact (CustomUser)"""
+    contact_id = request.POST.get('contact_id')
+    name = request.POST.get('name')
+    email = request.POST.get('email')
+    phone = request.POST.get('phone')
+    
+    if not all([contact_id, name, email]):
+        return JsonResponse({'success': False, 'message': 'Required fields missing'}, status=400)
+    
+    from .models import CustomUser
+    contact = get_object_or_404(CustomUser, pk=contact_id)
+    
+    # Check access (same company or tenant)
+    if contact.tenant != request.user.tenant and contact.company.tenant != request.user.tenant:
+         return JsonResponse({'success': False, 'message': 'Permission denied'}, status=403)
+
+    try:
+        contact.email = email
+        contact.first_name = name.split(' ')[0]
+        contact.last_name = ' '.join(name.split(' ')[1:]) if ' ' in name else ''
+        contact.phone = phone
+        contact.save()
+        
+        return JsonResponse({
+            'success': True,
+            'contact': {
+                'id': contact.id,
+                'name': contact.get_full_name() or contact.username,
+                'email': contact.email,
+                'phone': contact.phone or "(---) --- ----"
+            }
+        })
+    except Exception as e:
+        logger.exception('Failed to update contact: %s', e)
+        return JsonResponse({'success': False, 'message': f'Error: {str(e)}'}, status=500)
+
+
+@login_required
+@require_POST
+def ajax_archive_contact(request):
+    """AJAX archive a contact (set is_active=False)"""
+    import json
+    data = json.loads(request.body)
+    contact_id = data.get('contact_id')
+    
+    if not contact_id:
+        return JsonResponse({'success': False, 'message': 'Contact ID missing'}, status=400)
+    
+    from .models import CustomUser
+    contact = get_object_or_404(CustomUser, pk=contact_id)
+    
+    # Check access
+    if contact.tenant != request.user.tenant and contact.company.tenant != request.user.tenant:
+         return JsonResponse({'success': False, 'message': 'Permission denied'}, status=403)
+         
+    try:
+        contact.is_active = False
+        contact.save()
+        return JsonResponse({'success': True})
+    except Exception as e:
+        logger.exception('Failed to archive contact: %s', e)
+        return JsonResponse({'success': False, 'message': f'Error: {str(e)}'}, status=500)
