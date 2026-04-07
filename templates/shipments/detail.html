@@ -643,6 +643,64 @@
         background: #fee2e2;
         color: #ef4444;
     }
+
+    /* Location Modal Styles */
+    .location-modal .modal-content {
+        border-radius: 24px;
+        border: none;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.12);
+        overflow: hidden;
+    }
+    .location-modal .modal-header {
+        padding: 32px 32px 20px;
+        border-bottom: none;
+        background: #fff;
+    }
+    .location-modal .modal-body {
+        padding: 0 32px 32px;
+    }
+    .location-modal .modal-footer {
+        padding: 0 32px 32px;
+        border-top: none;
+        justify-content: flex-start;
+    }
+    .location-modal .detail-item {
+        margin-bottom: 24px;
+    }
+    .location-modal .detail-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #64748b;
+        margin-bottom: 8px;
+    }
+    .location-modal .detail-value {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #1e293b;
+        line-height: 1.4;
+    }
+    .location-modal .btn-view-more {
+        background: #2563eb;
+        color: #fff;
+        border-radius: 12px;
+        padding: 12px 24px;
+        font-weight: 700;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        transition: all 0.2s;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+    }
+    .location-modal .btn-view-more:hover {
+        background: #1d4ed8;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3);
+        color: #fff;
+    }
 </style>
 {% endblock %}
 
@@ -736,13 +794,24 @@
 
 
 
-        <!-- Supplier & Receiver -->
         <div class="row g-4">
             <div class="col-md-5">
                 <div class="party-label mb-1">Supplier</div>
                 <div class="party-name">{{ shipment.shipper.name|default:shipment.customer.name }}</div>
                 {% if shipment.shipper %}
-                <div class="party-detail"><i class="fas fa-map-marker-alt text-primary me-1"></i>{{ shipment.shipper.full_address }}</div>
+                <div class="party-detail">
+                    <a href="javascript:void(0)" class="text-primary text-decoration-none location-modal-trigger fw-semibold"
+                       data-address="{{ shipment.shipper.full_address }}"
+                       data-name="{{ shipment.shipper.name }}"
+                       data-phone="{{ shipment.shipper.phone|default:'-' }}"
+                       data-shipping-req="{{ shipment.shipper.shipping_requirements|default:'-' }}"
+                       data-pickup-appt="{{ shipment.get_pickup_appointment_type_display }}"
+                       data-delivery-appt="{{ shipment.get_delivery_appointment_type_display }}"
+                       data-id="{% if shipment.pickup_location %}{{ shipment.pickup_location.pk }}{% endif %}"
+                       data-company-id="{{ shipment.shipper.id }}">
+                        <i class="fas fa-map-marker-alt me-1"></i> {{ shipment.shipper.full_address }}
+                    </a>
+                </div>
                 {% endif %}
                 <div class="party-detail"><i class="fas fa-hashtag me-1 text-muted"></i>P/U No: {{ shipment.pickup_number|default:"-" }}</div>
                 <div class="party-detail mt-1"><i class="fas fa-handshake me-1 text-muted"></i>FOB Origin</div>
@@ -760,11 +829,47 @@
                     {% endif %}
                 </div>
                 {% if shipment.destination_address %}
-                <div class="party-detail"><i class="fas fa-map-marker-alt text-primary me-1"></i>{{ shipment.destination_address }}{% if shipment.destination_city or shipment.destination_state or shipment.destination_postal_code or shipment.destination_country %}, {{ shipment.destination_city }}{% if shipment.destination_state %}, {{ shipment.destination_state }}{% endif %}{% if shipment.destination_postal_code %} {{ shipment.destination_postal_code }}{% endif %}{% if shipment.destination_country %}, {{ shipment.destination_country }}{% endif %}{% endif %}</div>
+                <div class="party-detail">
+                    <a href="javascript:void(0)" class="text-primary text-decoration-none location-modal-trigger fw-semibold"
+                       data-address="{{ shipment.destination_address }}{% if shipment.destination_city or shipment.destination_state or shipment.destination_postal_code or shipment.destination_country %}, {{ shipment.destination_city }}{% if shipment.destination_state %}, {{ shipment.destination_state }}{% endif %}{% if shipment.destination_postal_code %} {{ shipment.destination_postal_code }}{% endif %}{% if shipment.destination_country %}, {{ shipment.destination_country }}{% endif %}{% endif %}"
+                       data-name="{% if shipment.consignee %}{{ shipment.consignee.name }}{% else %}{{ shipment.customer.name }}{% endif %}"
+                       data-phone="{% if shipment.consignee %}{{ shipment.consignee.phone|default:'-' }}{% else %}-{% endif %}"
+                       data-shipping-req="{% if shipment.consignee %}{{ shipment.consignee.shipping_requirements|default:'-' }}{% else %}-{% endif %}"
+                       data-pickup-appt="{{ shipment.get_pickup_appointment_type_display }}"
+                       data-delivery-appt="{{ shipment.get_delivery_appointment_type_display }}"
+                       data-id="{% if shipment.destination_location %}{{ shipment.destination_location.pk }}{% endif %}"
+                       data-company-id="{% if shipment.consignee %}{{ shipment.consignee.id }}{% else %}{{ shipment.customer.id }}{% endif %}">
+                        <i class="fas fa-map-marker-alt me-1"></i> {{ shipment.destination_address }}{% if shipment.destination_city or shipment.destination_state or shipment.destination_postal_code or shipment.destination_country %}, {{ shipment.destination_city }}{% if shipment.destination_state %}, {{ shipment.destination_state }}{% endif %}{% if shipment.destination_postal_code %} {{ shipment.destination_postal_code }}{% endif %}{% if shipment.destination_country %}, {{ shipment.destination_country }}{% endif %}{% endif %}
+                    </a>
+                </div>
                 {% elif shipment.consignee %}
-                <div class="party-detail"><i class="fas fa-map-marker-alt text-primary me-1"></i>{{ shipment.consignee.full_address }}</div>
+                <div class="party-detail">
+                    <a href="javascript:void(0)" class="text-primary text-decoration-none location-modal-trigger fw-semibold"
+                       data-address="{{ shipment.consignee.full_address }}"
+                       data-name="{{ shipment.consignee.name }}"
+                       data-phone="{{ shipment.consignee.phone|default:'-' }}"
+                       data-shipping-req="{{ shipment.consignee.shipping_requirements|default:'-' }}"
+                       data-pickup-appt="{{ shipment.get_pickup_appointment_type_display }}"
+                       data-delivery-appt="{{ shipment.get_delivery_appointment_type_display }}"
+                       data-id="{% if shipment.destination_location %}{{ shipment.destination_location.pk }}{% endif %}"
+                       data-company-id="{{ shipment.consignee.id }}">
+                        <i class="fas fa-map-marker-alt me-1"></i> {{ shipment.consignee.full_address }}
+                    </a>
+                </div>
                 {% elif shipment.order and shipment.order.receiver %}
-                <div class="party-detail"><i class="fas fa-map-marker-alt text-primary me-1"></i>{{ shipment.order.receiver.full_address }}</div>
+                <div class="party-detail">
+                    <a href="javascript:void(0)" class="text-primary text-decoration-none location-modal-trigger fw-semibold"
+                       data-address="{{ shipment.order.receiver.full_address }}"
+                       data-name="{{ shipment.order.receiver.name }}"
+                       data-phone="{{ shipment.order.receiver.phone|default:'-' }}"
+                       data-shipping-req="{{ shipment.order.receiver.shipping_requirements|default:'-' }}"
+                       data-pickup-appt="{{ shipment.get_pickup_appointment_type_display }}"
+                       data-delivery-appt="{{ shipment.get_delivery_appointment_type_display }}"
+                       data-id="{% if shipment.destination_location %}{{ shipment.destination_location.pk }}{% endif %}"
+                       data-company-id="{{ shipment.order.receiver.id }}">
+                        <i class="fas fa-map-marker-alt me-1"></i> {{ shipment.order.receiver.full_address }}
+                    </a>
+                </div>
                 {% endif %}
                 <div class="party-detail"><i class="fas fa-hashtag me-1 text-muted"></i>Del No: {{ shipment.delivery_number|default:"-" }}</div>
                 <div class="party-detail mt-1"><i class="fas fa-handshake me-1 text-muted"></i>FOB Destination</div>
@@ -2875,7 +2980,89 @@
             calculatePlTotals();
             updatePlUnitLabels();
         }
+
+        // Location Modal Logic
+        const modalTriggers = document.querySelectorAll('.location-modal-trigger');
+        const locModal = new bootstrap.Modal(document.getElementById('locationDetailModal'));
+        
+        modalTriggers.forEach(el => {
+            el.addEventListener('click', function() {
+                const data = this.dataset;
+                document.getElementById('locModalTitle').innerText = data.address;
+                document.getElementById('locModalAddress').innerText = data.address;
+                document.getElementById('locModalName').innerText = data.name;
+                document.getElementById('locModalPhone').innerText = data.phone;
+                document.getElementById('locModalShippingReq').innerText = data.shippingReq;
+                document.getElementById('locModalPickupAppt').innerText = data.pickupAppt;
+                document.getElementById('locModalDeliveryAppt').innerText = data.deliveryAppt;
+                
+                const viewMoreBtn = document.getElementById('locModalViewMore');
+                if (data.companyId) {
+                    viewMoreBtn.href = `/companies/${data.companyId}/?tab=locations`;
+                    viewMoreBtn.style.display = 'flex';
+                } else if (data.id) {
+                    viewMoreBtn.href = `/inventory/warehouses/${data.id}/`;
+                    viewMoreBtn.style.display = 'flex';
+                } else {
+                    viewMoreBtn.style.display = 'none';
+                }
+                
+                locModal.show();
+            });
+        });
     });
 </script>
+
+<!-- Location Detail Modal -->
+<div class="modal fade location-modal" id="locationDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header d-block position-relative">
+                <button type="button" class="btn btn-outline-secondary rounded-circle p-0 position-absolute d-flex align-items-center justify-content-center bg-white" 
+                        style="top: 24px; right: 24px; width: 36px; height: 36px; border-color: #cbd5e1;" data-bs-dismiss="modal">
+                    <i class="fas fa-times" style="font-size: 1rem; color: #475569;"></i>
+                </button>
+                <div class="d-flex align-items-center text-muted mb-2 fw-medium" style="font-size: 1rem;">
+                    <i class="far fa-paper-plane me-2"></i> Location
+                </div>
+                <h3 class="modal-title fw-bold text-dark pe-5" id="locModalTitle" style="font-size: 1.75rem; line-height: 1.2;">-</h3>
+            </div>
+            <div class="modal-body">
+                <div class="detail-item">
+                    <div class="detail-label">Address</div>
+                    <div class="detail-value d-flex align-items-start">
+                        <i class="fas fa-map-marker-alt text-muted mt-1 me-2" style="font-size: 0.9rem;"></i>
+                        <span id="locModalAddress">-</span>
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Name</div>
+                    <div class="detail-value" id="locModalName">-</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Phone Number</div>
+                    <div class="detail-value" id="locModalPhone">-</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Shipping Requirements</div>
+                    <div class="detail-value" id="locModalShippingReq">-</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Pickup Appointment</div>
+                    <div class="detail-value text-uppercase" id="locModalPickupAppt">-</div>
+                </div>
+                <div class="detail-item mb-0">
+                    <div class="detail-label">Delivery Appointment</div>
+                    <div class="detail-value text-uppercase" id="locModalDeliveryAppt">-</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a href="#" class="btn btn-view-more" id="locModalViewMore">
+                    View more <i class="fas fa-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
 
 {% endblock %}

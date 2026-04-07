@@ -1146,6 +1146,8 @@
         const tabParam = urlParams.get('tab');
         if (tabParam === 'locations' && locationsTab) {
             bootstrap.Tab.getOrCreateInstance(locationsTab).show();
+            // Call initMap directly for ?tab=locations to avoid event race conditions
+            setTimeout(initMap, 500);
         }
 
         let mapInitialized = false;
@@ -1154,19 +1156,29 @@
 
         function initMap() {
             if (mapInitialized) return;
+            if (typeof L === 'undefined') {
+                console.error('Leaflet (L) is not defined. Map cannot be initialized.');
+                return;
+            }
 
             // Map container div clear
             const mapContainer = document.getElementById('map');
             if (!mapContainer) return;
             mapContainer.innerHTML = '';
 
-            // Initialize map
-            map = L.map('map').setView([20, 0], 2);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                attribution: '&copy; OpenStreetMap &copy; CARTO',
-                subdomains: 'abcd',
-                maxZoom: 20
-            }).addTo(map);
+            try {
+                // Initialize map
+                map = L.map('map').setView([20, 0], 2);
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                    attribution: '&copy; OpenStreetMap &copy; CARTO',
+                    subdomains: 'abcd',
+                    maxZoom: 20
+                }).addTo(map);
+            } catch (err) {
+                console.error('Map initialization error:', err);
+                mapContainer.innerHTML = '<div class="text-center p-4 text-danger">Failed to initialize map.</div>';
+                return;
+            }
 
             const locationCards = document.querySelectorAll('.location-card');
             const bounds = L.latLngBounds();
