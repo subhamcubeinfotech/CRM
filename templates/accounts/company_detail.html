@@ -1263,8 +1263,48 @@
             });
 
             saveBtn.addEventListener('click', () => {
-                views.forEach(v => v.classList.remove('d-none'));
-                edits.forEach(e => e.classList.add('d-none'));
+                const textarea = aboutSection.querySelector('textarea');
+                if (!textarea) return;
+                
+                const description = textarea.value;
+                
+                // Show loading state
+                const originalBtnHtml = saveBtn.innerHTML;
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
+
+                fetch("{% url 'accounts:ajax_update_company_about' company.pk %}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: new URLSearchParams({
+                        'description': description
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = originalBtnHtml;
+
+                    if (data.success) {
+                        const aboutText = aboutSection.querySelector('.about-text');
+                        if (aboutText) {
+                            aboutText.innerText = data.description || "No description provided for this company.";
+                        }
+                        views.forEach(v => v.classList.remove('d-none'));
+                        edits.forEach(e => e.classList.add('d-none'));
+                    } else {
+                        alert('Failed to save: ' + (data.message || 'Unknown error'));
+                    }
+                })
+                .catch(err => {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = originalBtnHtml;
+                    console.error('Save error:', err);
+                    alert('An error occurred while saving.');
+                });
             });
         }
 

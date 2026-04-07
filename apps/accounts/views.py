@@ -562,3 +562,31 @@ def ajax_archive_contact(request):
         logger.exception('Failed to archive contact: %s', e)
         return JsonResponse({'success': False, 'message': f'Error: {str(e)}'}, status=500)
 
+
+@login_required
+@require_POST
+def ajax_update_company_about(request, pk):
+    """AJAX update for company description (About section)"""
+    company = get_object_or_404(Company.plain_objects, pk=pk)
+    
+    # Check access (same company or tenant)
+    if not getattr(request.user, 'is_admin', False):
+        if request.user.tenant != company.tenant:
+             return JsonResponse({'success': False, 'message': 'Permission denied'}, status=403)
+             
+    description = request.POST.get('description', '')
+    company.description = description
+    company.save()
+    
+    # Log History
+    from .models import CompanyHistory
+    CompanyHistory.objects.create(
+        company=company,
+        user=request.user,
+        action="Updated Company About",
+        description=f"Updated the 'About' section for {company.name}.",
+        icon="fas fa-edit"
+    )
+    
+    return JsonResponse({'success': True, 'description': company.description})
+
