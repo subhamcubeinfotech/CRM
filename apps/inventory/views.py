@@ -424,7 +424,6 @@ def inventory_item_add_general(request):
         packagings = request.POST.getlist('packaging')
         pieces_list = request.POST.getlist('pieces')
         notes_list = request.POST.getlist('description')
-        lot_numbers = request.POST.getlist('lot_number')
         palletized_choices = request.POST.getlist('is_palletized')
         offered_weights = request.POST.getlist('offered_weight')
         offered_weight_units = request.POST.getlist('offered_weight_unit')
@@ -454,7 +453,7 @@ def inventory_item_add_general(request):
                 'description': notes_list[i] if i < len(notes_list) else '',
                 # Shared fields
                 'po_number': request.POST.get('po_number'),
-                'lot_number': lot_numbers[i] if i < len(lot_numbers) else '',
+                'lot_number': request.POST.get('lot_number'),
                 'shipping_terms': request.POST.get('shipping_terms'),
                 'tags': request.POST.getlist('tags'),
                 'company': request.POST.get('company'),

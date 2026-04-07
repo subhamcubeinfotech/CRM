@@ -145,6 +145,12 @@
                         {{ form.po_number }}
                     </div>
 
+                    <!-- Lot Number (Global) -->
+                    <div class="col-12">
+                        <label class="form-label mb-1 text-uppercase fw-bold">Lot Number</label>
+                        {{ form.lot_number }}
+                    </div>
+
                     <!-- Lot Number moved inside group -->
 
                     <!-- Grouped Inventory Container -->
@@ -206,12 +212,7 @@
                                     {{ form.pieces }}
                                 </div>
 
-                                <!-- Lot Number & Palletized -->
-                                <div class="col-md-7">
-                                    <label class="form-label mb-1 text-uppercase fw-bold">Lot Number</label>
-                                    <input type="text" name="lot_number" class="form-control" placeholder="Lot Number" value="{{ form.lot_number.value|default:'' }}">
-                                </div>
-                                <div class="col-md-5">
+                                <div class="col-md-12">
                                     <label class="form-label mb-1 text-uppercase fw-bold">Palletized</label>
                                     <select name="is_palletized" class="form-select">
                                         <option value="no" {% if not form.is_palletized.value %}selected{% endif %}>No</option>
