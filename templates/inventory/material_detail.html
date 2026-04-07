@@ -122,7 +122,6 @@
                                 <th>Role</th>
                                 <th>Latest Activity</th>
                                 <th>Current Stock</th>
-                                <th>Status</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -148,21 +147,11 @@
                                     <span class="fw-bold text-dark">{{ partner.stock_qty|floatformat:2 }} {{ partner.unit }}</span>
                                     {% else %}—{% endif %}
                                 </td>
-                                <td>
-                                    {% if partner.is_stockist %}
-                                        {% if partner.stock_qty > 0 %}
-                                        <span class="badge bg-success-subtle text-success rounded-pill px-2">Available</span>
-                                        {% else %}
-                                        <span class="badge bg-warning-subtle text-warning rounded-pill px-2">Zero Stock</span>
-                                        {% endif %}
-                                    {% else %}
-                                    <span class="badge bg-light text-muted rounded-pill px-2">Past Dealer</span>
-                                    {% endif %}
                                 </td>
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="5" class="text-center py-4 text-muted">No companies found associated with this material.</td>
+                                <td colspan="4" class="text-center py-4 text-muted">No companies found associated with this material.</td>
                             </tr>
                             {% endfor %}
                         </tbody>
