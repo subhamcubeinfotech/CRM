@@ -444,8 +444,8 @@ def inventory_item_add_general(request):
                 'sku': skus[i] if i < len(skus) else '',
                 'offered_weight': offered_weights[i] if i < len(offered_weights) else (quantities[i] if i < len(quantities) else 0),
                 'offered_weight_unit': offered_weight_units[i] if i < len(offered_weight_units) else (uoms[i] if i < len(uoms) else 'lbs'),
-                'quantity': quantities[i] if i < len(quantities) else 0,
-                'unit_of_measure': uoms[i] if i < len(uoms) else 'lbs',
+                'quantity': quantities[i] if (i < len(quantities) and quantities[i]) else (offered_weights[i] if i < len(offered_weights) else 0),
+                'unit_of_measure': uoms[i] if (i < len(uoms) and uoms[i]) else (offered_weight_units[i] if i < len(offered_weight_units) else 'lbs'),
                 'unit_cost': unit_costs[i] if i < len(unit_costs) else 0,
                 'price_unit': price_units[i] if i < len(price_units) else 'per lbs',
                 'packaging': packagings[i] if i < len(packagings) else '',
@@ -542,6 +542,12 @@ def inventory_item_add(request, pk):
         post_data = request.POST.copy()
         post_data['warehouse'] = resolve_location(request, warehouse_val)
         
+        # Default quantity/unit to offered weight if missing
+        if not post_data.get('quantity'):
+            post_data['quantity'] = post_data.get('offered_weight', 0)
+        if not post_data.get('unit_of_measure'):
+            post_data['unit_of_measure'] = post_data.get('offered_weight_unit', 'lbs')
+
         form = InventoryItemForm(post_data, user=request.user)
         if form.is_valid():
             item = form.save(commit=False)
@@ -602,6 +608,12 @@ def inventory_item_edit(request, pk):
         warehouse_val = request.POST.get('warehouse')
         post_data = request.POST.copy()
         post_data['warehouse'] = resolve_location(request, warehouse_val)
+
+        # Default quantity/unit to offered weight if missing
+        if not post_data.get('quantity'):
+            post_data['quantity'] = post_data.get('offered_weight', 0)
+        if not post_data.get('unit_of_measure'):
+            post_data['unit_of_measure'] = post_data.get('offered_weight_unit', 'lbs')
 
         form = InventoryItemForm(post_data, instance=item, user=request.user)
         if form.is_valid():
