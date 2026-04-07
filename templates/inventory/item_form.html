@@ -185,15 +185,6 @@
                                     {{ form.offered_weight_unit }}
                                 </div>
 
-                                <!-- Current Stock & Unit -->
-                                <div class="col-md-7">
-                                    <label class="form-label mb-1 text-uppercase fw-bold">Current Stock<span class="text-danger">*</span></label>
-                                    {{ form.quantity }}
-                                </div>
-                                <div class="col-md-5">
-                                    <label class="form-label mb-1 text-uppercase fw-bold">Unit</label>
-                                    {{ form.unit_of_measure }}
-                                </div>
 
                                 <!-- Price & Unit -->
                                 <div class="col-md-7">
@@ -808,26 +799,12 @@
     // Unit Synchronization Logic
     function setupUnitSync(group) {
         const offeredUnitSelect = group.querySelector('select[name="offered_weight_unit"]');
-        const weightUnitSelect = group.querySelector('select[name="unit_of_measure"]');
         const priceUnitSelect = group.querySelector('select[name="price_unit"]');
         
-        if (!weightUnitSelect || !priceUnitSelect) return;
+        if (!offeredUnitSelect || !priceUnitSelect) return;
 
-        // Auto-sync offered unit with quantity unit
-        if (offeredUnitSelect && weightUnitSelect) {
-            weightUnitSelect.addEventListener('change', function() {
-                if (!offeredUnitSelect.value || offeredUnitSelect.value === 'lbs') {
-                    offeredUnitSelect.value = this.value;
-                }
-            });
-            offeredUnitSelect.addEventListener('change', function() {
-                if (!weightUnitSelect.value || weightUnitSelect.value === 'lbs') {
-                    weightUnitSelect.value = this.value;
-                }
-            });
-        }
-
-        weightUnitSelect.addEventListener('change', function() {
+        // Auto-sync price unit with weight unit
+        offeredUnitSelect.addEventListener('change', function() {
             const val = this.value.toLowerCase();
             for (let option of priceUnitSelect.options) {
                 if (option.value.toLowerCase() === 'per ' + val) {
@@ -837,34 +814,19 @@
             }
         });
 
+        // Inverse sync - Price unit back to weight unit
         priceUnitSelect.addEventListener('change', function() {
             const val = this.value.toLowerCase();
             if (val.startsWith('per ')) {
                 const baseUnit = val.replace('per ', '');
-                for (let option of weightUnitSelect.options) {
+                for (let option of offeredUnitSelect.options) {
                     if (option.value.toLowerCase() === baseUnit) {
-                        weightUnitSelect.value = option.value;
-                        if (offeredUnitSelect) offeredUnitSelect.value = option.value;
+                        offeredUnitSelect.value = option.value;
                         break;
                     }
                 }
             }
         });
-
-        // For Creation: Sync weight and quantity if one is changed and the other is empty
-        const offeredWeightInput = group.querySelector('input[name="offered_weight"]');
-        const quantityInput = group.querySelector('input[name="quantity"]');
-        if (offeredWeightInput && quantityInput) {
-            quantityInput.addEventListener('input', function() {
-                if (!offeredWeightInput.value || offeredWeightInput.getAttribute('data-synced') === 'true') {
-                    offeredWeightInput.value = this.value;
-                    offeredWeightInput.setAttribute('data-synced', 'true');
-                }
-            });
-            offeredWeightInput.addEventListener('input', function() {
-                offeredWeightInput.setAttribute('data-synced', 'false');
-            });
-        }
     }
 
     // Grouped Inventory Logic
