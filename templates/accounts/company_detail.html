@@ -590,8 +590,12 @@
         <form>
             <div class="mb-4">
                 <label class="form-label small fw-bold text-muted text-uppercase mb-2">Date *</label>
-                <input type="date" class="form-control rounded-pill bg-light border-0 px-3" value="{% now 'Y-m-d' %}"
-                    required>
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-0 rounded-start-pill ps-3"><i
+                            class="fas fa-calendar-alt text-primary"></i></span>
+                    <input type="text" class="form-control flatpickr-date rounded-end-pill bg-light border-0 px-3" value="{% now 'Y-m-d' %}"
+                        required readonly>
+                </div>
             </div>
 
             <div class="mb-4">
@@ -605,8 +609,8 @@
                 <div class="input-group">
                     <span class="input-group-text bg-light border-0 rounded-start-pill ps-3"><i
                             class="fas fa-calendar-plus text-primary"></i></span>
-                    <input type="text" class="form-control rounded-end-pill bg-light border-0 px-3"
-                        placeholder="Click to set reminder date...">
+                    <input type="text" class="form-control flatpickr-date rounded-end-pill bg-light border-0 px-3"
+                        placeholder="Click to set reminder date..." readonly>
                 </div>
             </div>
 
