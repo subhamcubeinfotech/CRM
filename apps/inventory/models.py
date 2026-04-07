@@ -180,7 +180,7 @@ class InventoryItem(TenantAwareModel):
     
     # Packaging
     packaging = models.CharField(max_length=100, blank=True)
-    pieces = models.IntegerField(default=1, null=True, blank=True)
+    pieces = models.IntegerField(null=True, blank=True)
     is_palletized = models.BooleanField(default=False)
     
     # Financial
