@@ -12,7 +12,7 @@
     </div>
 
     <div class="d-flex align-items-start gap-4">
-        <div class="company-logo-wrapper">
+        <div class="company-logo-wrapper" id="company-logo-wrapper">
             {% if company.logo %}
             <img src="{{ company.logo.url }}" alt="{{ company.name }}" class="company-logo-img">
             {% else %}
@@ -157,10 +157,13 @@
                                     {% if contact.is_contact_archived %}style="display: none !important;" {% endif %}>
                                     <div class="d-flex justify-content-between align-items-start">
                                         <div class="flex-grow-1">
-                                            <div class="fw-bold text-dark" style="font-size: 0.8rem;">{{ contact.get_full_name|default:contact.username }}</div>
-                                            <div class="text-primary small mb-1" style="font-size: 0.7rem;">{{ contact.email }}</div>
+                                            <div class="fw-bold text-dark" style="font-size: 0.8rem;">{{
+                                                contact.get_full_name|default:contact.username }}</div>
+                                            <div class="text-primary small mb-1" style="font-size: 0.7rem;">{{
+                                                contact.email }}</div>
                                             <div class="text-muted small" style="font-size: 0.7rem;">
-                                                Mobile: <span class="text-dark">{{ contact.phone|default:"(---) --- ----" }}</span>
+                                                Mobile: <span class="text-dark">{{ contact.phone|default:"(---) ---
+                                                    ----" }}</span>
                                             </div>
                                         </div>
                                         <div class="ms-2">
@@ -351,7 +354,8 @@
                             {% for order in orders %}
                             <tr data-activity-type="order">
                                 <td class="ps-4">
-                                    <a href="{% url 'orders:order_detail' order.pk %}" class="fw-bold text-primary">{{ order.order_number }}</a>
+                                    <a href="{% url 'orders:order_detail' order.pk %}" class="fw-bold text-primary">{{
+                                        order.order_number }}</a>
                                 </td>
                                 <td><span
                                         class="badge bg-primary-subtle text-primary border rounded-pill px-2">Order</span>
@@ -369,7 +373,8 @@
                                     <span class="small text-muted">Receiver</span>
                                     {% endif %}
                                 </td>
-                                <td class="small fw-bold">{{ order.total_weight_target|floatformat:0 }} {{ order.total_weight_unit }}</td>
+                                <td class="small fw-bold">{{ order.total_weight_target|floatformat:0 }} {{
+                                    order.total_weight_unit }}</td>
                                 <td class="text-end pe-4 small text-muted">{{ order.created_at|date:"M d, Y" }}</td>
                             </tr>
                             {% endfor %}
@@ -432,15 +437,19 @@
                                         <span
                                             class="badge bg-info-subtle text-info border border-info-subtle rounded-pill small">Warehouse</span>
                                         {% endif %}
-                                        <span class="badge bg-light text-muted small border rounded-pill">{{ loc.code }}</span>
+                                        <span class="badge bg-light text-muted small border rounded-pill">{{ loc.code
+                                            }}</span>
                                     </div>
                                 </div>
                                 <p class="small text-muted mb-3">
-                                    <i class="fas fa-map-marker-alt me-2 text-primary opacity-50"></i>{{ loc.full_address }}
+                                    <i class="fas fa-map-marker-alt me-2 text-primary opacity-50"></i>{{
+                                    loc.full_address }}
                                 </p>
                                 <div class="d-flex gap-4 small text-muted mb-4">
-                                    <span><i class="fas fa-phone me-1 opacity-50"></i>{{ loc.phone|default:"N/A" }}</span>
-                                    <span><i class="fas fa-envelope me-1 opacity-50"></i>{{ loc.email|default:"N/A" }}</span>
+                                    <span><i class="fas fa-phone me-1 opacity-50"></i>{{ loc.phone|default:"N/A"
+                                        }}</span>
+                                    <span><i class="fas fa-envelope me-1 opacity-50"></i>{{ loc.email|default:"N/A"
+                                        }}</span>
                                 </div>
                                 <a href="https://www.google.com/maps/search/?api=1&query={{ loc.full_address|urlencode }}"
                                     target="_blank" class="btn btn-outline-primary btn-sm w-100 py-2 rounded-pill">
@@ -504,8 +513,10 @@
                                             class="fw-bold text-dark text-decoration-none">{{ doc.title }}</a>
                                     </div>
                                 </td>
-                                <td><span class="badge bg-light text-muted border rounded-pill">{{ doc.get_document_type_display }}</span></td>
-                                <td class="small text-muted">{{ doc.uploaded_by.get_full_name|default:doc.uploaded_by.username }}</td>
+                                <td><span class="badge bg-light text-muted border rounded-pill">{{
+                                        doc.get_document_type_display }}</span></td>
+                                <td class="small text-muted">{{
+                                    doc.uploaded_by.get_full_name|default:doc.uploaded_by.username }}</td>
                                 <td class="small text-muted">{{ doc.uploaded_at|date:"M d, Y" }}</td>
                                 <td class="text-end pe-4">
                                     <div class="d-flex gap-2 justify-content-end">
@@ -563,7 +574,8 @@
                             </div>
                             <p class="text-muted small mb-0">{{ record.description }}</p>
                             <div class="text-muted extra-small mt-1 italic">
-                                <i class="fas fa-user me-1 opacity-50"></i>{{ record.user.get_full_name|default:record.user.username }}
+                                <i class="fas fa-user me-1 opacity-50"></i>{{
+                                record.user.get_full_name|default:record.user.username }}
                             </div>
                         </div>
                     </div>
@@ -593,8 +605,8 @@
                 <div class="input-group">
                     <span class="input-group-text bg-light border-0 rounded-start-pill ps-3"><i
                             class="fas fa-calendar-alt text-primary"></i></span>
-                    <input type="text" class="form-control flatpickr-date rounded-end-pill bg-light border-0 px-3" value="{% now 'Y-m-d' %}"
-                        required readonly>
+                    <input type="text" class="form-control flatpickr-date rounded-end-pill bg-light border-0 px-3"
+                        value="{% now 'Y-m-d' %}" required readonly>
                 </div>
             </div>
 
@@ -644,6 +656,38 @@
         align-items: center;
         justify-content: center;
         overflow: hidden;
+        position: relative;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .company-logo-wrapper:hover {
+        transform: scale(1.02);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    .company-logo-wrapper::after {
+        content: '\f030';
+        font-family: 'Font Awesome 5 Free';
+        font-weight: 900;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.4);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        border-radius: 1.5rem;
+        font-size: 1.2rem;
+    }
+
+    .company-logo-wrapper:hover::after {
+        opacity: 1;
     }
 
     .company-logo-img {
@@ -1132,6 +1176,61 @@
     </div>
 </div>
 
+<!-- Upload Logo Modal -->
+<div class="modal fade" id="modalUploadLogo" tabindex="-1" aria-labelledby="modalUploadLogoLabel" aria-hidden="true" style="z-index: 1080;">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header border-0 pb-3 pe-4 pt-4 bg-light bg-opacity-50">
+                <h5 class="modal-title fw-bold h5 mb-0" id="modalUploadLogoLabel">Upload Logo</h5>
+                <button type="button" class="btn-close shadow-none border rounded-circle bg-white d-flex align-items-center justify-content-center" 
+                        data-bs-dismiss="modal" aria-label="Close" style="width: 28px; height: 28px; padding: 0;">
+                    <i class="fas fa-times small text-muted" style="font-size: 10px;"></i>
+                </button>
+            </div>
+            <div class="modal-body p-4">
+                <div id="logo-drop-zone" class="border rounded-3 p-4 text-center mb-4" 
+                     style="border-color: #e2e8f0 !important; background-color: #fff; transition: all 0.2s ease;">
+                    
+                    <!-- Buttons Container -->
+                    <div class="d-flex justify-content-center gap-2 mb-3" id="logo-buttons-container">
+                        <button type="button" class="btn btn-light border px-4 d-flex align-items-center gap-2 fw-semibold text-muted" 
+                                id="btn-choose-logo-v2" onclick="document.getElementById('input-logo-file').click()" style="background: #f1f5f9; font-size: 0.85rem;">
+                            <i class="fas fa-plus" style="font-size: 12px;"></i> Choose
+                        </button>
+                        <button type="button" class="btn btn-primary px-4 d-flex align-items-center gap-2 fw-semibold" 
+                                id="btn-set-logo" disabled style="background: #7ca3ff; border-color: #7ca3ff; font-size: 0.85rem;">
+                            <i class="fas fa-upload" style="font-size: 12px;"></i> Set Logo
+                        </button>
+                    </div>
+
+                    <!-- Preview Container (Internal to box) -->
+                    <div id="logo-preview-container" class="mb-3 d-none">
+                        <div class="position-relative d-inline-block p-2 border rounded bg-white">
+                            <img id="logo-preview-img" src="" alt="Preview" class="img-fluid" style="max-height: 80px; object-fit: contain;">
+                            <button type="button" class="btn btn-danger btn-sm rounded-circle position-absolute top-0 start-100 translate-middle shadow-sm" 
+                                    id="btn-clear-preview" style="width: 20px; height: 20px; padding: 0;">
+                                <i class="fas fa-times" style="font-size: 8px;"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <p class="text-muted small mb-0 fw-medium" id="drop-text">Drag and drop a file here to upload</p>
+                    <input type="file" id="input-logo-file" class="d-none" accept="image/*">
+                </div>
+
+                <div class="d-flex justify-content-center">
+                    {% if company.logo %}
+                    <button type="button" class="btn btn-danger px-4 py-2 fw-bold" id="btn-remove-logo" 
+                            style="background-color: #c53030; border: none; border-radius: 8px; font-size: 0.9rem;">
+                        Remove Current Logo
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 {% endblock %}
@@ -1281,9 +1380,9 @@
             saveBtn.addEventListener('click', () => {
                 const textarea = aboutSection.querySelector('textarea');
                 if (!textarea) return;
-                
+
                 const description = textarea.value;
-                
+
                 // Show loading state
                 const originalBtnHtml = saveBtn.innerHTML;
                 saveBtn.disabled = true;
@@ -1299,28 +1398,28 @@
                         'description': description
                     })
                 })
-                .then(response => response.json())
-                .then(data => {
-                    saveBtn.disabled = false;
-                    saveBtn.innerHTML = originalBtnHtml;
+                    .then(response => response.json())
+                    .then(data => {
+                        saveBtn.disabled = false;
+                        saveBtn.innerHTML = originalBtnHtml;
 
-                    if (data.success) {
-                        const aboutText = aboutSection.querySelector('.about-text');
-                        if (aboutText) {
-                            aboutText.innerText = data.description || "No description provided for this company.";
+                        if (data.success) {
+                            const aboutText = aboutSection.querySelector('.about-text');
+                            if (aboutText) {
+                                aboutText.innerText = data.description || "No description provided for this company.";
+                            }
+                            views.forEach(v => v.classList.remove('d-none'));
+                            edits.forEach(e => e.classList.add('d-none'));
+                        } else {
+                            alert('Failed to save: ' + (data.message || 'Unknown error'));
                         }
-                        views.forEach(v => v.classList.remove('d-none'));
-                        edits.forEach(e => e.classList.add('d-none'));
-                    } else {
-                        alert('Failed to save: ' + (data.message || 'Unknown error'));
-                    }
-                })
-                .catch(err => {
-                    saveBtn.disabled = false;
-                    saveBtn.innerHTML = originalBtnHtml;
-                    console.error('Save error:', err);
-                    alert('An error occurred while saving.');
-                });
+                    })
+                    .catch(err => {
+                        saveBtn.disabled = false;
+                        saveBtn.innerHTML = originalBtnHtml;
+                        console.error('Save error:', err);
+                        alert('An error occurred while saving.');
+                    });
             });
         }
 
@@ -1991,6 +2090,148 @@
                         btn.innerHTML = originalHtml;
                         console.error('Error:', err);
                     });
+            });
+        }
+
+        // --- COMPANY LOGO UPLOAD ---
+        const logoWrapper = document.getElementById('company-logo-wrapper');
+        const modalUploadLogoEl = document.getElementById('modalUploadLogo');
+        const modalUploadLogo = modalUploadLogoEl ? new bootstrap.Modal(modalUploadLogoEl) : null;
+        const logoDropZone = document.getElementById('logo-drop-zone');
+        const logoFileInput = document.getElementById('input-logo-file');
+        const btnSetLogo = document.getElementById('btn-set-logo');
+        const btnRemoveLogo = document.getElementById('btn-remove-logo');
+        const logoPreviewContainer = document.getElementById('logo-preview-container');
+        const logoPreviewImg = document.getElementById('logo-preview-img');
+        const btnClearPreview = document.getElementById('btn-clear-preview');
+
+        const logoButtonsContainer = document.getElementById('logo-buttons-container');
+        const dropText = document.getElementById('drop-text');
+
+        if (logoWrapper) {
+            logoWrapper.addEventListener('click', () => modalUploadLogo.show());
+        }
+
+        function handleLogoFile(file) {
+            if (!file || !file.type.startsWith('image/')) return;
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                logoPreviewImg.src = e.target.result;
+                logoPreviewContainer.classList.remove('d-none');
+                btnSetLogo.disabled = false;
+                if (dropText) dropText.classList.add('d-none');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        if (logoDropZone) {
+            logoDropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                logoDropZone.style.borderColor = '#4a6cf7';
+                logoDropZone.style.backgroundColor = '#eff6ff';
+            });
+
+            logoDropZone.addEventListener('dragleave', () => {
+                logoDropZone.style.borderColor = '#cbd5e1';
+                logoDropZone.style.backgroundColor = '#f8fafc';
+            });
+
+            logoDropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                logoDropZone.style.borderColor = '#cbd5e1';
+                logoDropZone.style.backgroundColor = '#f8fafc';
+                const file = e.dataTransfer.files[0];
+                if (file) {
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(file);
+                    logoFileInput.files = dataTransfer.files;
+                    handleLogoFile(file);
+                }
+            });
+        }
+
+        if (logoFileInput) {
+            logoFileInput.addEventListener('change', (e) => {
+                handleLogoFile(e.target.files[0]);
+            });
+        }
+
+        if (btnClearPreview) {
+            btnClearPreview.addEventListener('click', () => {
+                logoPreviewContainer.classList.add('d-none');
+                logoPreviewImg.src = '';
+                btnSetLogo.disabled = true;
+                if (dropText) dropText.classList.remove('d-none');
+                logoFileInput.value = '';
+            });
+        }
+
+        if (btnSetLogo) {
+            btnSetLogo.addEventListener('click', () => {
+                if (!logoFileInput.files[0]) return;
+
+                const formData = new FormData();
+                formData.append('logo', logoFileInput.files[0]);
+
+                btnSetLogo.disabled = true;
+                btnSetLogo.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+                fetch('{% url "accounts:ajax_update_company_logo" company.id %}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert(data.message);
+                        btnSetLogo.disabled = false;
+                        btnSetLogo.innerHTML = '<i class="fas fa-upload" style="font-size: 12px;"></i> Set Logo';
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    btnSetLogo.disabled = false;
+                    btnSetLogo.innerHTML = '<i class="fas fa-upload" style="font-size: 12px;"></i> Set Logo';
+                });
+            });
+        }
+
+        if (btnRemoveLogo) {
+            btnRemoveLogo.addEventListener('click', () => {
+                if (!confirm('Are you sure you want to remove the logo?')) return;
+
+                btnRemoveLogo.disabled = true;
+                btnRemoveLogo.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+                fetch('{% url "accounts:ajax_remove_company_logo" company.id %}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert(data.message);
+                        btnRemoveLogo.disabled = false;
+                        btnRemoveLogo.innerHTML = 'Remove Current Logo';
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    btnRemoveLogo.disabled = false;
+                    btnRemoveLogo.innerHTML = 'Remove Current Logo';
+                });
             });
         }
     });
