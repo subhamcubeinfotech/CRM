@@ -590,3 +590,36 @@ def ajax_update_company_about(request, pk):
     
     return JsonResponse({'success': True, 'description': company.description})
 
+
+@login_required
+@require_POST
+def ajax_update_company_logo(request, pk):
+    """Update company logo via AJAX"""
+    company = get_object_or_404(Company, pk=pk)
+    logo_file = request.FILES.get('logo')
+
+    if logo_file:
+        company.logo = logo_file
+        company.save()
+        return JsonResponse({
+            'success': True,
+            'message': 'Logo updated successfully.',
+            'logo_url': company.logo.url
+        })
+    return JsonResponse({'success': False, 'message': 'No logo file provided.'})
+
+
+@login_required
+@require_POST
+def ajax_remove_company_logo(request, pk):
+    """Remove company logo via AJAX"""
+    company = get_object_or_404(Company, pk=pk)
+    if company.logo:
+        company.logo.delete()
+        company.save()
+        return JsonResponse({
+            'success': True,
+            'message': 'Logo removed successfully.'
+        })
+    return JsonResponse({'success': False, 'message': 'No logo to remove.'})
+
