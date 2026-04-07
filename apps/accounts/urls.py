@@ -31,4 +31,5 @@ urlpatterns = [
     path('ajax/add-contact/', views.ajax_add_contact, name='ajax_add_contact'),
     path('ajax/help-ticket/', views.ajax_help_ticket, name='ajax_help_ticket'),
     path('<int:pk>/ajax/associate-material/', views.ajax_associate_material, name='ajax_associate_material'),
+    path('<int:pk>/ajax/update-about/', views.ajax_update_company_about, name='ajax_update_company_about'),
 ]
