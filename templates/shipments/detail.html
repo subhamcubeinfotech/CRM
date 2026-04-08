@@ -1242,8 +1242,11 @@
                                     </div>
                                 </div>
 
-                                <div class="d-grid">
-                                    <button type="submit" class="btn btn-primary fw-bold py-2" style="border-radius:10px;">Submit</button>
+                                <div class="d-flex gap-2 justify-content-end">
+                                    <button type="button" class="btn btn-outline-danger fw-bold py-2 px-4"
+                                        id="editManifestItemDeleteBtn" style="border-radius:10px;">Delete</button>
+                                    <button type="submit" class="btn btn-primary fw-bold py-2 px-4"
+                                        style="border-radius:10px;">Submit</button>
                                 </div>
                             </form>
                         </div>
@@ -3231,6 +3234,39 @@
             })
             .catch(() => alert('Connection error'));
         });
+
+        // Delete manifest item from the drawer
+        (function() {
+            const deleteBtn = document.getElementById('editManifestItemDeleteBtn');
+            if (!deleteBtn) return;
+
+            deleteBtn.addEventListener('click', function() {
+                const itemId = document.getElementById('editItemId')?.value;
+                if (!itemId) return;
+                if (!confirm('Delete this item?')) return;
+
+                fetch(`/shipments/item/${itemId}/delete/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(r => r.json().then(j => ({ ok: r.ok, j })))
+                .then(({ ok, j }) => {
+                    if (!ok || j.status !== 'success') {
+                        alert(j.message || 'Error deleting item');
+                        return;
+                    }
+                    const row = document.querySelector(`tr.manifest-item-row[data-item-id="${itemId}"]`);
+                    row?.remove();
+                    if (window.bootstrap?.Offcanvas && editDrawerEl) {
+                        bootstrap.Offcanvas.getOrCreateInstance(editDrawerEl).hide();
+                    }
+                })
+                .catch(() => alert('Connection error'));
+            });
+        })();
 
         // Keep units in sync inside the drawer
         (function() {
