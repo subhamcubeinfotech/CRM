@@ -1073,7 +1073,7 @@
             </div>
             <div class="mb-3">
                 <label class="form-label">Phone Number</label>
-                <input type="text" class="form-control" id="locationDrawerPhone" placeholder="(000) 000-0000">
+                <input type="text" class="form-control" id="locationDrawerPhone" placeholder="(000) 000-0000" inputmode="numeric" maxlength="14">
             </div>
             <div class="mb-3">
                 <label class="form-label">Shipping Requirements</label>
@@ -1417,6 +1417,7 @@
     enforceNumericLimit('contactDrawerMobile', 10, formatPhoneNumber);
     enforceNumericLimit('contactDrawerOffice', 10, formatPhoneNumber);
     enforceNumericLimit('contactDrawerExtension', 6);
+    enforceNumericLimit('locationDrawerPhone', 10, formatPhoneNumber);
 
     function toggleShipmentFieldLock(select, shouldLock) {
         if (!select) return;
@@ -1640,6 +1641,7 @@
     document.querySelectorAll('.location-drawer-trigger').forEach(function(button) {
         button.addEventListener('click', function() {
             activeLocationSelectId = this.dataset.locationSelectTarget || '';
+            document.getElementById('locationDrawerForm')?.reset();
         });
     });
 
