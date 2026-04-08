@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+﻿{% extends 'base.html' %}
 {% load inventory_tags %}
 {% load humanize %}
 
@@ -297,6 +297,27 @@
         height: 100% !important;
         top: 0 !important;
         right: 8px !important;
+    }
+
+    /* 3-way toggle (No / N/A / Yes) look: selected = white */
+    #filterDrawer .btn-group .btn.btn-outline-secondary {
+        background-color: #f1f5f9;
+        border-color: #e2e8f0;
+        color: #64748b;
+        font-weight: 600;
+    }
+
+    #filterDrawer .btn-check:checked + .btn.btn-outline-secondary {
+        background-color: #ffffff;
+        border-color: #2563eb;
+        color: #0f172a;
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+    }
+
+    #filterDrawer .btn-group .btn.btn-outline-secondary:hover {
+        background-color: #eaf2ff;
+        border-color: #c7ddff;
+        color: #1e293b;
     }
 </style>
 {% endblock %}
@@ -838,13 +859,393 @@
                     </h2>
                     <div id="collapsePhysical" class="accordion-collapse collapse" data-bs-parent="#propertiesAccordion">
                         <div class="accordion-body">
-                            <div class="mb-2">
-                                <label class="small text-muted mb-1">Melt Flow Rate</label>
-                                <input type="text" class="form-control form-control-sm" placeholder="g/10min">
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Grade</label>
+                                <select name="ph_grade" class="form-select form-select-sm border-light bg-light select2-basic" data-placeholder="Select a value">
+                                    {% if ph_grade %}<option value="{{ ph_grade }}" selected>{{ ph_grade }}</option>{% else %}<option value=""></option>{% endif %}
+                                </select>
                             </div>
-                            <div class="mb-2">
-                                <label class="small text-muted mb-1">Density</label>
-                                <input type="text" class="form-control form-control-sm" placeholder="g/cm³">
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Form</label>
+                                <select name="ph_form" class="form-select form-select-sm border-light bg-light select2-basic" data-placeholder="Select a value">
+                                    {% if ph_form %}<option value="{{ ph_form }}" selected>{{ ph_form }}</option>{% else %}<option value=""></option>{% endif %}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Color</label>
+                                <select name="ph_color" class="form-select form-select-sm border-light bg-light select2-basic" data-placeholder="Select a value">
+                                    {% if ph_color %}<option value="{{ ph_color }}" selected>{{ ph_color }}</option>{% else %}<option value=""></option>{% endif %}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Product Type</label>
+                                <select name="ph_product_type" class="form-select form-select-sm border-light bg-light select2-basic" data-placeholder="Select a value">
+                                    {% if ph_product_type %}<option value="{{ ph_product_type }}" selected>{{ ph_product_type }}</option>{% else %}<option value=""></option>{% endif %}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Melt Index (g/10 min)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="ph_melt_index_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ ph_melt_index_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="ph_melt_index_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ ph_melt_index_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Density (g/cm³)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.0001" name="ph_density_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ ph_density_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.0001" name="ph_density_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ ph_density_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Recycled Content (%)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="ph_recycled_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ ph_recycled_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="ph_recycled_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ ph_recycled_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Filler Percent (%)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="ph_filler_pct_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ ph_filler_pct_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="ph_filler_pct_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ ph_filler_pct_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Filler Type</label>
+                                <select name="ph_filler_type" class="form-select form-select-sm border-light bg-light select2-basic" data-placeholder="Select a value">
+                                    {% if ph_filler_type %}<option value="{{ ph_filler_type }}" selected>{{ ph_filler_type }}</option>{% else %}<option value=""></option>{% endif %}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-2">Foamed?</label>
+                                <div class="btn-group w-100" role="group" aria-label="Foamed">
+                                    <input type="radio" class="btn-check" name="ph_foamed" id="phFoamedNo" value="no" {% if ph_foamed == 'no' %}checked{% endif %}>
+                                    <label class="btn btn-outline-secondary btn-sm" for="phFoamedNo">No</label>
+                                    <input type="radio" class="btn-check" name="ph_foamed" id="phFoamedNa" value="na" {% if ph_foamed == 'na' or not ph_foamed %}checked{% endif %}>
+                                    <label class="btn btn-outline-secondary btn-sm" for="phFoamedNa">N/A</label>
+                                    <input type="radio" class="btn-check" name="ph_foamed" id="phFoamedYes" value="yes" {% if ph_foamed == 'yes' %}checked{% endif %}>
+                                    <label class="btn btn-outline-secondary btn-sm" for="phFoamedYes">Yes</label>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Moisture Content (%)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="ph_moisture_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ ph_moisture_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="ph_moisture_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ ph_moisture_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Ash Content (%)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="ph_ash_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ ph_ash_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="ph_ash_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ ph_ash_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Bulk Density (g/cm³)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.0001" name="ph_bulk_density_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ ph_bulk_density_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.0001" name="ph_bulk_density_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ ph_bulk_density_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Contamination Percent (%)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="ph_contam_pct_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ ph_contam_pct_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="ph_contam_pct_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ ph_contam_pct_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-2">Contamination Type</label>
+                                <div class="form-check mb-1">
+                                    <input class="form-check-input" type="radio" name="ph_contam_mode" id="phContamModeSet" value="set" {% if ph_contam_mode == 'set' %}checked{% endif %}>
+                                    <label class="form-check-label small" for="phContamModeSet">Is set</label>
+                                </div>
+                                <div class="form-check mb-1">
+                                    <input class="form-check-input" type="radio" name="ph_contam_mode" id="phContamModeNotSet" value="not_set" {% if ph_contam_mode == 'not_set' %}checked{% endif %}>
+                                    <label class="form-check-label small" for="phContamModeNotSet">Is not set</label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="radio" name="ph_contam_mode" id="phContamModeContains" value="contains" {% if ph_contam_mode == 'contains' %}checked{% endif %}>
+                                    <label class="form-check-label small" for="phContamModeContains">Contains</label>
+                                </div>
+                                <input type="text" name="ph_contam_contains" class="form-control form-control-sm border-light bg-light" placeholder="Type contamination" value="{{ ph_contam_contains|default:'' }}">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-2">Barrier?</label>
+                                <div class="btn-group w-100" role="group" aria-label="Barrier">
+                                    <input type="radio" class="btn-check" name="ph_barrier" id="phBarrierNo" value="no" {% if ph_barrier == 'no' %}checked{% endif %}>
+                                    <label class="btn btn-outline-secondary btn-sm" for="phBarrierNo">No</label>
+                                    <input type="radio" class="btn-check" name="ph_barrier" id="phBarrierNa" value="na" {% if ph_barrier == 'na' or not ph_barrier %}checked{% endif %}>
+                                    <label class="btn btn-outline-secondary btn-sm" for="phBarrierNa">N/A</label>
+                                    <input type="radio" class="btn-check" name="ph_barrier" id="phBarrierYes" value="yes" {% if ph_barrier == 'yes' %}checked{% endif %}>
+                                    <label class="btn btn-outline-secondary btn-sm" for="phBarrierYes">Yes</label>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-2">Fire Retardant?</label>
+                                <div class="btn-group w-100" role="group" aria-label="Fire Retardant">
+                                    <input type="radio" class="btn-check" name="ph_fire_retardant" id="phFireRetNo" value="no" {% if ph_fire_retardant == 'no' %}checked{% endif %}>
+                                    <label class="btn btn-outline-secondary btn-sm" for="phFireRetNo">No</label>
+                                    <input type="radio" class="btn-check" name="ph_fire_retardant" id="phFireRetNa" value="na" {% if ph_fire_retardant == 'na' or not ph_fire_retardant %}checked{% endif %}>
+                                    <label class="btn btn-outline-secondary btn-sm" for="phFireRetNa">N/A</label>
+                                    <input type="radio" class="btn-check" name="ph_fire_retardant" id="phFireRetYes" value="yes" {% if ph_fire_retardant == 'yes' %}checked{% endif %}>
+                                    <label class="btn btn-outline-secondary btn-sm" for="phFireRetYes">Yes</label>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-2">Slip?</label>
+                                <div class="btn-group w-100" role="group" aria-label="Slip">
+                                    <input type="radio" class="btn-check" name="ph_slip" id="phSlipNo" value="no" {% if ph_slip == 'no' %}checked{% endif %}>
+                                    <label class="btn btn-outline-secondary btn-sm" for="phSlipNo">No</label>
+                                    <input type="radio" class="btn-check" name="ph_slip" id="phSlipNa" value="na" {% if ph_slip == 'na' or not ph_slip %}checked{% endif %}>
+                                    <label class="btn btn-outline-secondary btn-sm" for="phSlipNa">N/A</label>
+                                    <input type="radio" class="btn-check" name="ph_slip" id="phSlipYes" value="yes" {% if ph_slip == 'yes' %}checked{% endif %}>
+                                    <label class="btn btn-outline-secondary btn-sm" for="phSlipYes">Yes</label>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-2">Anti-Block?</label>
+                                <div class="btn-group w-100" role="group" aria-label="Anti-Block">
+                                    <input type="radio" class="btn-check" name="ph_anti_block" id="phAntiBlockNo" value="no" {% if ph_anti_block == 'no' %}checked{% endif %}>
+                                    <label class="btn btn-outline-secondary btn-sm" for="phAntiBlockNo">No</label>
+                                    <input type="radio" class="btn-check" name="ph_anti_block" id="phAntiBlockNa" value="na" {% if ph_anti_block == 'na' or not ph_anti_block %}checked{% endif %}>
+                                    <label class="btn btn-outline-secondary btn-sm" for="phAntiBlockNa">N/A</label>
+                                    <input type="radio" class="btn-check" name="ph_anti_block" id="phAntiBlockYes" value="yes" {% if ph_anti_block == 'yes' %}checked{% endif %}>
+                                    <label class="btn btn-outline-secondary btn-sm" for="phAntiBlockYes">Yes</label>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-2">Nucleated?</label>
+                                <div class="btn-group w-100" role="group" aria-label="Nucleated">
+                                    <input type="radio" class="btn-check" name="ph_nucleated" id="phNucleatedNo" value="no" {% if ph_nucleated == 'no' %}checked{% endif %}>
+                                    <label class="btn btn-outline-secondary btn-sm" for="phNucleatedNo">No</label>
+                                    <input type="radio" class="btn-check" name="ph_nucleated" id="phNucleatedNa" value="na" {% if ph_nucleated == 'na' or not ph_nucleated %}checked{% endif %}>
+                                    <label class="btn btn-outline-secondary btn-sm" for="phNucleatedNa">N/A</label>
+                                    <input type="radio" class="btn-check" name="ph_nucleated" id="phNucleatedYes" value="yes" {% if ph_nucleated == 'yes' %}checked{% endif %}>
+                                    <label class="btn btn-outline-secondary btn-sm" for="phNucleatedYes">Yes</label>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-2">Anti-Stat?</label>
+                                <div class="btn-group w-100" role="group" aria-label="Anti-Stat">
+                                    <input type="radio" class="btn-check" name="ph_anti_stat" id="phAntiStatNo" value="no" {% if ph_anti_stat == 'no' %}checked{% endif %}>
+                                    <label class="btn btn-outline-secondary btn-sm" for="phAntiStatNo">No</label>
+                                    <input type="radio" class="btn-check" name="ph_anti_stat" id="phAntiStatNa" value="na" {% if ph_anti_stat == 'na' or not ph_anti_stat %}checked{% endif %}>
+                                    <label class="btn btn-outline-secondary btn-sm" for="phAntiStatNa">N/A</label>
+                                    <input type="radio" class="btn-check" name="ph_anti_stat" id="phAntiStatYes" value="yes" {% if ph_anti_stat == 'yes' %}checked{% endif %}>
+                                    <label class="btn btn-outline-secondary btn-sm" for="phAntiStatYes">Yes</label>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-2">Clarified?</label>
+                                <div class="btn-group w-100" role="group" aria-label="Clarified">
+                                    <input type="radio" class="btn-check" name="ph_clarified" id="phClarifiedNo" value="no" {% if ph_clarified == 'no' %}checked{% endif %}>
+                                    <label class="btn btn-outline-secondary btn-sm" for="phClarifiedNo">No</label>
+                                    <input type="radio" class="btn-check" name="ph_clarified" id="phClarifiedNa" value="na" {% if ph_clarified == 'na' or not ph_clarified %}checked{% endif %}>
+                                    <label class="btn btn-outline-secondary btn-sm" for="phClarifiedNa">N/A</label>
+                                    <input type="radio" class="btn-check" name="ph_clarified" id="phClarifiedYes" value="yes" {% if ph_clarified == 'yes' %}checked{% endif %}>
+                                    <label class="btn btn-outline-secondary btn-sm" for="phClarifiedYes">Yes</label>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Intrinsic Viscosity (dL/g)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.001" name="ph_intrinsic_visc_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ ph_intrinsic_visc_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.001" name="ph_intrinsic_visc_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ ph_intrinsic_visc_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Inherent Viscosity (dL/g)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.001" name="ph_inherent_visc_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ ph_inherent_visc_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.001" name="ph_inherent_visc_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ ph_inherent_visc_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Relative Viscosity</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.001" name="ph_relative_visc_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ ph_relative_visc_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.001" name="ph_relative_visc_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ ph_relative_visc_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Water Absorption (%)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="ph_water_abs_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ ph_water_abs_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="ph_water_abs_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ ph_water_abs_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Gauge (mils)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="ph_gauge_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ ph_gauge_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="ph_gauge_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ ph_gauge_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Mold Shrinkage (in/in)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.0001" name="ph_mold_shrink_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ ph_mold_shrink_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.0001" name="ph_mold_shrink_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ ph_mold_shrink_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">PP Structure</label>
+                                <select name="ph_pp_structure" class="form-select form-select-sm border-light bg-light select2-basic" data-placeholder="Select a value">
+                                    {% if ph_pp_structure %}<option value="{{ ph_pp_structure }}" selected>{{ ph_pp_structure }}</option>{% else %}<option value=""></option>{% endif %}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Carrier Resin</label>
+                                <select name="ph_carrier_resin" class="form-select form-select-sm border-light bg-light select2-basic" data-placeholder="Select a value">
+                                    {% if ph_carrier_resin %}<option value="{{ ph_carrier_resin }}" selected>{{ ph_carrier_resin }}</option>{% else %}<option value=""></option>{% endif %}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-2">Pantone Color</label>
+                                <div class="form-check mb-1">
+                                    <input class="form-check-input" type="radio" name="ph_pantone_mode" id="phPantoneModeSet" value="set" {% if ph_pantone_mode == 'set' %}checked{% endif %}>
+                                    <label class="form-check-label small" for="phPantoneModeSet">Is set</label>
+                                </div>
+                                <div class="form-check mb-1">
+                                    <input class="form-check-input" type="radio" name="ph_pantone_mode" id="phPantoneModeNotSet" value="not_set" {% if ph_pantone_mode == 'not_set' %}checked{% endif %}>
+                                    <label class="form-check-label small" for="phPantoneModeNotSet">Is not set</label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="radio" name="ph_pantone_mode" id="phPantoneModeContains" value="contains" {% if ph_pantone_mode == 'contains' %}checked{% endif %}>
+                                    <label class="form-check-label small" for="phPantoneModeContains">Contains</label>
+                                </div>
+                                <input type="text" name="ph_pantone_contains" class="form-control form-control-sm border-light bg-light" placeholder="Type pantone color" value="{{ ph_pantone_contains|default:'' }}">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Active Ingredient Concentration (%)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="ph_active_ing_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ ph_active_ing_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="ph_active_ing_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ ph_active_ing_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Recommended Addition Level (%)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="ph_reco_add_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ ph_reco_add_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="ph_reco_add_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ ph_reco_add_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Volatile Content (%)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="ph_volatile_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ ph_volatile_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="ph_volatile_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ ph_volatile_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Migration Resistance</label>
+                                <select name="ph_migration_resistance" class="form-select form-select-sm border-light bg-light select2-basic" data-placeholder="Select a value">
+                                    {% if ph_migration_resistance %}<option value="{{ ph_migration_resistance }}" selected>{{ ph_migration_resistance }}</option>{% else %}<option value=""></option>{% endif %}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Vinyl Acetate Content (%)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="ph_vinyl_acetate_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ ph_vinyl_acetate_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="ph_vinyl_acetate_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ ph_vinyl_acetate_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">PA Type</label>
+                                <select name="ph_pa_type" class="form-select form-select-sm border-light bg-light select2-basic" data-placeholder="Select a value">
+                                    {% if ph_pa_type %}<option value="{{ ph_pa_type }}" selected>{{ ph_pa_type }}</option>{% else %}<option value=""></option>{% endif %}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">PE Density Type</label>
+                                <select name="ph_pe_density_type" class="form-select form-select-sm border-light bg-light select2-basic" data-placeholder="Select a value">
+                                    {% if ph_pe_density_type %}<option value="{{ ph_pe_density_type }}" selected>{{ ph_pe_density_type }}</option>{% else %}<option value=""></option>{% endif %}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">High Load Melt Index (g/10 min)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="ph_high_load_mi_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ ph_high_load_mi_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="ph_high_load_mi_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ ph_high_load_mi_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">PE Processing</label>
+                                <select name="ph_pe_processing" class="form-select form-select-sm border-light bg-light select2-basic" data-placeholder="Select a value">
+                                    {% if ph_pe_processing %}<option value="{{ ph_pe_processing }}" selected>{{ ph_pe_processing }}</option>{% else %}<option value=""></option>{% endif %}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">PE Structure</label>
+                                <select name="ph_pe_structure" class="form-select form-select-sm border-light bg-light select2-basic" data-placeholder="Select a value">
+                                    {% if ph_pe_structure %}<option value="{{ ph_pe_structure }}" selected>{{ ph_pe_structure }}</option>{% else %}<option value=""></option>{% endif %}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Gel Content (%)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="ph_gel_content_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ ph_gel_content_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="ph_gel_content_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ ph_gel_content_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">PVC Type</label>
+                                <select name="ph_pvc_type" class="form-select form-select-sm border-light bg-light select2-basic" data-placeholder="Select a value">
+                                    {% if ph_pvc_type %}<option value="{{ ph_pvc_type }}" selected>{{ ph_pvc_type }}</option>{% else %}<option value=""></option>{% endif %}
+                                </select>
+                            </div>
+
+                            <div class="mb-0">
+                                <label class="small fw-bold text-dark mb-1">K Value</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="ph_k_value_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ ph_k_value_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="ph_k_value_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ ph_k_value_max|default:'' }}"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -859,9 +1260,150 @@
                     </h2>
                     <div id="collapseMechanical" class="accordion-collapse collapse" data-bs-parent="#propertiesAccordion">
                         <div class="accordion-body">
-                            <div class="mb-2">
-                                <label class="small text-muted mb-1">Tensile Strength</label>
-                                <input type="text" class="form-control form-control-sm">
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Notched Izod Impact (ft-lb/in)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="me_notched_izod_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ me_notched_izod_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="me_notched_izod_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ me_notched_izod_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Flexural Modulus (psi)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="me_flex_modulus_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ me_flex_modulus_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="me_flex_modulus_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ me_flex_modulus_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Tensile Strength (psi)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="me_tensile_strength_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ me_tensile_strength_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="me_tensile_strength_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ me_tensile_strength_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Durometer</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="me_durometer_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ me_durometer_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="me_durometer_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ me_durometer_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Durometer Scale</label>
+                                <select name="me_durometer_scale" class="form-select form-select-sm border-light bg-light select2-basic" data-placeholder="Select a value">
+                                    <option value=""></option>
+                                    {% for v in durometer_scale_options %}
+                                    <option value="{{ v }}" {% if v == me_durometer_scale %}selected{% endif %}>{{ v }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Charpy Impact (ft-lb/in)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="me_charpy_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ me_charpy_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="me_charpy_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ me_charpy_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Dart Drop Impact Strength (g)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="me_dart_drop_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ me_dart_drop_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="me_dart_drop_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ me_dart_drop_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Gardner Impact Resistance (ft-lb)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="me_gardner_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ me_gardner_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="me_gardner_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ me_gardner_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Tensile Impact (ft-lb/in2)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="me_tensile_impact_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ me_tensile_impact_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="me_tensile_impact_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ me_tensile_impact_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Flexural Strength (psi)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="me_flex_strength_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ me_flex_strength_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="me_flex_strength_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ me_flex_strength_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Tensile Strength at Yield (psi)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="me_tensile_yield_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ me_tensile_yield_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="me_tensile_yield_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ me_tensile_yield_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Tensile Modulus (psi)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="me_tensile_modulus_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ me_tensile_modulus_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="me_tensile_modulus_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ me_tensile_modulus_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Elongation at Break (%)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="me_elong_break_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ me_elong_break_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="me_elong_break_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ me_elong_break_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Elongation at Yield (%)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="me_elong_yield_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ me_elong_yield_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="me_elong_yield_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ me_elong_yield_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Tear Strength (lbf)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="me_tear_strength_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ me_tear_strength_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="me_tear_strength_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ me_tear_strength_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Environmental Stress Crack Resistance (hr)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="me_escr_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ me_escr_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="me_escr_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ me_escr_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Shear Modulus (psi)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="me_shear_modulus_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ me_shear_modulus_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="me_shear_modulus_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ me_shear_modulus_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-0">
+                                <label class="small fw-bold text-dark mb-1">Shear Strength (psi)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="me_shear_strength_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ me_shear_strength_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="me_shear_strength_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ me_shear_strength_max|default:'' }}"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
