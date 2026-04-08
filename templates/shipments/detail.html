@@ -3,6 +3,8 @@
 {% block title %}{{ shipment.shipment_number }} - FreightPro{% endblock %}
 
 {% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet">
 <style>
     .shipment-header-card {
         background: #fff;
@@ -1108,7 +1110,7 @@
                                     <div class="mb-0">
                                         <div class="d-flex justify-content-between align-items-center mb-2">
                                             <label class="logistics-label mb-0">Contact</label>
-                                            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="offcanvas" data-bs-target="#contactOffcanvas" data-contact-select-target="logistics-pickup-contact-select">
+                                            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#contactOffcanvas" data-contact-select-target="logistics-pickup-contact-select">
                                                 <i class="fas fa-plus-circle me-1"></i>Add
                                             </button>
                                         </div>
@@ -1152,7 +1154,7 @@
                                     <div class="mb-0">
                                         <div class="d-flex justify-content-between align-items-center mb-2">
                                             <label class="logistics-label mb-0">Contact</label>
-                                            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="offcanvas" data-bs-target="#contactOffcanvas" data-contact-select-target="logistics-delivery-contact-select">
+                                            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#contactOffcanvas" data-contact-select-target="logistics-delivery-contact-select">
                                                 <i class="fas fa-plus-circle me-1"></i>Add
                                             </button>
                                         </div>
@@ -2526,7 +2528,7 @@
                     <div class="col-md-6">
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <label class="form-label small fw-bold text-muted text-uppercase mb-0">Pickup Contact</label>
-                            <button type="button" class="btn btn-add-outline py-0" data-bs-toggle="offcanvas" data-bs-target="#contactOffcanvas" data-contact-select-target="edit-pickup-contact-select"><i class="fas fa-plus-circle me-1"></i>Add</button>
+                            <button type="button" class="btn btn-add-outline py-0" data-bs-toggle="modal" data-bs-target="#contactOffcanvas" data-contact-select-target="edit-pickup-contact-select"><i class="fas fa-plus-circle me-1"></i>Add</button>
                         </div>
                         <select name="pickup_contact_ui" id="edit-pickup-contact-select" class="form-select">
                             <option value="">Select a contact</option>
@@ -2590,7 +2592,7 @@
                     <div class="col-md-6">
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <label class="form-label small fw-bold text-muted text-uppercase mb-0">Delivery Contact</label>
-                            <button type="button" class="btn btn-add-outline py-0" data-bs-toggle="offcanvas" data-bs-target="#contactOffcanvas" data-contact-select-target="edit-delivery-contact-select"><i class="fas fa-plus-circle me-1"></i>Add</button>
+                            <button type="button" class="btn btn-add-outline py-0" data-bs-toggle="modal" data-bs-target="#contactOffcanvas" data-contact-select-target="edit-delivery-contact-select"><i class="fas fa-plus-circle me-1"></i>Add</button>
                         </div>
                         <select name="delivery_contact_ui" id="edit-delivery-contact-select" class="form-select">
                             <option value="">Select a contact</option>
@@ -2633,10 +2635,8 @@
             <!-- Logistics & Commercial Section -->
             <div class="mb-4">
                 <label class="form-label small fw-bold text-muted text-uppercase mb-1">Tags</label>
-                <select name="tags_ui" class="form-select mb-3" multiple style="min-height: 50px;">
-                    {% for tag in tags %}
-                    <option value="{{ tag.pk }}" {% if tag in shipment.tags.all %}selected{% endif %}>{{ tag.name }}</option>
-                    {% endfor %}
+                <select name="tags_ui" id="edit-tags-select" class="form-select mb-3" multiple style="width: 100%;">
+                    <!-- Existing tags intentionally omitted so dropdown stays empty -->
                 </select>
 
                 <div class="mb-3">
@@ -2669,14 +2669,16 @@
 </div>
 
 <!-- Add Contact Offcanvas -->
-<div class="offcanvas offcanvas-end" tabindex="-1" id="contactOffcanvas" aria-labelledby="contactOffcanvasLabel" style="width: 500px; z-index: 1070;">
-    <div class="offcanvas-header border-bottom px-4 py-3">
-        <h5 class="offcanvas-title fw-bold text-dark" id="contactOffcanvasLabel" style="font-size: 1.25rem;">Add Contact</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-    </div>
-    <div class="offcanvas-body p-0 d-flex flex-column" style="height: 100%;">
-        <div class="px-4 py-4 flex-grow-1" style="overflow-y: auto;">
-            <form id="contactOffcanvasForm">
+<div class="modal fade" id="contactOffcanvas" tabindex="-1" aria-labelledby="contactOffcanvasLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 500px;">
+        <div class="modal-content shadow-lg border-0" style="border-radius: 12px;">
+            <div class="modal-header border-bottom px-4 py-3">
+                <h5 class="modal-title fw-bold text-dark" id="contactOffcanvasLabel" style="font-size: 1.25rem;">Add Contact</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0 d-flex flex-column">
+                <div class="px-4 py-4 flex-grow-1" style="overflow-y: auto;">
+                    <form id="contactOffcanvasForm">
                 <div class="mb-4">
                     <label class="form-label small fw-bold text-dark mb-2">Name <span class="text-danger">*</span></label>
                     <input type="text" id="contactModalName" class="form-control" placeholder="Full name">
@@ -2713,10 +2715,12 @@
                         <input type="text" id="contactModalExt" class="form-control" placeholder="00000" style="background-color: #f1f5f9;">
                     </div>
                 </div>
-            </form>
-        </div>
-        <div class="px-4 py-3 border-top" style="background-color: #f8fafc; text-align: center;">
-            <button type="button" id="contactModalSubmit" class="btn btn-primary px-5 py-2 fw-semibold" style="border-radius: 6px;">Submit</button>
+                    </form>
+                </div>
+                <div class="px-4 py-3 border-top" style="background-color: #f8fafc; text-align: center;">
+                    <button type="button" id="contactModalSubmit" class="btn btn-primary px-5 py-2 fw-semibold" style="border-radius: 6px;">Submit</button>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -2773,8 +2777,36 @@
     </div>
 </div>
 
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        if (window.jQuery && $.fn.select2) {
+            $('#edit-tags-select').select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                placeholder: 'Select or type to create tags...',
+                tags: true,
+                tokenSeparators: [','],
+                createTag: function(params) {
+                    var term = $.trim(params.term);
+                    if (term === '') return null;
+                    return {
+                        id: term,
+                        text: term,
+                        newTag: true
+                    };
+                },
+                templateResult: function(data) {
+                    if (data.newTag) {
+                        return "Hit Enter to create new '" + data.text + "'";
+                    }
+                    return data.text;
+                },
+                dropdownParent: $('#editShipmentDrawer')
+            });
+        }
+
         // Representative Assignment
         const assignBtn = document.getElementById('assignYourselfBtn');
         const repSelect = document.getElementById('representativeSelect');
@@ -2903,9 +2935,9 @@
 
                 // Close the Offcanvas
                 const contactOffcanvasElement = document.getElementById('contactOffcanvas');
-                if (contactOffcanvasElement && window.bootstrap?.Offcanvas) {
-                    const offcanvas = bootstrap.Offcanvas.getInstance(contactOffcanvasElement);
-                    if (offcanvas) offcanvas.hide();
+                if (contactOffcanvasElement && window.bootstrap?.Modal) {
+                    const contactModal = bootstrap.Modal.getOrCreateInstance(contactOffcanvasElement);
+                    contactModal.hide();
                 }
 
                 // Reset form
