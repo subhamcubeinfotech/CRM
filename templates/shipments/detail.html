@@ -1071,12 +1071,51 @@
 
                                 <!-- Scales (upload only) -->
                                 <div>
-                                    <button class="gen-doc-btn" type="button" onclick="triggerUpload('other')">
+                                    <button class="gen-doc-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#scaleUploadDrawer">
                                         <i class="fas fa-balance-scale text-danger"></i>Scales
                                         <span style="font-size:0.7rem; color:#aaa;">(upload)</span>
                                     </button>
                                 </div>
 
+                            </div>
+
+                            <!-- Upload Scale Offcanvas -->
+                            <div class="offcanvas offcanvas-end" tabindex="-1" id="scaleUploadDrawer" aria-labelledby="scaleUploadDrawerLabel" style="width: 520px; z-index: 1080;">
+                                <div class="offcanvas-header border-bottom px-4 py-3">
+                                    <h5 class="offcanvas-title fw-bold" id="scaleUploadDrawerLabel">Upload Scale</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                                </div>
+                                <div class="offcanvas-body px-4 py-4 d-flex flex-column" style="gap: 16px;">
+                                    <form id="scaleUploadForm" method="post"
+                                        action="{% url 'shipments:document_upload' shipment.pk %}"
+                                        enctype="multipart/form-data" class="d-flex flex-column" style="gap: 16px; flex: 1;">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="document_type" value="other">
+                                        <input type="hidden" name="title" id="scale-upload-title" value="Scale">
+
+                                        <div id="scale-dropzone" class="border rounded-3 p-4 text-center"
+                                            style="border-style: dashed !important; background: #fbfdff;">
+                                            <input type="file" name="file" id="scale-upload-file" class="d-none" required>
+                                            <button type="button" class="btn btn-outline-primary" id="scale-upload-btn">
+                                                <i class="fas fa-upload me-2"></i>Upload file
+                                            </button>
+                                            <span class="text-muted ms-2">or drop file here</span>
+                                            <div class="small text-muted mt-2" id="scale-upload-filename"></div>
+                                        </div>
+
+                                        <div>
+                                            <label class="form-label fw-bold small text-uppercase mb-1">Document Type <span class="text-danger">*</span></label>
+                                            <select class="form-select" id="scale-doc-type" required>
+                                                <option value="Light" selected>Light</option>
+                                                <option value="Heavy">Heavy</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="mt-auto d-grid pt-2">
+                                            <button type="submit" class="btn btn-primary fw-bold py-2" style="border-radius:10px;">Upload</button>
+                                        </div>
+                                    </form>
+                                </div>
                             </div>
 
                             <!-- Hidden typed upload form -->
@@ -3127,6 +3166,67 @@
             const syncPriceUnits = (value) => syncSelects(value, [priceUnit, sellPriceUnit]);
             priceUnit?.addEventListener('change', () => syncPriceUnits(priceUnit.value));
             sellPriceUnit?.addEventListener('change', () => syncPriceUnits(sellPriceUnit.value));
+        })();
+
+        // Scale upload drawer behavior (Heavy/Light + file upload)
+        (function() {
+            const drawerEl = document.getElementById('scaleUploadDrawer');
+            const formEl = document.getElementById('scaleUploadForm');
+            const fileInput = document.getElementById('scale-upload-file');
+            const pickBtn = document.getElementById('scale-upload-btn');
+            const fileNameEl = document.getElementById('scale-upload-filename');
+            const docTypeSelect = document.getElementById('scale-doc-type');
+            const titleInput = document.getElementById('scale-upload-title');
+            const dropzone = document.getElementById('scale-dropzone');
+
+            if (!drawerEl || !formEl || !fileInput || !docTypeSelect || !titleInput) return;
+
+            const updateTitle = () => {
+                const kind = docTypeSelect.value || 'Light';
+                titleInput.value = `Scale - ${kind}`;
+            };
+
+            const resetUi = () => {
+                formEl.reset();
+                updateTitle();
+                if (fileNameEl) fileNameEl.textContent = '';
+            };
+
+            updateTitle();
+
+            pickBtn?.addEventListener('click', () => fileInput.click());
+            docTypeSelect.addEventListener('change', updateTitle);
+
+            fileInput.addEventListener('change', () => {
+                const f = fileInput.files?.[0];
+                if (fileNameEl) fileNameEl.textContent = f ? f.name : '';
+            });
+
+            // Drag/drop support
+            if (dropzone) {
+                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach((evt) => {
+                    dropzone.addEventListener(evt, (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    });
+                });
+                ['dragenter', 'dragover'].forEach((evt) => {
+                    dropzone.addEventListener(evt, () => dropzone.classList.add('bg-primary-subtle', 'border-primary'));
+                });
+                ['dragleave', 'drop'].forEach((evt) => {
+                    dropzone.addEventListener(evt, () => dropzone.classList.remove('bg-primary-subtle', 'border-primary'));
+                });
+                dropzone.addEventListener('drop', (e) => {
+                    const files = e.dataTransfer?.files;
+                    if (files && files.length > 0) {
+                        fileInput.files = files;
+                        const f = fileInput.files?.[0];
+                        if (fileNameEl) fileNameEl.textContent = f ? f.name : '';
+                    }
+                });
+            }
+
+            drawerEl.addEventListener('show.bs.offcanvas', resetUi);
         })();
 
         // Contact Change Handler for Edit Drawer & Logistics Section
