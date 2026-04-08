@@ -1506,7 +1506,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <option value="{{ warehouse.id }}" 
                             {% if order.source_location_id == warehouse.id %}selected{% endif %}
                             data-address="{{ warehouse.address }}" data-city="{{ warehouse.city }}" data-state="{{ warehouse.state }}" data-postal-code="{{ warehouse.postal_code }}" data-country="{{ warehouse.country }}">
-                            {{ warehouse.display_name }}
+                            {{ warehouse.full_address }}
                         </option>
                         {% endfor %}
                     </select>
@@ -1570,7 +1570,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <option value="">Select a Location</option>
                         {% if order.receiver and order.receiver.full_address %}
                         <option value="temp_addr_{{ order.receiver.full_address }}" 
-                            {% if not order.destination_location %}selected{% endif %}
+                            selected
                             data-company-id="{{ order.receiver.id }}"
                             data-address="{{ order.receiver.address_line1 }}"
                             data-city="{{ order.receiver.city }}"
@@ -1582,9 +1582,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         {% endif %}
                         {% for warehouse in warehouses %}
                         <option value="{{ warehouse.id }}"
-                            {% if order.destination_location_id == warehouse.id %}selected{% endif %}
                             data-address="{{ warehouse.address }}" data-city="{{ warehouse.city }}" data-state="{{ warehouse.state }}" data-postal-code="{{ warehouse.postal_code }}" data-country="{{ warehouse.country }}">
-                            {{ warehouse.display_name }}
+                            {{ warehouse.full_address }}
                         </option>
                         {% endfor %}
                     </select>
