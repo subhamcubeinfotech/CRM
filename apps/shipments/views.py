@@ -108,6 +108,18 @@ def shipment_item_update_ajax(request, pk):
 
 
 @login_required
+@require_POST
+def shipment_item_delete_ajax(request, pk):
+    item = get_object_or_404(
+        ShipmentItem.objects.select_related('shipment'),
+        pk=pk,
+        shipment__tenant=request.user.tenant,
+    )
+    item.delete()
+    return JsonResponse({'status': 'success'})
+
+
+@login_required
 @transaction.atomic
 def shipment_copy(request, pk):
     """Create a duplicate of an existing shipment and redirect to edit page"""

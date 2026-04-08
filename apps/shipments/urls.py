@@ -41,4 +41,5 @@ urlpatterns = [
 
     # Shipment item edits (AJAX)
     path('item/<int:pk>/update/', views.shipment_item_update_ajax, name='shipment_item_update_ajax'),
+    path('item/<int:pk>/delete/', views.shipment_item_delete_ajax, name='shipment_item_delete_ajax'),
 ]
