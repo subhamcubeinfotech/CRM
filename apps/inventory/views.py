@@ -1,6 +1,8 @@
 """
 Inventory Views
 """
+from decimal import Decimal
+import re
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
@@ -10,7 +12,9 @@ from django.db.models import Sum, F, Q, ExpressionWrapper, DecimalField, Case, W
 from .models import Warehouse, InventoryItem, Material
 from .forms import WarehouseForm, InventoryItemForm, MaterialForm
 from apps.accounts.utils import filter_by_user_company, check_company_access
-from apps.orders.models import ManifestItem, Order
+from apps.orders.models import ManifestItem, Order, Tag, ShippingTerm, PackagingType
+from apps.accounts.models import CustomUser
+from .countries import COUNTRIES
 import logging
 import json
 from django.utils import timezone
@@ -233,6 +237,123 @@ def inventory_item_list(request):
     low_stock = request.GET.get('low_stock')
     if low_stock:
         items = items.filter(quantity__lte=F('reorder_level'))
+
+    # Material filter (single select)
+    material = request.GET.get('material')
+    if material:
+        items = items.filter(product_name=material)
+
+    # Have Details: Status
+    status = request.GET.get('status')
+    if status == 'out_of_stock':
+        items = items.filter(quantity=0)
+    elif status == 'low_stock':
+        items = items.filter(quantity__gt=0, quantity__lte=F('reorder_level'))
+    elif status == 'in_stock':
+        items = items.filter(quantity__gt=F('reorder_level'))
+
+    # Have Details: Representative
+    representative = request.GET.get('representative')
+    if representative:
+        items = items.filter(representative_id=representative)
+
+    # Have Details: PO/SO number rules
+    po_mode = request.GET.get('po_mode')
+    po_contains = (request.GET.get('po_contains') or '').strip()
+    if po_mode == 'set':
+        items = items.exclude(po_number__isnull=True).exclude(po_number__exact='')
+    elif po_mode == 'not_set':
+        items = items.filter(Q(po_number__isnull=True) | Q(po_number__exact=''))
+    elif po_mode == 'contains' and po_contains:
+        items = items.filter(po_number__icontains=po_contains)
+
+    # Have Details: Price range + unit
+    price_unit = request.GET.get('price_unit')
+    price_min = request.GET.get('price_min')
+    price_max = request.GET.get('price_max')
+    include_no_price = request.GET.get('include_no_price')
+    if price_unit:
+        items = items.filter(price_unit=price_unit)
+    if price_min not in (None, ''):
+        try:
+            items = items.filter(unit_cost__gte=Decimal(str(price_min)))
+        except Exception:
+            pass
+    if price_max not in (None, ''):
+        try:
+            items = items.filter(unit_cost__lte=Decimal(str(price_max)))
+        except Exception:
+            pass
+    if not include_no_price and (price_min not in (None, '') or price_max not in (None, '')):
+        # Treat 0.00 as "no listed price"
+        items = items.exclude(unit_cost=0)
+
+    # Have Details: Weight range + unit (offered_weight)
+    weight_unit = request.GET.get('weight_unit')
+    weight_min = request.GET.get('weight_min')
+    weight_max = request.GET.get('weight_max')
+    if weight_unit:
+        items = items.filter(offered_weight_unit=weight_unit)
+    if weight_min not in (None, ''):
+        try:
+            items = items.filter(offered_weight__gte=Decimal(str(weight_min)))
+        except Exception:
+            pass
+    if weight_max not in (None, ''):
+        try:
+            items = items.filter(offered_weight__lte=Decimal(str(weight_max)))
+        except Exception:
+            pass
+
+    # Have Details: Packaging
+    packaging = request.GET.get('packaging')
+    if packaging:
+        items = items.filter(packaging=packaging)
+
+    # Have Details: Shipping Terms
+    shipping_term = request.GET.get('shipping_term')
+    if shipping_term:
+        items = items.filter(shipping_terms_id=shipping_term)
+
+    # Have Details: Lot number rules
+    lot_mode = request.GET.get('lot_mode')
+    lot_contains = (request.GET.get('lot_contains') or '').strip()
+    if lot_mode == 'set':
+        items = items.exclude(lot_number__isnull=True).exclude(lot_number__exact='')
+    elif lot_mode == 'not_set':
+        items = items.filter(Q(lot_number__isnull=True) | Q(lot_number__exact=''))
+    elif lot_mode == 'contains' and lot_contains:
+        items = items.filter(lot_number__icontains=lot_contains)
+
+    # Have Details: Tag
+    tag = request.GET.get('tag')
+    if tag:
+        items = items.filter(tags__id=tag).distinct()
+
+    # Have Details: Archived (interpreted as inactive warehouse)
+    archived = request.GET.get('archived')
+    if archived == '1':
+        items = items.filter(warehouse__is_active=False)
+    elif archived == '0' or archived is None:
+        # Default show non-archived (active warehouses)
+        items = items.filter(warehouse__is_active=True)
+
+    # Typical Properties (Material-derived)
+    typ_grade = request.GET.get('typ_grade')
+    typ_form = request.GET.get('typ_form')
+    typ_color = request.GET.get('typ_color')
+    typ_product_type = request.GET.get('typ_product_type')
+    if any([typ_grade, typ_form, typ_color, typ_product_type]):
+        mats = Material.objects.filter(tenant=request.user.tenant)
+        if typ_grade:
+            mats = mats.filter(grade=typ_grade)
+        if typ_form:
+            mats = mats.filter(product_type=typ_form)
+        if typ_color:
+            mats = mats.filter(color=typ_color)
+        if typ_product_type:
+            mats = mats.filter(material_type=typ_product_type)
+        items = items.filter(product_name__in=mats.values_list('name', flat=True))
     
     # Sorting
     sort_param = request.GET.get('sort', 'newest')
@@ -264,17 +385,152 @@ def inventory_item_list(request):
     paginator = Paginator(items, 25)
     page = request.GET.get('page')
     items_page = paginator.get_page(page)
-    
+
+    # Packaging options for filter dropdown should match the full packaging type list
+    # (same set used in manifest items), not just whatever happens to exist in inventory rows.
+    packaging_options = list(PackagingType.objects.order_by('name').values_list('name', flat=True))
+
+    # Also include any extra packaging values that exist on inventory rows but aren't in PackagingType yet.
+    inventory_packaging_values = list(
+        InventoryItem.objects
+        .exclude(packaging__isnull=True)
+        .exclude(packaging__exact='')
+        .values_list('packaging', flat=True)
+    )
+    seen = {p.lower() for p in packaging_options if isinstance(p, str)}
+    for v in inventory_packaging_values:
+        if not isinstance(v, str):
+            continue
+        v = v.strip()
+        if not v:
+            continue
+        key = v.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        packaging_options.append(v)
+     
     context = {
         'items': items_page,
         'warehouses': Warehouse.objects.filter(is_active=True),
         'warehouse_filter': warehouse_id,
         'search': search,
         'low_stock_filter': low_stock,
+        'material_filter': material,
         'scope': scope,
         'sort_param': sort_param,
         'stats': stats,
         'materials': sorted(list(set(InventoryItem.objects.all().values_list('product_name', flat=True)))),
+        # Have Details options
+        'representatives': CustomUser.objects.filter(tenant=request.user.tenant, is_active=True).order_by('username'),
+        'shipping_terms': ShippingTerm.objects.filter(tenant=request.user.tenant).order_by('name'),
+        'tags': Tag.objects.filter(tenant=request.user.tenant).order_by('name'),
+        'packaging_options': packaging_options,
+        'price_units': ['per lbs', 'per kgs', 'per MT', 'per ST'],
+        'weight_units': ['lbs', 'kgs', 'MT', 'ST'],
+        # Have Details current values
+        'have_status': status,
+        'have_representative': representative or '',
+        'have_po_mode': po_mode or '',
+        'have_po_contains': po_contains,
+        'have_price_unit': price_unit or '',
+        'have_price_min': price_min or '',
+        'have_price_max': price_max or '',
+        'have_include_no_price': bool(include_no_price),
+        'have_weight_unit': weight_unit or '',
+        'have_weight_min': weight_min or '',
+        'have_weight_max': weight_max or '',
+        'have_packaging': packaging or '',
+        'have_shipping_term': shipping_term or '',
+        'have_lot_mode': lot_mode or '',
+        'have_lot_contains': lot_contains,
+        'have_tag': tag or '',
+        'have_archived': archived or '0',
+        # Typical current values
+        'typ_grade': typ_grade or '',
+        'typ_form': typ_form or '',
+        'typ_color': typ_color or '',
+        'typ_product_type': typ_product_type or '',
+        # Typical dropdown options
+        'typical_grade_options': sorted(set(Material.objects.filter(tenant=request.user.tenant).exclude(grade='').values_list('grade', flat=True))),
+        'typical_form_options': sorted(set(Material.objects.filter(tenant=request.user.tenant).exclude(product_type='').values_list('product_type', flat=True))),
+        'typical_color_options': sorted(set(Material.objects.filter(tenant=request.user.tenant).exclude(color='').values_list('color', flat=True))),
+        'typical_product_type_options': sorted(set(Material.objects.filter(tenant=request.user.tenant).exclude(material_type='').values_list('material_type', flat=True))),
+        # Optical current values (UI only for now)
+        'opt_b_value_min': request.GET.get('opt_b_value_min') or '',
+        'opt_b_value_max': request.GET.get('opt_b_value_max') or '',
+        'opt_haze_min': request.GET.get('opt_haze_min') or '',
+        'opt_haze_max': request.GET.get('opt_haze_max') or '',
+        'opt_gloss_min': request.GET.get('opt_gloss_min') or '',
+        'opt_gloss_max': request.GET.get('opt_gloss_max') or '',
+        'opt_l_value_min': request.GET.get('opt_l_value_min') or '',
+        'opt_l_value_max': request.GET.get('opt_l_value_max') or '',
+        'opt_whiteness_min': request.GET.get('opt_whiteness_min') or '',
+        'opt_whiteness_max': request.GET.get('opt_whiteness_max') or '',
+        'opt_transmittance_min': request.GET.get('opt_transmittance_min') or '',
+        'opt_transmittance_max': request.GET.get('opt_transmittance_max') or '',
+        'opt_a_value_min': request.GET.get('opt_a_value_min') or '',
+        'opt_a_value_max': request.GET.get('opt_a_value_max') or '',
+        'opt_tio2_min': request.GET.get('opt_tio2_min') or '',
+        'opt_tio2_max': request.GET.get('opt_tio2_max') or '',
+        'opt_light_fastness_min': request.GET.get('opt_light_fastness_min') or '',
+        'opt_light_fastness_max': request.GET.get('opt_light_fastness_max') or '',
+        'opt_weather_fastness_min': request.GET.get('opt_weather_fastness_min') or '',
+        'opt_weather_fastness_max': request.GET.get('opt_weather_fastness_max') or '',
+        # Thermal current values
+        'th_melting_min': request.GET.get('th_melting_min') or '',
+        'th_melting_max': request.GET.get('th_melting_max') or '',
+        'th_hdt_min': request.GET.get('th_hdt_min') or '',
+        'th_hdt_max': request.GET.get('th_hdt_max') or '',
+        'th_vicat_min': request.GET.get('th_vicat_min') or '',
+        'th_vicat_max': request.GET.get('th_vicat_max') or '',
+        'th_tg_min': request.GET.get('th_tg_min') or '',
+        'th_tg_max': request.GET.get('th_tg_max') or '',
+        'th_clte_min': request.GET.get('th_clte_min') or '',
+        'th_clte_max': request.GET.get('th_clte_max') or '',
+        'th_conductivity_min': request.GET.get('th_conductivity_min') or '',
+        'th_conductivity_max': request.GET.get('th_conductivity_max') or '',
+        'th_gelation_min': request.GET.get('th_gelation_min') or '',
+        'th_gelation_max': request.GET.get('th_gelation_max') or '',
+        'th_max_proc_min': request.GET.get('th_max_proc_min') or '',
+        'th_max_proc_max': request.GET.get('th_max_proc_max') or '',
+        # Electrical current values
+        'el_dielectric_const_min': request.GET.get('el_dielectric_const_min') or '',
+        'el_dielectric_const_max': request.GET.get('el_dielectric_const_max') or '',
+        'el_dielectric_strength_min': request.GET.get('el_dielectric_strength_min') or '',
+        'el_dielectric_strength_max': request.GET.get('el_dielectric_strength_max') or '',
+        'el_dissipation_min': request.GET.get('el_dissipation_min') or '',
+        'el_dissipation_max': request.GET.get('el_dissipation_max') or '',
+        'el_surface_res_min': request.GET.get('el_surface_res_min') or '',
+        'el_surface_res_max': request.GET.get('el_surface_res_max') or '',
+        'el_insulation_res_min': request.GET.get('el_insulation_res_min') or '',
+        'el_insulation_res_max': request.GET.get('el_insulation_res_max') or '',
+        'el_conductivity_min': request.GET.get('el_conductivity_min') or '',
+        'el_conductivity_max': request.GET.get('el_conductivity_max') or '',
+        'el_arc_res_min': request.GET.get('el_arc_res_min') or '',
+        'el_arc_res_max': request.GET.get('el_arc_res_max') or '',
+        # Regulatory current values
+        'reg_country_origin_list': [v.strip() for v in request.GET.getlist('reg_country_origin') if v.strip()],
+        'reg_recycled_cert': (request.GET.get('reg_recycled_cert') or '').strip(),
+        'reg_fda': (request.GET.get('reg_fda') or '').strip(),
+        # Other current values
+        'oth_ul94': (request.GET.get('oth_ul94') or '').strip(),
+        'oth_dry_temp_min': request.GET.get('oth_dry_temp_min') or '',
+        'oth_dry_temp_max': request.GET.get('oth_dry_temp_max') or '',
+        'oth_dry_time_min': request.GET.get('oth_dry_time_min') or '',
+        'oth_dry_time_max': request.GET.get('oth_dry_time_max') or '',
+        'oth_proc_temp_min': request.GET.get('oth_proc_temp_min') or '',
+        'oth_proc_temp_max': request.GET.get('oth_proc_temp_max') or '',
+        'oth_tack_free_min': request.GET.get('oth_tack_free_min') or '',
+        'oth_tack_free_max': request.GET.get('oth_tack_free_max') or '',
+        'oth_colorant': (request.GET.get('oth_colorant') or '').strip(),
+        'oth_additive': (request.GET.get('oth_additive') or '').strip(),
+        # Dropdown options (static for now; we can refine later)
+        'recycled_cert_options': ['ISCC PLUS', 'SCS Recycled Content', 'GRS', 'RCS', 'UL 2809', 'Other'],
+        'ul94_options': ['HB', 'V-2', 'V-1', 'V-0', '5VB', '5VA'],
+        'colorant_type_options': ['None', 'Carbon Black', 'TiO2', 'Color Masterbatch', 'Dye', 'Other'],
+        'additive_type_options': ['None', 'UV Stabilizer', 'Antioxidant', 'Flame Retardant', 'Impact Modifier', 'Slip/Anti-block', 'Other'],
+        'country_options': COUNTRIES,
     }
     return render(request, 'inventory/item_list.html', context)
 
