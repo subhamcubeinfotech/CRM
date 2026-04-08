@@ -319,6 +319,16 @@
         border-color: #c7ddff;
         color: #1e293b;
     }
+
+    /* Select2 dropdown scroll fix inside offcanvas */
+    #filterDrawer .select2-dropdown {
+        z-index: 2050;
+    }
+
+    #filterDrawer .select2-results__options {
+        max-height: 320px !important;
+        overflow-y: auto !important;
+    }
 </style>
 {% endblock %}
 
@@ -1827,6 +1837,15 @@
                 closeOnSelect: false,
                 templateResult: countryOptionTemplate,
                 templateSelection: function(opt) { return opt.text || ''; },
+            });
+
+            // Make mouse wheel scroll the country dropdown (avoid offcanvas stealing scroll)
+            $(document).on('select2:open', function() {
+                const opts = document.querySelector('.select2-container--open .select2-results__options');
+                if (!opts) return;
+                opts.addEventListener('wheel', function(e) {
+                    e.stopPropagation();
+                }, { passive: true });
             });
         }
     });
