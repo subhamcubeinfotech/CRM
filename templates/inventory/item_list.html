@@ -6,6 +6,7 @@
 {% block title %}Inventory Portfolio - FreightPro{% endblock %}
 
 {% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
 <style>
     /* Premium Table Styling */
     .inventory-table {
@@ -165,6 +166,36 @@
         display: block;
     }
 
+    /* Address Autocomplete (Photon API) */
+    .autocomplete-results {
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 0;
+        z-index: 2000;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        width: 100%;
+        max-height: 300px;
+        overflow-y: auto;
+        display: none;
+    }
+
+    .autocomplete-item {
+        padding: 10px 16px;
+        cursor: pointer;
+        transition: background 0.2s ease;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .autocomplete-item:last-child { border-bottom: none; }
+    .autocomplete-item:hover { background-color: #f8fafc; }
+    .autocomplete-item strong { color: #1e293b; font-size: 0.85rem; }
+    .autocomplete-item span { color: #64748b; font-size: 0.75rem; }
+
     /* Accordion Customization */
     .filter-accordion .accordion-item {
         background: transparent;
@@ -245,6 +276,27 @@
         border: 1px solid #f1f5f9 !important;
         border-radius: 8px !important;
         background-color: #f8fafc !important;
+    }
+
+    /* Make Select2 look like compact Bootstrap select (like screenshot) */
+    .select2-container--bootstrap-5 .select2-selection--single {
+        min-height: 38px !important;
+        padding: 0.35rem 0.75rem !important;
+        display: flex !important;
+        align-items: center !important;
+    }
+
+    .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
+        padding-left: 0 !important;
+        line-height: 1.2 !important;
+        color: #64748b;
+        font-weight: 500;
+    }
+
+    .select2-container--bootstrap-5 .select2-selection--single .select2-selection__arrow {
+        height: 100% !important;
+        top: 0 !important;
+        right: 8px !important;
     }
 </style>
 {% endblock %}
@@ -501,11 +553,13 @@
             </div>
 
             <!-- Location Section -->
-            <label class="filter-label">Location</label>
-            <div class="filter-card">
-                <div class="mb-3">
-                    <input type="text" name="location_address" class="form-control form-control-sm border-light bg-light" 
-                           placeholder="Type an address" value="{{ location_address|default:'' }}">
+             <label class="filter-label">Location</label>
+             <div class="filter-card">
+                <div class="mb-3 position-relative">
+                    <input type="text" name="location_address" id="inventory_location_input"
+                           class="form-control form-control-sm border-light bg-light"
+                           placeholder="Type an address" value="{{ location_address|default:'' }}" autocomplete="off">
+                    <div id="inventory-location-autocomplete-results" class="autocomplete-results"></div>
                 </div>
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <span class="small fw-bold text-dark">Radius</span>
@@ -513,19 +567,21 @@
                 </div>
                 <input type="range" name="radius" class="form-range" min="0" max="500" step="10" 
                        id="radiusRange" value="{{ radius|default:'50' }}" oninput="updateRadiusLabel(this.value)">
-            </div>
+             </div>
 
             <!-- Material Details -->
             <label class="filter-label">Material Details</label>
             <div class="filter-card">
-                <div class="mb-3">
-                    <label class="small fw-bold text-dark mb-1">Material Name</label>
-                    <select name="material" class="form-select form-select-sm border-light bg-light select2-basic" multiple>
-                        {% for mat in materials %}
-                        <option value="{{ mat }}" {% if mat in material_filter %}selected{% endif %}>{{ mat }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
+                 <div class="mb-3">
+                     <label class="small fw-bold text-dark mb-1">Material Name</label>
+                    <select name="material" class="form-select form-select-sm border-light bg-light select2-basic"
+                        data-placeholder="Select a value">
+                        <option value=""></option>
+                         {% for mat in materials %}
+                        <option value="{{ mat }}" {% if mat == material_filter %}selected{% endif %}>{{ mat }}</option>
+                         {% endfor %}
+                     </select>
+                 </div>
                 <div class="mb-1">
                     <label class="small fw-bold text-dark mb-1">Material Type</label>
                     <select name="material_type" class="form-select form-select-sm border-light bg-light">
@@ -543,15 +599,175 @@
                 <div class="accordion-item">
                     <h2 class="accordion-header">
                         <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseHave">
-                            Have Details
+                            Details
                         </button>
                     </h2>
                     <div id="collapseHave" class="accordion-collapse collapse" data-bs-parent="#propertiesAccordion">
                         <div class="accordion-body">
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" name="low_stock" value="1" id="lowStockCheck"
-                                       {% if low_stock_filter %}checked{% endif %}>
-                                <label class="form-check-label small" for="lowStockCheck">Low Stock Only</label>
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Status</label>
+                                <select name="status" class="form-select form-select-sm border-light bg-light select2-basic"
+                                    data-placeholder="Select a value">
+                                    <option value=""></option>
+                                    <option value="in_stock" {% if have_status == 'in_stock' %}selected{% endif %}>In Stock</option>
+                                    <option value="low_stock" {% if have_status == 'low_stock' %}selected{% endif %}>Low Stock</option>
+                                    <option value="out_of_stock" {% if have_status == 'out_of_stock' %}selected{% endif %}>Out of Stock</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Representatives</label>
+                                <select name="representative" class="form-select form-select-sm border-light bg-light select2-basic"
+                                    data-placeholder="Select a value">
+                                    <option value=""></option>
+                                    {% for u in representatives %}
+                                    <option value="{{ u.id }}" {% if u.id|stringformat:'s' == have_representative %}selected{% endif %}>
+                                        {{ u.username }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-2">SO/PO Number</label>
+                                <div class="form-check mb-1">
+                                    <input class="form-check-input" type="radio" name="po_mode" id="poModeSet" value="set"
+                                        {% if have_po_mode == 'set' %}checked{% endif %}>
+                                    <label class="form-check-label small" for="poModeSet">Is set</label>
+                                </div>
+                                <div class="form-check mb-1">
+                                    <input class="form-check-input" type="radio" name="po_mode" id="poModeNotSet" value="not_set"
+                                        {% if have_po_mode == 'not_set' %}checked{% endif %}>
+                                    <label class="form-check-label small" for="poModeNotSet">Is not set</label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="radio" name="po_mode" id="poModeContains" value="contains"
+                                        {% if have_po_mode == 'contains' %}checked{% endif %}>
+                                    <label class="form-check-label small" for="poModeContains">Contains</label>
+                                </div>
+                                <input type="text" name="po_contains" class="form-control form-control-sm border-light bg-light"
+                                    placeholder="Type PO/SO number" value="{{ have_po_contains|default:'' }}">
+                            </div>
+
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <label class="small fw-bold text-dark mb-0">Price ($)</label>
+                                    <select name="price_unit" class="form-select form-select-sm border-light bg-light"
+                                        style="width: 110px;">
+                                        {% for pu in price_units %}
+                                        <option value="{{ pu }}" {% if pu == have_price_unit %}selected{% endif %}>{{ pu }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <input type="number" step="0.01" name="price_min" class="form-control form-control-sm border-light bg-light"
+                                            placeholder="Min value" value="{{ have_price_min|default:'' }}">
+                                    </div>
+                                    <div class="col-6">
+                                        <input type="number" step="0.01" name="price_max" class="form-control form-control-sm border-light bg-light"
+                                            placeholder="Max value" value="{{ have_price_max|default:'' }}">
+                                    </div>
+                                </div>
+                                <div class="form-check mt-2">
+                                    <input class="form-check-input" type="checkbox" name="include_no_price" value="1" id="includeNoPrice"
+                                        {% if have_include_no_price %}checked{% endif %}>
+                                    <label class="form-check-label small" for="includeNoPrice">Include items with no listed price</label>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <label class="small fw-bold text-dark mb-0">Weight</label>
+                                    <select name="weight_unit" class="form-select form-select-sm border-light bg-light"
+                                        style="width: 90px;">
+                                        {% for wu in weight_units %}
+                                        <option value="{{ wu }}" {% if wu == have_weight_unit %}selected{% endif %}>{{ wu }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <input type="number" step="0.01" name="weight_min" class="form-control form-control-sm border-light bg-light"
+                                            placeholder="Min value" value="{{ have_weight_min|default:'' }}">
+                                    </div>
+                                    <div class="col-6">
+                                        <input type="number" step="0.01" name="weight_max" class="form-control form-control-sm border-light bg-light"
+                                            placeholder="Max value" value="{{ have_weight_max|default:'' }}">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Packaging</label>
+                                <select name="packaging" class="form-select form-select-sm border-light bg-light select2-basic"
+                                    data-placeholder="Select a value">
+                                    <option value=""></option>
+                                    {% for p in packaging_options %}
+                                    <option value="{{ p }}" {% if p == have_packaging %}selected{% endif %}>{{ p }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Shipping Terms</label>
+                                <select name="shipping_term" class="form-select form-select-sm border-light bg-light select2-basic"
+                                    data-placeholder="Select a value">
+                                    <option value=""></option>
+                                    {% for st in shipping_terms %}
+                                    <option value="{{ st.id }}" {% if st.id|stringformat:'s' == have_shipping_term %}selected{% endif %}>
+                                        {{ st.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-2">Lot Number</label>
+                                <div class="form-check mb-1">
+                                    <input class="form-check-input" type="radio" name="lot_mode" id="lotModeSet" value="set"
+                                        {% if have_lot_mode == 'set' %}checked{% endif %}>
+                                    <label class="form-check-label small" for="lotModeSet">Is set</label>
+                                </div>
+                                <div class="form-check mb-1">
+                                    <input class="form-check-input" type="radio" name="lot_mode" id="lotModeNotSet" value="not_set"
+                                        {% if have_lot_mode == 'not_set' %}checked{% endif %}>
+                                    <label class="form-check-label small" for="lotModeNotSet">Is not set</label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="radio" name="lot_mode" id="lotModeContains" value="contains"
+                                        {% if have_lot_mode == 'contains' %}checked{% endif %}>
+                                    <label class="form-check-label small" for="lotModeContains">Contains</label>
+                                </div>
+                                <input type="text" name="lot_contains" class="form-control form-control-sm border-light bg-light"
+                                    placeholder="Type lot number" value="{{ have_lot_contains|default:'' }}">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Tags</label>
+                                <select name="tag" class="form-select form-select-sm border-light bg-light select2-basic"
+                                    data-placeholder="Select a value">
+                                    <option value=""></option>
+                                    {% for t in tags %}
+                                    <option value="{{ t.id }}" {% if t.id|stringformat:'s' == have_tag %}selected{% endif %}>
+                                        {{ t.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="mb-0">
+                                <label class="small fw-bold text-dark mb-2">Archived</label>
+                                <div class="form-check mb-1">
+                                    <input class="form-check-input" type="radio" name="archived" id="archivedNo" value="0"
+                                        {% if have_archived != '1' %}checked{% endif %}>
+                                    <label class="form-check-label small" for="archivedNo">No</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="archived" id="archivedYes" value="1"
+                                        {% if have_archived == '1' %}checked{% endif %}>
+                                    <label class="form-check-label small" for="archivedYes">Yes</label>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -566,9 +782,48 @@
                     </h2>
                     <div id="collapseTypical" class="accordion-collapse collapse" data-bs-parent="#propertiesAccordion">
                         <div class="accordion-body">
-                            <div class="mb-2">
-                                <label class="small text-muted mb-1">Grade</label>
-                                <input type="text" class="form-control form-control-sm" placeholder="e.g. Post-Industrial">
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Grade</label>
+                                <select name="typ_grade" class="form-select form-select-sm border-light bg-light select2-basic"
+                                    data-placeholder="Select a value">
+                                    <option value=""></option>
+                                    {% for v in typical_grade_options %}
+                                    <option value="{{ v }}" {% if v == typ_grade %}selected{% endif %}>{{ v }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Form</label>
+                                <select name="typ_form" class="form-select form-select-sm border-light bg-light select2-basic"
+                                    data-placeholder="Select a value">
+                                    <option value=""></option>
+                                    {% for v in typical_form_options %}
+                                    <option value="{{ v }}" {% if v == typ_form %}selected{% endif %}>{{ v }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Color</label>
+                                <select name="typ_color" class="form-select form-select-sm border-light bg-light select2-basic"
+                                    data-placeholder="Select a value">
+                                    <option value=""></option>
+                                    {% for v in typical_color_options %}
+                                    <option value="{{ v }}" {% if v == typ_color %}selected{% endif %}>{{ v }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="mb-0">
+                                <label class="small fw-bold text-dark mb-1">Product Type</label>
+                                <select name="typ_product_type" class="form-select form-select-sm border-light bg-light select2-basic"
+                                    data-placeholder="Select a value">
+                                    <option value=""></option>
+                                    {% for v in typical_product_type_options %}
+                                    <option value="{{ v }}" {% if v == typ_product_type %}selected{% endif %}>{{ v }}</option>
+                                    {% endfor %}
+                                </select>
                             </div>
                         </div>
                     </div>
@@ -621,7 +876,355 @@
                     </h2>
                     <div id="collapseOptical" class="accordion-collapse collapse" data-bs-parent="#propertiesAccordion">
                         <div class="accordion-body">
-                            <p class="small text-muted">Additional optical property filters.</p>
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">B Value (YI)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="opt_b_value_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ opt_b_value_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="opt_b_value_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ opt_b_value_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Haze (%)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="opt_haze_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ opt_haze_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="opt_haze_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ opt_haze_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Gloss (GU)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="opt_gloss_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ opt_gloss_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="opt_gloss_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ opt_gloss_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">L Value</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="opt_l_value_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ opt_l_value_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="opt_l_value_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ opt_l_value_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Whiteness Index</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="opt_whiteness_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ opt_whiteness_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="opt_whiteness_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ opt_whiteness_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Transmittance (%)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="opt_transmittance_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ opt_transmittance_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="opt_transmittance_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ opt_transmittance_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">A Value</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="opt_a_value_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ opt_a_value_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="opt_a_value_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ opt_a_value_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">TiO₂ Content (%)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="opt_tio2_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ opt_tio2_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="opt_tio2_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ opt_tio2_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Light Fastness (1-8 scale)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="1" name="opt_light_fastness_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ opt_light_fastness_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="1" name="opt_light_fastness_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ opt_light_fastness_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-0">
+                                <label class="small fw-bold text-dark mb-1">Weather Fastness (1-5 scale)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="1" name="opt_weather_fastness_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ opt_weather_fastness_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="1" name="opt_weather_fastness_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ opt_weather_fastness_max|default:'' }}"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Thermal Properties -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThermal">
+                            Thermal Properties
+                        </button>
+                    </h2>
+                    <div id="collapseThermal" class="accordion-collapse collapse" data-bs-parent="#propertiesAccordion">
+                        <div class="accordion-body">
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Melting Point (°F)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="th_melting_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ th_melting_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="th_melting_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ th_melting_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Heat Deflection Temperature (°F)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="th_hdt_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ th_hdt_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="th_hdt_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ th_hdt_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Vicat Softening Temperature (°F)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="th_vicat_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ th_vicat_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="th_vicat_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ th_vicat_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Glass Transition Temperature (°F)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="th_tg_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ th_tg_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="th_tg_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ th_tg_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Coefficient of Linear Thermal Expansion (CLTE) (in/(in·°F))</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.000001" name="th_clte_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ th_clte_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.000001" name="th_clte_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ th_clte_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Thermal Conductivity (BTU/(hr·ft·°F))</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.0001" name="th_conductivity_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ th_conductivity_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.0001" name="th_conductivity_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ th_conductivity_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Gelation Temperature (°F)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="th_gelation_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ th_gelation_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="th_gelation_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ th_gelation_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-0">
+                                <label class="small fw-bold text-dark mb-1">Max Processing Temperature (°F)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="th_max_proc_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ th_max_proc_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="th_max_proc_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ th_max_proc_max|default:'' }}"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Electrical Properties -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseElectrical">
+                            Electrical Properties
+                        </button>
+                    </h2>
+                    <div id="collapseElectrical" class="accordion-collapse collapse" data-bs-parent="#propertiesAccordion">
+                        <div class="accordion-body">
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Dielectric Constant</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="el_dielectric_const_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ el_dielectric_const_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="el_dielectric_const_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ el_dielectric_const_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Dielectric Strength (V/mil)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="el_dielectric_strength_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ el_dielectric_strength_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="el_dielectric_strength_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ el_dielectric_strength_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Dissipation Factor</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.0001" name="el_dissipation_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ el_dissipation_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.0001" name="el_dissipation_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ el_dissipation_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Surface Resistance (ohm/sq)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="el_surface_res_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ el_surface_res_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="el_surface_res_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ el_surface_res_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Insulation Resistance (ohm)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="el_insulation_res_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ el_insulation_res_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="el_insulation_res_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ el_insulation_res_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Conductivity (S/in)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.000001" name="el_conductivity_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ el_conductivity_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.000001" name="el_conductivity_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ el_conductivity_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-0">
+                                <label class="small fw-bold text-dark mb-1">Arc Resistance (sec)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="el_arc_res_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ el_arc_res_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="el_arc_res_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ el_arc_res_max|default:'' }}"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Regulatory Properties -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseRegulatory">
+                            Regulatory Properties
+                        </button>
+                    </h2>
+                    <div id="collapseRegulatory" class="accordion-collapse collapse" data-bs-parent="#propertiesAccordion">
+                        <div class="accordion-body">
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Country of Origin</label>
+                                <select name="reg_country_origin" id="regCountryOrigin" multiple
+                                    class="form-select form-select-sm border-light bg-light select2-country"
+                                    data-placeholder="Select a value">
+                                    <option value=""></option>
+                                    {% for c in country_options %}
+                                    <option value="{{ c }}" {% if c in reg_country_origin_list %}selected{% endif %}>{{ c }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Recycled Certification</label>
+                                <select name="reg_recycled_cert" class="form-select form-select-sm border-light bg-light select2-basic"
+                                    data-placeholder="Select a value">
+                                    <option value=""></option>
+                                    {% for v in recycled_cert_options %}
+                                    <option value="{{ v }}" {% if v == reg_recycled_cert %}selected{% endif %}>{{ v }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="mb-0">
+                                <label class="small fw-bold text-dark mb-2">FDA Certified?</label>
+                                <div class="btn-group w-100" role="group" aria-label="FDA Certified">
+                                    <input type="radio" class="btn-check" name="reg_fda" id="regFdaNo" value="no" {% if reg_fda == 'no' or not reg_fda %}checked{% endif %}>
+                                    <label class="btn btn-outline-secondary btn-sm" for="regFdaNo">No</label>
+
+                                    <input type="radio" class="btn-check" name="reg_fda" id="regFdaNa" value="na" {% if reg_fda == 'na' %}checked{% endif %}>
+                                    <label class="btn btn-outline-secondary btn-sm" for="regFdaNa">N/A</label>
+
+                                    <input type="radio" class="btn-check" name="reg_fda" id="regFdaYes" value="yes" {% if reg_fda == 'yes' %}checked{% endif %}>
+                                    <label class="btn btn-outline-secondary btn-sm" for="regFdaYes">Yes</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Other Properties -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOther">
+                            Other Properties
+                        </button>
+                    </h2>
+                    <div id="collapseOther" class="accordion-collapse collapse" data-bs-parent="#propertiesAccordion">
+                        <div class="accordion-body">
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Flammability UL94</label>
+                                <select name="oth_ul94" class="form-select form-select-sm border-light bg-light select2-basic"
+                                    data-placeholder="Select a value">
+                                    <option value=""></option>
+                                    {% for v in ul94_options %}
+                                    <option value="{{ v }}" {% if v == oth_ul94 %}selected{% endif %}>{{ v }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Drying Temperature for Injection Molding (°F)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="oth_dry_temp_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ oth_dry_temp_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="oth_dry_temp_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ oth_dry_temp_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Drying Time for Injection Molding (hr)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="oth_dry_time_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ oth_dry_time_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="oth_dry_time_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ oth_dry_time_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Processing Temperature for Injection Molding (°F)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="oth_proc_temp_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ oth_proc_temp_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="oth_proc_temp_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ oth_proc_temp_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Tack Free Time (min)</label>
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="number" step="0.01" name="oth_tack_free_min" class="form-control form-control-sm border-light bg-light" placeholder="Min value" value="{{ oth_tack_free_min|default:'' }}"></div>
+                                    <div class="col-6"><input type="number" step="0.01" name="oth_tack_free_max" class="form-control form-control-sm border-light bg-light" placeholder="Max value" value="{{ oth_tack_free_max|default:'' }}"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold text-dark mb-1">Colorant Type</label>
+                                <select name="oth_colorant" class="form-select form-select-sm border-light bg-light select2-basic"
+                                    data-placeholder="Select a value">
+                                    <option value=""></option>
+                                    {% for v in colorant_type_options %}
+                                    <option value="{{ v }}" {% if v == oth_colorant %}selected{% endif %}>{{ v }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="mb-0">
+                                <label class="small fw-bold text-dark mb-1">Additive Type</label>
+                                <select name="oth_additive" class="form-select form-select-sm border-light bg-light select2-basic"
+                                    data-placeholder="Select a value">
+                                    <option value=""></option>
+                                    {% for v in additive_type_options %}
+                                    <option value="{{ v }}" {% if v == oth_additive %}selected{% endif %}>{{ v }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -636,10 +1239,139 @@
     </div>
 </div>
 
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
 <script>
     function updateRadiusLabel(val) {
         const radiusVal = document.getElementById('radiusVal');
         if (radiusVal) radiusVal.innerText = val + ' mi';
     }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Select2 (searchable selects) inside offcanvas
+        if (window.jQuery && $.fn.select2) {
+            const $drawer = $('#filterDrawer');
+            $('.select2-basic').each(function() {
+                const $el = $(this);
+                const placeholder = $el.data('placeholder') || 'Select a value';
+                $el.select2({
+                    theme: 'bootstrap-5',
+                    width: '100%',
+                    placeholder: placeholder,
+                    allowClear: true,
+                    dropdownParent: $drawer.length ? $drawer : $(document.body),
+                });
+            });
+
+            // Country of Origin: async search (world-wide) via Photon API
+            function countryOptionTemplate(opt) {
+                if (!opt.id) return opt.text;
+                const checked = opt.selected ? 'checked' : '';
+                return $(
+                    `<span style="display:flex; align-items:center; gap:8px;">
+                        <input type="checkbox" ${checked} style="pointer-events:none;" />
+                        <span>${opt.text}</span>
+                     </span>`
+                );
+            }
+
+            $('.select2-country').select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                placeholder: 'Select a value',
+                allowClear: true,
+                dropdownParent: $drawer.length ? $drawer : $(document.body),
+                closeOnSelect: false,
+                templateResult: countryOptionTemplate,
+                templateSelection: function(opt) { return opt.text || ''; },
+            });
+        }
+    });
+
+    // Location autocomplete dropdown (Photon API, same as Shipments filters)
+    (function() {
+        const input = document.getElementById('inventory_location_input');
+        const results = document.getElementById('inventory-location-autocomplete-results');
+        if (!input || !results) return;
+
+        function debounce(fn, wait) {
+            let t = null;
+            return function(...args) {
+                window.clearTimeout(t);
+                t = window.setTimeout(() => fn.apply(this, args), wait);
+            };
+        }
+
+        const handleAutocomplete = debounce((query) => {
+            const q = (query || '').trim();
+            if (q.length < 3) {
+                results.style.display = 'none';
+                results.innerHTML = '';
+                return;
+            }
+
+            fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=8`)
+                .then(r => r.json())
+                .then(data => {
+                    results.innerHTML = '';
+                    if (data.features && data.features.length > 0) {
+                        data.features.forEach(feature => {
+                            const props = feature.properties || {};
+                            const item = document.createElement('div');
+                            item.className = 'autocomplete-item';
+
+                            // Build address components: street/city/state/postcode/country etc.
+                            const components = [];
+                            if (props.house_number) components.push(props.house_number);
+                            if (props.street) components.push(props.street);
+                            if (props.name && props.name !== props.street) components.push(props.name);
+                            if (props.city) components.push(props.city);
+                            if (props.state) components.push(props.state);
+                            if (props.postcode) components.push(props.postcode);
+                            if (props.country) components.push(props.country);
+
+                            const fullLabel = components.filter(v => v).join(', ');
+                            const mainLabel = props.name || props.street || fullLabel || '';
+                            const subLabel = components.filter(v => v && v !== mainLabel).join(', ');
+
+                            item.innerHTML = `
+                                <strong>${mainLabel}</strong>
+                                <span>${subLabel}</span>
+                            `;
+
+                            item.addEventListener('click', () => {
+                                input.value = fullLabel || mainLabel;
+                                results.style.display = 'none';
+                                results.innerHTML = '';
+                            });
+
+                            results.appendChild(item);
+                        });
+                        results.style.display = 'block';
+                    } else {
+                        results.style.display = 'none';
+                    }
+                })
+                .catch(() => {
+                    results.style.display = 'none';
+                });
+        }, 300);
+
+        input.addEventListener('input', (e) => handleAutocomplete(e.target.value));
+
+        // Hide dropdown on outside click
+        document.addEventListener('click', (e) => {
+            if (!input.contains(e.target) && !results.contains(e.target)) {
+                results.style.display = 'none';
+            }
+        });
+
+        // Hide dropdown when filter drawer scrolls (prevents weird overlay)
+        const drawerBody = input.closest('.offcanvas-body');
+        drawerBody?.addEventListener('scroll', () => {
+            results.style.display = 'none';
+        });
+    })();
 </script>
 {% endblock %}
