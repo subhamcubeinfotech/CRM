@@ -1308,6 +1308,19 @@ document.addEventListener('DOMContentLoaded', function() {
     let activeLocationSelectId = '';
     let activeContactSelectId = '';
 
+    const enforceNumericLimit = (inputId, maxLength) => {
+        const input = document.getElementById(inputId);
+        if (!input) return;
+
+        input.addEventListener('input', function() {
+            this.value = (this.value || '').replace(/\D/g, '').slice(0, maxLength);
+        });
+    };
+
+    enforceNumericLimit('contactModalMobile', 10);
+    enforceNumericLimit('contactModalOffice', 10);
+    enforceNumericLimit('locationModalPhone', 10);
+
     // Date sequence validation
     const pickupDateInput = document.querySelector('input[name="pickup_date"]');
     const deliveryDateInput = document.querySelector('input[name="estimated_delivery_date"]');
@@ -1389,12 +1402,14 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('[data-bs-target="#locationModal"]').forEach(btn => {
         btn.addEventListener('click', function() {
             activeLocationSelectId = this.dataset.locationSelectTarget;
+            document.getElementById('locationModalForm')?.reset();
         });
     });
     
     document.querySelectorAll('[data-bs-target="#contactModal"]').forEach(btn => {
         btn.addEventListener('click', function() {
             activeContactSelectId = this.dataset.contactSelectTarget;
+            document.getElementById('contactModalForm')?.reset();
         });
     });
     
@@ -1830,12 +1845,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <div class="mb-3">
                         <label class="form-label small fw-bold text-uppercase">Mobile Number</label>
-                        <input type="text" id="contactModalMobile" class="form-control rounded-3" placeholder="Mobile #">
+                        <input type="text" id="contactModalMobile" class="form-control rounded-3" placeholder="Mobile #" inputmode="numeric" maxlength="10">
                     </div>
                     <div class="row mb-3">
                         <div class="col-12">
                             <label class="form-label small fw-bold text-uppercase">Office Number</label>
-                            <input type="text" id="contactModalOffice" class="form-control rounded-3" placeholder="Office #">
+                            <input type="text" id="contactModalOffice" class="form-control rounded-3" placeholder="Office #" inputmode="numeric" maxlength="10">
                         </div>
                     </div>
                 </form>
@@ -1868,7 +1883,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <div class="mb-3">
                         <label class="form-label small fw-bold text-uppercase">Phone Number</label>
-                        <input type="text" id="locationModalPhone" class="form-control rounded-3" placeholder="(000) 000-0000">
+                        <input type="text" id="locationModalPhone" class="form-control rounded-3" placeholder="(000) 000-0000" inputmode="numeric" maxlength="10">
                     </div>
                     <div class="mb-4">
                         <label class="form-label small fw-bold text-uppercase">Shipping Requirements</label>
