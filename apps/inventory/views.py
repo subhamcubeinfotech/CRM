@@ -354,6 +354,10 @@ def inventory_item_list(request):
         if typ_product_type:
             mats = mats.filter(material_type=typ_product_type)
         items = items.filter(product_name__in=mats.values_list('name', flat=True))
+
+    # Physical Properties (UI only for now): keep any `ph_` values after refresh
+    physical_ctx = {k: (v or '').strip() for k, v in request.GET.items() if k.startswith('ph_')}
+    mechanical_ctx = {k: (v or '').strip() for k, v in request.GET.items() if k.startswith('me_')}
     
     # Sorting
     sort_param = request.GET.get('sort', 'newest')
@@ -531,7 +535,10 @@ def inventory_item_list(request):
         'colorant_type_options': ['None', 'Carbon Black', 'TiO2', 'Color Masterbatch', 'Dye', 'Other'],
         'additive_type_options': ['None', 'UV Stabilizer', 'Antioxidant', 'Flame Retardant', 'Impact Modifier', 'Slip/Anti-block', 'Other'],
         'country_options': COUNTRIES,
+        'durometer_scale_options': ['Shore A', 'Shore D', 'Shore OO', 'Rockwell R', 'Rockwell M', 'Rockwell E', 'Other'],
     }
+    context.update(physical_ctx)
+    context.update(mechanical_ctx)
     return render(request, 'inventory/item_list.html', context)
 
 
