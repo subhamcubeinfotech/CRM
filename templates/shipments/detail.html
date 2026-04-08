@@ -2702,17 +2702,17 @@
                 
                 <div class="mb-4">
                     <label class="form-label small fw-bold text-dark mb-2">Mobile number</label>
-                    <input type="text" id="contactModalMobile" class="form-control" placeholder="(000) 000-0000">
+                    <input type="text" id="contactModalMobile" class="form-control" placeholder="(000) 000-0000" inputmode="numeric" maxlength="14">
                 </div>
                 
                 <div class="row g-3">
                     <div class="col-8">
                         <label class="form-label small fw-bold text-dark mb-2">Office Number</label>
-                        <input type="text" id="contactModalOffice" class="form-control" placeholder="(000) 000-0000">
+                        <input type="text" id="contactModalOffice" class="form-control" placeholder="(000) 000-0000" inputmode="numeric" maxlength="14">
                     </div>
                     <div class="col-4">
                         <label class="form-label small fw-bold text-dark mb-2">Extension</label>
-                        <input type="text" id="contactModalExt" class="form-control" placeholder="00000" style="background-color: #f1f5f9;">
+                        <input type="text" id="contactModalExt" class="form-control" placeholder="00000" inputmode="numeric" maxlength="6" style="background-color: #f1f5f9;">
                     </div>
                 </div>
                     </form>
@@ -2833,8 +2833,31 @@
         document.querySelectorAll('[data-contact-select-target]').forEach(function(button) {
             button.addEventListener('click', function() {
                 activeContactSelectId = this.dataset.contactSelectTarget || '';
+                document.getElementById('contactOffcanvasForm')?.reset();
             });
         });
+
+        const formatPhoneNumber = (digits) => {
+            const cleaned = (digits || '').replace(/\D/g, '').slice(0, 10);
+            if (!cleaned) return '';
+            if (cleaned.length <= 3) return `(${cleaned}`;
+            if (cleaned.length <= 6) return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3)}`;
+            return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
+        };
+
+        const enforceNumericLimit = (inputId, maxLength, formatter) => {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+
+            input.addEventListener('input', function() {
+                const digits = (this.value || '').replace(/\D/g, '').slice(0, maxLength);
+                this.value = formatter ? formatter(digits) : digits;
+            });
+        };
+
+        enforceNumericLimit('contactModalMobile', 10, formatPhoneNumber);
+        enforceNumericLimit('contactModalOffice', 10, formatPhoneNumber);
+        enforceNumericLimit('contactModalExt', 6);
 
         // Contact Change Handler for Edit Drawer & Logistics Section
         const handleEditContactChange = (idPrefix) => {
