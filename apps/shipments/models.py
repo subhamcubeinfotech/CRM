@@ -362,6 +362,31 @@ class ShipmentItem(models.Model):
     def __str__(self):
         return f"{self.material_name} ({self.weight} {self.weight_unit})"
 
+
+class ShipmentCommission(models.Model):
+    COMMISSION_TYPE_CHOICES = [
+        ('fixed', 'Fixed'),
+        ('gross_profit_pct', '% Gross Profit'),
+        ('material_cost_pct', '% Material Cost'),
+        ('material_sale_pct', '% Material Sale'),
+    ]
+
+    shipment = models.ForeignKey(Shipment, on_delete=models.CASCADE, related_name='commissions')
+    representative = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    commission_type = models.CharField(max_length=30, choices=COMMISSION_TYPE_CHOICES, default='fixed')
+    percentage = models.DecimalField(max_digits=8, decimal_places=4, null=True, blank=True)
+    amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    paid_date = models.DateField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        rep = getattr(self.representative, 'username', None) or 'Unknown'
+        return f"{self.shipment.shipment_number} - {rep} - {self.amount}"
+
+
 class ShipmentHistory(models.Model):
     """Detailed audit log for shipment changes"""
     shipment = models.ForeignKey(Shipment, on_delete=models.CASCADE, related_name='history')

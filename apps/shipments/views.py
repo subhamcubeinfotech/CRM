@@ -19,7 +19,7 @@ import json
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
-from .models import Shipment, Container, ShipmentMilestone, Document, ShipmentItem, ShipmentComment
+from .models import Shipment, Container, ShipmentMilestone, Document, ShipmentItem, ShipmentComment, ShipmentCommission
 from apps.accounts.models import Company, CustomUser
 from apps.invoicing.models import Invoice
 from apps.orders.models import Order, PackagingType
@@ -665,6 +665,10 @@ def shipment_detail(request, pk):
         },
     }
     
+    commissions = shipment.commissions.select_related('representative').all()
+    commission_total = sum((c.amount or 0) for c in commissions) if commissions else 0
+    net_profit = shipment.gross_profit - commission_total
+
     context = {
         'shipment': shipment,
         'milestones': milestones,
@@ -688,8 +692,90 @@ def shipment_detail(request, pk):
         'packaging_types': PackagingType.objects.all().order_by('name'),
         'shipment_types': Shipment.SHIPMENT_TYPE_CHOICES,
         'comments': comments,
+        'commissions': commissions,
+        'commission_total': commission_total,
+        'net_profit': net_profit,
     }
     return render(request, 'shipments/detail.html', context)
+
+
+@login_required
+@require_POST
+def shipment_commission_add(request, pk):
+    shipment = get_object_or_404(Shipment, pk=pk)
+    if request.user.tenant and shipment.tenant_id != request.user.tenant_id:
+        return JsonResponse({'status': 'error', 'message': 'Permission denied'}, status=403)
+
+    commission_type = (request.POST.get('commission_type') or 'fixed').strip()
+    representative_id = request.POST.get('representative') or None
+    paid_date_raw = (request.POST.get('paid_date') or '').strip()
+
+    percentage_raw = (request.POST.get('percentage') or '').strip()
+    amount_raw = (request.POST.get('amount') or '').strip()
+
+    representative = None
+    if representative_id:
+        representative = CustomUser.objects.filter(tenant=request.user.tenant, pk=representative_id).first()
+
+    percentage = None
+    if percentage_raw:
+        try:
+            percentage = Decimal(str(percentage_raw))
+        except (InvalidOperation, ValueError, TypeError):
+            messages.error(request, 'Invalid percentage.')
+            return redirect('shipments:shipment_detail', pk=pk)
+
+    amount = None
+    if amount_raw:
+        try:
+            amount = Decimal(str(amount_raw))
+        except (InvalidOperation, ValueError, TypeError):
+            messages.error(request, 'Invalid amount.')
+            return redirect('shipments:shipment_detail', pk=pk)
+
+    paid_date = None
+    if paid_date_raw:
+        try:
+            paid_date = datetime.fromisoformat(paid_date_raw).date()
+        except ValueError:
+            messages.error(request, 'Invalid paid date.')
+            return redirect('shipments:shipment_detail', pk=pk)
+
+    if commission_type == 'fixed':
+        if amount is None:
+            messages.error(request, 'Amount is required for Fixed commission.')
+            return redirect('shipments:shipment_detail', pk=pk)
+        final_amount = amount
+    else:
+        if amount is not None:
+            final_amount = amount
+        else:
+            if percentage is None:
+                messages.error(request, 'Percentage is required for this commission type.')
+                return redirect('shipments:shipment_detail', pk=pk)
+
+            if commission_type == 'gross_profit_pct':
+                base = shipment.gross_profit
+            elif commission_type == 'material_cost_pct':
+                base = shipment.cost
+            elif commission_type == 'material_sale_pct':
+                base = shipment.revenue
+            else:
+                messages.error(request, 'Invalid commission type.')
+                return redirect('shipments:shipment_detail', pk=pk)
+
+            final_amount = (Decimal(str(base)) * percentage) / Decimal('100')
+
+    ShipmentCommission.objects.create(
+        shipment=shipment,
+        representative=representative,
+        commission_type=commission_type,
+        percentage=percentage,
+        amount=final_amount,
+        paid_date=paid_date,
+    )
+    messages.success(request, 'Commission added.')
+    return redirect('shipments:shipment_detail', pk=pk)
 
 
 @login_required

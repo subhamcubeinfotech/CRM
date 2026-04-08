@@ -1399,11 +1399,11 @@
                                 </tr>
                                 <tr>
                                     <td class="summary-label">Commissions</td>
-                                    <td class="summary-value">$0.00</td>
+                                    <td class="summary-value">${{ commission_total|floatformat:2 }}</td>
                                 </tr>
                                 <tr class="highlight-bold" style="border-top: 2px solid #e2e8f0;">
                                     <td class="summary-label">Net Profit</td>
-                                    <td class="summary-value">${{ shipment.gross_profit|floatformat:2 }}</td>
+                                    <td class="summary-value">${{ net_profit|floatformat:2 }}</td>
                                 </tr>
                             </table>
                         </div>
@@ -1445,7 +1445,100 @@
                                     </tbody>
                                 </table>
                             </div>
+
+                            <div class="mt-4">
+                                <div class="ledger-header">
+                                    <h5 class="fw-bold mb-0">Commissions</h5>
+                                    <button class="btn btn-sm btn-outline-primary px-3 fw-bold" style="border-radius: 8px;"
+                                            data-bs-toggle="offcanvas" data-bs-target="#commissionDrawer">Add Commission</button>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table ledger-table mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Representative</th>
+                                                <th>Type</th>
+                                                <th>Percentage</th>
+                                                <th>Amount</th>
+                                                <th>Paid Date</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for c in commissions %}
+                                            <tr>
+                                                <td class="fw-semibold text-dark">{{ c.representative.get_full_name|default:c.representative.username|default:"-" }}</td>
+                                                <td class="text-muted">{{ c.get_commission_type_display }}</td>
+                                                <td class="text-muted">{% if c.percentage is not None %}{{ c.percentage }}%{% else %}-{% endif %}</td>
+                                                <td class="ledger-amount-neg">(${{ c.amount|floatformat:2 }})</td>
+                                                <td class="text-muted">{% if c.paid_date %}{{ c.paid_date|date:'Y-m-d' }}{% else %}-{% endif %}</td>
+                                            </tr>
+                                            {% empty %}
+                                            <tr>
+                                                <td colspan="5" class="text-muted text-center py-3">No commissions</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Commission Drawer (Offcanvas) -->
+                <div class="offcanvas offcanvas-end" tabindex="-1" id="commissionDrawer" aria-labelledby="commissionDrawerLabel"
+                    style="width: 520px; z-index: 1080;">
+                    <div class="offcanvas-header border-bottom px-4 py-3">
+                        <h5 class="offcanvas-title fw-bold" id="commissionDrawerLabel">Add Commission</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                    </div>
+                    <div class="offcanvas-body px-4 py-4">
+                        <form method="post" action="{% url 'shipments:shipment_commission_add' shipment.pk %}" id="commissionForm">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small text-uppercase mb-1">Representative <span class="text-danger">*</span></label>
+                                <select name="representative" class="form-select" required>
+                                    {% if shipment.representative %}
+                                    <option value="{{ shipment.representative.pk }}" selected>{{ shipment.representative.get_full_name|default:shipment.representative.username }}</option>
+                                    {% else %}
+                                    <option value="">Select representative</option>
+                                    {% endif %}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small text-uppercase mb-1">Type <span class="text-danger">*</span></label>
+                                <select name="commission_type" class="form-select" id="commissionType" required>
+                                    <option value="">Select a commission type</option>
+                                    <option value="fixed">Fixed</option>
+                                    <option value="gross_profit_pct">% Gross Profit</option>
+                                    <option value="material_cost_pct">% Material Cost</option>
+                                    <option value="material_sale_pct">% Material Sale</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small text-uppercase mb-1">Percentage</label>
+                                <input type="number" step="0.0001" name="percentage" class="form-control" id="commissionPercentage" placeholder="Enter percentage">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small text-uppercase mb-1">Amount</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" step="0.01" name="amount" class="form-control" id="commissionAmount" placeholder="Enter amount">
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-bold small text-uppercase mb-1">Paid Date</label>
+                                <input type="date" name="paid_date" class="form-control">
+                            </div>
+
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary fw-bold py-2" style="border-radius:10px;">Submit</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
 
@@ -3227,6 +3320,27 @@
             }
 
             drawerEl.addEventListener('show.bs.offcanvas', resetUi);
+        })();
+
+        // Commission drawer: toggle percentage/amount expectations
+        (function() {
+            const typeSel = document.getElementById('commissionType');
+            const pct = document.getElementById('commissionPercentage');
+            const amt = document.getElementById('commissionAmount');
+            if (!typeSel || !pct || !amt) return;
+
+            const apply = () => {
+                const t = typeSel.value;
+                if (t === 'fixed') {
+                    amt.disabled = false;
+                    amt.required = true;
+                } else {
+                    amt.required = false; // allow override amount if user wants
+                }
+            };
+
+            typeSel.addEventListener('change', apply);
+            apply();
         })();
 
         // Contact Change Handler for Edit Drawer & Logistics Section
