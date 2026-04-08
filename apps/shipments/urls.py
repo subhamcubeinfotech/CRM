@@ -37,4 +37,7 @@ urlpatterns = [
 
     # Tracking
     path('track/<str:tracking_number>/', views.public_tracking, name='public_tracking'),
+
+    # Shipment item edits (AJAX)
+    path('item/<int:pk>/update/', views.shipment_item_update_ajax, name='shipment_item_update_ajax'),
 ]

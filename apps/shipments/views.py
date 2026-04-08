@@ -14,6 +14,7 @@ from django.db import transaction, IntegrityError
 from django.utils import timezone
 from datetime import datetime, timedelta
 from decimal import Decimal
+from decimal import InvalidOperation
 import json
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
@@ -35,6 +36,75 @@ def _get_tracking_shipment_for_user(user, pk):
     if user.tenant and shipment.tenant_id != user.tenant_id:
         raise PermissionDenied("You do not have access to this shipment.")
     return shipment
+
+
+@login_required
+@require_POST
+def shipment_item_update_ajax(request, pk):
+    item = get_object_or_404(
+        ShipmentItem.objects.select_related('shipment'),
+        pk=pk,
+        shipment__tenant=request.user.tenant,
+    )
+
+    def _dec(name, default=None):
+        raw = request.POST.get(name, None)
+        if raw is None or raw == '':
+            return default
+        try:
+            return Decimal(str(raw))
+        except (InvalidOperation, ValueError, TypeError):
+            raise ValueError(f"Invalid {name}")
+
+    def _int(name, default=None):
+        raw = request.POST.get(name, None)
+        if raw is None or raw == '':
+            return default
+        try:
+            return int(raw)
+        except (ValueError, TypeError):
+            raise ValueError(f"Invalid {name}")
+
+    try:
+        item.weight = _dec('weight', item.weight)
+        item.weight_unit = (request.POST.get('weight_unit') or item.weight_unit or 'lbs')[:10]
+
+        item.gross_weight = _dec('gross_weight', None)
+        item.gross_weight_unit = (request.POST.get('gross_weight_unit') or item.gross_weight_unit or item.weight_unit or 'lbs')[:10]
+
+        item.tare_weight = _dec('tare_weight', None)
+        item.tare_weight_unit = (request.POST.get('tare_weight_unit') or item.tare_weight_unit or item.weight_unit or 'lbs')[:10]
+
+        item.packaging = (request.POST.get('packaging') or '')[:100]
+        item.pieces = _int('pieces', None)
+        item.is_palletized = request.POST.get('is_palletized') in ('1', 'true', 'on', 'yes')
+
+        item.buy_price = _dec('buy_price', item.buy_price)
+        item.sell_price = _dec('sell_price', item.sell_price)
+        item.price_unit = (request.POST.get('price_unit') or item.price_unit or 'per lbs')[:20]
+
+        item.save()
+    except ValueError as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+    return JsonResponse({
+        'status': 'success',
+        'item': {
+            'id': item.id,
+            'buy_price': f"{item.buy_price:.4f}",
+            'sell_price': f"{item.sell_price:.4f}",
+            'price_unit': item.price_unit,
+            'weight': f"{item.weight:.2f}",
+            'weight_unit': item.weight_unit,
+            'gross_weight': f"{(item.gross_weight or 0):.2f}" if item.gross_weight is not None else '',
+            'gross_weight_unit': item.gross_weight_unit or item.weight_unit,
+            'tare_weight': f"{(item.tare_weight or 0):.2f}" if item.tare_weight is not None else '',
+            'tare_weight_unit': item.tare_weight_unit or item.weight_unit,
+            'pieces': item.pieces if item.pieces is not None else '',
+            'packaging': item.packaging or '',
+            'is_palletized': bool(item.is_palletized),
+        }
+    })
 
 
 @login_required
