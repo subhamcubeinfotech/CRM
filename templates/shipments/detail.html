@@ -2833,6 +2833,7 @@
         document.querySelectorAll('[data-contact-select-target]').forEach(function(button) {
             button.addEventListener('click', function() {
                 activeContactSelectId = this.dataset.contactSelectTarget || '';
+                document.getElementById('contactOffcanvasForm')?.reset();
             });
         });
 
