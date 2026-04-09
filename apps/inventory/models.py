@@ -135,6 +135,7 @@ class Material(TenantAwareModel):
     company = models.ForeignKey('accounts.Company', on_delete=models.CASCADE, related_name='materials', null=True, blank=True, help_text="Company this material belongs to (optional, null means global to tenant)")
     image = models.ImageField(upload_to='materials/images/', null=True, blank=True)
     document = models.FileField(upload_to='materials/docs/', null=True, blank=True)
+    is_archived = models.BooleanField(default=False)
     
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
