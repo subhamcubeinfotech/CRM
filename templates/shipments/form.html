@@ -537,7 +537,7 @@
                                             <label class="form-label">Weight / Qty <span class="text-danger">*</span></label>
                                             <div class="row g-0">
                                                 <div class="col-8">
-                                                    <input type="number" name="items_ui[{{ forloop.counter0 }}][weight]" class="form-control rounded-end-0" placeholder="Qty" step="0.01" required value="{{ item.weight|floatformat:2 }}">
+                                                    <input type="number" name="items_ui[{{ forloop.counter0 }}][weight]" class="form-control rounded-end-0 item-weight-input" placeholder="Qty" step="0.01" required value="{{ item.weight|floatformat:2 }}">
                                                 </div>
                                                 <div class="col-4">
                                                     <select name="items_ui[{{ forloop.counter0 }}][unit]" class="form-select rounded-start-0 border-start-0 weight-unit-select">
@@ -555,7 +555,7 @@
                                             <label class="form-label">Gross Weight</label>
                                             <div class="row g-0">
                                                 <div class="col-8">
-                                                    <input type="number" name="items_ui[{{ forloop.counter0 }}][gross_weight]" class="form-control rounded-end-0" placeholder="Gross Wt." step="0.01">
+                                                    <input type="number" name="items_ui[{{ forloop.counter0 }}][gross_weight]" class="form-control rounded-end-0 item-gross-input" placeholder="Gross Wt." step="0.01">
                                                 </div>
                                                 <div class="col-4">
                                                     <select name="items_ui[{{ forloop.counter0 }}][gross_unit]" class="form-select rounded-start-0 border-start-0">
@@ -573,7 +573,7 @@
                                             <label class="form-label">Tare Weight</label>
                                             <div class="row g-0">
                                                 <div class="col-8">
-                                                    <input type="number" name="items_ui[{{ forloop.counter0 }}][tare_weight]" class="form-control rounded-end-0" placeholder="Tare Wt." step="0.01">
+                                                    <input type="number" name="items_ui[{{ forloop.counter0 }}][tare_weight]" class="form-control rounded-end-0 item-tare-input" placeholder="Tare Wt." step="0.01">
                                                 </div>
                                                 <div class="col-4">
                                                     <select name="items_ui[{{ forloop.counter0 }}][tare_unit]" class="form-select rounded-start-0 border-start-0">
@@ -665,7 +665,7 @@
                                             <label class="form-label">Weight / Qty <span class="text-danger">*</span></label>
                                             <div class="row g-0">
                                                 <div class="col-8">
-                                                    <input type="number" name="items_ui[{{ forloop.counter0 }}][weight]" class="form-control rounded-end-0" placeholder="Qty" step="0.01" required value="{{ item.weight|floatformat:2 }}">
+                                                    <input type="number" name="items_ui[{{ forloop.counter0 }}][weight]" class="form-control rounded-end-0 item-weight-input" placeholder="Qty" step="0.01" required value="{{ item.weight|floatformat:2 }}">
                                                 </div>
                                                 <div class="col-4">
                                                     <select name="items_ui[{{ forloop.counter0 }}][unit]" class="form-select rounded-start-0 border-start-0 weight-unit-select">
@@ -683,7 +683,7 @@
                                             <label class="form-label">Gross Weight</label>
                                             <div class="row g-0">
                                                 <div class="col-8">
-                                                    <input type="number" name="items_ui[{{ forloop.counter0 }}][gross_weight]" class="form-control rounded-end-0" placeholder="Gross Wt." step="0.01" value="{{ item.gross_weight|floatformat:2 }}">
+                                                    <input type="number" name="items_ui[{{ forloop.counter0 }}][gross_weight]" class="form-control rounded-end-0 item-gross-input" placeholder="Gross Wt." step="0.01" value="{{ item.gross_weight|floatformat:2 }}">
                                                 </div>
                                                 <div class="col-4">
                                                     <select name="items_ui[{{ forloop.counter0 }}][gross_unit]" class="form-select rounded-start-0 border-start-0">
@@ -701,7 +701,7 @@
                                             <label class="form-label">Tare Weight</label>
                                             <div class="row g-0">
                                                 <div class="col-8">
-                                                    <input type="number" name="items_ui[{{ forloop.counter0 }}][tare_weight]" class="form-control rounded-end-0" placeholder="Tare Wt." step="0.01" value="{{ item.tare_weight|floatformat:2 }}">
+                                                    <input type="number" name="items_ui[{{ forloop.counter0 }}][tare_weight]" class="form-control rounded-end-0 item-tare-input" placeholder="Tare Wt." step="0.01" value="{{ item.tare_weight|floatformat:2 }}">
                                                 </div>
                                                 <div class="col-4">
                                                     <select name="items_ui[{{ forloop.counter0 }}][tare_unit]" class="form-select rounded-start-0 border-start-0">
@@ -1925,6 +1925,24 @@
                 // Sync tare weight unit
                 const tareUnitSelect = itemContainer.querySelector('select[name*="[tare_unit]"]');
                 if (tareUnitSelect) tareUnitSelect.value = selectedUnit;
+            }
+        });
+
+        function calculateGrossForItem(container) {
+            const weightInput = container.querySelector('.item-weight-input');
+            const tareInput = container.querySelector('.item-tare-input');
+            const grossInput = container.querySelector('.item-gross-input');
+            if (weightInput && tareInput && grossInput) {
+                const weight = parseFloat(weightInput.value) || 0;
+                const tare = parseFloat(tareInput.value) || 0;
+                grossInput.value = (weight + tare).toFixed(2);
+            }
+        }
+
+        root.addEventListener('input', function(e) {
+            if (e.target.classList.contains('item-weight-input') || e.target.classList.contains('item-tare-input')) {
+                const itemContainer = e.target.closest('.shipment-item');
+                if (itemContainer) calculateGrossForItem(itemContainer);
             }
         });
     })();
