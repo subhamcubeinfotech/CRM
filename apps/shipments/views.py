@@ -2086,7 +2086,7 @@ def generate_packing_list_pdf(request, pk):
     ]
 
     company_lines = [
-        Paragraph("FreightPro", ParagraphStyle('CompName', parent=bold_style, fontSize=18, textColor=primary_color)),
+        Paragraph("FreightPro", ParagraphStyle('CompName', parent=bold_style, fontSize=18, leading=22, spaceAfter=2, textColor=primary_color)),
         Paragraph("Logistics & Freight Services", normal_style),
         Paragraph("123 Logistics Way, Chicago, IL 60601", normal_style),
     ]
