@@ -639,16 +639,28 @@ def create_material_ajax(request):
                     'status': 'success',
                     'id': material.id,
                     'name': material.name,
-                    'type': material.material_type or "—",
-                    'grade': material.grade or "—",
-                    'form': material.product_type or "—",
+                    'type': material.material_type or "-",
+                    'grade': material.grade or "-",
+                    'form': material.product_type or "-",
                     'description': material.description or ""
                 })
-            except IntegrityError:
+            except IntegrityError as e:
+                # Capture specific conflict message if possible
+                error_msg = str(e)
+                if 'unique constraint' in error_msg.lower() or 'already exists' in error_msg.lower():
+                    friendly_msg = 'A material with this name already exists for this company.'
+                else:
+                    friendly_msg = f'Database conflict: {error_msg}'
+                
                 return JsonResponse({
                     'status': 'error',
-                    'errors': {'name': ['A material with this name already exists.']}
+                    'errors': {'name': [{'message': friendly_msg, 'code': 'unique'}]}
                 }, status=400)
+        else:
+            return JsonResponse({
+                'status': 'error',
+                'errors': form.errors.get_json_data()
+            }, status=400)
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
 
 @login_required

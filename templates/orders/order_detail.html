@@ -2304,8 +2304,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 } else {
                     let errorMsg = 'Error creating material:\n';
-                    for (const field in data.errors) {
-                        errorMsg += `${field}: ${data.errors[field][0].message}\n`;
+                    if (data.errors) {
+                        for (const field in data.errors) {
+                            const errorItem = data.errors[field][0];
+                            const msg = (typeof errorItem === 'string') ? errorItem : (errorItem.message || 'Unknown error');
+                            errorMsg += `${field}: ${msg}\n`;
+                        }
+                    } else if (data.message) {
+                        errorMsg += data.message;
+                    } else {
+                        errorMsg += 'Unknown server error.';
                     }
                     alert(errorMsg);
                 }
