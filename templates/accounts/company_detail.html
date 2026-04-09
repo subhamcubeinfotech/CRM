@@ -609,8 +609,8 @@
                 <div class="input-group">
                     <span class="input-group-text bg-light border-0 rounded-start-pill ps-3"><i
                             class="fas fa-calendar-alt text-primary"></i></span>
-                    <input type="text" class="form-control flatpickr-date rounded-end-pill bg-light border-0 px-3"
-                        value="{% now 'Y-m-d' %}" required readonly>
+                    <input type="text" class="form-control flatpickr-date-today rounded-end-pill bg-light border-0 px-3"
+                        required readonly>
                 </div>
             </div>
 
@@ -1377,7 +1377,15 @@
         }
 
         flatpickr(".flatpickr-date", {
-            dateFormat: "D, M j",
+            dateFormat: "Y-m-d",
+            allowInput: true,
+            altInput: true,
+            altFormat: "F j, Y",
+        });
+
+        flatpickr(".flatpickr-date-today", {
+            dateFormat: "Y-m-d",
+            defaultDate: "today",
             allowInput: true,
             altInput: true,
             altFormat: "F j, Y",
