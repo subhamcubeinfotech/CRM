@@ -28,6 +28,7 @@ urlpatterns = [
     path('ajax/verify-otp/', views_auth.ajax_verify_otp, name='ajax_verify_otp'),
     path('ajax/edit-contact/', views.ajax_edit_contact, name='ajax_edit_contact'),
     path('ajax/archive-contact/', views.ajax_archive_contact, name='ajax_archive_contact'),
+    path('ajax/unarchive-contact/', views.ajax_unarchive_contact, name='ajax_unarchive_contact'),
     path('ajax/add-contact/', views.ajax_add_contact, name='ajax_add_contact'),
     path('ajax/help-ticket/', views.ajax_help_ticket, name='ajax_help_ticket'),
     path('<int:pk>/ajax/associate-material/', views.ajax_associate_material, name='ajax_associate_material'),

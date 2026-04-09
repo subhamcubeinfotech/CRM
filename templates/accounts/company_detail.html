@@ -150,10 +150,14 @@
                                 </div>
                             </div>
 
+
                             <div class="contacts-list">
+                                <div id="noArchivedMsg" class="text-center py-4 text-muted border rounded-3 mb-3 d-none" style="background-color: #f8f9fa;">
+                                    <p class="mb-0 italic" style="font-size: 0.75rem; font-style: italic;">No archived contacts found. Toggle "Archived" to see any active contacts.</p>
+                                </div>
                                 {% if company.users.all %}
                                 {% for contact in company.users.all %}
-                                <div class="contact-item mb-3 {% if contact.is_contact_archived %}archived-contact opacity-75{% endif %}"
+                                <div class="contact-item mb-3 {% if contact.is_contact_archived %}archived-contact{% endif %}"
                                     {% if contact.is_contact_archived %}style="display: none !important;" {% endif %}>
                                     <div class="d-flex justify-content-between align-items-start">
                                         <div class="flex-grow-1">
@@ -166,6 +170,7 @@
                                             </div>
                                         </div>
                                         <div class="ms-2">
+                                            {% if not contact.is_contact_archived %}
                                             <div class="dropdown">
                                                 <button
                                                     class="btn btn-light btn-sm rounded-circle p-0 d-flex align-items-center justify-content-center no-caret"
@@ -183,13 +188,21 @@
                                                             data-phone="{{ contact.phone|default:'' }}">
                                                             <i class="fas fa-edit me-2 opacity-50"
                                                                 style="width: 14px;"></i>Edit</a></li>
-                                                    <li><a class="dropdown-item archive-contact-btn py-2 text-danger align-items-center"
-                                                            href="javascript:void(0)" data-id="{{ contact.id }}"
-                                                            style="{% if contact.is_contact_archived %}display:none;{% else %}display:flex;{% endif %}">
-                                                            <i class="fas fa-trash-alt me-2 opacity-50"
+                                                    <li><a class="dropdown-item archive-contact-btn py-2 text-danger d-flex align-items-center"
+                                                            href="javascript:void(0)" data-id="{{ contact.id }}">
+                                                            <i class="fas fa-archive me-2 opacity-50"
                                                                 style="width: 14px;"></i>Archive</a></li>
                                                 </ul>
                                             </div>
+                                            {% else %}
+                                            <div class="restore-action-wrapper">
+                                                <a href="javascript:void(0)" class="restore-contact-btn text-primary text-decoration-none" data-id="{{ contact.id }}">
+                                                    <i class="fas fa-trash-alt position-relative" style="font-size: 1.1rem;">
+                                                        <span style="position: absolute; top: 50%; left: -2px; width: 120%; height: 2px; background: currentColor; transform: translateY(-50%) rotate(-45deg); pointer-events: none;"></span>
+                                                    </i>
+                                                </a>
+                                            </div>
+                                            {% endif %}
                                         </div>
                                     </div>
                                 </div>
@@ -1054,6 +1067,27 @@
         </div>
     </div>
 </div>
+
+<!-- Restore Contact Modal -->
+<div class="modal fade" id="restoreContactModal" tabindex="-1" aria-labelledby="restoreContactModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 380px;">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+            <div class="modal-body p-4 text-center">
+                <h5 class="modal-title fw-bold mb-3" id="restoreContactModalLabel">Restore Contact</h5>
+                <p class="text-muted small mb-4">Are you sure you want to restore this contact?</p>
+                <input type="hidden" id="restore_contact_id">
+                <div class="d-flex justify-content-center gap-2">
+                    <button type="button" class="btn btn-outline-primary px-4 rounded-pill small"
+                        data-bs-dismiss="modal" style="font-size: 0.75rem;">Cancel</button>
+                    <button type="button" class="btn btn-danger px-4 rounded-pill small" id="confirmRestoreBtn"
+                        style="font-size: 0.75rem; background-color: #dc3545; border: none;">Submit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="offcanvas offcanvas-end border-0 shadow" tabindex="-1" id="offcanvasAddCompanyMaterial"
     aria-labelledby="offcanvasAddCompanyMaterialLabel" style="width: 400px;">
     <div class="offcanvas-header bg-white border-bottom py-3">
@@ -1913,12 +1947,34 @@
         // --- ARCHIVED CONTACTS TOGGLE ---
         const archivedToggle = document.getElementById('showArchivedContacts');
         if (archivedToggle) {
-            archivedToggle.addEventListener('change', function () {
-                const archivedItems = document.querySelectorAll('.contact-item.archived-contact');
-                const isVisible = this.checked;
+            // Restore state on load
+            const savedState = sessionStorage.getItem('contacts_show_archived');
+            if (savedState === 'true') {
+                archivedToggle.checked = true;
+            } else if (savedState === 'false') {
+                archivedToggle.checked = false;
+            }
 
-                archivedItems.forEach(item => {
-                    if (isVisible) {
+            archivedToggle.addEventListener('change', function () {
+                const isToggleOn = this.checked;
+                sessionStorage.setItem('contacts_show_archived', isToggleOn);
+                
+                const items = document.querySelectorAll('.contact-item');
+                const archivedItems = document.querySelectorAll('.contact-item.archived-contact');
+                const noArchivedMsg = document.getElementById('noArchivedMsg');
+
+                items.forEach(item => {
+                    const isArchived = item.classList.contains('archived-contact');
+                    
+                    // Logic: OFF shows only Active. ON shows only Archived.
+                    let shouldShow = false;
+                    if (isToggleOn) {
+                        shouldShow = isArchived;
+                    } else {
+                        shouldShow = !isArchived;
+                    }
+
+                    if (shouldShow) {
                         item.style.setProperty('display', 'block', 'important');
                         item.classList.add('animate__fadeIn');
                     } else {
@@ -1926,7 +1982,17 @@
                         item.classList.remove('animate__fadeIn');
                     }
                 });
+
+                // Show empty message if Toggle is ON and no archived contacts exist
+                if (isToggleOn && archivedItems.length === 0) {
+                    noArchivedMsg.classList.remove('d-none');
+                } else {
+                    noArchivedMsg.classList.add('d-none');
+                }
             });
+
+            // Trigger initial state
+            archivedToggle.dispatchEvent(new Event('change'));
         }
 
         // --- CONTACT EDIT/ARCHIVE HANDLERS ---
@@ -1950,6 +2016,16 @@
                 editOffcanvas.show();
             }
 
+            if (e.target.closest('.restore-contact-btn')) {
+                const btn = e.target.closest('.restore-contact-btn');
+                const id = btn.dataset.id;
+
+                // Store ID and show custom modal
+                document.getElementById('restore_contact_id').value = id;
+                const restoreModal = new bootstrap.Modal(document.getElementById('restoreContactModal'));
+                restoreModal.show();
+            }
+
             if (e.target.closest('.archive-contact-btn')) {
                 const btn = e.target.closest('.archive-contact-btn');
                 const id = btn.dataset.id;
@@ -1961,6 +2037,47 @@
             }
 
         });
+
+        // Handle Confirm Restore Button Click
+        const confirmRestoreBtn = document.getElementById('confirmRestoreBtn');
+        if (confirmRestoreBtn) {
+            confirmRestoreBtn.addEventListener('click', function () {
+                const id = document.getElementById('restore_contact_id').value;
+                const btn = this;
+                const originalHtml = btn.innerHTML;
+
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Restoring...';
+
+                fetch('{% url "accounts:ajax_unarchive_contact" %}', {
+                    method: 'POST',
+                    body: JSON.stringify({ contact_id: id }),
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // On success, set toggle to OFF and reload to see in active list
+                            sessionStorage.setItem('contacts_show_archived', 'false');
+                            bootstrap.Modal.getInstance(document.getElementById('restoreContactModal')).hide();
+                            location.reload(); 
+                        } else {
+                            btn.disabled = false;
+                            btn.innerHTML = originalHtml;
+                            alert(data.message || 'Error restoring contact.');
+                        }
+                    })
+                    .catch(err => {
+                        btn.disabled = false;
+                        btn.innerHTML = originalHtml;
+                        console.error('Error:', err);
+                    });
+            });
+        }
 
         // Handle Confirm Archive Button Click
         const confirmArchiveBtn = document.getElementById('confirmArchiveBtn');
@@ -1985,33 +2102,10 @@
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
-                            // Update the contact item instead of removing it
-                            const items = document.querySelectorAll('.contact-item');
-                            const isToggleOn = document.getElementById('showArchivedContacts')?.checked;
-                            items.forEach(item => {
-                                const archiveBtn = item.querySelector('.archive-contact-btn');
-                                if (archiveBtn && archiveBtn.dataset.id == id) {
-                                    item.classList.add('archived-contact', 'opacity-75');
-                                    if (!isToggleOn) {
-                                        item.style.setProperty('display', 'none', 'important');
-                                    }
-                                }
-                            });
-
-                            // If no contacts left, show placeholder
-                            const list = document.querySelector('.contacts-list');
-                            if (list && document.querySelectorAll('.contact-item').length === 0) {
-                                list.innerHTML = `
-                                <div class="text-center py-4 text-muted bg-light bg-opacity-50 border rounded-3 mb-3">
-                                    <i class="fas fa-user-friends d-block mb-2 opacity-50"></i>
-                                    <span style="font-size: 0.7rem;">No contacts linked yet.</span>
-                                </div>
-                            `;
-                            }
-
+                            // On success, set toggle to ON and reload to see in archived list
+                            sessionStorage.setItem('contacts_show_archived', 'true');
                             bootstrap.Modal.getInstance(document.getElementById('archiveContactModal')).hide();
-                            btn.disabled = false;
-                            btn.innerHTML = originalHtml;
+                            location.reload(); 
                         } else {
                             btn.disabled = false;
                             btn.innerHTML = originalHtml;
