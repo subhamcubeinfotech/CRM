@@ -12,6 +12,7 @@ from .models import Order, ManifestItem, Tag, ShippingTerm, PackagingType
 from apps.accounts.models import Company
 from apps.inventory.models import Warehouse, InventoryItem, Material
 from apps.inventory.forms import MaterialForm
+from apps.shipments.models import Shipment
 from apps.accounts.utils import filter_by_user_company, check_company_access
 import logging
 
@@ -272,6 +273,7 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
         context['all_tags'] = Tag.plain_objects.filter(Q(tenant=user_tenant) | Q(tenant__isnull=True)).order_by('name')
         context['all_shipping_terms'] = ShippingTerm.plain_objects.filter(Q(tenant=user_tenant) | Q(tenant__isnull=True)).order_by('name')
         context['all_representatives'] = get_user_model().objects.filter(tenant=user_tenant, is_active=True).order_by('first_name', 'username')
+        context['shipment_types'] = Shipment.SHIPMENT_TYPE_CHOICES
             
         inventory_items_qs = InventoryItem.plain_objects.filter(
             company=self.object.supplier,
