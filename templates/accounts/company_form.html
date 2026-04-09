@@ -2,217 +2,289 @@
 
 {% block title %}{{ title }} - FreightPro{% endblock %}
 
+{% block extra_css %}
+<!-- Select2 CSS for searchable dropdowns -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+<style>
+/* Modern input styling to match screenshot */
+.select2-container--bootstrap-5 .select2-selection {
+    border-color: #dee2e6;
+    min-height: 48px !important;
+    border-radius: 10px !important;
+    padding: 6px 12px !important;
+    font-size: 0.95rem;
+}
+.select2-container--bootstrap-5.select2-container--focus .select2-selection {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+.select2-selection__choice {
+    background-color: #f1f5f9 !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 8px !important;
+    padding: 3px 10px !important;
+    color: #475569 !important;
+    font-weight: 500 !important;
+}
+.form-label {
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 0.6rem;
+}
+.card {
+    border-radius: 16px;
+    border: 1px solid #f1f5f9;
+}
+.invalid-feedback {
+    display: block;
+    font-weight: 500;
+    margin-top: 0.35rem;
+}
+.is-invalid + .select2-container--bootstrap-5 .select2-selection {
+    border-color: #dc3545 !important;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2><i class="fas fa-building text-primary me-2"></i> {{ title }}</h2>
-    <a href="{% url 'accounts:company_list' %}" class="btn btn-outline-secondary">
+    <a href="{% url 'accounts:company_list' %}" class="btn btn-outline-secondary rounded-pill px-3">
         <i class="fas fa-arrow-left me-1"></i> Back to Directory
     </a>
 </div>
 
-<div class="card shadow-sm mb-4">
+<div class="card shadow-sm mb-4 p-2">
     <div class="card-body">
-        <form method="post" action="" enctype="multipart/form-data">
+        {% if form.errors %}
+        <div class="alert alert-danger rounded-4 mb-4">
+            <h6 class="fw-bold mb-2"><i class="fas fa-exclamation-triangle me-2"></i>Please fix the following issues:</h6>
+            <ul class="mb-0 small">
+                {% for field, errors in form.errors.items %}
+                    {% for error in errors %}
+                        <li><strong>{{ field|capfirst }}:</strong> {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <form method="post" action="" enctype="multipart/form-data" novalidate>
             {% csrf_token %}
             
             {% if form.non_field_errors %}
-            <div class="alert alert-danger">
+            <div class="alert alert-danger rounded-4">
                 {{ form.non_field_errors }}
             </div>
             {% endif %}
 
-            <div class="row mb-4">
-                <div class="col-md-12">
-                    <h5 class="border-bottom pb-2 text-primary">Basic Information</h5>
+            <div class="row mb-5">
+                <div class="col-md-12 mb-4">
+                    <h5 class="fw-bold text-dark"><i class="fas fa-info-circle text-primary me-2"></i>Basic Information</h5>
+                    <hr class="mt-2 opacity-10">
                 </div>
                 
                 <div class="col-md-6 mb-3">
                     <label for="{{ form.name.id_for_label }}" class="form-label">Company Name *</label>
                     {{ form.name }}
-                    {% if form.name.errors %}
-                        <div class="text-danger small mt-1">{{ form.name.errors }}</div>
-                    {% endif %}
+                    {% if form.name.errors %}<div class="invalid-feedback text-danger">{{ form.name.errors.0 }}</div>{% endif %}
                 </div>
                 
                 <div class="col-md-6 mb-3">
                     <label for="{{ form.company_type.id_for_label }}" class="form-label">Company Type *</label>
                     {{ form.company_type }}
-                    {% if form.company_type.errors %}
-                        <div class="text-danger small mt-1">{{ form.company_type.errors }}</div>
-                    {% endif %}
+                    {% if form.company_type.errors %}<div class="invalid-feedback text-danger">{{ form.company_type.errors.0 }}</div>{% endif %}
                 </div>
 
                 <div class="col-md-6 mb-3">
                     <label for="{{ form.tax_id.id_for_label }}" class="form-label">Tax ID / EIN</label>
                     {{ form.tax_id }}
-                    {% if form.tax_id.errors %}
-                        <div class="text-danger small mt-1">{{ form.tax_id.errors }}</div>
-                    {% endif %}
+                    {% if form.tax_id.errors %}<div class="invalid-feedback text-danger">{{ form.tax_id.errors.0 }}</div>{% endif %}
                 </div>
                 
                 <div class="col-md-6 mb-3 d-flex align-items-end">
                     <div class="form-check mb-2">
                         {{ form.is_active }}
-                        <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
-                            Active Status
-                        </label>
+                        <label class="form-check-label ms-2 fw-medium" for="{{ form.is_active.id_for_label }}">Active Status</label>
                     </div>
                 </div>
             </div>
 
-            <div class="row mb-4">
-                <div class="col-md-12">
-                    <h5 class="border-bottom pb-2 text-primary">Contact Information</h5>
+            <div class="row mb-5">
+                <div class="col-md-12 mb-4">
+                    <h5 class="fw-bold text-dark"><i class="fas fa-address-book text-primary me-2"></i>Contact Information</h5>
+                    <hr class="mt-2 opacity-10">
+                </div>
+                
+                <div class="col-md-12 mb-3">
+                    <label for="{{ form.legal_name.id_for_label }}" class="form-label">Legal Name</label>
+                    {{ form.legal_name }}
+                    {% if form.legal_name.errors %}<div class="invalid-feedback text-danger">{{ form.legal_name.errors.0 }}</div>{% endif %}
                 </div>
                 
                 <div class="col-md-4 mb-3">
                     <label for="{{ form.phone.id_for_label }}" class="form-label">Phone</label>
                     {{ form.phone }}
-                    {% if form.phone.errors %}
-                        <div class="text-danger small mt-1">{{ form.phone.errors }}</div>
-                    {% endif %}
+                    {% if form.phone.errors %}<div class="invalid-feedback text-danger">{{ form.phone.errors.0 }}</div>{% endif %}
                 </div>
                 
                 <div class="col-md-4 mb-3">
                     <label for="{{ form.email.id_for_label }}" class="form-label">Email *</label>
                     {{ form.email }}
-                    {% if form.email.errors %}
-                        <div class="text-danger small mt-1">{{ form.email.errors }}</div>
-                    {% endif %}
+                    {% if form.email.errors %}<div class="invalid-feedback text-danger">{{ form.email.errors.0 }}</div>{% endif %}
                 </div>
 
                 <div class="col-md-4 mb-3">
                     <label for="{{ form.website.id_for_label }}" class="form-label">Website</label>
                     {{ form.website }}
-                    {% if form.website.errors %}
-                        <div class="text-danger small mt-1">{{ form.website.errors }}</div>
-                    {% endif %}
+                    {% if form.website.errors %}<div class="invalid-feedback text-danger">{{ form.website.errors.0 }}</div>{% endif %}
                 </div>
             </div>
 
-            <div class="row mb-4">
-                <div class="col-md-12">
-                    <h5 class="border-bottom pb-2 text-primary">Address</h5>
+            <div class="row mb-5">
+                <div class="col-md-12 mb-4">
+                    <h5 class="fw-bold text-dark"><i class="fas fa-map-marker-alt text-primary me-2"></i>Address</h5>
+                    <hr class="mt-2 opacity-10">
                 </div>
                 
                 <div class="col-md-6 mb-3">
                     <label for="{{ form.address_line1.id_for_label }}" class="form-label">Address Line 1</label>
                     {{ form.address_line1 }}
-                    {% if form.address_line1.errors %}
-                        <div class="text-danger small mt-1">{{ form.address_line1.errors }}</div>
-                    {% endif %}
+                    {% if form.address_line1.errors %}<div class="invalid-feedback text-danger">{{ form.address_line1.errors.0 }}</div>{% endif %}
                 </div>
                 
                 <div class="col-md-6 mb-3">
                     <label for="{{ form.address_line2.id_for_label }}" class="form-label">Address Line 2</label>
                     {{ form.address_line2 }}
-                    {% if form.address_line2.errors %}
-                        <div class="text-danger small mt-1">{{ form.address_line2.errors }}</div>
-                    {% endif %}
+                    {% if form.address_line2.errors %}<div class="invalid-feedback text-danger">{{ form.address_line2.errors.0 }}</div>{% endif %}
                 </div>
 
-                <div class="col-md-3 mb-3">
+                <div class="col-md-4 mb-3">
                     <label for="{{ form.city.id_for_label }}" class="form-label">City</label>
                     {{ form.city }}
-                    {% if form.city.errors %}
-                        <div class="text-danger small mt-1">{{ form.city.errors }}</div>
-                    {% endif %}
+                    {% if form.city.errors %}<div class="invalid-feedback text-danger">{{ form.city.errors.0 }}</div>{% endif %}
                 </div>
                 
-                <div class="col-md-3 mb-3">
+                <div class="col-md-4 mb-3">
                     <label for="{{ form.state.id_for_label }}" class="form-label">State / Province</label>
                     {{ form.state }}
-                    {% if form.state.errors %}
-                        <div class="text-danger small mt-1">{{ form.state.errors }}</div>
-                    {% endif %}
+                    {% if form.state.errors %}<div class="invalid-feedback text-danger">{{ form.state.errors.0 }}</div>{% endif %}
                 </div>
 
-                <div class="col-md-3 mb-3">
+                <div class="col-md-4 mb-3">
                     <label for="{{ form.postal_code.id_for_label }}" class="form-label">Postal / Zip Code</label>
                     {{ form.postal_code }}
-                    {% if form.postal_code.errors %}
-                        <div class="text-danger small mt-1">{{ form.postal_code.errors }}</div>
-                    {% endif %}
-                </div>
-
-                <div class="col-md-3 mb-3">
-                    <label for="{{ form.country.id_for_label }}" class="form-label">Country</label>
-                    {{ form.country }}
-                    {% if form.country.errors %}
-                        <div class="text-danger small mt-1">{{ form.country.errors }}</div>
-                    {% endif %}
+                    {% if form.postal_code.errors %}<div class="invalid-feedback text-danger">{{ form.postal_code.errors.0 }}</div>{% endif %}
                 </div>
             </div>
 
-            <div class="row mb-4">
-                <div class="col-md-12">
-                    <h5 class="border-bottom pb-2 text-primary">Company Profile</h5>
+            <div class="row mb-5">
+                <div class="col-md-12 mb-4">
+                    <h5 class="fw-bold text-dark"><i class="fas fa-user-tag text-primary me-2"></i>Company Profile</h5>
+                    <p class="text-muted small">Fields below are empty for you to add your own data. Type and press Enter.</p>
+                    <hr class="mt-2 opacity-10">
                 </div>
 
-                <div class="col-md-12 mb-3">
+                <div class="col-md-12 mb-4">
                     <label for="{{ form.description.id_for_label }}" class="form-label">About</label>
                     {{ form.description }}
-                    {% if form.description.errors %}
-                        <div class="text-danger small mt-1">{{ form.description.errors }}</div>
-                    {% endif %}
+                    {% if form.description.errors %}<div class="invalid-feedback text-danger">{{ form.description.errors.0 }}</div>{% endif %}
+                </div>
+
+                <div class="col-md-6 mb-4">
+                    <label for="{{ form.services_provided.id_for_label }}" class="form-label">Services Provided</label>
+                    {{ form.services_provided }}
+                    {% if form.services_provided.errors %}<div class="invalid-feedback text-danger">{{ form.services_provided.errors.0 }}</div>{% endif %}
+                    <div class="form-text mt-1">Type and press Enter to add.</div>
+                </div>
+
+                <div class="col-md-6 mb-4">
+                    <label for="{{ form.material_tags.id_for_label }}" class="form-label">Materials Handled</label>
+                    {{ form.material_tags }}
+                    {% if form.material_tags.errors %}<div class="invalid-feedback text-danger">{{ form.material_tags.errors.0 }}</div>{% endif %}
+                    <div class="form-text mt-1">Type and press Enter to add.</div>
+                </div>
+
+                <div class="col-md-12 mb-4">
+                    <label for="{{ form.company_tags.id_for_label }}" class="form-label">Tags</label>
+                    {{ form.company_tags }}
+                    {% if form.company_tags.errors %}<div class="invalid-feedback text-danger">{{ form.company_tags.errors.0 }}</div>{% endif %}
+                    <div class="form-text mt-1">Type and press Enter to add.</div>
                 </div>
 
                 <div class="col-md-12 mb-3">
-                    <label for="{{ form.logo.id_for_label }}" class="form-label">Logo</label>
-                    {{ form.logo }}
-                    {% if form.logo.errors %}
-                        <div class="text-danger small mt-1">{{ form.logo.errors }}</div>
-                    {% endif %}
-                    {% if is_edit and company.logo %}
-                        <div class="mt-2">
-                            <img src="{{ company.logo.url }}" alt="{{ company.name }} logo" style="max-height: 72px; border-radius: 8px;">
-                        </div>
-                    {% endif %}
+                    <label for="{{ form.logo.id_for_label }}" class="form-label">Company Logo</label>
+                    <div class="p-3 border rounded-3 bg-light bg-opacity-50">
+                        {{ form.logo }}
+                        {% if is_edit and company.logo %}
+                            <div class="mt-3">
+                                <img src="{{ company.logo.url }}" alt="{{ company.name }}" style="max-height: 80px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+                            </div>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
 
-            <div class="row mb-4">
-                <div class="col-md-12">
-                    <h5 class="border-bottom pb-2 text-primary">Financial Information</h5>
+            <div class="row mb-5">
+                <div class="col-md-12 mb-4">
+                    <h5 class="fw-bold text-dark"><i class="fas fa-file-invoice-dollar text-primary me-2"></i>Financial Information</h5>
+                    <hr class="mt-2 opacity-10">
                 </div>
                 
                 <div class="col-md-6 mb-3">
                     <label for="{{ form.payment_terms.id_for_label }}" class="form-label">Payment Terms (Days)</label>
                     {{ form.payment_terms }}
-                    <div class="form-text">Standard net payment terms (e.g., 30 for Net 30)</div>
-                    {% if form.payment_terms.errors %}
-                        <div class="text-danger small mt-1">{{ form.payment_terms.errors }}</div>
-                    {% endif %}
+                    {% if form.payment_terms.errors %}<div class="invalid-feedback text-danger">{{ form.payment_terms.errors.0 }}</div>{% endif %}
                 </div>
                 
                 <div class="col-md-6 mb-3">
-                    <label for="{{ form.credit_limit.id_for_label }}" class="form-label">Credit Limit ($)</label>
-                    <div class="input-group">
-                        <span class="input-group-text">$</span>
-                        {{ form.credit_limit }}
-                    </div>
-                    {% if form.credit_limit.errors %}
-                        <div class="text-danger small mt-1">{{ form.credit_limit.errors }}</div>
-                    {% endif %}
+                    <label for="{{ form.credit_limit.id_for_label }}" class="form-label">Credit Limit</label>
+                    {{ form.credit_limit }}
+                    {% if form.credit_limit.errors %}<div class="invalid-feedback text-danger">{{ form.credit_limit.errors.0 }}</div>{% endif %}
                 </div>
             </div>
 
-            <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+            <div class="d-flex justify-content-between align-items-center mt-5 pt-4 border-top">
                 <div>
                     {% if is_edit %}
-                    <a href="{% url 'accounts:company_delete' company.pk %}" class="btn btn-outline-danger" onclick="return confirm('Delete this company?')">
-                        <i class="fas fa-trash me-1"></i> Delete Company
+                    <a href="{% url 'accounts:company_delete' company.pk %}" class="btn btn-outline-danger px-4 rounded-pill" onclick="return confirm('Delete this company?')">
+                        <i class="fas fa-trash me-2"></i>Delete Company
                     </a>
                     {% endif %}
                 </div>
                 <div class="d-flex gap-2">
-                    <a href="{% url 'accounts:company_list' %}" class="btn btn-light">Cancel</a>
-                    <button type="submit" class="btn btn-primary px-4">
-                        <i class="fas fa-save me-1"></i> {% if is_edit %}Save Changes{% else %}Save Company{% endif %}
+                    <a href="{% url 'accounts:company_list' %}" class="btn btn-light px-4 rounded-pill fw-medium">Cancel</a>
+                    <button type="submit" class="btn btn-primary px-5 py-2 rounded-pill fw-bold">
+                        <i class="fas fa-save me-2"></i>{% if is_edit %}Save Changes{% else %}Save Company{% endif %}
                     </button>
                 </div>
             </div>
         </form>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- jQuery (Required for Select2) -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<!-- Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    // Initialize Select2 with Tagging (Type & Enter)
+    $('.select2-tags').select2({
+        tags: true,
+        tokenSeparators: [',', ' '],
+        theme: 'bootstrap-5',
+        width: '100%',
+        placeholder: "Type and press Enter...",
+        allowClear: true,
+        containerCssClass: 'select2-custom-container'
+    });
+
+    console.log("Select2 Tagging Initialized");
+});
+</script>
 {% endblock %}

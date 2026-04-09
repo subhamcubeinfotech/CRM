@@ -17,6 +17,7 @@ class Company(TenantAwareModel):
     ]
     
     name = models.CharField(max_length=200)
+    legal_name = models.CharField(max_length=255, blank=True)
     company_type = models.CharField(max_length=20, choices=COMPANY_TYPE_CHOICES, default='customer')
     tax_id = models.CharField(max_length=50, blank=True)
     
@@ -36,6 +37,11 @@ class Company(TenantAwareModel):
     website = models.URLField(blank=True)
     description = models.TextField(blank=True)
     logo = models.ImageField(upload_to='company_logos/', blank=True, null=True)
+    
+    # Relationships & Extended Info
+    services_provided = models.JSONField(default=list, blank=True, help_text="List of services provided")
+    material_tags = models.ManyToManyField('inventory.Material', blank=True, related_name='associated_companies')
+    company_tags = models.ManyToManyField('orders.Tag', blank=True, related_name='companies')
     
     # Financial fields
     payment_terms = models.IntegerField(default=30, help_text='Payment terms in days')

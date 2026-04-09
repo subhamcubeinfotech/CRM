@@ -5,21 +5,89 @@ from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
 from .models import Company
 
+class TagInputField(forms.MultipleChoiceField):
+    """Custom field to allow any value typed in Select2 tags, bypassing choice validation."""
+    def valid_value(self, value):
+        return True
+
 class CompanyForm(forms.ModelForm):
     email = forms.EmailField(required=True, widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Email Address'}))
+    
+    services_provided = TagInputField(
+        choices=[],
+        required=False,
+        widget=forms.SelectMultiple(attrs={
+            'class': 'form-select select2-tags',
+            'multiple': 'multiple',
+            'data-placeholder': 'Type a service and press Enter...'
+        }),
+        label="Services Provided"
+    )
+
+    material_tags = TagInputField(
+        choices=[],
+        required=False,
+        widget=forms.SelectMultiple(attrs={
+            'class': 'form-select select2-tags',
+            'multiple': 'multiple',
+            'data-placeholder': 'Type and press Enter to add...'
+        }),
+        label="Materials Handled"
+    )
+
+    company_tags = TagInputField(
+        choices=[],
+        required=False,
+        widget=forms.SelectMultiple(attrs={
+            'class': 'form-select select2-tags',
+            'multiple': 'multiple',
+            'data-placeholder': 'Type and press Enter to add...'
+        }),
+        label="Company Tags"
+    )
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
+        
+        # Add labels to make them look like the screenshot
+        self.fields['legal_name'].label = "Legal Name"
+
+        # If editing, populate the choices with EXISTING linked items only
+
+        # If editing, populate the choices with EXISTING linked items only
+        # so they show up as tags in the searchable box
+        if self.instance and self.instance.pk:
+            # For JSON field (Services)
+            if self.instance.services_provided:
+                self.fields['services_provided'].initial = self.instance.services_provided
+                self.fields['services_provided'].widget.choices = [(s, s) for s in self.instance.services_provided]
+            
+            # For M2M (Materials)
+            linked_materials = self.instance.material_tags.all()
+            if linked_materials:
+                self.fields['material_tags'].initial = [m.pk for m in linked_materials]
+                # Provide IDs as choices so Select2 can map them
+                self.fields['material_tags'].widget.choices = [(m.pk, m.name) for m in linked_materials]
+            
+            # For M2M (Tags)
+            linked_tags = self.instance.company_tags.all()
+            if linked_tags:
+                self.fields['company_tags'].initial = [t.pk for t in linked_tags]
+                self.fields['company_tags'].widget.choices = [(t.pk, t.name) for t in linked_tags]
+
+        # Make financial fields optional for now so they don't block save
+        self.fields['payment_terms'].required = False
+        self.fields['credit_limit'].required = False
 
     class Meta:
         model = Company
         fields = [
-            'name', 'company_type', 'tax_id',
+            'name', 'legal_name', 'company_type', 'tax_id',
             'phone', 'email', 'website',
             'description', 'logo',
             'address_line1', 'address_line2', 'city', 'state', 'postal_code', 'country',
-            'payment_terms', 'credit_limit', 'is_active'
+            'payment_terms', 'credit_limit', 'is_active',
         ]
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Company Name'}),
@@ -38,7 +106,8 @@ class CompanyForm(forms.ModelForm):
             'country': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Country'}),
             'payment_terms': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Days (e.g., 30)'}),
             'credit_limit': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Credit Limit'}),
-            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'})
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'legal_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Company Legal Name'}),
         }
 
     def clean_phone(self):
@@ -70,15 +139,27 @@ class CompanyForm(forms.ModelForm):
 
     def clean_credit_limit(self):
         credit_limit = self.cleaned_data.get('credit_limit')
-        if credit_limit is not None and credit_limit < 0:
+        if credit_limit is None:
+            return 0
+        if credit_limit < 0:
             raise ValidationError("Credit limit cannot be negative.")
         return credit_limit
 
     def clean_payment_terms(self):
         payment_terms = self.cleaned_data.get('payment_terms')
-        if payment_terms is not None and payment_terms < 0:
+        if payment_terms is None:
+            return 30
+        if payment_terms < 0:
             raise ValidationError("Payment terms cannot be negative.")
         return payment_terms
+
+    def clean_services_provided(self):
+        # SelectMultiple returns a list, which is what we want for JSONField
+        services = self.cleaned_data.get('services_provided')
+        if isinstance(services, str):
+            # If for some reason it comes as a string, split it
+            return [s.strip() for s in services.split(',') if s.strip()]
+        return services or []
 
     def clean_name(self):
         name = self.cleaned_data.get('name')
@@ -100,6 +181,65 @@ class CompanyForm(forms.ModelForm):
             if queryset.exists():
                 raise ValidationError(f"A company with the name '{name}' already exists.")
         return name
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        
+        # Manually capture services_provided since it's now a TagInputField 
+        # (MultipleChoiceField) and might not auto-map to JSONField in commit=False
+        if 'services_provided' in self.cleaned_data:
+            instance.services_provided = self.cleaned_data['services_provided']
+
+        if commit:
+            instance.save()
+            self.save_m2m()
+        return instance
+
+    def save_m2m(self):
+        """Custom save_m2m to handle auto-creation of Tags and Materials."""
+        instance = self.instance
+        
+        # 1. Handle Materials
+        material_names = self.cleaned_data.get('material_tags', [])
+        if material_names:
+            from apps.inventory.models import Material
+            material_objs = []
+            for name in material_names:
+                if name.isdigit():
+                    try:
+                        material_objs.append(Material.objects.get(pk=int(name)))
+                        continue
+                    except Material.DoesNotExist:
+                        pass
+                mat, created = Material.objects.get_or_create(
+                    tenant=instance.tenant,
+                    name=name.strip()
+                )
+                material_objs.append(mat)
+            instance.material_tags.set(material_objs)
+            
+        # 2. Handle Tags
+        tag_names = self.cleaned_data.get('company_tags', [])
+        if tag_names:
+            from apps.orders.models import Tag
+            tag_objs = []
+            for name in tag_names:
+                if name.isdigit():
+                    try:
+                        tag_objs.append(Tag.objects.get(pk=int(name)))
+                        continue
+                    except Tag.DoesNotExist:
+                        pass
+                tag, created = Tag.objects.get_or_create(
+                    tenant=instance.tenant,
+                    name=name.strip()
+                )
+                tag_objs.append(tag)
+            instance.company_tags.set(tag_objs)
+
+        # Call the original save_m2m for any other standard fields
+        if hasattr(super(), 'save_m2m'):
+            super().save_m2m()
 
 class CustomPasswordResetForm(PasswordResetForm):
     def clean_email(self):

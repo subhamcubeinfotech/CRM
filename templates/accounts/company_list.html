@@ -38,7 +38,7 @@
     .directory-map .leaflet-tile-pane {
         filter: saturate(1.4) contrast(1.15) brightness(1.02);
     }
-    
+
     .directory-map-card.is-fullscreen .directory-map {
         height: calc(100vh - 110px);
         flex: 1;
@@ -103,7 +103,7 @@
         top: 50%;
         margin: -16px 0 0 -16px;
         border: 3px solid #fff;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -119,21 +119,32 @@
         content: '';
         width: 10px;
         height: 10px;
-        background: rgba(255,255,255,0.9);
+        background: rgba(255, 255, 255, 0.9);
         position: absolute;
         border-radius: 50%;
         transform: rotate(45deg);
     }
 
-    .custom-marker.carrier { background: #f59e0b; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35); }
-    .custom-marker.customer { background: #3b82f6; box-shadow: 0 4px 14px rgba(59, 130, 246, 0.35); }
-    .custom-marker.vendor { background: #8b5cf6; box-shadow: 0 4px 14px rgba(139, 92, 246, 0.35); }
+    .custom-marker.carrier {
+        background: #f59e0b;
+        box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
+    }
+
+    .custom-marker.customer {
+        background: #3b82f6;
+        box-shadow: 0 4px 14px rgba(59, 130, 246, 0.35);
+    }
+
+    .custom-marker.vendor {
+        background: #8b5cf6;
+        box-shadow: 0 4px 14px rgba(139, 92, 246, 0.35);
+    }
 
     /* Custom Cluster Styles to match user reference */
     .marker-cluster-vibrant {
         background: none;
     }
-    
+
     .custom-cluster {
         width: 40px;
         height: 40px;
@@ -171,6 +182,7 @@
         border-radius: 50%;
         display: inline-block;
     }
+
     body {
         font-size: 0.875rem;
     }
@@ -182,10 +194,12 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h2"><i class="fas fa-address-book me-2 text-primary"></i>Company Directory</h1>
         <div class="d-flex align-items-center gap-2">
-            <button type="button" class="btn btn-outline-primary company-map-toggle" id="company-map-toggle" title="Show company locations">
+            <button type="button" class="btn btn-outline-primary company-map-toggle" id="company-map-toggle"
+                title="Show company locations">
                 <i class="fas fa-location-dot"></i>
             </button>
-            <a href="{% url 'accounts:company_create' %}" class="btn btn-primary"><i class="fas fa-plus me-1"></i>Add Company</a>
+            <a href="{% url 'accounts:company_create' %}" class="btn btn-primary"><i class="fas fa-plus me-1"></i>Add
+                Company</a>
         </div>
     </div>
 
@@ -195,8 +209,10 @@
             <form method="get" class="row g-3">
                 <div class="col-md-5">
                     <div class="input-group">
-                        <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
-                        <input type="text" name="search" class="form-control border-start-0" placeholder="Search by company name..." value="{{ search|default:'' }}">
+                        <span class="input-group-text bg-white border-end-0"><i
+                                class="fas fa-search text-muted"></i></span>
+                        <input type="text" name="search" class="form-control border-start-0"
+                            placeholder="Search by company name..." value="{{ search|default:'' }}">
                     </div>
                 </div>
                 <div class="col-md-4">
@@ -222,7 +238,8 @@
                     <div class="company-map-status" id="company-map-status">Click markers to view company address.</div>
                 </div>
                 <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-sm btn-outline-info" id="company-map-reset" title="Reset view to show all markers">
+                    <button type="button" class="btn btn-sm btn-outline-info" id="company-map-reset"
+                        title="Reset view to show all markers">
                         <i class="fas fa-arrows-rotate me-1"></i>Reset View
                     </button>
                     <button type="button" class="btn btn-sm btn-outline-primary" id="company-map-fullscreen">
@@ -234,18 +251,21 @@
                 </div>
             </div>
             <div id="company-directory-map" class="directory-map shadow-sm border overflow-hidden"></div>
-            
+
             <div class="mt-3 d-flex flex-wrap gap-4 px-2">
                 <div class="d-flex align-items-center gap-2">
-                    <span class="legend-color" style="background: #2563eb; box-shadow: 0 0 0 2px #fff, 0 0 0 3px #2563eb;"></span>
+                    <span class="legend-color"
+                        style="background: #2563eb; box-shadow: 0 0 0 2px #fff, 0 0 0 3px #2563eb;"></span>
                     <span class="small fw-semibold text-secondary">Customers</span>
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                    <span class="legend-color" style="background: #f59e0b; box-shadow: 0 0 0 2px #fff, 0 0 0 3px #f59e0b;"></span>
+                    <span class="legend-color"
+                        style="background: #f59e0b; box-shadow: 0 0 0 2px #fff, 0 0 0 3px #f59e0b;"></span>
                     <span class="small fw-semibold text-secondary">Carriers</span>
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                    <span class="legend-color" style="background: #6366f1; box-shadow: 0 0 0 2px #fff, 0 0 0 3px #6366f1;"></span>
+                    <span class="legend-color"
+                        style="background: #6366f1; box-shadow: 0 0 0 2px #fff, 0 0 0 3px #6366f1;"></span>
                     <span class="small fw-semibold text-secondary">Vendors</span>
                 </div>
                 <div class="ms-auto small text-muted fst-italic">
@@ -263,7 +283,7 @@
                     <thead class="bg-light">
                         <tr>
                             <th class="ps-4">Company Name</th>
-                            <th>Type</th>
+                            <th>Materials</th>
                             <th>Contact Info</th>
                             <th>Location</th>
                             <th>Status</th>
@@ -275,15 +295,18 @@
                         <tr>
                             <td class="ps-4">
                                 <div class="d-flex align-items-center">
-                                    <div class="avatar-sm me-3 bg-primary bg-opacity-10 text-primary rounded d-flex align-items-center justify-content-center overflow-hidden" style="width: 40px; height: 40px;">
+                                    <div class="avatar-sm me-3 bg-primary bg-opacity-10 text-primary rounded d-flex align-items-center justify-content-center overflow-hidden"
+                                        style="width: 40px; height: 40px;">
                                         {% if company.logo %}
-                                            <img src="{{ company.logo.url }}" alt="{{ company.name }} logo" style="width: 100%; height: 100%; object-fit: cover;">
+                                        <img src="{{ company.logo.url }}" alt="{{ company.name }} logo"
+                                            style="width: 100%; height: 100%; object-fit: cover;">
                                         {% else %}
-                                            <i class="fas fa-building"></i>
+                                        <i class="fas fa-building"></i>
                                         {% endif %}
                                     </div>
                                     <div>
-                                        <a href="{% url 'accounts:company_detail' company.pk %}" class="fw-bold text-decoration-none text-dark">
+                                        <a href="{% url 'accounts:company_detail' company.pk %}"
+                                            class="fw-bold text-decoration-none text-dark">
                                             {{ company.name }}
                                         </a>
                                         <div class="small text-muted">ID: #{{ company.pk }}</div>
@@ -291,9 +314,15 @@
                                 </div>
                             </td>
                             <td>
-                                <span class="badge {% if company.company_type == 'customer' %}bg-info{% elif company.company_type == 'carrier' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
-                                    {{ company.get_company_type_display }}
-                                </span>
+                                <div class="small fw-medium">
+                                    {% if company.material_tags.all %}
+                                        {% for tag in company.material_tags.all %}
+                                            {{ tag.name }}{% if not forloop.last %}, {% endif %}
+                                        {% endfor %}
+                                    {% else %}
+                                        <span class="text-muted small italic">No materials</span>
+                                    {% endif %}
+                                </div>
                             </td>
                             <td>
                                 <div class="small"><i class="fas fa-envelope me-2 text-muted"></i>{{ company.email|default:"-" }}</div>
@@ -305,20 +334,26 @@
                             </td>
                             <td>
                                 {% if company.is_active %}
-                                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2">Active</span>
+                                <span
+                                    class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2">Active</span>
                                 {% else %}
-                                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-2">Inactive</span>
+                                <span
+                                    class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-2">Inactive</span>
                                 {% endif %}
                             </td>
                             <td class="text-end pe-4">
                                 <div class="btn-group">
-                                    <a href="{% url 'accounts:company_detail' company.pk %}" class="btn btn-sm btn-outline-primary" title="View Details">
+                                    <a href="{% url 'accounts:company_detail' company.pk %}"
+                                        class="btn btn-sm btn-outline-primary" title="View Details">
                                         <i class="fas fa-eye"></i>
                                     </a>
-                                    <a href="{% url 'accounts:company_edit' company.pk %}" class="btn btn-sm btn-outline-secondary" title="Edit">
+                                    <a href="{% url 'accounts:company_edit' company.pk %}"
+                                        class="btn btn-sm btn-outline-secondary" title="Edit">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <a href="{% url 'accounts:company_delete' company.pk %}" class="btn btn-sm btn-outline-danger" title="Delete" onclick="return confirm('Delete this company?')">
+                                    <a href="{% url 'accounts:company_delete' company.pk %}"
+                                        class="btn btn-sm btn-outline-danger" title="Delete"
+                                        onclick="return confirm('Delete this company?')">
                                         <i class="fas fa-trash"></i>
                                     </a>
                                 </div>
@@ -342,13 +377,17 @@
             <nav>
                 <ul class="pagination justify-content-center mb-0">
                     {% if companies.has_previous %}
-                    <li class="page-item"><a class="page-link" href="?page={{ companies.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if company_type %}&type={{ company_type }}{% endif %}">Previous</a></li>
+                    <li class="page-item"><a class="page-link"
+                            href="?page={{ companies.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if company_type %}&type={{ company_type }}{% endif %}">Previous</a>
+                    </li>
                     {% endif %}
-                    
+
                     <li class="page-item active"><span class="page-link">{{ companies.number }}</span></li>
-                    
+
                     {% if companies.has_next %}
-                    <li class="page-item"><a class="page-link" href="?page={{ companies.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if company_type %}&type={{ company_type }}{% endif %}">Next</a></li>
+                    <li class="page-item"><a class="page-link"
+                            href="?page={{ companies.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if company_type %}&type={{ company_type }}{% endif %}">Next</a>
+                    </li>
                     {% endif %}
                 </ul>
             </nav>
@@ -366,125 +405,125 @@
         const companies = [
             {% for company in companies %}
             {
-                name: "{{ company.name|escapejs }}",
-                address: "{{ company.full_address|default:''|escapejs }}",
-                latitude: {{ company.latitude|default:'null' }},
-                longitude: {{ company.longitude|default:'null' }},
-                city: "{{ company.city|default:''|escapejs }}",
-                state: "{{ company.state|default:''|escapejs }}",
-                country: "{{ company.country|default:''|escapejs }}",
-                location: "{{ company.city|default:''|escapejs }}{% if company.state %}, {{ company.state|escapejs }}{% endif %}{% if company.country %}, {{ company.country|escapejs }}{% endif %}",
-                companyType: "{{ company.get_company_type_display|escapejs }}",
-                detailUrl: "{% url 'accounts:company_detail' company.pk %}"
-            }{% if not forloop.last %},{% endif %}
-            {% endfor %}
+            name: "{{ company.name|escapejs }}",
+            address: "{{ company.full_address|default:''|escapejs }}",
+            latitude: {{ company.latitude|default:'null' }},
+            longitude: {{ company.longitude|default:'null' }},
+        city: "{{ company.city|default:''|escapejs }}",
+        state: "{{ company.state|default:''|escapejs }}",
+        country: "{{ company.country|default:''|escapejs }}",
+        location: "{{ company.city|default:''|escapejs }}{% if company.state %}, {{ company.state|escapejs }}{% endif %}{% if company.country %}, {{ company.country|escapejs }}{% endif %}",
+        companyType: "{{ company.get_company_type_display|escapejs }}",
+        detailUrl: "{% url 'accounts:company_detail' company.pk %}"
+            }{% if not forloop.last %}, {% endif %}
+    {% endfor %}
         ].filter(company => company.address.trim() || company.location.trim());
 
-        const mapCard = document.getElementById('company-map-card');
-        const toggleButton = document.getElementById('company-map-toggle');
-        const closeButton = document.getElementById('company-map-close');
-        const fullscreenButton = document.getElementById('company-map-fullscreen');
-        const resetButton = document.getElementById('company-map-reset');
-        const statusText = document.getElementById('company-map-status');
+    const mapCard = document.getElementById('company-map-card');
+    const toggleButton = document.getElementById('company-map-toggle');
+    const closeButton = document.getElementById('company-map-close');
+    const fullscreenButton = document.getElementById('company-map-fullscreen');
+    const resetButton = document.getElementById('company-map-reset');
+    const statusText = document.getElementById('company-map-status');
 
-        if (!mapCard || !toggleButton) {
+    if (!mapCard || !toggleButton) {
+        return;
+    }
+
+    let companyMap = null;
+    let markersLayer = null;
+    let mapLoaded = false;
+
+    function refreshMapLayout() {
+        if (!companyMap) return;
+        setTimeout(() => {
+            companyMap.invalidateSize();
+            if (markersLayer && markersLayer.getLayers().length) {
+                companyMap.fitBounds(markersLayer.getBounds().pad(0.2));
+            }
+        }, 150);
+    }
+
+    function setStatus(message) {
+        if (statusText) {
+            statusText.textContent = message;
+        }
+    }
+
+    async function loadCompanyMap() {
+        if (mapLoaded) {
+            refreshMapLayout();
             return;
         }
 
-        let companyMap = null;
-        let markersLayer = null;
-        let mapLoaded = false;
+        setStatus('Loading company locations on map...');
 
-        function refreshMapLayout() {
-            if (!companyMap) return;
-            setTimeout(() => {
-                companyMap.invalidateSize();
-                if (markersLayer && markersLayer.getLayers().length) {
-                    companyMap.fitBounds(markersLayer.getBounds().pad(0.2));
-                }
-            }, 150);
+        companyMap = L.map('company-directory-map', {
+            zoomControl: true,
+        });
+
+        // High-DPI (Retina) support for crisp labels and 'shining' vibrant colors
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+            detectRetina: true
+        }).addTo(companyMap);
+
+        // Using MarkerClusterGroup to handle overlapping markers (Spiderfying)
+        // Styled to look like the vibrant blue circular clusters in the reference image
+        markersLayer = L.markerClusterGroup({
+            showCoverageOnHover: false,
+            spiderfyOnMaxZoom: true,
+            zoomToBoundsOnClick: true,
+            maxClusterRadius: 50,
+            iconCreateFunction: function (cluster) {
+                const childCount = cluster.getChildCount();
+                return L.divIcon({
+                    html: `<div class="custom-cluster"><span>${childCount}</span></div>`,
+                    className: 'marker-cluster-vibrant',
+                    iconSize: L.point(40, 40)
+                });
+            }
+        }).addTo(companyMap);
+
+        const mappedCompanies = companies.filter(company =>
+            typeof company.latitude === 'number' &&
+            !Number.isNaN(company.latitude) &&
+            typeof company.longitude === 'number' &&
+            !Number.isNaN(company.longitude)
+        );
+
+        if (!mappedCompanies.length) {
+            setStatus('No company locations could be mapped.');
+            companyMap.setView([20.5937, 78.9629], 4);
+            mapLoaded = true;
+            return;
         }
 
-        function setStatus(message) {
-            if (statusText) {
-                statusText.textContent = message;
+        mappedCompanies.forEach(company => {
+            let markerClass = 'customer';
+            let typeColor = '#3b82f6';
+
+            const typeLower = (company.companyType || '').toLowerCase();
+            if (typeLower.includes('carrier')) {
+                markerClass = 'carrier';
+                typeColor = '#f59e0b';
+            } else if (typeLower.includes('vendor')) {
+                markerClass = 'vendor';
+                typeColor = '#8b5cf6';
             }
-        }
 
-        async function loadCompanyMap() {
-            if (mapLoaded) {
-                refreshMapLayout();
-                return;
-            }
-
-            setStatus('Loading company locations on map...');
-
-            companyMap = L.map('company-directory-map', {
-                zoomControl: true,
+            const customIcon = L.divIcon({
+                className: 'custom-div-icon',
+                html: `<div class="custom-marker ${markerClass}"></div>`,
+                iconSize: [30, 30],
+                iconAnchor: [15, 30],
+                popupAnchor: [0, -32]
             });
 
-            // High-DPI (Retina) support for crisp labels and 'shining' vibrant colors
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-                maxZoom: 19,
-                attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
-                detectRetina: true
-            }).addTo(companyMap);
+            const marker = L.marker([company.latitude, company.longitude], { icon: customIcon }).addTo(markersLayer);
 
-            // Using MarkerClusterGroup to handle overlapping markers (Spiderfying)
-            // Styled to look like the vibrant blue circular clusters in the reference image
-            markersLayer = L.markerClusterGroup({
-                showCoverageOnHover: false,
-                spiderfyOnMaxZoom: true,
-                zoomToBoundsOnClick: true,
-                maxClusterRadius: 50,
-                iconCreateFunction: function(cluster) {
-                    const childCount = cluster.getChildCount();
-                    return L.divIcon({ 
-                        html: `<div class="custom-cluster"><span>${childCount}</span></div>`, 
-                        className: 'marker-cluster-vibrant', 
-                        iconSize: L.point(40, 40) 
-                    });
-                }
-            }).addTo(companyMap);
-
-            const mappedCompanies = companies.filter(company =>
-                typeof company.latitude === 'number' &&
-                !Number.isNaN(company.latitude) &&
-                typeof company.longitude === 'number' &&
-                !Number.isNaN(company.longitude)
-            );
-
-            if (!mappedCompanies.length) {
-                setStatus('No company locations could be mapped.');
-                companyMap.setView([20.5937, 78.9629], 4);
-                mapLoaded = true;
-                return;
-            }
-
-            mappedCompanies.forEach(company => {
-                let markerClass = 'customer';
-                let typeColor = '#3b82f6';
-                
-                const typeLower = (company.companyType || '').toLowerCase();
-                if (typeLower.includes('carrier')) {
-                    markerClass = 'carrier';
-                    typeColor = '#f59e0b';
-                } else if (typeLower.includes('vendor')) {
-                    markerClass = 'vendor';
-                    typeColor = '#8b5cf6';
-                }
-
-                const customIcon = L.divIcon({
-                    className: 'custom-div-icon',
-                    html: `<div class="custom-marker ${markerClass}"></div>`,
-                    iconSize: [30, 30],
-                    iconAnchor: [15, 30],
-                    popupAnchor: [0, -32]
-                });
-
-                const marker = L.marker([company.latitude, company.longitude], { icon: customIcon }).addTo(markersLayer);
-                
-                const popupHtml = `
+            const popupHtml = `
                     <div class="company-map-popup px-1">
                         <div class="company-map-popup-type mb-1" style="color: ${typeColor}">${company.companyType}</div>
                         <div class="company-map-popup-name">${company.name}</div>
@@ -495,50 +534,50 @@
                     </div>
                 `;
 
-                marker.bindPopup(popupHtml, { closeButton: false });
-                marker.on('mouseover', function () {
-                    this.openPopup();
-                });
+            marker.bindPopup(popupHtml, { closeButton: false });
+            marker.on('mouseover', function () {
+                this.openPopup();
             });
+        });
 
-            companyMap.fitBounds(markersLayer.getBounds().pad(0.2));
-            setStatus(`${mappedCompanies.length} company locations loaded.`);
-            mapLoaded = true;
-            refreshMapLayout();
+        companyMap.fitBounds(markersLayer.getBounds().pad(0.2));
+        setStatus(`${mappedCompanies.length} company locations loaded.`);
+        mapLoaded = true;
+        refreshMapLayout();
+    }
+
+    toggleButton?.addEventListener('click', async function () {
+        mapCard.classList.add('is-visible');
+        toggleButton.classList.remove('btn-outline-primary');
+        toggleButton.classList.add('btn-primary');
+        await loadCompanyMap();
+        mapCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        refreshMapLayout();
+    });
+
+    closeButton?.addEventListener('click', function () {
+        mapCard.classList.remove('is-visible');
+        mapCard.classList.remove('is-fullscreen');
+        toggleButton.classList.add('btn-outline-primary');
+        toggleButton.classList.remove('btn-primary');
+        if (fullscreenButton) {
+            fullscreenButton.innerHTML = '<i class="fas fa-expand me-1"></i>Full Screen';
         }
+    });
 
-        toggleButton?.addEventListener('click', async function () {
-            mapCard.classList.add('is-visible');
-            toggleButton.classList.remove('btn-outline-primary');
-            toggleButton.classList.add('btn-primary');
-            await loadCompanyMap();
-            mapCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            refreshMapLayout();
-        });
+    fullscreenButton?.addEventListener('click', function () {
+        const isFullscreen = mapCard.classList.toggle('is-fullscreen');
+        fullscreenButton.innerHTML = isFullscreen
+            ? '<i class="fas fa-compress me-1"></i>Exit Full Screen'
+            : '<i class="fas fa-expand me-1"></i>Full Screen';
+        refreshMapLayout();
+    });
 
-        closeButton?.addEventListener('click', function () {
-            mapCard.classList.remove('is-visible');
-            mapCard.classList.remove('is-fullscreen');
-            toggleButton.classList.add('btn-outline-primary');
-            toggleButton.classList.remove('btn-primary');
-            if (fullscreenButton) {
-                fullscreenButton.innerHTML = '<i class="fas fa-expand me-1"></i>Full Screen';
-            }
-        });
+    window.addEventListener('resize', refreshMapLayout);
 
-        fullscreenButton?.addEventListener('click', function () {
-            const isFullscreen = mapCard.classList.toggle('is-fullscreen');
-            fullscreenButton.innerHTML = isFullscreen
-                ? '<i class="fas fa-compress me-1"></i>Exit Full Screen'
-                : '<i class="fas fa-expand me-1"></i>Full Screen';
-            refreshMapLayout();
-        });
-
-        window.addEventListener('resize', refreshMapLayout);
-
-        resetButton?.addEventListener('click', function () {
-            refreshMapLayout();
-        });
+    resetButton?.addEventListener('click', function () {
+        refreshMapLayout();
+    });
     });
 </script>
 {% endblock %}

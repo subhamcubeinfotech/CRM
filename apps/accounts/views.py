@@ -230,6 +230,7 @@ def company_create(request):
                 company.tenant = request.user.tenant
             company.created_by = request.user
             company.save()
+            form.save_m2m() # Guarantee tags and materials are saved
             geocode_company(company, save=True)
             
             # Create a default warehouse location if address is provided
