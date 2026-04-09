@@ -1367,11 +1367,25 @@ def shipment_edit(request, pk):
                 if 'items_ui[0][weight]' in request.POST:
                     shipment.items.all().delete()
                     items_data = _parse_items_from_post(request.POST)
+
+                    calculated_weight = 0
+                    calculated_pieces = 0
+
                     for item_data in items_data:
                         inv_item = None
                         if item_data['material_id'] and str(item_data['material_id']).isdigit():
                             inv_item = InventoryItem.objects.filter(pk=item_data['material_id']).first()
                         
+                        try:
+                            calculated_weight += float(item_data.get('weight') or 0)
+                        except (ValueError, TypeError):
+                            pass
+                            
+                        try:
+                            calculated_pieces += int(item_data.get('pieces') or 0)
+                        except (ValueError, TypeError):
+                            pass
+
                         ShipmentItem.objects.create(
                             shipment=shipment,
                             inventory_item=inv_item,
@@ -1385,12 +1399,34 @@ def shipment_edit(request, pk):
                             packaging=item_data['packaging'],
                             is_palletized=item_data['is_palletized'],
                             pieces=item_data['pieces'],
-                        buy_price=item_data['buy_price'],
-                        sell_price=item_data['sell_price'],
-                        price_unit=item_data['price_unit'],
-                    )
+                            buy_price=item_data['buy_price'],
+                            sell_price=item_data['sell_price'],
+                            price_unit=item_data['price_unit'],
+                        )
 
-                # Update associated order commercial details
+                    # Update shipment totals if they were missing from the form
+                    update_shipment = False
+                    try:
+                        form_weight = float(request.POST.get('total_weight') or 0)
+                    except (ValueError, TypeError):
+                        form_weight = 0
+                        
+                    if form_weight <= 0 and calculated_weight > 0:
+                        shipment.total_weight = calculated_weight
+                        update_shipment = True
+                    
+                    try:
+                        form_pieces = int(request.POST.get('number_of_pieces') or 0)
+                    except (ValueError, TypeError):
+                        form_pieces = 0
+                        
+                    if form_pieces <= 1 and calculated_pieces > 1:
+                        shipment.number_of_pieces = calculated_pieces
+                        update_shipment = True
+                        
+                    if update_shipment:
+                        shipment.save(update_fields=['total_weight', 'number_of_pieces', 'updated_at'])
+
                 if shipment.order:
                     shipment.order.shipping_terms_id = request.POST.get('shipping_terms_ui') or None
                     shipment.order.representative_id = request.POST.get('representative_ui') or None
