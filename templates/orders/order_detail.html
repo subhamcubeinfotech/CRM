@@ -1477,6 +1477,25 @@ document.addEventListener('DOMContentLoaded', function() {
         <form id="addShipmentForm" action="{% url 'shipments:shipment_create' %}?order_id={{ order.pk }}&next={{ request.path }}" method="POST">
             {% csrf_token %}
             
+            <!-- Shipment Info -->
+            <div class="mb-4 pt-2">
+                <h6 class="fw-bold text-primary mb-3"><i class="fas fa-info-circle me-2"></i>SHIPMENT INFO</h6>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small text-uppercase mb-1">Shipment Type <span class="text-danger">*</span></label>
+                        <select name="shipment_type" class="form-select rounded-3" required>
+                            {% for code, label in shipment_types %}
+                            <option value="{{ code }}" {% if code == "road" %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small text-uppercase mb-1">Tracking Number</label>
+                        <input type="text" name="tracking_number" class="form-control rounded-3" placeholder="Auto-generated if empty">
+                    </div>
+                </div>
+            </div>
+            
             <!-- Pickup Details -->
             <div class="mb-4">
                 <h6 class="fw-bold text-primary mb-3"><i class="fas fa-arrow-up me-2"></i>PICKUP DETAILS</h6>
