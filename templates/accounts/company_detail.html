@@ -183,10 +183,9 @@
                                                             data-phone="{{ contact.phone|default:'' }}">
                                                             <i class="fas fa-edit me-2 opacity-50"
                                                                 style="width: 14px;"></i>Edit</a></li>
-                                                    <li><a class="dropdown-item archive-contact-btn py-2 text-danger align-items-center"
-                                                            href="javascript:void(0)" data-id="{{ contact.id }}"
-                                                            style="{% if contact.is_contact_archived %}display:none;{% else %}display:flex;{% endif %}">
-                                                            <i class="fas fa-trash-alt me-2 opacity-50"
+                                                    <li><a class="dropdown-item archive-contact-btn py-2 text-danger d-flex align-items-center"
+                                                            href="javascript:void(0)" data-id="{{ contact.id }}">
+                                                            <i class="fas fa-archive me-2 opacity-50"
                                                                 style="width: 14px;"></i>Archive</a></li>
                                                 </ul>
                                             </div>
@@ -1054,6 +1053,7 @@
         </div>
     </div>
 </div>
+
 <div class="offcanvas offcanvas-end border-0 shadow" tabindex="-1" id="offcanvasAddCompanyMaterial"
     aria-labelledby="offcanvasAddCompanyMaterialLabel" style="width: 400px;">
     <div class="offcanvas-header bg-white border-bottom py-3">

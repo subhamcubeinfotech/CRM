@@ -528,7 +528,7 @@ def ajax_edit_contact(request):
 @login_required
 @require_POST
 def ajax_archive_contact(request):
-    """AJAX archive a contact (set is_active=False)"""
+    """AJAX archive a contact (set is_contact_archived=True)"""
     import json
     data = json.loads(request.body)
     contact_id = data.get('contact_id')
@@ -560,6 +560,44 @@ def ajax_archive_contact(request):
         return JsonResponse({'success': True})
     except Exception as e:
         logger.exception('Failed to archive contact: %s', e)
+        return JsonResponse({'success': False, 'message': f'Error: {str(e)}'}, status=500)
+
+
+@login_required
+@require_POST
+def ajax_unarchive_contact(request):
+    """AJAX unarchive a contact (set is_contact_archived=False)"""
+    import json
+    data = json.loads(request.body)
+    contact_id = data.get('contact_id')
+    
+    if not contact_id:
+        return JsonResponse({'success': False, 'message': 'Contact ID missing'}, status=400)
+    
+    from .models import CustomUser
+    contact = get_object_or_404(CustomUser, pk=contact_id)
+    
+    # Check access
+    if contact.tenant != request.user.tenant and contact.company.tenant != request.user.tenant:
+         return JsonResponse({'success': False, 'message': 'Permission denied'}, status=403)
+         
+    try:
+        contact.is_contact_archived = False
+        contact.save()
+        
+        # Log History
+        from .models import CompanyHistory
+        CompanyHistory.objects.create(
+            company=contact.company,
+            user=request.user,
+            action="Unarchived Contact",
+            description=f"Unarchived contact {contact.get_full_name() or contact.username}.",
+            icon="fas fa-user-check"
+        )
+        
+        return JsonResponse({'success': True})
+    except Exception as e:
+        logger.exception('Failed to unarchive contact: %s', e)
         return JsonResponse({'success': False, 'message': f'Error: {str(e)}'}, status=500)
 
 
