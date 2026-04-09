@@ -2054,19 +2054,19 @@
                                 </td>
                                 <td>
                                     <div class="input-group input-group-sm">
-                                        <input type="number" step="0.1" name="gross[]" class="form-control border-0 bg-transparent pl-gross" placeholder="0" value="{{ item.gross_weight|default:item.weight|floatformat:1 }}" oninput="calculatePlNet(this)">
+                                        <input type="number" step="0.1" name="gross[]" class="form-control border-0 bg-transparent pl-gross" placeholder="0" oninput="calculatePlNet(this)">
                                         <span class="input-group-text border-0 bg-transparent small text-muted px-1 pl-unit-label">{{ item.weight_unit|default:'lbs' }}</span>
                                     </div>
                                 </td>
                                 <td>
                                     <div class="input-group input-group-sm">
-                                        <input type="number" step="0.1" name="tare[]" class="form-control border-0 bg-transparent pl-tare" placeholder="0" value="{{ item.tare_weight|default:'0'|floatformat:1 }}" oninput="calculatePlNet(this)">
+                                        <input type="number" step="0.1" name="tare[]" class="form-control border-0 bg-transparent pl-tare" placeholder="0" oninput="calculatePlNet(this)">
                                         <span class="input-group-text border-0 bg-transparent small text-muted px-1 pl-unit-label">{{ item.weight_unit|default:'lbs' }}</span>
                                     </div>
                                 </td>
                                 <td>
                                     <div class="input-group input-group-sm">
-                                        <input type="number" step="0.1" name="net[]" class="form-control border-0 bg-light pl-net" placeholder="0" value="{{ item.weight|floatformat:1 }}" readonly>
+                                        <input type="number" step="0.1" name="net[]" class="form-control border-0 bg-light pl-net" placeholder="0" readonly>
                                         <span class="input-group-text border-0 bg-light small text-muted px-1 pl-unit-label">{{ item.weight_unit|default:'lbs' }}</span>
                                     </div>
                                 </td>
@@ -2100,19 +2100,19 @@
                                 </td>
                                 <td>
                                     <div class="input-group input-group-sm">
-                                        <input type="number" step="0.1" name="gross[]" class="form-control border-0 bg-transparent pl-gross" placeholder="0" value="{{ item.weight|floatformat:1 }}" oninput="calculatePlNet(this)">
+                                        <input type="number" step="0.1" name="gross[]" class="form-control border-0 bg-transparent pl-gross" placeholder="0" oninput="calculatePlNet(this)">
                                         <span class="input-group-text border-0 bg-transparent small text-muted px-1 pl-unit-label">lbs</span>
                                     </div>
                                 </td>
                                 <td>
                                     <div class="input-group input-group-sm">
-                                        <input type="number" step="0.1" name="tare[]" class="form-control border-0 bg-transparent pl-tare" placeholder="0" value="0.0" oninput="calculatePlNet(this)">
+                                        <input type="number" step="0.1" name="tare[]" class="form-control border-0 bg-transparent pl-tare" placeholder="0" oninput="calculatePlNet(this)">
                                         <span class="input-group-text border-0 bg-transparent small text-muted px-1 pl-unit-label">lbs</span>
                                     </div>
                                 </td>
                                 <td>
                                     <div class="input-group input-group-sm">
-                                        <input type="number" step="0.1" name="net[]" class="form-control border-0 bg-light pl-net" placeholder="0" value="{{ item.weight|floatformat:1 }}" readonly>
+                                        <input type="number" step="0.1" name="net[]" class="form-control border-0 bg-light pl-net" placeholder="0" readonly>
                                         <span class="input-group-text border-0 bg-light small text-muted px-1 pl-unit-label">lbs</span>
                                     </div>
                                 </td>
