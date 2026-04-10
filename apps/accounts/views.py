@@ -4,6 +4,7 @@ Accounts Views
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
+from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
@@ -13,6 +14,8 @@ from django.conf import settings
 from .models import Company, CompanyDocument
 from .forms import CompanyForm
 from apps.inventory.forms import WarehouseForm
+from apps.inventory.models import Material
+from apps.orders.models import Tag
 
 from .geocoding import geocode_company
 from .utils import filter_by_user_company, check_company_access
@@ -31,28 +34,143 @@ def custom_logout(request):
 @login_required
 def company_list(request):
     """List companies — filtered by creator unless admin (uses plain_objects)"""
-    companies = Company.plain_objects.prefetch_related('material_tags').all().order_by('name')
-    
-    # Restriction: non-admins only see companies they created OR their own company
+    companies = Company.plain_objects.prefetch_related('material_tags', 'company_tags').all().order_by('name')
+
     if not getattr(request.user, 'is_admin', False):
         user_company = request.user.company
         if user_company:
             companies = companies.filter(Q(created_by=request.user) | Q(pk=user_company.pk))
         else:
             companies = companies.filter(created_by=request.user)
-    
-    # Filter by type
-    company_type = request.GET.get('type')
-    if company_type:
-        companies = companies.filter(company_type=company_type)
-        
-    # Search
-    search = request.GET.get('search')
-    if search:
-        companies = companies.filter(name__icontains=search)
 
-    company_type = request.GET.get('type')
-    search = request.GET.get('search')
+    base_companies = companies
+    company_type_choices = dict(Company.COMPANY_TYPE_CHOICES)
+    crm_status_choices = dict(Company.CRM_STATUS_CHOICES)
+
+    company_type = (request.GET.get('type') or '').strip()
+    crm_status = (request.GET.get('status') or '').strip()
+    material_id = (request.GET.get('material') or '').strip()
+    material_type = (request.GET.get('material_type') or '').strip()
+    tag_id = (request.GET.get('tag') or '').strip()
+    service = (request.GET.get('service') or '').strip()
+    representative_id = (request.GET.get('representative') or '').strip()
+    archived = (request.GET.get('archived') or '').strip()
+    location = (request.GET.get('location') or '').strip()
+    search = (request.GET.get('search') or '').strip()
+
+    if company_type in company_type_choices:
+        companies = companies.filter(company_type=company_type)
+
+    if crm_status in crm_status_choices:
+        companies = companies.filter(crm_status=crm_status)
+
+    if material_id.isdigit():
+        companies = companies.filter(material_tags__pk=int(material_id))
+
+    if material_type:
+        companies = companies.filter(material_tags__material_type__icontains=material_type)
+
+    if tag_id.isdigit():
+        companies = companies.filter(company_tags__pk=int(tag_id))
+
+    if service:
+        companies = companies.filter(services_provided__icontains=service)
+
+    if representative_id.isdigit():
+        companies = companies.filter(created_by_id=int(representative_id))
+
+    if archived == 'yes':
+        companies = companies.filter(is_active=False)
+    elif archived == 'no':
+        companies = companies.filter(is_active=True)
+
+    if location:
+        companies = companies.filter(
+            Q(address_line1__icontains=location) |
+            Q(address_line2__icontains=location) |
+            Q(city__icontains=location) |
+            Q(state__icontains=location) |
+            Q(country__icontains=location) |
+            Q(postal_code__icontains=location)
+        )
+
+    if search:
+        companies = companies.filter(
+            Q(name__icontains=search) |
+            Q(legal_name__icontains=search) |
+            Q(city__icontains=search) |
+            Q(state__icontains=search) |
+            Q(country__icontains=search) |
+            Q(services_provided__icontains=search) |
+            Q(material_tags__name__icontains=search) |
+            Q(company_tags__name__icontains=search)
+        )
+
+    companies = companies.distinct()
+
+    available_materials = Material.plain_objects.filter(
+        associated_companies__in=base_companies
+    ).distinct().order_by('name')
+    available_tags = Tag.objects.filter(
+        companies__in=base_companies
+    ).distinct().order_by('name')
+    available_services = sorted({
+        service_name.strip()
+        for company in base_companies
+        for service_name in (company.services_provided or [])
+        if str(service_name).strip()
+    }, key=str.lower)
+    available_locations = sorted({
+        value.strip()
+        for company in base_companies
+        for value in [
+            company.full_address,
+            ", ".join(filter(None, [company.city, company.state, company.country])),
+            ", ".join(filter(None, [company.address_line1, company.city, company.state])),
+            ", ".join(filter(None, [company.address_line1, company.address_line2, company.city, company.state, company.country])),
+            company.postal_code,
+        ]
+        if value and str(value).strip()
+    }, key=str.lower)
+    available_material_types = sorted({
+        material.material_type.strip()
+        for material in available_materials
+        if material.material_type and material.material_type.strip()
+    }, key=str.lower)
+    representatives = get_user_model().objects.filter(pk=request.user.pk)
+
+    selected_material = available_materials.filter(pk=int(material_id)).first() if material_id.isdigit() else None
+    selected_tag = available_tags.filter(pk=int(tag_id)).first() if tag_id.isdigit() else None
+    selected_representative = representatives.filter(pk=int(representative_id)).first() if representative_id.isdigit() else None
+
+    active_filters = []
+    if search:
+        active_filters.append({'label': 'Search', 'value': search})
+    if location:
+        active_filters.append({'label': 'Location', 'value': location})
+    if company_type in company_type_choices:
+        active_filters.append({'label': 'Type', 'value': company_type_choices[company_type]})
+    if crm_status in crm_status_choices:
+        active_filters.append({'label': 'Status', 'value': crm_status_choices[crm_status]})
+    if service:
+        active_filters.append({'label': 'Service', 'value': service})
+    if selected_material:
+        active_filters.append({'label': 'Material', 'value': selected_material.name})
+    if material_type:
+        active_filters.append({'label': 'Material Type', 'value': material_type})
+    if selected_tag:
+        active_filters.append({'label': 'Tag', 'value': selected_tag.name})
+    if selected_representative:
+        active_filters.append({'label': 'Representative', 'value': selected_representative.get_full_name() or selected_representative.username})
+    if archived == 'yes':
+        active_filters.append({'label': 'Archived', 'value': 'Yes'})
+    elif archived == 'no':
+        active_filters.append({'label': 'Archived', 'value': 'No'})
+
+    query_params = request.GET.copy()
+    query_params.pop('page', None)
+    pagination_query = query_params.urlencode()
+
     paginator = Paginator(companies, 25)
     page = request.GET.get('page')
     companies = paginator.get_page(page)
@@ -62,7 +180,28 @@ def company_list(request):
     context = {
         'companies': companies,
         'company_type': company_type,
+        'crm_status': crm_status,
+        'material_id': material_id,
+        'material_type': material_type,
+        'tag_id': tag_id,
+        'service': service,
+        'representative_id': representative_id,
+        'archived': archived,
+        'location': location,
         'search': search,
+        'available_materials': available_materials,
+        'available_tags': available_tags,
+        'available_services': available_services,
+        'available_locations': available_locations,
+        'available_material_types': available_material_types,
+        'representatives': representatives,
+        'active_filters': active_filters,
+        'selected_material': selected_material,
+        'selected_tag': selected_tag,
+        'selected_representative': selected_representative,
+        'company_type_choices': Company.COMPANY_TYPE_CHOICES,
+        'crm_status_choices': Company.CRM_STATUS_CHOICES,
+        'pagination_query': pagination_query,
     }
     return render(request, 'accounts/company_list.html', context)
 

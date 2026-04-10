@@ -88,18 +88,25 @@ class InventoryItemForm(forms.ModelForm):
         if user:
             from apps.accounts.models import Company
             user_company = user.company
-            if not user_company and user.tenant:
-                user_company = Company.objects.filter(tenant=user.tenant).first()
-            
-            if user_company:
-                if getattr(user, 'is_admin', False):
-                    self.fields['company'].queryset = Company.objects.all()
+            if getattr(user, 'is_admin', False):
+                company_qs = Company.plain_objects.all().order_by('name')
+            else:
+                from django.db.models import Q
+                if user_company:
+                    company_qs = Company.plain_objects.filter(
+                        Q(created_by=user) | Q(pk=user_company.pk)
+                    ).order_by('name')
                 else:
-                    from django.db.models import Q
-                    self.fields['company'].queryset = Company.objects.filter(Q(created_by=user) | Q(pk=user_company.pk))
-                
+                    company_qs = Company.plain_objects.filter(created_by=user).order_by('name')
+
+            self.fields['company'].queryset = company_qs
+
+            if user_company and company_qs.filter(pk=user_company.pk).exists():
                 self.fields['company'].initial = user_company
-                self.fields['company'].disabled = False
+            elif company_qs.exists():
+                self.fields['company'].initial = company_qs.first()
+
+            self.fields['company'].disabled = False
 
             # Representative locking
             self.fields['representative'].queryset = user.__class__.objects.filter(id=user.id)
