@@ -17,6 +17,7 @@ class Company(TenantAwareModel):
     ]
     
     name = models.CharField(max_length=200)
+    legal_name = models.CharField(max_length=255, blank=True)
     company_type = models.CharField(max_length=20, choices=COMPANY_TYPE_CHOICES, default='customer')
     tax_id = models.CharField(max_length=50, blank=True)
     
@@ -37,11 +38,25 @@ class Company(TenantAwareModel):
     description = models.TextField(blank=True)
     logo = models.ImageField(upload_to='company_logos/', blank=True, null=True)
     
+    # Relationships & Extended Info
+    services_provided = models.JSONField(default=list, blank=True, help_text="List of services provided")
+    material_tags = models.ManyToManyField('inventory.Material', blank=True, related_name='associated_companies')
+    company_tags = models.ManyToManyField('orders.Tag', blank=True, related_name='companies')
+    
     # Financial fields
     payment_terms = models.IntegerField(default=30, help_text='Payment terms in days')
     credit_limit = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     
     # Status
+    CRM_STATUS_CHOICES = [
+        ('active', 'Active'),
+        ('cold', 'Cold'),
+        ('dormant', 'Dormant'),
+        ('lead', 'Lead'),
+    ]
+    crm_status = models.CharField(max_length=20, choices=CRM_STATUS_CHOICES, default='active')
+    last_touch = models.DateField(null=True, blank=True)
+    next_touch = models.DateField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_companies')
     created_at = models.DateTimeField(auto_now_add=True)

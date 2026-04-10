@@ -24,7 +24,15 @@
         <div class="flex-grow-1 pt-1">
             <div class="d-flex align-items-center gap-2 mb-1">
                 <h1 class="h2 mb-0 fw-bold">{{ company.name }}</h1>
-                <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-1 small">AS</span>
+                {% if company.is_active %}<span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">Active</span>{% else %}<span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill">Inactive</span>{% endif %}
+            </div>
+            {% if company.legal_name %}
+            <div class="text-muted mb-2 fw-medium">{{ company.legal_name }}</div>
+            {% endif %}
+            <div class="d-flex flex-wrap gap-2 mb-2">
+                {% for tag in company.company_tags.all %}
+                    <span class="badge bg-light text-dark border rounded-pill px-2 py-1 small"><i class="fas fa-tag me-1 opacity-50"></i>{{ tag.name }}</span>
+                {% endfor %}
             </div>
             <div class="d-flex align-items-center gap-3 text-muted small">
                 {% if company.website %}
@@ -107,6 +115,26 @@
                                 <div>Last: <input type="text"
                                         class="flatpickr-date border-0 bg-transparent text-primary text-decoration-underline p-0 w-auto cursor-pointer"
                                         style="font-size: 0.85rem;" placeholder="Add Date" readonly></div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <h6 class="fw-bold mb-3 small text-uppercase tracking-wider">Services Provided</h6>
+                            <div class="d-flex flex-wrap gap-2 mb-4">
+                                {% for service in company.services_provided %}
+                                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2 py-1" style="font-size: 0.7rem;">{{ service }}</span>
+                                {% empty %}
+                                    <span class="text-muted small italic" style="font-size: 0.7rem; font-style: italic;">No services listed.</span>
+                                {% endfor %}
+                            </div>
+
+                            <h6 class="fw-bold mb-3 small text-uppercase tracking-wider">Materials</h6>
+                            <div class="d-flex flex-wrap gap-2">
+                                {% for material in company.material_tags.all %}
+                                    <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-2 py-1" style="font-size: 0.7rem;">{{ material.name }}</span>
+                                {% empty %}
+                                    <span class="text-muted small italic" style="font-size: 0.7rem; font-style: italic;">No materials listed.</span>
+                                {% endfor %}
                             </div>
                         </div>
 
@@ -307,8 +335,7 @@
                                         </div>
                                         <div class="collapse mt-3" id="material-{{ material.pk }}">
                                             <div class="bg-light p-3 rounded-3 small">
-                                                <p class="mb-0 text-muted">{{ material.description|default:"No
-                                                    additional details available." }}</p>
+                                                <p class="mb-0 text-muted">{{ material.description|default:"No additional details available." }}</p>
                                             </div>
                                         </div>
                                     </div>
