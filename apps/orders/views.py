@@ -184,7 +184,7 @@ class OrderListView(LoginRequiredMixin, ListView):
                 Q(order__receiver_id__in=visible_company_ids)
             ).values_list('material', flat=True)
         )
-        context['materials'] = sorted(list(m_model | m_items))
+        context['materials'] = [] # Emptied as requested
         
         # Unique material types from Material model
         context['material_types'] = Material.objects.filter(
