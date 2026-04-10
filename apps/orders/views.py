@@ -170,13 +170,27 @@ class OrderListView(LoginRequiredMixin, ListView):
         context['suppliers'] = all_companies
         context['receivers'] = all_companies
         
-        # Unique materials from both Material model and existing orders
-        m_model = set(Material.objects.all().values_list('name', flat=True))
-        m_items = set(ManifestItem.objects.all().values_list('material', flat=True))
+        # Unique materials from companies visible to the current user
+        visible_company_ids = all_companies.values_list('id', flat=True)
+        m_model = set(
+            Material.objects.filter(
+                Q(company_id__in=visible_company_ids) |
+                Q(company__isnull=True, tenant=user_tenant)
+            ).values_list('name', flat=True)
+        )
+        m_items = set(
+            ManifestItem.objects.filter(
+                Q(order__supplier_id__in=visible_company_ids) |
+                Q(order__receiver_id__in=visible_company_ids)
+            ).values_list('material', flat=True)
+        )
         context['materials'] = sorted(list(m_model | m_items))
         
         # Unique material types from Material model
-        context['material_types'] = Material.objects.filter(tenant=user_tenant).values_list('material_type', flat=True).distinct().order_by('material_type')
+        context['material_types'] = Material.objects.filter(
+            Q(company_id__in=visible_company_ids) |
+            Q(company__isnull=True, tenant=user_tenant)
+        ).values_list('material_type', flat=True).distinct().order_by('material_type')
         
         # Packaging types from both PackagingType model and existing orders
         p_model = set(PackagingType.objects.all().values_list('name', flat=True))
@@ -185,7 +199,7 @@ class OrderListView(LoginRequiredMixin, ListView):
         
         context['tags'] = Tag.plain_objects.filter(Q(tenant=user_tenant) | Q(tenant__isnull=True)).order_by('name')
         context['shipping_terms'] = ShippingTerm.plain_objects.filter(Q(tenant=user_tenant) | Q(tenant__isnull=True)).order_by('name')
-        context['representatives'] = get_user_model().objects.filter(tenant=user_tenant, is_active=True).order_by('first_name', 'username')
+        context['representatives'] = get_user_model().objects.filter(pk=self.request.user.pk)
         
         # Preserve filter states to pre-fill the drawer inputs
         context['filters'] = {
