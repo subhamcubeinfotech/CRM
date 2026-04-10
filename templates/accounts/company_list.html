@@ -795,13 +795,7 @@
                                             <input type="text" class="form-control checkbox-filter-search-input" placeholder="Search material">
                                         </div>
                                         <div class="checkbox-filter-options">
-                                            {% for material in available_materials %}
-                                                <label class="checkbox-filter-option" data-option-label="{{ material.name|lower }}">
-                                                    <input type="checkbox" class="form-check-input mt-0" value="{{ material.name|lower }}" data-label="{{ material.name }}"
-                                                        {% if material_id == material.pk|stringformat:'s' %}checked{% endif %}>
-                                                    <span>{{ material.name }}</span>
-                                                </label>
-                                            {% endfor %}
+                                            <div class="small text-muted px-2 py-2">No material options available.</div>
                                         </div>
                                     </div>
                                 </div>

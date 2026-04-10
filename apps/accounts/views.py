@@ -133,9 +133,9 @@ def company_list(request):
         if value and str(value).strip()
     }, key=str.lower)
     available_material_types = sorted({
-        material.material_type.strip()
+        (material.material_type or material.name).strip()
         for material in available_materials
-        if material.material_type and material.material_type.strip()
+        if (material.material_type or material.name) and (material.material_type or material.name).strip()
     }, key=str.lower)
     representatives = get_user_model().objects.filter(pk=request.user.pk)
 
