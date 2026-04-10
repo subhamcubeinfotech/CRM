@@ -206,6 +206,10 @@ class CompanyForm(forms.ModelForm):
             self.process_m2m_data()
         return instance
 
+    def save_m2m(self):
+        """Ensure custom materials/tags processing runs for commit=False save flows."""
+        self.process_m2m_data()
+
     def process_m2m_data(self):
         """Custom method to handle auto-creation of Tags and Materials."""
         instance = self.instance
@@ -247,8 +251,9 @@ class CompanyForm(forms.ModelForm):
                 except:
                     pass
             
-            if material_objs:
-                instance.material_tags.set(material_objs)
+            instance.material_tags.set(material_objs)
+        else:
+            instance.material_tags.clear()
         
         # 2. Handle Tags (ManyToMany)
         tag_data = self.cleaned_data.get('company_tags') or self.data.getlist('company_tags')
@@ -267,12 +272,9 @@ class CompanyForm(forms.ModelForm):
                 except Exception as e:
                     print(f"Error saving tag '{item}': {e}")
             
-            if tag_objs:
-                instance.company_tags.set(tag_objs)
-
-        # Call the original save_m2m for any other standard fields
-        if hasattr(super(), 'save_m2m'):
-            super().save_m2m()
+            instance.company_tags.set(tag_objs)
+        else:
+            instance.company_tags.clear()
 
 class CustomPasswordResetForm(PasswordResetForm):
     def clean_email(self):
