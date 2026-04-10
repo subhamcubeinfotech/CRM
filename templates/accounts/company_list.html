@@ -213,34 +213,59 @@
     .card-top-row {
         display: flex;
         align-items: center;
-        gap: 12px;
-        margin-bottom: 6px;
+        gap: 15px;
+        margin-bottom: 8px;
     }
 
     .card-logo {
-        width: 32px;
-        height: 32px;
+        width: 44px;
+        height: 44px;
         background: #f8fafc;
-        border-radius: 6px;
+        border-radius: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
         border: 1px solid #f1f5f9;
         flex-shrink: 0;
+        overflow: hidden;
+        position: relative;
     }
 
     .card-logo img {
-        max-width: 80%;
-        max-height: 80%;
+        width: 100%;
+        height: 100%;
         object-fit: contain;
+        padding: 4px;
     }
 
+    /* Premium Initial Avatar */
+    .avatar-initial {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1.2rem;
+        color: #fff;
+        text-transform: uppercase;
+    }
+
+    /* Colorful backgrounds for avatars */
+    .bg-avatar-1 { background: linear-gradient(135deg, #6366f1, #818cf8); }
+    .bg-avatar-2 { background: linear-gradient(135deg, #ec4899, #f472b6); }
+    .bg-avatar-3 { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
+    .bg-avatar-4 { background: linear-gradient(135deg, #10b981, #34d399); }
+    .bg-avatar-5 { background: linear-gradient(135deg, #3b82f6, #60a5fa); }
+    .bg-avatar-6 { background: linear-gradient(135deg, #8b5cf6, #a78bfa); }
+
     .card-title {
-        font-size: 1.05rem;
+        font-size: 1.1rem;
         font-weight: 700;
         color: #1e293b;
         margin: 0;
         flex-grow: 1;
+        letter-spacing: -0.01em;
     }
 
     .card-status-container {
@@ -406,7 +431,7 @@
                     {% if company.logo %}
                         <img src="{{ company.logo.url }}" alt="{{ company.name }}">
                     {% else %}
-                        <i class="fas fa-building text-muted opacity-30"></i>
+                        <div class="avatar-initial bg-avatar-{% cycle '1' '2' '3' '4' '5' '6' %}">{{ company.name|slice:":1" }}</div>
                     {% endif %}
                 </div>
                 
