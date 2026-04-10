@@ -596,11 +596,11 @@ def shipment_list(request):
         'receivers': all_companies,
         'carriers': all_companies.filter(company_type='carrier'),
         'warehouses': Warehouse.plain_objects.filter(tenant=user_tenant).order_by('name'),
-        # Unique materials from ShipmentItem names
-        'materials': sorted(list(set(ShipmentItem.objects.all().values_list('material_name', flat=True)))),
+        # Empty Material filters as requested
+        'materials': [],
         'material_types': Material.objects.filter(tenant=user_tenant).values_list('material_type', flat=True).distinct().order_by('material_type'),
         'shipping_terms': ShippingTerm.plain_objects.filter(Q(tenant=user_tenant) | Q(tenant__isnull=True)).order_by('name'),
-        'representatives': User.objects.filter(tenant=user_tenant, is_active=True).order_by('first_name'),
+        'representatives': User.objects.filter(pk=request.user.pk),
         'tags': Tag.plain_objects.filter(Q(tenant=user_tenant) | Q(tenant__isnull=True)).order_by('name'),
         'filters': {
             'search': search or '',
