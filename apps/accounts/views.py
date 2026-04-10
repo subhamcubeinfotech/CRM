@@ -31,7 +31,7 @@ def custom_logout(request):
 @login_required
 def company_list(request):
     """List companies — filtered by creator unless admin (uses plain_objects)"""
-    companies = Company.plain_objects.all().order_by('name')
+    companies = Company.plain_objects.prefetch_related('material_tags').all().order_by('name')
     
     # Restriction: non-admins only see companies they created OR their own company
     if not getattr(request.user, 'is_admin', False):
@@ -223,6 +223,12 @@ def company_delete(request, pk):
 def company_create(request):
     """Create a new company"""
     if request.method == 'POST':
+        # Diagnostic logging to find why materials are missing
+        with open('debug_post.txt', 'a') as f:
+            f.write(f"\n--- New Company Submission ---\n")
+            f.write(f"POST data: {dict(request.POST)}\n")
+            f.write(f"Files: {dict(request.FILES)}\n")
+
         form = CompanyForm(request.POST, request.FILES, user=request.user)
         if form.is_valid():
             company = form.save(commit=False)

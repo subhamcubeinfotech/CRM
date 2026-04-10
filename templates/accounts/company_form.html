@@ -200,7 +200,7 @@
                 </div>
 
                 <div class="col-md-6 mb-4">
-                    <label for="{{ form.material_tags.id_for_label }}" class="form-label">Materials Handled</label>
+                    <label for="{{ form.material_tags.id_for_label }}" class="form-label">Materials</label>
                     {{ form.material_tags }}
                     {% if form.material_tags.errors %}<div class="invalid-feedback text-danger">{{ form.material_tags.errors.0 }}</div>{% endif %}
                     <div class="form-text mt-1">Type and press Enter to add.</div>
@@ -243,7 +243,32 @@
                     {{ form.credit_limit }}
                     {% if form.credit_limit.errors %}<div class="invalid-feedback text-danger">{{ form.credit_limit.errors.0 }}</div>{% endif %}
                 </div>
-            </div>
+             </div>
+ 
+             <div class="row mb-5">
+                 <div class="col-md-12 mb-4">
+                     <h5 class="fw-bold text-dark"><i class="fas fa-chart-line text-primary me-2"></i>CRM Tracking</h5>
+                     <hr class="mt-2 opacity-10">
+                 </div>
+                 
+                 <div class="col-md-4 mb-3">
+                     <label for="{{ form.crm_status.id_for_label }}" class="form-label">CRM Status</label>
+                     {{ form.crm_status }}
+                     {% if form.crm_status.errors %}<div class="invalid-feedback text-danger">{{ form.crm_status.errors.0 }}</div>{% endif %}
+                 </div>
+                 
+                 <div class="col-md-4 mb-3">
+                     <label for="{{ form.last_touch.id_for_label }}" class="form-label">Last Touch</label>
+                     {{ form.last_touch }}
+                     {% if form.last_touch.errors %}<div class="invalid-feedback text-danger">{{ form.last_touch.errors.0 }}</div>{% endif %}
+                 </div>
+ 
+                 <div class="col-md-4 mb-3">
+                     <label for="{{ form.next_touch.id_for_label }}" class="form-label">Next Touch</label>
+                     {{ form.next_touch }}
+                     {% if form.next_touch.errors %}<div class="invalid-feedback text-danger">{{ form.next_touch.errors.0 }}</div>{% endif %}
+                 </div>
+             </div>
 
             <div class="d-flex justify-content-between align-items-center mt-5 pt-4 border-top">
                 <div>
@@ -274,7 +299,7 @@
 <script>
 $(document).ready(function() {
     // Initialize Select2 with Tagging (Type & Enter)
-    $('.select2-tags').select2({
+    const select2Options = {
         tags: true,
         tokenSeparators: [',', ' '],
         theme: 'bootstrap-5',
@@ -282,9 +307,48 @@ $(document).ready(function() {
         placeholder: "Type and press Enter...",
         allowClear: true,
         containerCssClass: 'select2-custom-container'
+    };
+
+    $('.select2-tags').select2(select2Options);
+
+    // Fix: Ensure typed-but-not-entered tags are saved on form submit
+    $('form').on('submit', function() {
+        console.log("Form submit triggered - checking for uncommitted tags");
+        $('.select2-tags').each(function() {
+            const select = $(this);
+            const container = select.siblings('.select2-container');
+            
+            // 1. Try to find the search input field
+            let searchField = container.find('input.select2-search__field');
+            let val = searchField.val();
+            
+            if (val && val.trim() !== '') {
+                console.log("Found uncommitted tag in search field:", val);
+                if (!select.find("option[value='" + val + "']").length) {
+                    const newOption = new Option(val, val, true, true);
+                    select.append(newOption).trigger('change');
+                }
+                searchField.val('');
+            }
+
+            // 2. Extra Safety: Double check if all selected tags in the UI are in the <select>
+            container.find('.select2-selection__choice').each(function() {
+                const title = $(this).attr('title');
+                if (title && !select.val().includes(title)) {
+                    console.log("Syncing missing tag from UI:", title);
+                    if (!select.find("option[value='" + title + "']").length) {
+                        const newOption = new Option(title, title, true, true);
+                        select.append(newOption);
+                    }
+                    const currentVal = select.val() || [];
+                    currentVal.push(title);
+                    select.val(currentVal).trigger('change');
+                }
+            });
+        });
     });
 
-    console.log("Select2 Tagging Initialized");
+    console.log("Select2 Tagging with Maximum-Robustness Fix Initialized");
 });
 </script>
 {% endblock %}

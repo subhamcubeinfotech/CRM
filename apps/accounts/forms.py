@@ -32,7 +32,7 @@ class CompanyForm(forms.ModelForm):
             'multiple': 'multiple',
             'data-placeholder': 'Type and press Enter to add...'
         }),
-        label="Materials Handled"
+        label="Materials"
     )
 
     company_tags = TagInputField(
@@ -87,7 +87,7 @@ class CompanyForm(forms.ModelForm):
             'phone', 'email', 'website',
             'description', 'logo',
             'address_line1', 'address_line2', 'city', 'state', 'postal_code', 'country',
-            'payment_terms', 'credit_limit', 'is_active',
+            'payment_terms', 'credit_limit', 'crm_status', 'last_touch', 'next_touch', 'is_active',
         ]
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Company Name'}),
@@ -108,6 +108,9 @@ class CompanyForm(forms.ModelForm):
             'credit_limit': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Credit Limit'}),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'legal_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Company Legal Name'}),
+            'crm_status': forms.Select(attrs={'class': 'form-select'}),
+            'last_touch': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'next_touch': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
         }
 
     def clean_phone(self):
@@ -154,10 +157,11 @@ class CompanyForm(forms.ModelForm):
         return payment_terms
 
     def clean_services_provided(self):
-        # SelectMultiple returns a list, which is what we want for JSONField
         services = self.cleaned_data.get('services_provided')
+        if not services and 'services_provided' in self.data:
+            services = self.data.getlist('services_provided')
+        
         if isinstance(services, str):
-            # If for some reason it comes as a string, split it
             return [s.strip() for s in services.split(',') if s.strip()]
         return services or []
 
@@ -185,10 +189,17 @@ class CompanyForm(forms.ModelForm):
     def save(self, commit=True):
         instance = super().save(commit=False)
         
-        # Manually capture services_provided since it's now a TagInputField 
-        # (MultipleChoiceField) and might not auto-map to JSONField in commit=False
-        if 'services_provided' in self.cleaned_data:
-            instance.services_provided = self.cleaned_data['services_provided']
+        # Manually capture services_provided since it's a JSONField and 
+        # not in Meta.fields to avoid standard field handling issues
+        services = self.cleaned_data.get('services_provided')
+        if not services and 'services_provided' in self.data:
+            services = self.data.getlist('services_provided')
+        
+        if services is not None:
+            if isinstance(services, str):
+                instance.services_provided = [s.strip() for s in services.split(',') if s.strip()]
+            else:
+                instance.services_provided = services
 
         if commit:
             instance.save()
@@ -199,40 +210,83 @@ class CompanyForm(forms.ModelForm):
         """Custom save_m2m to handle auto-creation of Tags and Materials."""
         instance = self.instance
         
+        # IMPORTANT: If instance.tenant is missing, try to set it before creating tags
+        if not instance.tenant:
+            from apps.accounts.models import CustomUser
+            if hasattr(self, 'user') and self.user and hasattr(self.user, 'tenant'):
+                instance.tenant = self.user.tenant
+
         # 1. Handle Materials
+        # Be extremely aggressive in capturing material data
+        # Check cleaned_data, getlist, and comma-separated string fallbacks
         material_names = self.cleaned_data.get('material_tags', [])
+        if not material_names:
+            material_names = self.data.getlist('material_tags')
+        
+        # Fallback: Check if it's sent as a single string inside a list or as a key
+        if not material_names and 'material_tags' in self.data:
+            val = self.data.get('material_tags')
+            if val:
+                material_names = [v.strip() for v in val.split(',') if v.strip()]
+
         if material_names:
             from apps.inventory.models import Material
             material_objs = []
             for name in material_names:
-                if name.isdigit():
+                if not name: continue
+                
+                # Sometimes tags come in as a string of a list like "['Mat1', 'Mat2']"
+                if str(name).startswith('[') and str(name).endswith(']'):
+                    import ast
                     try:
-                        material_objs.append(Material.objects.get(pk=int(name)))
+                        inner_names = ast.literal_eval(name)
+                        if isinstance(inner_names, list):
+                            for inner in inner_names:
+                                mat, _ = Material.objects.get_or_create(tenant=instance.tenant, name=str(inner).strip())
+                                material_objs.append(mat)
+                            continue
+                    except: pass
+
+                name_str = str(name).strip()
+                if name_str.isdigit():
+                    try:
+                        material_objs.append(Material.objects.get(pk=int(name_str)))
                         continue
-                    except Material.DoesNotExist:
+                    except (Material.DoesNotExist, ValueError):
                         pass
+                
                 mat, created = Material.objects.get_or_create(
                     tenant=instance.tenant,
-                    name=name.strip()
+                    name=name_str
                 )
                 material_objs.append(mat)
             instance.material_tags.set(material_objs)
             
         # 2. Handle Tags
         tag_names = self.cleaned_data.get('company_tags', [])
+        if not tag_names:
+            tag_names = self.data.getlist('company_tags')
+        if not tag_names and 'company_tags' in self.data:
+            val = self.data.get('company_tags')
+            tag_names = [v.strip() for v in val.split(',') if v.strip()] if val else []
+
         if tag_names:
             from apps.orders.models import Tag
             tag_objs = []
             for name in tag_names:
-                if name.isdigit():
+                if not name: continue
+                
+                name_str = str(name).strip()
+                if name_str.isdigit():
                     try:
-                        tag_objs.append(Tag.objects.get(pk=int(name)))
+                        tag_objs.append(Tag.objects.get(pk=int(name_str)))
                         continue
-                    except Tag.DoesNotExist:
+                    except (Tag.DoesNotExist, ValueError):
                         pass
+                
                 tag, created = Tag.objects.get_or_create(
                     tenant=instance.tenant,
-                    name=name.strip()
+                    name=name_str
                 )
                 tag_objs.append(tag)
             instance.company_tags.set(tag_objs)

@@ -48,6 +48,15 @@ class Company(TenantAwareModel):
     credit_limit = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     
     # Status
+    CRM_STATUS_CHOICES = [
+        ('active', 'Active'),
+        ('cold', 'Cold'),
+        ('dormant', 'Dormant'),
+        ('lead', 'Lead'),
+    ]
+    crm_status = models.CharField(max_length=20, choices=CRM_STATUS_CHOICES, default='active')
+    last_touch = models.DateField(null=True, blank=True)
+    next_touch = models.DateField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_companies')
     created_at = models.DateTimeField(auto_now_add=True)

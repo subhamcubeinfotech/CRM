@@ -186,6 +186,128 @@
     body {
         font-size: 0.875rem;
     }
+
+    /* Ultra-Compact Horizontal Design */
+    .company-directory-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .company-card {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 10px 20px;
+        transition: all 0.2s ease;
+        position: relative;
+        cursor: pointer;
+    }
+
+    .company-card:hover {
+        border-color: var(--primary-color);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        background-color: #fcfdfe;
+    }
+
+    .card-top-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 6px;
+    }
+
+    .card-logo {
+        width: 32px;
+        height: 32px;
+        background: #f8fafc;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #f1f5f9;
+        flex-shrink: 0;
+    }
+
+    .card-logo img {
+        max-width: 80%;
+        max-height: 80%;
+        object-fit: contain;
+    }
+
+    .card-title {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+        flex-grow: 1;
+    }
+
+    .card-status-container {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .status-pill-small {
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 2px 10px;
+        border-radius: 6px;
+        border: 1px solid currentColor;
+        text-transform: capitalize;
+    }
+
+    /* Colors derived from reference */
+    .status-active  { background: #f0fdf4; color: #16a34a; }
+    .status-cold    { background: #fefce8; color: #ca8a04; }
+    .status-dormant { background: #fef2f2; color: #dc2626; }
+    .status-prospect { background: #f0f9ff; color: #0284c7; }
+
+    .card-meta-row {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+        padding-top: 6px;
+        border-top: 1px solid #f8fafc;
+    }
+
+    .meta-col {
+        min-width: 0;
+    }
+
+    .meta-label {
+        font-size: 0.65rem;
+        color: #94a3b8;
+        margin-bottom: 2px;
+        font-weight: 500;
+    }
+
+    .meta-value {
+        font-size: 0.78rem;
+        color: #475569;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .meta-value.empty {
+        color: #cbd5e1;
+    }
+
+    .action-btn {
+        color: #94a3b8;
+        padding: 0;
+        background: none;
+        border: none;
+        transition: color 0.2s;
+    }
+
+    .action-btn:hover {
+        color: #475569;
+    }
+</style>
 </style>
 {% endblock %}
 
@@ -275,103 +397,78 @@
         </div>
     </div>
 
-    <!-- Company List -->
-    <div class="card shadow-sm border-0">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="bg-light">
-                        <tr>
-                            <th class="ps-4">Company Name</th>
-                            <th>Materials</th>
-                            <th>Contact Info</th>
-                            <th>Location</th>
-                            <th>Status</th>
-                            <th class="text-end pe-4">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for company in companies %}
-                        <tr>
-                            <td class="ps-4">
-                                <div class="d-flex align-items-center">
-                                    <div class="avatar-sm me-3 bg-primary bg-opacity-10 text-primary rounded d-flex align-items-center justify-content-center overflow-hidden"
-                                        style="width: 40px; height: 40px;">
-                                        {% if company.logo %}
-                                        <img src="{{ company.logo.url }}" alt="{{ company.name }} logo"
-                                            style="width: 100%; height: 100%; object-fit: cover;">
-                                        {% else %}
-                                        <i class="fas fa-building"></i>
-                                        {% endif %}
-                                    </div>
-                                    <div>
-                                        <a href="{% url 'accounts:company_detail' company.pk %}"
-                                            class="fw-bold text-decoration-none text-dark">
-                                            {{ company.name }}
-                                        </a>
-                                        <div class="small text-muted">ID: #{{ company.pk }}</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="small fw-medium">
-                                    {% if company.material_tags.all %}
-                                        {% for tag in company.material_tags.all %}
-                                            {{ tag.name }}{% if not forloop.last %}, {% endif %}
-                                        {% endfor %}
-                                    {% else %}
-                                        <span class="text-muted small italic">No materials</span>
-                                    {% endif %}
-                                </div>
-                            </td>
-                            <td>
-                                <div class="small"><i class="fas fa-envelope me-2 text-muted"></i>{{ company.email|default:"-" }}</div>
-                                <div class="small"><i class="fas fa-phone me-2 text-muted"></i>{{ company.phone|default:"-" }}</div>
-                            </td>
-                            <td>
-                                <div class="small">{{ company.city }}, {{ company.state }}</div>
-                                <div class="small text-muted">{{ company.country }}</div>
-                            </td>
-                            <td>
-                                {% if company.is_active %}
-                                <span
-                                    class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2">Active</span>
-                                {% else %}
-                                <span
-                                    class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-2">Inactive</span>
-                                {% endif %}
-                            </td>
-                            <td class="text-end pe-4">
-                                <div class="btn-group">
-                                    <a href="{% url 'accounts:company_detail' company.pk %}"
-                                        class="btn btn-sm btn-outline-primary" title="View Details">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    <a href="{% url 'accounts:company_edit' company.pk %}"
-                                        class="btn btn-sm btn-outline-secondary" title="Edit">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    <a href="{% url 'accounts:company_delete' company.pk %}"
-                                        class="btn btn-sm btn-outline-danger" title="Delete"
-                                        onclick="return confirm('Delete this company?')">
-                                        <i class="fas fa-trash"></i>
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="6" class="text-center py-5 text-muted">
-                                <i class="fas fa-search fa-3x mb-3 opacity-25"></i>
-                                <h5>No companies found</h5>
-                                <p>Try adjusting your search or filters.</p>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+    <!-- Company List Redesigned to Cards -->
+    <div class="company-directory-grid">
+        {% for company in companies %}
+        <div class="company-card" onclick="window.location='{% url 'accounts:company_detail' company.pk %}';">
+            <div class="card-top-row">
+                <div class="card-logo">
+                    {% if company.logo %}
+                        <img src="{{ company.logo.url }}" alt="{{ company.name }}">
+                    {% else %}
+                        <i class="fas fa-building text-muted opacity-30"></i>
+                    {% endif %}
+                </div>
+                
+                <h3 class="card-title">{{ company.name }}</h3>
+
+                <div class="card-status-container" onclick="event.stopPropagation();">
+                    <span class="status-pill-small status-{{ company.crm_status }}">
+                        {{ company.get_crm_status_display }}
+                    </span>
+                    
+                    <div class="dropdown">
+                        <button class="action-btn" type="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 py-2">
+                            <li><a class="dropdown-item py-1" href="{% url 'accounts:company_detail' company.pk %}"><i class="fas fa-id-card me-2 small"></i>Details</a></li>
+                            <li><a class="dropdown-item py-1" href="{% url 'accounts:company_edit' company.pk %}"><i class="fas fa-edit me-2 small"></i>Edit</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-meta-row">
+                <div class="meta-col">
+                    <div class="meta-label">Services</div>
+                    <div class="meta-value {% if not company.services_provided %}empty{% endif %}">
+                        {{ company.services_provided|join:", "|default:"-" }}
+                    </div>
+                </div>
+
+                <div class="meta-col">
+                    <div class="meta-label">Materials</div>
+                    <div class="meta-value {% if not company.material_tags.all %}empty{% endif %}">
+                        {% if company.material_tags.all %}
+                            {% for tag in company.material_tags.all %}{{ tag.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                        {% else %}-{% endif %}
+                    </div>
+                </div>
+
+                <div class="meta-col">
+                    <div class="meta-label">Last Touch</div>
+                    <div class="meta-value {% if not company.last_touch %}empty{% endif %}">
+                        {{ company.last_touch|date:"M d, Y"|default:"-" }}
+                    </div>
+                </div>
+
+                <div class="meta-col">
+                    <div class="meta-label">Next Touch</div>
+                    <div class="meta-value {% if not company.next_touch %}empty{% endif %}" style="color: var(--primary-color);">
+                        {{ company.next_touch|date:"M d, Y"|default:"-" }}
+                    </div>
+                </div>
             </div>
         </div>
+        {% empty %}
+        <div class="card shadow-sm border-0 p-5 text-center text-muted rounded-4">
+            <i class="fas fa-search fa-3x mb-3 opacity-25"></i>
+            <h5>No companies found</h5>
+            <p>Try adjusting your search or filters.</p>
+        </div>
+        {% endfor %}
+    </div>
         {% if companies.has_other_pages %}
         <div class="card-footer bg-white border-0 py-3">
             <nav>
