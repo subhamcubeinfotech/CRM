@@ -358,12 +358,12 @@
                     <div class="input-group">
                         <span class="input-group-text bg-white border-end-0"><i
                                 class="fas fa-search text-muted"></i></span>
-                        <input type="text" name="search" class="form-control border-start-0"
-                            placeholder="Search by company name..." value="{{ search|default:'' }}">
+                        <input type="text" id="live-search" name="search" class="form-control border-start-0"
+                            placeholder="Search by company name, services, or materials..." value="{{ search|default:'' }}">
                     </div>
                 </div>
                 <div class="col-md-4">
-                    <select name="type" class="form-select">
+                    <select id="live-filter-type" name="type" class="form-select">
                         <option value="">All Company Types</option>
                         <option value="customer" {% if company_type == 'customer' %}selected{% endif %}>Customers</option>
                         <option value="carrier" {% if company_type == 'carrier' %}selected{% endif %}>Carriers</option>
@@ -422,10 +422,14 @@
         </div>
     </div>
 
-    <!-- Company List Redesigned to Cards -->
-    <div class="company-directory-grid">
+    <div class="company-directory-grid" id="company-cards-container">
         {% for company in companies %}
-        <div class="company-card" onclick="window.location='{% url 'accounts:company_detail' company.pk %}';">
+        <div class="company-card" 
+             data-name="{{ company.name|lower }}"
+             data-type="{{ company.company_type|lower }}"
+             data-services="{{ company.services_provided|join:', '|lower }}"
+             data-materials="{% for tag in company.material_tags.all %}{{ tag.name|lower }}{% if not forloop.last %}, {% endif %}{% endfor %}"
+             onclick="window.location='{% url 'accounts:company_detail' company.pk %}';">
             <div class="card-top-row">
                 <div class="card-logo">
                     {% if company.logo %}
@@ -700,6 +704,44 @@
     resetButton?.addEventListener('click', function () {
         refreshMapLayout();
     });
+
+    // --- LIVE FILTERING LOGIC ---
+    const searchInput = document.getElementById('live-search');
+    const typeFilter = document.getElementById('live-filter-type');
+    const companyCards = document.querySelectorAll('.company-card');
+
+    function performFilter() {
+        const searchTerm = searchInput.value.toLowerCase().trim();
+        const selectedType = typeFilter.value.toLowerCase();
+
+        companyCards.forEach(card => {
+            const name = card.dataset.name || "";
+            const type = card.dataset.type || "";
+            const services = card.dataset.services || "";
+            const materials = card.dataset.materials || "";
+
+            const matchesSearch = name.includes(searchTerm) || 
+                                 services.includes(searchTerm) || 
+                                 materials.includes(searchTerm);
+            
+            const matchesType = selectedType === "" || type === selectedType;
+
+            if (matchesSearch && matchesType) {
+                card.style.display = "block";
+            } else {
+                card.style.display = "none";
+            }
+        });
+
+        // Optional: Hide pagination if searching to avoid confusion
+        const pagination = document.querySelector('.pagination')?.closest('.card-footer');
+        if (pagination) {
+            pagination.style.display = (searchTerm !== "" || selectedType !== "") ? "none" : "block";
+        }
+    }
+
+    searchInput?.addEventListener('input', performFilter);
+    typeFilter?.addEventListener('change', performFilter);
     });
 </script>
 {% endblock %}
