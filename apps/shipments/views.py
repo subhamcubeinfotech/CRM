@@ -563,7 +563,19 @@ def shipment_list(request):
     
     # Drawer Context
     user_tenant = request.user.tenant
-    all_companies = Company.plain_objects.all().order_by('name')
+    user_company = request.user.company
+    all_companies = Company.plain_objects.filter(is_active=True).filter(
+        Q(tenant=user_tenant) | Q(tenant__isnull=True)
+    )
+    if not getattr(request.user, 'is_admin', False):
+        if user_company:
+            all_companies = all_companies.filter(
+                Q(created_by=request.user) | Q(pk=user_company.pk)
+            )
+        else:
+            all_companies = all_companies.filter(created_by=request.user)
+    
+    all_companies = all_companies.order_by('name')
     
     # AJAX Rendering
     if request.GET.get('ajax') == '1':
