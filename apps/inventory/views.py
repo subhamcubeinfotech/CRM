@@ -767,9 +767,6 @@ def inventory_item_add_general(request):
             'company': user_company,
         }
         form = InventoryItemForm(initial=initial, user=request.user)
-        
-        if request.user.tenant:
-            form.fields['company'].queryset = Company.objects.filter(tenant=request.user.tenant)
 
     # Show all warehouses in tenant, prioritize user's company (matching Order page)
     warehouses = Warehouse.plain_objects.filter(tenant=request.user.tenant).annotate(

@@ -203,93 +203,72 @@ class CompanyForm(forms.ModelForm):
 
         if commit:
             instance.save()
-            self.save_m2m()
+            self.process_m2m_data()
         return instance
 
-    def save_m2m(self):
-        """Custom save_m2m to handle auto-creation of Tags and Materials."""
+    def process_m2m_data(self):
+        """Custom method to handle auto-creation of Tags and Materials."""
         instance = self.instance
         
-        # IMPORTANT: If instance.tenant is missing, try to set it before creating tags
+        # 0. Set Tenant if missing (critical for Material creation)
         if not instance.tenant:
-            from apps.accounts.models import CustomUser
             if hasattr(self, 'user') and self.user and hasattr(self.user, 'tenant'):
                 instance.tenant = self.user.tenant
+            elif 'request' in self.data and hasattr(self.data['request'], 'user'):
+                 instance.tenant = self.data['request'].user.tenant
 
-        # 1. Handle Materials
-        # Be extremely aggressive in capturing material data
-        # Check cleaned_data, getlist, and comma-separated string fallbacks
-        material_names = self.cleaned_data.get('material_tags', [])
-        if not material_names:
-            material_names = self.data.getlist('material_tags')
+        # 1. Handle Materials (ManyToMany)
+        # Be extremely aggressive in capturing the data
+        material_data = self.cleaned_data.get('material_tags')
+        if not material_data:
+            material_data = self.data.getlist('material_tags')
         
-        # Fallback: Check if it's sent as a single string inside a list or as a key
-        if not material_names and 'material_tags' in self.data:
-            val = self.data.get('material_tags')
-            if val:
-                material_names = [v.strip() for v in val.split(',') if v.strip()]
-
-        if material_names:
+        # Normalize to list of strings
+        if isinstance(material_data, str):
+            material_data = [v.strip() for v in material_data.split(',') if v.strip()]
+        elif isinstance(material_data, list) and len(material_data) == 1 and ',' in str(material_data[0]):
+            material_data = [v.strip() for v in material_data[0].split(',') if v.strip()]
+        
+        material_objs = []
+        if material_data:
             from apps.inventory.models import Material
-            material_objs = []
-            for name in material_names:
-                if not name: continue
-                
-                # Sometimes tags come in as a string of a list like "['Mat1', 'Mat2']"
-                if str(name).startswith('[') and str(name).endswith(']'):
-                    import ast
-                    try:
-                        inner_names = ast.literal_eval(name)
-                        if isinstance(inner_names, list):
-                            for inner in inner_names:
-                                mat, _ = Material.objects.get_or_create(tenant=instance.tenant, name=str(inner).strip())
-                                material_objs.append(mat)
-                            continue
-                    except: pass
-
-                name_str = str(name).strip()
-                if name_str.isdigit():
-                    try:
-                        material_objs.append(Material.objects.get(pk=int(name_str)))
-                        continue
-                    except (Material.DoesNotExist, ValueError):
-                        pass
-                
-                mat, created = Material.objects.get_or_create(
-                    tenant=instance.tenant,
-                    name=name_str
-                )
-                material_objs.append(mat)
-            instance.material_tags.set(material_objs)
+            for item in material_data:
+                item_str = str(item).strip() if item else ""
+                if not item_str: continue
+                try:
+                    if item_str.isdigit():
+                        mat = Material.objects.get(pk=int(item_str))
+                    else:
+                        mat, created = Material.objects.get_or_create(
+                            tenant=instance.tenant,
+                            name=item_str
+                        )
+                    material_objs.append(mat)
+                except:
+                    pass
             
-        # 2. Handle Tags
-        tag_names = self.cleaned_data.get('company_tags', [])
-        if not tag_names:
-            tag_names = self.data.getlist('company_tags')
-        if not tag_names and 'company_tags' in self.data:
-            val = self.data.get('company_tags')
-            tag_names = [v.strip() for v in val.split(',') if v.strip()] if val else []
-
-        if tag_names:
+            if material_objs:
+                instance.material_tags.set(material_objs)
+        
+        # 2. Handle Tags (ManyToMany)
+        tag_data = self.cleaned_data.get('company_tags') or self.data.getlist('company_tags')
+        if tag_data:
             from apps.orders.models import Tag
             tag_objs = []
-            for name in tag_names:
-                if not name: continue
-                
-                name_str = str(name).strip()
-                if name_str.isdigit():
-                    try:
-                        tag_objs.append(Tag.objects.get(pk=int(name_str)))
-                        continue
-                    except (Tag.DoesNotExist, ValueError):
-                        pass
-                
-                tag, created = Tag.objects.get_or_create(
-                    tenant=instance.tenant,
-                    name=name_str
-                )
-                tag_objs.append(tag)
-            instance.company_tags.set(tag_objs)
+            for item in tag_data:
+                item_str = str(item).strip()
+                if not item_str: continue
+                try:
+                    if item_str.isdigit():
+                        tag_objs.append(Tag.objects.get(pk=int(item_str)))
+                    else:
+                        tag, _ = Tag.objects.get_or_create(tenant=instance.tenant, name=item_str)
+                        tag_objs.append(tag)
+                except Exception as e:
+                    print(f"Error saving tag '{item}': {e}")
+            
+            if tag_objs:
+                instance.company_tags.set(tag_objs)
 
         # Call the original save_m2m for any other standard fields
         if hasattr(super(), 'save_m2m'):

@@ -271,7 +271,8 @@
     .card-status-container {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 18px;
+        margin-right: 5px;
     }
 
     .status-pill-small {
@@ -288,6 +289,7 @@
     .status-cold    { background: #fefce8; color: #ca8a04; }
     .status-dormant { background: #fef2f2; color: #dc2626; }
     .status-prospect { background: #f0f9ff; color: #0284c7; }
+    .status-lead    { background: #f0f9ff; color: #0284c7; }
 
     .card-meta-row {
         display: grid;
@@ -332,50 +334,624 @@
     .action-btn:hover {
         color: #475569;
     }
-</style>
+
+    .directory-shell {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+    }
+
+    .directory-toolbar {
+        border: 1px solid #dbe4f0;
+        border-radius: 20px;
+        background:
+            radial-gradient(circle at top right, rgba(59, 130, 246, 0.08), transparent 32%),
+            linear-gradient(180deg, #ffffff, #f8fbff);
+        box-shadow: 0 16px 40px rgba(15, 23, 42, 0.05);
+    }
+
+    .toolbar-kicker {
+        font-size: 0.76rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #2563eb;
+        margin-bottom: 6px;
+    }
+
+    .toolbar-title {
+        font-size: 1.65rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin: 0;
+    }
+
+    .toolbar-subtitle {
+        font-size: 0.92rem;
+        color: #64748b;
+        margin-top: 4px;
+        margin-bottom: 0;
+    }
+
+    .filter-trigger-btn {
+        min-height: 48px;
+        border-radius: 14px;
+        font-weight: 700;
+    }
+
+    .filter-count-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 24px;
+        height: 24px;
+        padding: 0 8px;
+        border-radius: 999px;
+        background: #dbeafe;
+        color: #1d4ed8;
+        font-size: 0.78rem;
+        font-weight: 800;
+    }
+
+    .toolbar-search .input-group-text,
+    .toolbar-search .form-control,
+    .toolbar-search .form-select {
+        min-height: 48px;
+        border-radius: 14px;
+    }
+
+    .toolbar-search .input-group-text {
+        border-right: 0;
+        background: #fff;
+    }
+
+    .toolbar-search .form-control {
+        border-left: 0;
+    }
+
+    .filter-reflection {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    .filter-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border-radius: 999px;
+        padding: 8px 12px;
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        color: #1e3a8a;
+        font-size: 0.82rem;
+        font-weight: 600;
+    }
+
+    .filter-chip-label {
+        color: #64748b;
+        font-weight: 700;
+    }
+
+    .filter-summary {
+        font-size: 0.88rem;
+        color: #475569;
+        font-weight: 600;
+    }
+
+    .filter-empty {
+        font-size: 0.88rem;
+        color: #94a3b8;
+        font-weight: 500;
+    }
+
+    .directory-offcanvas {
+        width: min(420px, 100vw);
+    }
+
+    .directory-offcanvas .offcanvas-header {
+        padding: 24px 24px 12px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .directory-offcanvas .offcanvas-body {
+        padding: 20px 24px 24px;
+        background: linear-gradient(180deg, #ffffff, #f8fafc);
+    }
+
+    .filter-section-label {
+        font-size: 0.74rem;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #64748b;
+        margin-bottom: 10px;
+    }
+
+    .filter-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .filter-stack > div {
+        transition: opacity 0.2s ease;
+    }
+
+    .filter-search-input {
+        min-height: 46px;
+        border-radius: 14px;
+    }
+
+    .range-row {
+        display: grid;
+        grid-template-columns: 1fr 120px auto;
+        gap: 12px;
+        align-items: center;
+    }
+
+    .range-row input[type="range"] {
+        width: 100%;
+    }
+
+    .range-value {
+        min-height: 44px;
+        border-radius: 12px;
+        border: 1px solid #dbe2ea;
+        padding: 0 14px;
+        display: flex;
+        align-items: center;
+        background: #fff;
+        color: #475569;
+        font-weight: 600;
+    }
+
+    .location-suggestion-box {
+        display: none;
+        margin-top: 8px;
+        border: 1px solid #dbe2ea;
+        border-radius: 14px;
+        background: #fff;
+        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+        overflow: hidden;
+        max-height: 210px;
+        overflow-y: auto;
+    }
+
+    .location-suggestion-box.is-visible {
+        display: block;
+    }
+
+    .location-suggestion-item {
+        width: 100%;
+        text-align: left;
+        border: 0;
+        background: transparent;
+        padding: 11px 14px;
+        color: #0f172a;
+        font-weight: 600;
+        line-height: 1.45;
+        white-space: normal;
+    }
+
+    .location-suggestion-item:hover {
+        background: #f8fafc;
+    }
+
+    .checkbox-filter {
+        position: relative;
+    }
+
+    .checkbox-filter-toggle {
+        width: 100%;
+        min-height: 46px;
+        border: 1px solid #dbe2ea;
+        border-radius: 12px;
+        background: #fff;
+        padding: 10px 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        color: #64748b;
+        font-weight: 500;
+    }
+
+    .checkbox-filter-toggle.has-selection {
+        color: #0f172a;
+        border-color: #bfd7ff;
+        background: #f8fbff;
+    }
+
+    .checkbox-filter-label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .checkbox-filter-menu {
+        display: none;
+        position: absolute;
+        top: calc(100% + 8px);
+        left: 0;
+        right: 0;
+        z-index: 50;
+        background: #fff;
+        border: 1px solid #dbe2ea;
+        border-radius: 14px;
+        box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12);
+        overflow: hidden;
+    }
+
+    .checkbox-filter.is-open .checkbox-filter-menu {
+        display: block;
+    }
+
+    .checkbox-filter-search {
+        padding: 12px;
+        border-bottom: 1px solid #eef2f7;
+    }
+
+    .checkbox-filter-search-input {
+        min-height: 40px;
+        border-radius: 10px;
+    }
+
+    .checkbox-filter-options {
+        max-height: 220px;
+        overflow-y: auto;
+        padding: 8px;
+    }
+
+    .checkbox-filter-option {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 8px;
+        border-radius: 10px;
+        color: #334155;
+        cursor: pointer;
+    }
+
+    .checkbox-filter-option:hover {
+        background: #f8fafc;
+    }
+
+    .checkbox-filter-option.is-hidden {
+        display: none;
+    }
+
+    .filter-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 24px;
+    }
+
+    .filter-actions .btn {
+        min-height: 46px;
+        border-radius: 14px;
+        font-weight: 700;
+    }
+
+    .directory-result-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 2px;
+        margin-bottom: 2px;
+    }
+
+    .directory-result-count {
+        font-size: 0.92rem;
+        color: #334155;
+        font-weight: 700;
+    }
+
+    .company-card.is-hidden {
+        display: none !important;
+    }
+
+    .directory-no-results {
+        display: none;
+        border: 1px dashed #cbd5e1;
+        border-radius: 18px;
+        padding: 40px 24px;
+        text-align: center;
+        background: #fff;
+        color: #64748b;
+    }
+
+    .directory-no-results.is-visible {
+        display: block;
+    }
+
+    @media (max-width: 767.98px) {
+        .toolbar-title {
+            font-size: 1.35rem;
+        }
+
+        .card-meta-row {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .directory-result-meta {
+            align-items: flex-start;
+        }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h2"><i class="fas fa-address-book me-2 text-primary"></i>Company Directory</h1>
-        <div class="d-flex align-items-center gap-2">
-            <button type="button" class="btn btn-outline-primary company-map-toggle" id="company-map-toggle"
-                title="Show company locations">
-                <i class="fas fa-location-dot"></i>
-            </button>
-            <a href="{% url 'accounts:company_create' %}" class="btn btn-primary"><i class="fas fa-plus me-1"></i>Add
-                Company</a>
-        </div>
-    </div>
-
-    <!-- Filters -->
-    <div class="card mb-4 shadow-sm border-0">
-        <div class="card-body">
-            <form method="get" class="row g-3">
-                <div class="col-md-5">
-                    <div class="input-group">
-                        <span class="input-group-text bg-white border-end-0"><i
-                                class="fas fa-search text-muted"></i></span>
-                        <input type="text" name="search" class="form-control border-start-0"
-                            placeholder="Search by company name..." value="{{ search|default:'' }}">
+    <div class="directory-shell">
+        <div class="directory-toolbar p-4 p-lg-4">
+            <form method="get" id="company-filter-form">
+                <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-4">
+                    <div>
+                        <div class="toolbar-kicker">Directory Workspace</div>
+                        <h1 class="toolbar-title">Company Directory</h1>
+                        <p class="toolbar-subtitle">Select filters and they will stay reflected here on the page.</p>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <button type="button" class="btn btn-outline-primary company-map-toggle" id="company-map-toggle"
+                            title="Show company locations">
+                            <i class="fas fa-location-dot"></i>
+                        </button>
+                        <a href="{% url 'accounts:company_create' %}" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i>Add Company
+                        </a>
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <select name="type" class="form-select">
-                        <option value="">All Company Types</option>
-                        <option value="customer" {% if company_type == 'customer' %}selected{% endif %}>Customers</option>
-                        <option value="carrier" {% if company_type == 'carrier' %}selected{% endif %}>Carriers</option>
-                        <option value="vendor" {% if company_type == 'vendor' %}selected{% endif %}>Vendors</option>
-                    </select>
+
+                <div class="row g-3 toolbar-search align-items-stretch">
+                    <div class="col-12 col-lg-2">
+                        <button class="btn btn-outline-dark w-100 filter-trigger-btn d-flex align-items-center justify-content-center gap-2"
+                            type="button" data-bs-toggle="offcanvas" data-bs-target="#directoryFilters"
+                            aria-controls="directoryFilters">
+                            <i class="fas fa-filter"></i>
+                            <span>Filters</span>
+                            <span class="filter-count-badge" id="filter-count-badge">{{ active_filters|length }}</span>
+                        </button>
+                    </div>
+                    <div class="col-12 col-lg-6">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-search text-muted"></i></span>
+                            <input type="text" id="live-search" name="search" class="form-control"
+                                placeholder="Search by company name, services, materials, tags, or location..."
+                                value="{{ search|default:'' }}">
+                        </div>
+                    </div>
+                    <div class="col-12 col-lg-2">
+                        <select id="live-filter-type" name="type" class="form-select">
+                            <option value="">All Types</option>
+                            {% for type_value, type_label in company_type_choices %}
+                                <option value="{{ type_value }}" {% if company_type == type_value %}selected{% endif %}>{{ type_label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
                 </div>
-                <div class="col-md-3">
-                    <button type="submit" class="btn btn-outline-primary w-100">Apply Filters</button>
+
+                <div class="filter-reflection" id="filter-reflection">
+                    <div class="d-flex flex-wrap gap-2" id="active-filter-chips">
+                        {% for item in active_filters %}
+                            <span class="filter-chip">
+                                <span class="filter-chip-label">{{ item.label }}</span>
+                                <span>{{ item.value }}</span>
+                            </span>
+                        {% endfor %}
+                    </div>
+                    <span class="filter-empty {% if active_filters %}d-none{% endif %}" id="filter-empty-state">No filters selected yet.</span>
+                    <a href="{% url 'accounts:company_list' %}" id="clear-filters-link"
+                        class="btn btn-link btn-sm text-decoration-none px-0 {% if not active_filters %}d-none{% endif %}">Clear all</a>
+                </div>
+
+                <div class="offcanvas offcanvas-start directory-offcanvas" tabindex="-1" id="directoryFilters"
+                    aria-labelledby="directoryFiltersLabel">
+                    <div class="offcanvas-header">
+                        <div>
+                            <h5 class="offcanvas-title mb-1" id="directoryFiltersLabel">Filters</h5>
+                            <div class="small text-muted">Selected values will reflect on the page after apply.</div>
+                        </div>
+                        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                    </div>
+                    <div class="offcanvas-body">
+                        <div class="filter-stack">
+                            <div data-filter-item>
+                                <div class="filter-section-label">Search for a filter</div>
+                                <input type="text" id="filter-panel-search" class="form-control filter-search-input"
+                                    placeholder="Search for a filter">
+                            </div>
+
+                            <div data-filter-item>
+                                <div class="filter-section-label">Location</div>
+                                <input type="text" id="live-filter-location" name="location" class="form-control"
+                                    placeholder="Type an address" value="{{ location|default:'' }}" autocomplete="off">
+                                <div class="location-suggestion-box" id="location-suggestion-box"></div>
+                            </div>
+
+                            <div data-filter-item>
+                                <div class="range-row">
+                                    <input type="range" min="25" max="1500" step="25" value="250" id="location-radius-range">
+                                    <div class="range-value"><span id="location-radius-value">250</span></div>
+                                    <div class="small text-muted fw-semibold">Miles</div>
+                                </div>
+                            </div>
+
+                            <div data-filter-item>
+                                <div class="filter-section-label">Material</div>
+                                <div class="checkbox-filter" data-checkbox-filter="material">
+                                    <button type="button" class="checkbox-filter-toggle">
+                                        <span class="checkbox-filter-label">Select material(s)</span>
+                                        <i class="fas fa-chevron-down small"></i>
+                                    </button>
+                                    <div class="checkbox-filter-menu">
+                                        <div class="checkbox-filter-search">
+                                            <input type="text" class="form-control checkbox-filter-search-input" placeholder="Search material">
+                                        </div>
+                                        <div class="checkbox-filter-options">
+                                            {% for material in available_materials %}
+                                                <label class="checkbox-filter-option" data-option-label="{{ material.name|lower }}">
+                                                    <input type="checkbox" class="form-check-input mt-0" value="{{ material.name|lower }}" data-label="{{ material.name }}"
+                                                        {% if material_id == material.pk|stringformat:'s' %}checked{% endif %}>
+                                                    <span>{{ material.name }}</span>
+                                                </label>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div data-filter-item>
+                                <div class="filter-section-label">Material Type</div>
+                                <div class="checkbox-filter" data-checkbox-filter="material-type">
+                                    <button type="button" class="checkbox-filter-toggle">
+                                        <span class="checkbox-filter-label">Select material type(s)</span>
+                                        <i class="fas fa-chevron-down small"></i>
+                                    </button>
+                                    <div class="checkbox-filter-menu">
+                                        <div class="checkbox-filter-search">
+                                            <input type="text" class="form-control checkbox-filter-search-input" placeholder="Search material type">
+                                        </div>
+                                        <div class="checkbox-filter-options">
+                                            {% for material_type_option in available_material_types %}
+                                                <label class="checkbox-filter-option" data-option-label="{{ material_type_option|lower }}">
+                                                    <input type="checkbox" class="form-check-input mt-0" value="{{ material_type_option|lower }}" data-label="{{ material_type_option }}"
+                                                        {% if material_type == material_type_option %}checked{% endif %}>
+                                                    <span>{{ material_type_option }}</span>
+                                                </label>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div data-filter-item>
+                                <div class="filter-section-label">Services</div>
+                                <div class="checkbox-filter" data-checkbox-filter="service">
+                                    <button type="button" class="checkbox-filter-toggle">
+                                        <span class="checkbox-filter-label">Select a value</span>
+                                        <i class="fas fa-chevron-down small"></i>
+                                    </button>
+                                    <div class="checkbox-filter-menu">
+                                        <div class="checkbox-filter-search">
+                                            <input type="text" class="form-control checkbox-filter-search-input" placeholder="Search service">
+                                        </div>
+                                        <div class="checkbox-filter-options">
+                                            {% for service_option in available_services %}
+                                                <label class="checkbox-filter-option" data-option-label="{{ service_option|lower }}">
+                                                    <input type="checkbox" class="form-check-input mt-0" value="{{ service_option|lower }}" data-label="{{ service_option }}"
+                                                        {% if service == service_option %}checked{% endif %}>
+                                                    <span>{{ service_option }}</span>
+                                                </label>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div data-filter-item>
+                                <div class="filter-section-label">Status</div>
+                                <div class="checkbox-filter" data-checkbox-filter="status">
+                                    <button type="button" class="checkbox-filter-toggle">
+                                        <span class="checkbox-filter-label">Select a value</span>
+                                        <i class="fas fa-chevron-down small"></i>
+                                    </button>
+                                    <div class="checkbox-filter-menu">
+                                        <div class="checkbox-filter-search">
+                                            <input type="text" class="form-control checkbox-filter-search-input" placeholder="Search status">
+                                        </div>
+                                        <div class="checkbox-filter-options">
+                                            {% for status_value, status_label in crm_status_choices %}
+                                                <label class="checkbox-filter-option" data-option-label="{{ status_label|lower }}">
+                                                    <input type="checkbox" class="form-check-input mt-0" value="{{ status_value|lower }}" data-label="{{ status_label }}"
+                                                        {% if crm_status == status_value %}checked{% endif %}>
+                                                    <span>{{ status_label }}</span>
+                                                </label>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div data-filter-item>
+                                <div class="filter-section-label">Representatives</div>
+                                <div class="checkbox-filter" data-checkbox-filter="representative">
+                                    <button type="button" class="checkbox-filter-toggle">
+                                        <span class="checkbox-filter-label">Select a value</span>
+                                        <i class="fas fa-chevron-down small"></i>
+                                    </button>
+                                    <div class="checkbox-filter-menu">
+                                        <div class="checkbox-filter-search">
+                                            <input type="text" class="form-control checkbox-filter-search-input" placeholder="Search representative">
+                                        </div>
+                                        <div class="checkbox-filter-options">
+                                            {% for rep in representatives %}
+                                                <label class="checkbox-filter-option" data-option-label="{{ rep.get_full_name|default:rep.username|lower }}">
+                                                    <input type="checkbox" class="form-check-input mt-0" value="{{ rep.get_full_name|default:rep.username|lower }}" data-label="{{ rep.get_full_name|default:rep.username }}"
+                                                        {% if representative_id == rep.pk|stringformat:'s' %}checked{% endif %}>
+                                                    <span>{{ rep.get_full_name|default:rep.username }}</span>
+                                                </label>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div data-filter-item>
+                                <div class="filter-section-label">Tag</div>
+                                <div class="checkbox-filter" data-checkbox-filter="tag">
+                                    <button type="button" class="checkbox-filter-toggle">
+                                        <span class="checkbox-filter-label">Select a value</span>
+                                        <i class="fas fa-chevron-down small"></i>
+                                    </button>
+                                    <div class="checkbox-filter-menu">
+                                        <div class="checkbox-filter-search">
+                                            <input type="text" class="form-control checkbox-filter-search-input" placeholder="Search tag">
+                                        </div>
+                                        <div class="checkbox-filter-options">
+                                            {% for tag in available_tags %}
+                                                <label class="checkbox-filter-option" data-option-label="{{ tag.name|lower }}">
+                                                    <input type="checkbox" class="form-check-input mt-0" value="{{ tag.name|lower }}" data-label="{{ tag.name }}"
+                                                        {% if tag_id == tag.pk|stringformat:'s' %}checked{% endif %}>
+                                                    <span>{{ tag.name }}</span>
+                                                </label>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div data-filter-item>
+                                <div class="filter-section-label">Archived</div>
+                                <div class="d-flex flex-column gap-2 pt-1">
+                                    <label class="d-flex align-items-center gap-2 text-secondary fw-medium">
+                                        <input type="radio" name="archived" value="no" class="form-check-input mt-0" {% if archived == 'no' %}checked{% endif %}>
+                                        <span>No</span>
+                                    </label>
+                                    <label class="d-flex align-items-center gap-2 text-secondary fw-medium">
+                                        <input type="radio" name="archived" value="yes" class="form-check-input mt-0" {% if archived == 'yes' %}checked{% endif %}>
+                                        <span>Yes</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="filter-actions">
+                            <a href="{% url 'accounts:company_list' %}" class="btn btn-outline-secondary flex-fill">Reset</a>
+                        </div>
+                    </div>
                 </div>
             </form>
         </div>
-    </div>
+        <div class="directory-result-meta">
+            <div class="directory-result-count">Showing your directory list with reflected filter state.</div>
+        </div>
 
     <div class="card mb-4 shadow-sm border-0 directory-map-card" id="company-map-card">
         <div class="card-body">
@@ -422,10 +998,20 @@
         </div>
     </div>
 
-    <!-- Company List Redesigned to Cards -->
-    <div class="company-directory-grid">
+    <div class="company-directory-grid" id="company-cards-container">
         {% for company in companies %}
-        <div class="company-card" onclick="window.location='{% url 'accounts:company_detail' company.pk %}';">
+        <div class="company-card" 
+             data-name="{{ company.name|lower }}"
+             data-type="{{ company.company_type|lower }}"
+             data-status="{{ company.crm_status|lower }}"
+             data-location="{{ company.city|lower }} {{ company.state|lower }} {{ company.country|lower }}"
+             data-representative="{% if company.created_by %}{{ company.created_by.get_full_name|default:company.created_by.username|lower }}{% endif %}"
+             data-services="{{ company.services_provided|join:', '|lower }}"
+             data-material-types="{% for tag in company.material_tags.all %}{{ tag.material_type|lower }}{% if not forloop.last %}, {% endif %}{% endfor %}"
+             data-materials="{% for tag in company.material_tags.all %}{{ tag.name|lower }}{% if not forloop.last %}, {% endif %}{% endfor %}"
+             data-tags="{% for tag in company.company_tags.all %}{{ tag.name|lower }}{% if not forloop.last %}, {% endif %}{% endfor %}"
+             data-archived="{% if company.is_active %}no{% else %}yes{% endif %}"
+             onclick="window.location='{% url 'accounts:company_detail' company.pk %}';">
             <div class="card-top-row">
                 <div class="card-logo">
                     {% if company.logo %}
@@ -494,13 +1080,18 @@
         </div>
         {% endfor %}
     </div>
+    <div class="directory-no-results" id="directory-no-results">
+        <i class="fas fa-filter fa-2x mb-3 opacity-50"></i>
+        <h5 class="mb-2">No companies match these filters</h5>
+        <p class="mb-0">Try changing one of the selected filters or reset the panel.</p>
+    </div>
         {% if companies.has_other_pages %}
         <div class="card-footer bg-white border-0 py-3">
             <nav>
                 <ul class="pagination justify-content-center mb-0">
                     {% if companies.has_previous %}
                     <li class="page-item"><a class="page-link"
-                            href="?page={{ companies.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if company_type %}&type={{ company_type }}{% endif %}">Previous</a>
+                            href="?page={{ companies.previous_page_number }}{% if pagination_query %}&{{ pagination_query }}{% endif %}">Previous</a>
                     </li>
                     {% endif %}
 
@@ -508,7 +1099,7 @@
 
                     {% if companies.has_next %}
                     <li class="page-item"><a class="page-link"
-                            href="?page={{ companies.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if company_type %}&type={{ company_type }}{% endif %}">Next</a>
+                            href="?page={{ companies.next_page_number }}{% if pagination_query %}&{{ pagination_query }}{% endif %}">Next</a>
                     </li>
                     {% endif %}
                 </ul>
@@ -700,6 +1291,303 @@
     resetButton?.addEventListener('click', function () {
         refreshMapLayout();
     });
+
+    // --- LIVE FILTERING LOGIC ---
+    const searchInput = document.getElementById('live-search');
+    const typeFilter = document.getElementById('live-filter-type');
+    const locationFilter = document.getElementById('live-filter-location');
+    const archivedFilters = document.querySelectorAll('input[name="archived"]');
+    const filterPanelSearch = document.getElementById('filter-panel-search');
+    const filterItems = document.querySelectorAll('[data-filter-item]');
+    const radiusRange = document.getElementById('location-radius-range');
+    const radiusValue = document.getElementById('location-radius-value');
+    const locationSuggestionBox = document.getElementById('location-suggestion-box');
+    const companyCards = document.querySelectorAll('.company-card');
+    const resultCount = document.getElementById('company-results-count');
+    const noResults = document.getElementById('directory-no-results');
+    const chipsContainer = document.getElementById('active-filter-chips');
+    const emptyState = document.getElementById('filter-empty-state');
+    const clearFiltersLink = document.getElementById('clear-filters-link');
+    const filterCountBadge = document.getElementById('filter-count-badge');
+    const checkboxFilters = document.querySelectorAll('.checkbox-filter');
+
+    function buildChip(label, value) {
+        return `
+            <span class="filter-chip">
+                <span class="filter-chip-label">${label}</span>
+                <span>${value}</span>
+            </span>
+        `;
+    }
+
+    function updateReflection(selectedFilters) {
+        if (!chipsContainer || !emptyState || !clearFiltersLink || !filterCountBadge) {
+            return;
+        }
+
+        filterCountBadge.textContent = selectedFilters.length;
+        chipsContainer.innerHTML = selectedFilters.map(filter => buildChip(filter.label, filter.value)).join('');
+        emptyState.classList.toggle('d-none', selectedFilters.length > 0);
+        clearFiltersLink.classList.toggle('d-none', selectedFilters.length === 0);
+    }
+
+    function getCheckedValues(filterName) {
+        return Array.from(document.querySelectorAll(`[data-checkbox-filter="${filterName}"] input[type="checkbox"]:checked`))
+            .map(input => input.value.toLowerCase());
+    }
+
+    function getCheckedLabels(filterName) {
+        return Array.from(document.querySelectorAll(`[data-checkbox-filter="${filterName}"] input[type="checkbox"]:checked`))
+            .map(input => input.dataset.label || input.value);
+    }
+
+    function updateCheckboxFilterSummary(filterElement) {
+        const label = filterElement.querySelector('.checkbox-filter-label');
+        const toggle = filterElement.querySelector('.checkbox-filter-toggle');
+        const checked = Array.from(filterElement.querySelectorAll('input[type="checkbox"]:checked'));
+        const defaultLabel = {
+            material: 'Select material(s)',
+            'material-type': 'Select material type(s)',
+            service: 'Select a value',
+            status: 'Select a value',
+            representative: 'Select a value',
+            tag: 'Select a value',
+        }[filterElement.dataset.checkboxFilter] || 'Select a value';
+
+        if (!label || !toggle) return;
+
+        if (!checked.length) {
+            label.textContent = defaultLabel;
+            toggle.classList.remove('has-selection');
+            return;
+        }
+
+        label.textContent = checked.length === 1
+            ? (checked[0].dataset.label || checked[0].value)
+            : `${checked.length} selected`;
+        toggle.classList.add('has-selection');
+    }
+
+    checkboxFilters.forEach(filterElement => {
+        const toggle = filterElement.querySelector('.checkbox-filter-toggle');
+        const search = filterElement.querySelector('.checkbox-filter-search-input');
+        const options = filterElement.querySelectorAll('.checkbox-filter-option');
+        const checkboxes = filterElement.querySelectorAll('input[type="checkbox"]');
+
+        updateCheckboxFilterSummary(filterElement);
+
+        toggle?.addEventListener('click', function (event) {
+            event.stopPropagation();
+            checkboxFilters.forEach(otherFilter => {
+                if (otherFilter !== filterElement) {
+                    otherFilter.classList.remove('is-open');
+                }
+            });
+            filterElement.classList.toggle('is-open');
+        });
+
+        search?.addEventListener('input', function () {
+            const term = this.value.toLowerCase().trim();
+            options.forEach(option => {
+                const text = option.dataset.optionLabel || option.textContent.toLowerCase();
+                option.classList.toggle('is-hidden', !!term && !text.includes(term));
+            });
+        });
+
+        checkboxes.forEach(input => {
+            input.addEventListener('change', function () {
+                updateCheckboxFilterSummary(filterElement);
+                performFilter();
+            });
+        });
+    });
+
+    let locationSuggestionController = null;
+    let locationSuggestionTimer = null;
+
+    function renderLocationSuggestions(matches) {
+        if (!locationSuggestionBox) {
+            return;
+        }
+
+        if (!matches.length) {
+            locationSuggestionBox.innerHTML = '';
+            locationSuggestionBox.classList.remove('is-visible');
+            return;
+        }
+
+        locationSuggestionBox.innerHTML = matches.map(locationValue => `
+            <button type="button" class="location-suggestion-item" data-location-value="${locationValue.replace(/"/g, '&quot;')}">
+                ${locationValue}
+            </button>
+        `).join('');
+        locationSuggestionBox.classList.add('is-visible');
+    }
+
+    async function refreshLocationSuggestions() {
+        if (!locationFilter || !locationSuggestionBox) {
+            return;
+        }
+
+        const term = locationFilter.value.trim();
+        if (!term) {
+            locationSuggestionBox.innerHTML = '';
+            locationSuggestionBox.classList.remove('is-visible');
+            return;
+        }
+
+        if (locationSuggestionController) {
+            locationSuggestionController.abort();
+        }
+
+        locationSuggestionController = new AbortController();
+        locationSuggestionBox.innerHTML = '<div class="px-3 py-2 text-muted small">Searching locations...</div>';
+        locationSuggestionBox.classList.add('is-visible');
+
+        try {
+            const response = await fetch(
+                `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=8&addressdetails=1&q=${encodeURIComponent(term)}`,
+                {
+                    signal: locationSuggestionController.signal,
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('Location lookup failed');
+            }
+
+            const results = await response.json();
+            const matches = [...new Set((results || [])
+                .map(item => item.display_name)
+                .filter(Boolean))];
+
+            renderLocationSuggestions(matches);
+        } catch (error) {
+            if (error.name === 'AbortError') {
+                return;
+            }
+
+            locationSuggestionBox.innerHTML = '<div class="px-3 py-2 text-muted small">No location suggestions found.</div>';
+            return;
+        }
+    }
+
+    function performFilter() {
+        const searchTerm = searchInput?.value.toLowerCase().trim() || "";
+        const selectedType = typeFilter?.value.toLowerCase() || "";
+        const selectedLocation = locationFilter?.value.toLowerCase().trim() || "";
+        const selectedStatuses = getCheckedValues('status');
+        const selectedServices = getCheckedValues('service');
+        const selectedMaterials = getCheckedValues('material');
+        const selectedMaterialTypes = getCheckedValues('material-type');
+        const selectedTags = getCheckedValues('tag');
+        const selectedRepresentatives = getCheckedValues('representative');
+        const selectedArchived = document.querySelector('input[name="archived"]:checked')?.value || "";
+
+        const selectedFilters = [];
+        if (searchInput?.value.trim()) selectedFilters.push({ label: 'Search', value: searchInput.value.trim() });
+        if (locationFilter?.value.trim()) selectedFilters.push({ label: 'Location', value: locationFilter.value.trim() });
+        if (typeFilter?.value) selectedFilters.push({ label: 'Type', value: typeFilter.selectedOptions[0].text });
+        getCheckedLabels('status').forEach(label => selectedFilters.push({ label: 'Status', value: label }));
+        getCheckedLabels('service').forEach(label => selectedFilters.push({ label: 'Service', value: label }));
+        getCheckedLabels('material').forEach(label => selectedFilters.push({ label: 'Material', value: label }));
+        getCheckedLabels('material-type').forEach(label => selectedFilters.push({ label: 'Material Type', value: label }));
+        getCheckedLabels('tag').forEach(label => selectedFilters.push({ label: 'Tag', value: label }));
+        getCheckedLabels('representative').forEach(label => selectedFilters.push({ label: 'Representative', value: label }));
+        if (selectedArchived) selectedFilters.push({ label: 'Archived', value: selectedArchived === 'yes' ? 'Yes' : 'No' });
+        updateReflection(selectedFilters);
+
+        let visibleCount = 0;
+
+        companyCards.forEach(card => {
+            const name = card.dataset.name || "";
+            const type = card.dataset.type || "";
+            const status = card.dataset.status || "";
+            const location = card.dataset.location || "";
+            const representative = card.dataset.representative || "";
+            const services = card.dataset.services || "";
+            const materialTypes = card.dataset.materialTypes || "";
+            const materials = card.dataset.materials || "";
+            const tags = card.dataset.tags || "";
+            const archived = card.dataset.archived || "";
+
+            const matchesSearch = !searchTerm ||
+                name.includes(searchTerm) ||
+                location.includes(searchTerm) ||
+                representative.includes(searchTerm) ||
+                services.includes(searchTerm) ||
+                materialTypes.includes(searchTerm) ||
+                materials.includes(searchTerm) ||
+                tags.includes(searchTerm);
+            const matchesLocation = !selectedLocation || location.includes(selectedLocation);
+            const matchesType = !selectedType || type === selectedType;
+            const matchesStatus = !selectedStatuses.length || selectedStatuses.includes(status);
+            const matchesService = !selectedServices.length || selectedServices.some(value => services.includes(value));
+            const matchesMaterial = !selectedMaterials.length || selectedMaterials.some(value => materials.includes(value));
+            const matchesMaterialType = !selectedMaterialTypes.length || selectedMaterialTypes.some(value => materialTypes.includes(value));
+            const matchesTag = !selectedTags.length || selectedTags.some(value => tags.includes(value));
+            const matchesRepresentative = !selectedRepresentatives.length || selectedRepresentatives.some(value => representative.includes(value));
+            const matchesArchived = !selectedArchived || archived === selectedArchived;
+
+            const isVisible = matchesSearch && matchesLocation && matchesType && matchesStatus && matchesService && matchesMaterial && matchesMaterialType && matchesTag && matchesRepresentative && matchesArchived;
+            card.classList.toggle('is-hidden', !isVisible);
+            if (isVisible) visibleCount += 1;
+        });
+
+        if (resultCount) {
+            resultCount.textContent = visibleCount;
+        }
+
+        if (noResults) {
+            noResults.classList.toggle('is-visible', visibleCount === 0 && companyCards.length > 0);
+        }
+
+        const pagination = document.querySelector('.pagination')?.closest('.card-footer');
+        if (pagination) {
+            pagination.style.display = selectedFilters.length > 0 ? 'none' : 'block';
+        }
+    }
+
+    searchInput?.addEventListener('input', performFilter);
+    typeFilter?.addEventListener('change', performFilter);
+    locationFilter?.addEventListener('input', function () {
+        clearTimeout(locationSuggestionTimer);
+        locationSuggestionTimer = setTimeout(refreshLocationSuggestions, 250);
+    });
+    locationFilter?.addEventListener('focus', refreshLocationSuggestions);
+    locationSuggestionBox?.addEventListener('click', function (event) {
+        const button = event.target.closest('[data-location-value]');
+        if (!button || !locationFilter) return;
+        locationFilter.value = button.getAttribute('data-location-value') || '';
+        locationSuggestionBox.classList.remove('is-visible');
+    });
+    document.addEventListener('click', function (event) {
+        checkboxFilters.forEach(filterElement => {
+            if (!filterElement.contains(event.target)) {
+                filterElement.classList.remove('is-open');
+            }
+        });
+        if (!locationSuggestionBox || !locationFilter) return;
+        if (!locationSuggestionBox.contains(event.target) && event.target !== locationFilter) {
+            locationSuggestionBox.classList.remove('is-visible');
+        }
+    });
+    archivedFilters.forEach(radio => radio.addEventListener('change', performFilter));
+    filterPanelSearch?.addEventListener('input', function () {
+        const term = this.value.toLowerCase().trim();
+        filterItems.forEach(item => {
+            const text = item.textContent.toLowerCase();
+            item.style.display = !term || text.includes(term) ? '' : 'none';
+        });
+    });
+    radiusRange?.addEventListener('input', function () {
+        if (radiusValue) radiusValue.textContent = this.value;
+    });
+    refreshLocationSuggestions();
+    performFilter();
     });
 </script>
 {% endblock %}
