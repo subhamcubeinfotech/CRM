@@ -165,6 +165,7 @@ class InventoryItem(TenantAwareModel):
 
     # Quantity
     quantity = models.DecimalField(max_digits=20, decimal_places=2, default=0)
+    reserved_quantity = models.DecimalField(max_digits=20, decimal_places=2, default=0)
     unit_of_measure = models.CharField(max_length=50, default='lbs')
 
     
@@ -207,6 +208,16 @@ class InventoryItem(TenantAwareModel):
         return self.quantity * self.unit_cost
     
     @property
+    def available_quantity(self):
+        """Quantum available for new sales (Physical - Reserved)"""
+        return self.quantity - self.reserved_quantity
+    
+    @property
+    def display_detailed_stock(self):
+        """Formatted string for tooltips/details"""
+        return f"On Hand: {self.quantity} | Reserved: {self.reserved_quantity} | Available: {self.available_quantity}"
+
+    @property
     def is_low_stock(self):
         """Check if stock is below reorder level"""
         return self.quantity <= self.reorder_level
@@ -224,3 +235,34 @@ class InventoryItem(TenantAwareModel):
     def display_stock(self):
         """Pre-formatted stock string for templates"""
         return f"{self.quantity} {self.unit_of_measure} available"
+
+
+class InventoryTransaction(TenantAwareModel):
+    """Log of every stock movement (Bank Statement for inventory)"""
+    TRANSACTION_TYPES = [
+        ('RECEIVE', 'Inbound Receipt'),
+        ('SHIP', 'Outbound Shipment'),
+        ('ADJUST', 'Manual Adjustment'),
+        ('INITIAL', 'Initial Stock'),
+        ('RESERVE', 'Inventory Reservation'),
+        ('UNRESERVE', 'Reservation Released'),
+    ]
+
+    item = models.ForeignKey(InventoryItem, on_delete=models.CASCADE, related_name='transactions')
+    transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPES)
+    quantity_change = models.DecimalField(max_digits=20, decimal_places=2, help_text="Amount changed (positive or negative)")
+    new_quantity = models.DecimalField(max_digits=20, decimal_places=2, help_text="Quantity after the transaction")
+    
+    # Context
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    notes = models.TextField(blank=True)
+    
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-timestamp']
+        verbose_name = 'Inventory Transaction'
+        verbose_name_plural = 'Inventory Transactions'
+
+    def __str__(self):
+        return f"{self.item.sku} - {self.transaction_type} ({self.quantity_change})"

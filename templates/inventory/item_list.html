@@ -469,9 +469,11 @@
                         <div class="fw-medium text-dark">{{ item.company.name|default:"-" }}</div>
                     </td>
                     <td>
-                        <div class="fw-bold">{{ item.offered_weight|format_short }} {{ item.offered_weight_unit }}</div>
-                        <div class="sub-text">
-                            Offered: {{ item.offered_weight|intcomma }} | Stock: {{ item.quantity|intcomma }} {{ item.unit_of_measure }}
+                        <div class="fw-bold text-dark">{{ item.quantity|format_short }} {{ item.unit_of_measure }}</div>
+                        <div class="sub-text mt-1">
+                            <span class="text-primary" title="Physical stock in warehouse">On Hand: {{ item.quantity|intcomma }}</span><br>
+                            <span class="text-warning" title="Booked for pending shipments">Reserved: {{ item.reserved_quantity|intcomma }}</span><br>
+                            <span class="text-success fw-bold" title="Available to sell">Available: {{ item.available_quantity|intcomma }}</span>
                         </div>
 
 
