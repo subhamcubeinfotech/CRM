@@ -888,11 +888,7 @@ def inventory_item_edit(request, pk):
 
         form = InventoryItemForm(post_data, instance=item, user=request.user)
         if form.is_valid():
-            item = form.save(commit=False)
-            if user_company:
-                item.company = user_company
-            item.save()
-            form.save_m2m()
+            item = form.save()
             messages.success(request, f"Item '{item.product_name}' updated successfully.")
             return redirect('inventory:warehouse_detail', pk=warehouse.pk)
     else:
@@ -924,7 +920,6 @@ def inventory_item_edit(request, pk):
     return render(request, 'inventory/item_form.html', context)
 
 
-@login_required
 def inventory_item_delete(request, pk):
     """Delete an inventory item"""
     item = get_object_or_404(InventoryItem, pk=pk)

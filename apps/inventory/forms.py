@@ -106,7 +106,11 @@ class InventoryItemForm(forms.ModelForm):
             elif company_qs.exists():
                 self.fields['company'].initial = company_qs.first()
 
-            self.fields['company'].disabled = False
+            # Disable company field if editing an existing item
+            if self.instance and self.instance.pk:
+                self.fields['company'].disabled = True
+            else:
+                self.fields['company'].disabled = False
 
             # Representative locking
             self.fields['representative'].queryset = user.__class__.objects.filter(id=user.id)
