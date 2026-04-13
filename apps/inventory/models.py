@@ -165,6 +165,7 @@ class InventoryItem(TenantAwareModel):
 
     # Quantity
     quantity = models.DecimalField(max_digits=20, decimal_places=2, default=0)
+    reserved_quantity = models.DecimalField(max_digits=20, decimal_places=2, default=0)
     unit_of_measure = models.CharField(max_length=50, default='lbs')
 
     
@@ -207,6 +208,16 @@ class InventoryItem(TenantAwareModel):
         return self.quantity * self.unit_cost
     
     @property
+    def available_quantity(self):
+        """Quantum available for new sales (Physical - Reserved)"""
+        return self.quantity - self.reserved_quantity
+    
+    @property
+    def display_detailed_stock(self):
+        """Formatted string for tooltips/details"""
+        return f"On Hand: {self.quantity} | Reserved: {self.reserved_quantity} | Available: {self.available_quantity}"
+
+    @property
     def is_low_stock(self):
         """Check if stock is below reorder level"""
         return self.quantity <= self.reorder_level
@@ -233,6 +244,8 @@ class InventoryTransaction(TenantAwareModel):
         ('SHIP', 'Outbound Shipment'),
         ('ADJUST', 'Manual Adjustment'),
         ('INITIAL', 'Initial Stock'),
+        ('RESERVE', 'Inventory Reservation'),
+        ('UNRESERVE', 'Reservation Released'),
     ]
 
     item = models.ForeignKey(InventoryItem, on_delete=models.CASCADE, related_name='transactions')

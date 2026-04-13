@@ -105,10 +105,20 @@
                     
                     <hr class="opacity-25 my-4">
                     
-                    <div class="stat-label text-white-50 mb-1 text-uppercase">Current Inventory</div>
-                    <div class="display-3 fw-bold">{{ item.quantity|format_short }}</div>
-                    <div class="text-white-50 mb-4">{{ item.unit_of_measure }} available</div>
-                    <button class="btn btn-outline-light px-4">Adjust Stock</button>
+                    <div class="stat-label text-white-50 mb-1 text-uppercase">On-Hand Stock</div>
+                    <div class="display-3 fw-bold mb-0">{{ item.quantity|format_short }}</div>
+                    <div class="text-white-50 mb-4">{{ item.unit_of_measure }} (Physical)</div>
+                    
+                    <div class="row g-0 border-top border-white border-opacity-25 pt-4">
+                        <div class="col-6 border-end border-white border-opacity-10 py-2">
+                            <div class="small text-white-50 text-uppercase" style="font-size: 0.65rem;">Reserved</div>
+                            <div class="h5 fw-bold mb-0 text-warning">{{ item.reserved_quantity|intcomma }}</div>
+                        </div>
+                        <div class="col-6 py-2">
+                            <div class="small text-white-50 text-uppercase" style="font-size: 0.65rem;">Available</div>
+                            <div class="h5 fw-bold mb-0 text-success">{{ item.available_quantity|intcomma }}</div>
+                        </div>
+                    </div>
                 </div>
             </div>
 

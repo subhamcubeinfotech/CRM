@@ -306,6 +306,7 @@ class OrderEvent(models.Model):
 
 class ManifestItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='manifest_items')
+    inventory_item = models.ForeignKey('inventory.InventoryItem', on_delete=models.SET_NULL, null=True, blank=True, related_name='manifest_items')
     material = models.CharField(max_length=200)
     weight = models.DecimalField(max_digits=12, decimal_places=2)
     weight_unit = models.CharField(max_length=10, default='lbs')
