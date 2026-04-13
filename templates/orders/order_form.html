@@ -655,234 +655,7 @@
     </form>
 </div>
 
-<script>
-    function syncLocationSelectState(selectId) {
-        const select = document.getElementById(selectId);
-        if (!select) return;
-        select.classList.toggle('has-value', !!select.value);
-    }
 
-    function filterMaterialOptions() {
-        const supplierSelect = document.getElementById('supplier-select');
-        const selectedSupplierId = supplierSelect?.value || '';
-        const materialSelects = document.querySelectorAll('.material-select');
-
-        materialSelects.forEach((materialSelect) => {
-            let hasVisibleOption = false;
-            let noMaterialOption = [...materialSelect.options].find((option) => option.dataset.placeholder === 'no-material');
-            const placeholderOption = materialSelect.options[0];
-
-            [...materialSelect.options].forEach((option, index) => {
-                if (index === 0) {
-                    option.text = 'Select material';
-                    option.hidden = false;
-                    option.style.display = '';
-                    return;
-                }
-                if (option.dataset.placeholder === 'no-material') return;
-
-                const optionCompanyId = option.dataset.companyId || '';
-                const shouldShow = !selectedSupplierId || optionCompanyId === selectedSupplierId;
-                option.hidden = !shouldShow;
-                option.style.display = shouldShow ? '' : 'none';
-                if (shouldShow) hasVisibleOption = true;
-            });
-
-            if (materialSelect.value) {
-                const selectedOption = materialSelect.selectedOptions[0];
-                if (selectedOption && selectedOption.hidden) materialSelect.value = '';
-            }
-
-            if (selectedSupplierId && !hasVisibleOption) {
-                if (!noMaterialOption) {
-                    noMaterialOption = new Option('No materials found', '');
-                    noMaterialOption.dataset.placeholder = 'no-material';
-                    materialSelect.add(noMaterialOption);
-                }
-                noMaterialOption.hidden = false;
-                noMaterialOption.style.display = '';
-                placeholderOption.text = 'Select a material';
-                materialSelect.value = '';
-            } else if (noMaterialOption) {
-                noMaterialOption.hidden = true;
-                noMaterialOption.style.display = 'none';
-                placeholderOption.text = 'Select a material';
-            }
-            materialSelect.disabled = false;
-        });
-    }
-
-    function syncLocationLockState(locationSelectId, partySelectId) {
-        const locationSelect = document.getElementById(locationSelectId);
-        const partySelect = document.getElementById(partySelectId);
-        if (!locationSelect || !partySelect) return;
-        const isLocked = !partySelect.value;
-        locationSelect.classList.toggle('location-select-locked', isLocked);
-    }
-
-    function assignMyCompany(selectId, companyId, companyName, companyAddress) {
-        const select = document.getElementById(selectId);
-        if (!companyId) return;
-        let option = [...select.options].find(o => o.value == companyId);
-        if (!option) {
-            option = new Option(companyName + " (Your Company)", companyId);
-            option.dataset.address = companyAddress || "";
-            select.add(option);
-        }
-        select.value = companyId;
-        select.dispatchEvent(new Event('change'));
-    }
-
-    document.getElementById('assign-supplier-mine')?.addEventListener('click', function (e) {
-        e.preventDefault();
-        assignMyCompany('supplier-select', this.dataset.companyId, "{{ assign_company.name|default:'My Company' }}", this.dataset.address);
-        filterMaterialOptions();
-    });
-
-    document.getElementById('assign-receiver-mine')?.addEventListener('click', function (e) {
-        e.preventDefault();
-        assignMyCompany('receiver-select', this.dataset.companyId, "{{ assign_company.name|default:'My Company' }}", this.dataset.address);
-    });
-
-    document.getElementById('assign-rep-me')?.addEventListener('click', function (e) {
-        e.preventDefault();
-        document.getElementById('rep-select').value = this.dataset.userId;
-    });
-
-    function assignCompanyLocation(selectId, partySelectId, force = false) {
-        const partySelect = document.getElementById(partySelectId);
-        const locationSelect = document.getElementById(selectId);
-        const selectedOption = partySelect.selectedOptions[0];
-        const addressStr = selectedOption?.dataset.address;
-        const companyId = partySelect.value;
-        if (!addressStr || !companyId) return;
-        const virtualValue = "temp_addr_" + addressStr;
-        let option = [...locationSelect.options].find(o => o.value === virtualValue);
-        if (!option) {
-            option = new Option(addressStr, virtualValue);
-            option.dataset.companyId = companyId;
-            locationSelect.add(option);
-        }
-        locationSelect.value = virtualValue;
-        syncLocationSelectState(selectId);
-    }
-
-    function recalcProfit() {
-        const items = document.querySelectorAll('.manifest-item');
-        let totalRevenue = 0, totalCost = 0, totalPieces = 0;
-        const freightCost = parseFloat(document.getElementById('freight-cost-input')?.value) || 0;
-        const breakdownList = document.getElementById('profit-items-list');
-        breakdownList.innerHTML = '';
-        let hasAny = false;
-
-        items.forEach((item, idx) => {
-            const materialSelect = item.querySelector('.material-select');
-            const qty = parseFloat(item.querySelector('.weight-input')?.value) || 0;
-            const unit = item.querySelector('.unit-display')?.value || 'lbs';
-            const buyP = parseFloat(item.querySelector('[name="buy_price[]"]')?.value) || 0;
-            const sellP = parseFloat(item.querySelector('[name="sell_price[]"]')?.value) || 0;
-            const material = materialSelect?.selectedOptions[0]?.dataset.name || materialSelect?.value || `Item ${idx + 1}`;
-            if (!materialSelect?.value || qty === 0 || (buyP === 0 && sellP === 0)) return;
-            hasAny = true;
-
-            const cost = buyP * qty, revenue = sellP * qty, profit = revenue - cost;
-            totalRevenue += revenue; totalCost += cost;
-            const isPos = profit >= 0, sign = isPos ? '+' : '';
-            breakdownList.innerHTML += `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #f3f4f6;font-size:0.82rem;"><div style="display:flex;align-items:center;gap:7px;"><div style="width:6px;height:6px;border-radius:50%;background:${isPos ? '#15803d' : '#dc2626'};flex-shrink:0;"></div><span style="color:#374151;font-weight:500;">${material}</span></div><span style="background:${isPos ? '#dcfce7' : '#fee2e2'};color:${isPos ? '#15803d' : '#dc2626'};padding:2px 9px;border-radius:99px;font-weight:700;font-size:0.75rem;">${sign}$${profit.toFixed(2)}</span></div>`;
-        });
-        totalCost += freightCost;
-        const totalProfit = totalRevenue - totalCost, marginVal = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
-        const isProfit = totalProfit >= 0, profitColor = isProfit ? '#16a34a' : '#dc2626';
-        document.getElementById('est-revenue').textContent = '$' + totalRevenue.toFixed(2);
-        document.getElementById('est-cost').textContent = '$' + totalCost.toFixed(2);
-        document.getElementById('est-profit').textContent = (isProfit ? '+' : '') + '$' + totalProfit.toFixed(2);
-        document.getElementById('est-profit').style.color = profitColor;
-        const piecesEl = document.getElementById('est-pieces');
-        if (piecesEl) piecesEl.textContent = Math.round(totalPieces);
-        document.getElementById('est-margin-text').textContent = totalRevenue > 0 ? `Margin: ${marginVal.toFixed(1)}%` : 'Margin: —';
-        const iconBg = document.getElementById('profit-icon-bg'), icon = document.getElementById('profit-icon');
-        if (iconBg && icon) { iconBg.style.background = isProfit ? '#dcfce7' : '#fee2e2'; icon.style.color = profitColor; icon.className = isProfit ? 'fas fa-star' : 'fas fa-exclamation-triangle'; }
-        const barFill = document.getElementById('margin-bar-fill'), barLabel = document.getElementById('margin-bar-label');
-        if (barFill && barLabel) { const barWidth = Math.min(Math.max(Math.abs(marginVal), 0), 100); barFill.style.width = barWidth + '%'; barFill.style.background = isProfit ? 'linear-gradient(90deg,#4f46e5,#22c55e)' : 'linear-gradient(90deg,#f97316,#dc2626)'; barLabel.textContent = totalRevenue > 0 ? marginVal.toFixed(1) + '%' : '—'; barLabel.style.color = profitColor; }
-        document.getElementById('profit-items-breakdown').style.display = hasAny ? 'block' : 'none';
-    }
-
-    document.getElementById('manifest-items-container').addEventListener('input', recalcProfit);
-    document.getElementById('manifest-items-container').addEventListener('change', recalcProfit);
-    document.getElementById('freight-cost-input').addEventListener('input', recalcProfit);
-
-    function setupInventoryValidation(container) {
-        const select = container.querySelector('.material-select'), input = container.querySelector('.weight-input'), warning = container.querySelector('.weight-warning'), unitDisplay = container.querySelector('.unit-display');
-        function validate() {
-            const option = select.selectedOptions[0], maxVal = parseFloat(option.dataset.max) || 0, currentVal = parseFloat(input.value) || 0, unit = option.dataset.unit || 'lbs';
-            unitDisplay.value = unit;
-            syncManifestUnits(container, unit);
-            if (!select.value && currentVal > 0) { warning.innerHTML = '<i class="fas fa-hand-point-up me-1"></i> Please select Material* first!'; warning.style.display = 'block'; input.classList.add('is-invalid'); }
-            else if (currentVal > maxVal) { warning.innerHTML = `<i class="fas fa-exclamation-triangle me-1"></i> Only ${maxVal} ${unit} available!`; warning.style.display = 'block'; input.classList.add('is-invalid'); }
-            else { warning.style.display = 'none'; input.classList.remove('is-invalid'); }
-        }
-        select.addEventListener('change', validate); input.addEventListener('input', validate);
-    }
-
-    function syncManifestUnits(container, baseUnit) {
-        const unitDisplay = container.querySelector('.unit-display'), buyUnit = container.querySelector('[name="buy_price_unit[]"]'), sellUnit = container.querySelector('[name="sell_price_unit[]"]');
-        if (!unitDisplay || !buyUnit || !sellUnit || !baseUnit) return;
-        const normalized = String(baseUnit).toLowerCase(), priceUnit = `per ${normalized}`;
-        unitDisplay.value = normalized; buyUnit.value = priceUnit; sellUnit.value = priceUnit;
-    }
-
-    function setupManifestUnitSync(container) {
-        const unitDisplay = container.querySelector('.unit-display'), buyUnit = container.querySelector('[name="buy_price_unit[]"]'), sellUnit = container.querySelector('[name="sell_price_unit[]"]');
-        if (!unitDisplay || !buyUnit || !sellUnit) return;
-        unitDisplay.addEventListener('change', function () { syncManifestUnits(container, this.value); });
-        buyUnit.addEventListener('change', function () { syncManifestUnits(container, this.value.replace(/^per\s+/i, '')); });
-        sellUnit.addEventListener('change', function () { syncManifestUnits(container, this.value.replace(/^per\s+/i, '')); });
-    }
-
-    document.querySelectorAll('.manifest-item').forEach(item => { setupInventoryValidation(item); setupManifestUnitSync(item); });
-
-    function filterLocations(partySelectId, locationSelectId) {
-        const partySelect = document.getElementById(partySelectId), locationSelect = document.getElementById(locationSelectId);
-        function updateFilter() {
-            const companyId = partySelect.value, companyAddress = partySelect.selectedOptions[0]?.dataset.address;
-            [...locationSelect.options].forEach(opt => { if (opt.value.startsWith('temp_addr_')) opt.remove(); });
-            let foundWarehouse = false, firstVisibleWarehouse = null;
-            [...locationSelect.options].forEach(opt => {
-                if (!opt.value) return;
-                const optCompanyId = opt.dataset.companyId;
-                if (!companyId) { opt.style.display = 'none'; return; }
-                if (optCompanyId === companyId || (!optCompanyId && companyId === "{{ assign_company.id|default:'' }}")) { opt.style.display = ''; foundWarehouse = true; if (!firstVisibleWarehouse) firstVisibleWarehouse = opt.value; }
-                else opt.style.display = 'none';
-            });
-            if (!companyId) locationSelect.value = "";
-            else if (companyAddress) assignCompanyLocation(locationSelectId, partySelectId);
-            else if (foundWarehouse) locationSelect.value = firstVisibleWarehouse;
-            else locationSelect.value = "";
-            syncLocationSelectState(locationSelectId); syncLocationLockState(locationSelectId, partySelectId);
-        }
-        partySelect.addEventListener('change', updateFilter);
-        locationSelect.addEventListener('change', function () { syncLocationSelectState(locationSelectId); });
-        updateFilter();
-    }
-
-    filterLocations('supplier-select', 'source-location-select'); filterLocations('receiver-select', 'dest-location-select');
-    syncLocationSelectState('source-location-select'); syncLocationSelectState('dest-location-select');
-    syncLocationLockState('source-location-select', 'supplier-select'); syncLocationLockState('dest-location-select', 'receiver-select');
-    filterMaterialOptions(); document.getElementById('supplier-select')?.addEventListener('change', filterMaterialOptions);
-    recalcProfit();
-
-    document.getElementById('add-item-btn').addEventListener('click', function () {
-        const container = document.getElementById('manifest-items-container'), firstItem = container.querySelector('.manifest-item'), newItem = firstItem.cloneNode(true);
-        newItem.querySelectorAll('input').forEach(input => { if (input.type === 'checkbox') input.checked = false; else input.value = ''; input.classList.remove('is-invalid'); });
-        newItem.querySelectorAll('select').forEach(select => { select.value = ''; });
-        const hiddenPallet = newItem.querySelector('.palletized-hidden'); if (hiddenPallet) hiddenPallet.value = 'false';
-        newItem.querySelector('.weight-warning').style.display = 'none';
-        const removeBtn = newItem.querySelector('.remove-item-btn'); if (removeBtn) removeBtn.style.display = 'block';
-        container.appendChild(newItem); setupInventoryValidation(newItem); setupManifestUnitSync(newItem); syncManifestUnits(newItem, 'lbs'); filterMaterialOptions();
-    });
-
-    document.getElementById('manifest-items-container').addEventListener('click', function (e) { if (e.target.classList.contains('remove-item-btn')) e.target.closest('.manifest-item').remove(); });
-</script>
 
 <!-- Add Material Offcanvas -->
 <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasAddMaterial" aria-labelledby="offcanvasAddMaterialLabel" style="width: 500px; border-left: none; box-shadow: -10px 0 30px rgba(0,0,0,0.1); z-index: 1060;">
@@ -950,195 +723,205 @@
     </div>
 </div>
 
+
+
+{% block extra_js %}
+<!-- jQuery and Select2 JS -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
 <script>
-    // New Material File Selection Logic
-    const btnChoose = document.getElementById('btnChooseMaterialFile');
-    const btnCancel = document.getElementById('btnCancelMaterialFile');
-    const imgInput = document.getElementById('materialImageInput');
-    const docInput = document.getElementById('materialDocumentInput');
-    const statusText = document.getElementById('materialFileStatus');
-
-    if (btnChoose) {
-        btnChoose.addEventListener('click', () => {
-            imgInput.click();
-        });
+    // --- Shared Functions ---
+    function syncLocationSelectState(selectId) {
+        const select = document.getElementById(selectId);
+        if (!select) return;
+        select.classList.toggle('has-value', !!select.value);
     }
 
-    if (imgInput) {
-        imgInput.addEventListener('change', function() {
-            if (this.files && this.files[0]) {
-                statusText.innerHTML = `<i class="fas fa-image me-1"></i> ${this.files[0].name}`;
-                statusText.classList.remove('text-muted');
-                statusText.classList.add('text-primary', 'fw-bold');
-            }
-        });
-    }
+    function filterMaterialOptions() {
+        const supplierSelect = document.getElementById('supplier-select');
+        const selectedSupplierId = supplierSelect?.value || '';
+        const materialSelects = document.querySelectorAll('.material-select');
 
-    if (btnCancel) {
-        btnCancel.addEventListener('click', () => {
-            if (imgInput) imgInput.value = '';
-            if (docInput) docInput.value = '';
-            statusText.innerHTML = 'Drag and drop files here to upload';
-            statusText.classList.add('text-muted');
-            statusText.classList.remove('text-primary', 'fw-bold');
-        });
-    }
+        materialSelects.forEach((materialSelect) => {
+            let hasVisibleOption = false;
+            let noMaterialOption = [...materialSelect.options].find((option) => option.dataset.placeholder === 'no-material');
+            const placeholderOption = materialSelect.options[0];
 
-    // New Material AJAX Submission
-    const addMaterialForm = document.getElementById('addMaterialForm');
-    if (addMaterialForm) {
-        addMaterialForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const form = this;
-            const submitBtn = document.getElementById('btnSubmitMaterial');
-            const formData = new FormData(form);
-            
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
-            
-            fetch("{% url 'inventory:create_material_ajax' %}", {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
+            [...materialSelect.options].forEach((option, index) => {
+                if (index === 0) {
+                    option.text = 'Select material';
+                    option.hidden = false;
+                    option.style.display = '';
+                    return;
                 }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    // Update ALL material dropdowns in the main form
-                    const materialDropdowns = document.querySelectorAll('.material-select');
-                    materialDropdowns.forEach(dropdown => {
-                        // Create a NEW option for the newly created material
-                        // Value is data.id if available, otherwise data.name
-                        const val = data.id || data.name;
-                        const newOption = new Option(data.name, val, true, true);
-                        
-                        // Set attributes for inventory logic
-                        newOption.dataset.max = "999999"; // Assume high stock for new material if spot or just created
-                        newOption.dataset.unit = "lbs"; // Default or from form
-                        newOption.dataset.name = data.name;
-                        newOption.dataset.companyId = ""; // Not tied to a specific warehouse yet
-                        
-                        dropdown.add(newOption);
-                    });
-                    
-                    // Hide offcanvas
-                    const offcanvasElement = document.getElementById('offcanvasAddMaterial');
-                    const offcanvas = bootstrap.Offcanvas.getInstance(offcanvasElement);
-                    if (offcanvas) offcanvas.hide();
-                    
-                    // Reset form
-                    form.reset();
-                    if (statusText) {
-                        statusText.innerHTML = 'Drag and drop files here to upload';
-                        statusText.classList.add('text-muted');
-                        statusText.classList.remove('text-primary', 'fw-bold');
-                    }
-                } else {
-                    let errorMsg = 'Error creating material:\n';
-                    if (data.errors) {
-                        for (const field in data.errors) {
-                            const errorItem = data.errors[field][0];
-                            const msg = (typeof errorItem === 'string') ? errorItem : (errorItem.message || 'Unknown error');
-                            errorMsg += `${field}: ${msg}\n`;
-                        }
-                    } else if (data.message) {
-                        errorMsg += data.message;
-                    } else {
-                        errorMsg += 'Unknown server error.';
-                    }
-                    alert(errorMsg);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An unexpected error occurred.');
-            })
-            .finally(() => {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = 'Submit';
+                if (option.dataset.placeholder === 'no-material') return;
+
+                const optionCompanyId = option.dataset.companyId || '';
+                const shouldShow = !selectedSupplierId || optionCompanyId === selectedSupplierId;
+                option.hidden = !shouldShow;
+                option.style.display = shouldShow ? '' : 'none';
+                if (shouldShow) hasVisibleOption = true;
             });
-        });
-    }
 
-    // --- Inline Location Creation Drawer Logic ---
-    let activeLocationSelectId = null;
-    let activeCompanySelectId = null;
-
-    document.querySelectorAll('.location-add-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            activeLocationSelectId = this.dataset.selectId;
-            activeCompanySelectId = this.dataset.companySelectId;
-        });
-    });
-
-    const ajaxAddWarehouseForm = document.getElementById('ajaxAddWarehouseForm');
-    if (ajaxAddWarehouseForm) {
-        ajaxAddWarehouseForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const form = this;
-            const formData = new FormData(form);
-            const submitBtn = form.querySelector('button[type="submit"]');
-
-            const companySelect = document.getElementById(activeCompanySelectId);
-            if (companySelect && companySelect.value) {
-                formData.append('company_id', companySelect.value);
-            } else {
-                alert('Please select a company first!');
-                return;
+            if (materialSelect.value) {
+                const selectedOption = materialSelect.selectedOptions[0];
+                if (selectedOption && selectedOption.hidden) materialSelect.value = '';
             }
-            
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
 
-            fetch("{% url 'inventory:ajax_warehouse_create' %}", {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+            if (selectedSupplierId && !hasVisibleOption) {
+                if (!noMaterialOption) {
+                    noMaterialOption = new Option('No materials found', '');
+                    noMaterialOption.dataset.placeholder = 'no-material';
+                    materialSelect.add(noMaterialOption);
                 }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    const warehouseSelect = document.getElementById(activeLocationSelectId);
-                    // Add new option to the target dropdown
-                    const newOption = new Option(data.full_label, data.id, true, true);
-                    newOption.dataset.companyId = data.company_id;
-                    warehouseSelect.add(newOption);
-                    
-                    // Trigger change to update UI state if needed
-                    warehouseSelect.dispatchEvent(new Event('change'));
-                    
-                    // Hide offcanvas
-                    const offcanvasElement = document.getElementById('offcanvasAddWarehouse');
-                    const offcanvas = bootstrap.Offcanvas.getInstance(offcanvasElement);
-                    if (offcanvas) offcanvas.hide();
-                    
-                    // Reset form
-                    form.reset();
-                } else {
-                    let errorMsg = 'Error creating location:\n';
-                    for (const field in data.errors) {
-                        errorMsg += `${field}: ${data.errors[field][0].message}\n`;
-                    }
-                    alert(errorMsg);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An unexpected error occurred.');
-            })
-            .finally(() => {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = 'Submit';
-            });
+                noMaterialOption.hidden = false;
+                noMaterialOption.style.display = '';
+                placeholderOption.text = 'No materials found';
+                materialSelect.value = '';
+            } else if (noMaterialOption) {
+                noMaterialOption.hidden = true;
+                noMaterialOption.style.display = 'none';
+                placeholderOption.text = 'Select material';
+            }
+            materialSelect.disabled = false;
         });
     }
 
-    // --- Enable/Disable Add Buttons based on Company Selection ---
+    function syncLocationLockState(locationSelectId, partySelectId) {
+        const locationSelect = document.getElementById(locationSelectId);
+        const partySelect = document.getElementById(partySelectId);
+        if (!locationSelect || !partySelect) return;
+        const isLocked = !partySelect.value;
+        locationSelect.classList.toggle('location-select-locked', isLocked);
+    }
+
+    function assignMyCompany(selectId, companyId, companyName, companyAddress) {
+        const select = document.getElementById(selectId);
+        if (!companyId) return;
+        let option = [...select.options].find(o => o.value == companyId);
+        if (!option) {
+            option = new Option(companyName + " (Your Company)", companyId);
+            option.dataset.address = companyAddress || "";
+            select.add(option);
+        }
+        select.value = companyId;
+        select.dispatchEvent(new Event('change'));
+    }
+
+    function assignCompanyLocation(selectId, partySelectId, force = false) {
+        const partySelect = document.getElementById(partySelectId);
+        const locationSelect = document.getElementById(selectId);
+        const selectedOption = partySelect.selectedOptions[0];
+        const addressStr = selectedOption?.dataset.address;
+        const companyId = partySelect.value;
+        if (!addressStr || !companyId) return;
+        const virtualValue = "temp_addr_" + addressStr;
+        let option = [...locationSelect.options].find(o => o.value === virtualValue);
+        if (!option) {
+            option = new Option(addressStr, virtualValue);
+            option.dataset.companyId = companyId;
+            locationSelect.add(option);
+        }
+        locationSelect.value = virtualValue;
+        syncLocationSelectState(selectId);
+    }
+
+    function recalcProfit() {
+        const items = document.querySelectorAll('.manifest-item');
+        let totalRevenue = 0, totalCost = 0, totalPieces = 0;
+        const freightCost = parseFloat(document.getElementById('freight-cost-input')?.value) || 0;
+        const breakdownList = document.getElementById('profit-items-list');
+        if (!breakdownList) return;
+        
+        breakdownList.innerHTML = '';
+        let hasAny = false;
+
+        items.forEach((item, idx) => {
+            const materialSelect = item.querySelector('.material-select');
+            const qty = parseFloat(item.querySelector('.weight-input')?.value) || 0;
+            const buyP = parseFloat(item.querySelector('[name="buy_price[]"]')?.value) || 0;
+            const sellP = parseFloat(item.querySelector('[name="sell_price[]"]')?.value) || 0;
+            const material = materialSelect?.selectedOptions[0]?.dataset.name || materialSelect?.value || `Item ${idx + 1}`;
+            if (!materialSelect?.value || qty === 0 || (buyP === 0 && sellP === 0)) return;
+            hasAny = true;
+
+            const cost = buyP * qty, revenue = sellP * qty, profit = revenue - cost;
+            totalRevenue += revenue; totalCost += cost;
+            const isPos = profit >= 0, sign = isPos ? '+' : '';
+            breakdownList.innerHTML += `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #f3f4f6;font-size:0.82rem;"><div style="display:flex;align-items:center;gap:7px;"><div style="width:6px;height:6px;border-radius:50%;background:${isPos ? '#15803d' : '#dc2626'};flex-shrink:0;"></div><span style="color:#374151;font-weight:500;">${material}</span></div><span style="background:${isPos ? '#dcfce7' : '#fee2e2'};color:${isPos ? '#15803d' : '#dc2626'};padding:2px 9px;border-radius:99px;font-weight:700;font-size:0.75rem;">${sign}$${profit.toFixed(2)}</span></div>`;
+        });
+        totalCost += freightCost;
+        const totalProfit = totalRevenue - totalCost, marginVal = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
+        const isProfit = totalProfit >= 0, profitColor = isProfit ? '#16a34a' : '#dc2626';
+        
+        document.getElementById('est-revenue').textContent = '$' + totalRevenue.toFixed(2);
+        document.getElementById('est-cost').textContent = '$' + totalCost.toFixed(2);
+        document.getElementById('est-profit').textContent = (isProfit ? '+' : '') + '$' + totalProfit.toFixed(2);
+        document.getElementById('est-profit').style.color = profitColor;
+        
+        document.getElementById('est-margin-text').textContent = totalRevenue > 0 ? `Margin: ${marginVal.toFixed(1)}%` : 'Margin: —';
+        const iconBg = document.getElementById('profit-icon-bg'), icon = document.getElementById('profit-icon');
+        if (iconBg && icon) { iconBg.style.background = isProfit ? '#dcfce7' : '#fee2e2'; icon.style.color = profitColor; icon.className = isProfit ? 'fas fa-star' : 'fas fa-exclamation-triangle'; }
+        const barFill = document.getElementById('margin-bar-fill'), barLabel = document.getElementById('margin-bar-label');
+        if (barFill && barLabel) { const barWidth = Math.min(Math.max(Math.abs(marginVal), 0), 100); barFill.style.width = barWidth + '%'; barFill.style.background = isProfit ? 'linear-gradient(90deg,#4f46e5,#22c55e)' : 'linear-gradient(90deg,#f97316,#dc2626)'; barLabel.textContent = totalRevenue > 0 ? marginVal.toFixed(1) + '%' : '—'; barLabel.style.color = profitColor; }
+        document.getElementById('profit-items-breakdown').style.display = hasAny ? 'block' : 'none';
+    }
+
+    function setupInventoryValidation(container) {
+        const select = container.querySelector('.material-select'), input = container.querySelector('.weight-input'), warning = container.querySelector('.weight-warning'), unitDisplay = container.querySelector('.unit-display');
+        function validate() {
+            const option = select.selectedOptions[0], maxVal = parseFloat(option.dataset.max) || 0, currentVal = parseFloat(input.value) || 0, unit = option.dataset.unit || 'lbs';
+            unitDisplay.value = unit;
+            syncManifestUnits(container, unit);
+            if (!select.value && currentVal > 0) { warning.innerHTML = '<i class="fas fa-hand-point-up me-1"></i> Please select Material* first!'; warning.style.display = 'block'; input.classList.add('is-invalid'); }
+            else if (currentVal > maxVal) { warning.innerHTML = `<i class="fas fa-exclamation-triangle me-1"></i> Only ${maxVal} ${unit} available!`; warning.style.display = 'block'; input.classList.add('is-invalid'); }
+            else { warning.style.display = 'none'; input.classList.remove('is-invalid'); }
+        }
+        select.addEventListener('change', validate); input.addEventListener('input', validate);
+    }
+
+    function syncManifestUnits(container, baseUnit) {
+        const unitDisplay = container.querySelector('.unit-display'), buyUnit = container.querySelector('[name="buy_price_unit[]"]'), sellUnit = container.querySelector('[name="sell_price_unit[]"]');
+        if (!unitDisplay || !buyUnit || !sellUnit || !baseUnit) return;
+        const normalized = String(baseUnit).toLowerCase(), priceUnit = `per ${normalized}`;
+        unitDisplay.value = normalized; buyUnit.value = priceUnit; sellUnit.value = priceUnit;
+    }
+
+    function setupManifestUnitSync(container) {
+        const unitDisplay = container.querySelector('.unit-display'), buyUnit = container.querySelector('[name="buy_price_unit[]"]'), sellUnit = container.querySelector('[name="sell_price_unit[]"]');
+        if (!unitDisplay || !buyUnit || !sellUnit) return;
+        unitDisplay.addEventListener('change', function () { syncManifestUnits(container, this.value); });
+        buyUnit.addEventListener('change', function () { syncManifestUnits(container, this.value.replace(/^per\s+/i, '')); });
+        sellUnit.addEventListener('change', function () { syncManifestUnits(container, this.value.replace(/^per\s+/i, '')); });
+    }
+
+    function filterLocations(partySelectId, locationSelectId) {
+        const partySelect = document.getElementById(partySelectId), locationSelect = document.getElementById(locationSelectId);
+        if (!partySelect || !locationSelect) return;
+
+        function updateFilter() {
+            const companyId = partySelect.value, companyAddress = partySelect.selectedOptions[0]?.dataset.address;
+            [...locationSelect.options].forEach(opt => { if (opt.value.startsWith('temp_addr_')) opt.remove(); });
+            let foundWarehouse = false, firstVisibleWarehouse = null;
+            [...locationSelect.options].forEach(opt => {
+                if (!opt.value) return;
+                const optCompanyId = opt.dataset.companyId;
+                if (!companyId) { opt.style.display = 'none'; return; }
+                if (optCompanyId === companyId || (!optCompanyId && companyId === "{{ assign_company.id|default:'' }}")) { opt.style.display = ''; foundWarehouse = true; if (!firstVisibleWarehouse) firstVisibleWarehouse = opt.value; }
+                else opt.style.display = 'none';
+            });
+            if (!companyId) locationSelect.value = "";
+            else if (companyAddress) assignCompanyLocation(locationSelectId, partySelectId);
+            else if (foundWarehouse) locationSelect.value = firstVisibleWarehouse;
+            else locationSelect.value = "";
+            syncLocationSelectState(locationSelectId); syncLocationLockState(locationSelectId, partySelectId);
+        }
+        partySelect.addEventListener('change', updateFilter);
+        locationSelect.addEventListener('change', function () { syncLocationSelectState(locationSelectId); });
+        updateFilter();
+    }
+
     function toggleAddButtons() {
         const supplierSelect = document.getElementById('supplier-select');
         const receiverSelect = document.getElementById('receiver-select');
@@ -1149,43 +932,208 @@
         if (destAddBtn) destAddBtn.disabled = !receiverSelect.value;
     }
 
-    document.getElementById('supplier-select')?.addEventListener('change', toggleAddButtons);
-    document.getElementById('receiver-select')?.addEventListener('change', toggleAddButtons);
-    toggleAddButtons(); // Initial check
-</script>
+    // --- DOM Ready Initialization ---
+    document.addEventListener('DOMContentLoaded', function() {
+        // 1. Logistics Initialization
+        filterLocations('supplier-select', 'source-location-select'); 
+        filterLocations('receiver-select', 'dest-location-select');
+        syncLocationSelectState('source-location-select'); 
+        syncLocationSelectState('dest-location-select');
+        syncLocationLockState('source-location-select', 'supplier-select'); 
+        syncLocationLockState('dest-location-select', 'receiver-select');
+        filterMaterialOptions(); 
+        document.getElementById('supplier-select')?.addEventListener('change', filterMaterialOptions);
+        
+        document.getElementById('supplier-select')?.addEventListener('change', toggleAddButtons);
+        document.getElementById('receiver-select')?.addEventListener('change', toggleAddButtons);
+        toggleAddButtons();
 
-{% block extra_js %}
-<!-- jQuery and Select2 JS -->
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-<script>
-    $(document).ready(function() {
-        if ($.fn.select2) {
-            const $tagsSelect = $('.select2-basic').select2({
-                theme: 'bootstrap-5',
-                width: '100%',
-                placeholder: 'Select or type to create tags...',
-                tags: true,
-                tokenSeparators: [','],
-                createTag: function (params) {
-                    var term = $.trim(params.term);
-                    if (term === '') return null;
-                    return {
-                        id: term,
-                        text: term,
-                        newTag: true
-                    };
-                },
-                templateResult: function (data) {
-                    if (data.newTag) {
-                        return "Hit Enter to create new '" + data.text + "'";
-                    }
-                    return data.text;
+        // 2. Button Event Listeners
+        document.getElementById('assign-supplier-mine')?.addEventListener('click', function (e) {
+            e.preventDefault();
+            assignMyCompany('supplier-select', this.dataset.companyId, "{{ assign_company.name|default:'My Company' }}", this.dataset.address);
+            filterMaterialOptions();
+        });
+
+        document.getElementById('assign-receiver-mine')?.addEventListener('click', function (e) {
+            e.preventDefault();
+            assignMyCompany('receiver-select', this.dataset.companyId, "{{ assign_company.name|default:'My Company' }}", this.dataset.address);
+        });
+
+        document.getElementById('assign-rep-me')?.addEventListener('click', function (e) {
+            e.preventDefault();
+            document.getElementById('rep-select').value = this.dataset.userId;
+        });
+
+        // 3. Manifest Item Logic
+        document.querySelectorAll('.manifest-item').forEach(item => { 
+            setupInventoryValidation(item); 
+            setupManifestUnitSync(item); 
+        });
+
+        document.getElementById('manifest-items-container')?.addEventListener('input', recalcProfit);
+        document.getElementById('manifest-items-container')?.addEventListener('change', recalcProfit);
+        document.getElementById('freight-cost-input')?.addEventListener('input', recalcProfit);
+        recalcProfit();
+
+        document.getElementById('add-item-btn')?.addEventListener('click', function () {
+            const container = document.getElementById('manifest-items-container');
+            const firstItem = container.querySelector('.manifest-item');
+            if (!firstItem) return;
+            const newItem = firstItem.cloneNode(true);
+            newItem.querySelectorAll('input').forEach(input => { if (input.type === 'checkbox') input.checked = false; else input.value = ''; input.classList.remove('is-invalid'); });
+            newItem.querySelectorAll('select').forEach(select => { select.value = ''; });
+            const hiddenPallet = newItem.querySelector('.palletized-hidden'); if (hiddenPallet) hiddenPallet.value = 'false';
+            newItem.querySelector('.weight-warning').style.display = 'none';
+            const removeBtn = newItem.querySelector('.remove-item-btn'); if (removeBtn) removeBtn.style.display = 'block';
+            container.appendChild(newItem); setupInventoryValidation(newItem); setupManifestUnitSync(newItem); syncManifestUnits(newItem, 'lbs'); filterMaterialOptions();
+        });
+
+        document.getElementById('manifest-items-container')?.addEventListener('click', function (e) { 
+            if (e.target.classList.contains('remove-item-btn')) e.target.closest('.manifest-item').remove(); 
+        });
+
+        // 4. New Material Drawer Logic
+        const btnChoose = document.getElementById('btnChooseMaterialFile');
+        const btnCancel = document.getElementById('btnCancelMaterialFile');
+        const imgInput = document.getElementById('materialImageInput');
+        const statusText = document.getElementById('materialFileStatus');
+
+        if (btnChoose) btnChoose.addEventListener('click', () => imgInput.click());
+        if (imgInput) {
+            imgInput.addEventListener('change', function() {
+                if (this.files && this.files[0] && statusText) {
+                    statusText.innerHTML = `<i class="fas fa-image me-1"></i> ${this.files[0].name}`;
+                    statusText.classList.remove('text-muted');
+                    statusText.classList.add('text-primary', 'fw-bold');
                 }
             });
+        }
+        if (btnCancel) {
+            btnCancel.addEventListener('click', () => {
+                if (imgInput) imgInput.value = '';
+                if (statusText) {
+                    statusText.innerHTML = 'Drag and drop files here to upload';
+                    statusText.classList.add('text-muted');
+                    statusText.classList.remove('text-primary', 'fw-bold');
+                }
+            });
+        }
 
-            // Force empty on load (Per user request)
-            $tagsSelect.val(null).trigger('change');
+        const addMaterialForm = document.getElementById('addMaterialForm');
+        if (addMaterialForm) {
+            addMaterialForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const form = this;
+                const submitBtn = document.getElementById('btnSubmitMaterial');
+                const formData = new FormData(form);
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+                
+                fetch("{% url 'inventory:create_material_ajax' %}", {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const materialDropdowns = document.querySelectorAll('.material-select');
+                        materialDropdowns.forEach(dropdown => {
+                            const val = data.id || data.name;
+                            const newOption = new Option(data.name, val, true, true);
+                            newOption.dataset.max = "999999"; newOption.dataset.unit = "lbs"; newOption.dataset.name = data.name;
+                            dropdown.add(newOption);
+                        });
+                        const offcanvas = bootstrap.Offcanvas.getInstance(document.getElementById('offcanvasAddMaterial'));
+                        if (offcanvas) offcanvas.hide();
+                        form.reset();
+                        if (statusText) { statusText.innerHTML = 'Drag and drop files here to upload'; statusText.classList.add('text-muted'); statusText.classList.remove('text-primary', 'fw-bold'); }
+                    } else { alert('Error creating material.'); }
+                })
+                .finally(() => { submitBtn.disabled = false; submitBtn.innerHTML = 'Submit'; });
+            });
+        }
+
+        // 5. Add Location Drawer Logic
+        let activeLocationSelectId = null;
+        let activeCompanySelectId = null;
+
+        document.querySelectorAll('.location-add-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                activeLocationSelectId = this.dataset.selectId;
+                activeCompanySelectId = this.dataset.companySelectId;
+            });
+        });
+
+        const ajaxAddWarehouseForm = document.getElementById('ajaxAddWarehouseForm');
+        if (ajaxAddWarehouseForm) {
+            ajaxAddWarehouseForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const form = this;
+                const formData = new FormData(form);
+                const submitBtn = form.querySelector('button[type="submit"]');
+                const companySelect = document.getElementById(activeCompanySelectId);
+
+                if (!companySelect || !companySelect.value) {
+                    alert('Please select a company first!'); return;
+                }
+                formData.append('company_id', companySelect.value);
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+
+                fetch("{% url 'inventory:ajax_warehouse_create' %}", {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const warehouseSelect = document.getElementById(activeLocationSelectId);
+                        const newOption = new Option(data.full_label, data.id, true, true);
+                        newOption.dataset.companyId = data.company_id;
+                        warehouseSelect.add(newOption);
+                        warehouseSelect.dispatchEvent(new Event('change'));
+                        const offcanvas = bootstrap.Offcanvas.getInstance(document.getElementById('offcanvasAddWarehouse'));
+                        if (offcanvas) offcanvas.hide();
+                        form.reset();
+                    } else {
+                        let errorMsg = 'Error creating location:\n';
+                        for (const field in data.errors) errorMsg += `${field}: ${data.errors[field][0].message}\n`;
+                        alert(errorMsg);
+                    }
+                })
+                .catch(err => alert('An error occurred.'))
+                .finally(() => { submitBtn.disabled = false; submitBtn.innerHTML = 'Submit'; });
+            });
+        }
+
+        // 6. Select2 Initialization
+        if ($.fn.select2) {
+            $('.select2-basic').each(function() {
+                $(this).select2({
+                    theme: 'bootstrap-5',
+                    width: '100%',
+                    placeholder: $(this).attr('placeholder') || 'Select or type to create tags...',
+                    tags: true,
+                    tokenSeparators: [','],
+                    createTag: function (params) {
+                        var term = $.trim(params.term);
+                        if (term === '') return null;
+                        return { id: term, text: term, newTag: true };
+                    },
+                    templateResult: function (data) {
+                        if (data.newTag) return "Hit Enter to create new '" + data.text + "'";
+                        return data.text;
+                    }
+                });
+                // Force empty on load if requested
+                if ($(this).attr('id') === 'tags-select') $(this).val(null).trigger('change');
+            });
         }
     });
 </script>
