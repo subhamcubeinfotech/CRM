@@ -2222,118 +2222,170 @@ def generate_packing_list_pdf(request, pk):
     )
 
     styles = getSampleStyleSheet()
-    primary_color = colors.HexColor('#2a4d8f')
-    dark_gray = colors.HexColor('#1e293b')
+    sagar_blue = colors.HexColor('#b9cfe7')
+    black = colors.black
+    light_grey = colors.HexColor('#f3f4f6')
     
     # Custom Styles
-    title_style = ParagraphStyle('Title', parent=styles['Heading1'], fontSize=20, textColor=dark_gray, fontName='Helvetica-Bold', alignment=TA_CENTER, leading=24)
-    label_style = ParagraphStyle('Label', parent=styles['Normal'], fontSize=8, textColor=colors.HexColor('#64748b'), fontName='Helvetica-Bold', leading=10, textTransform='uppercase')
-    normal_style = ParagraphStyle('Normal2', parent=styles['Normal'], fontSize=10, textColor=dark_gray, fontName='Helvetica', leading=13)
-    bold_style = ParagraphStyle('Bold', parent=styles['Normal'], fontSize=10, textColor=dark_gray, fontName='Helvetica-Bold', leading=13)
-    th_style = ParagraphStyle('TH', parent=styles['Normal'], fontSize=9, textColor=colors.white, fontName='Helvetica-Bold', alignment=TA_LEFT)
-    td_style = ParagraphStyle('TD', parent=styles['Normal'], fontSize=9, textColor=dark_gray, fontName='Helvetica')
-    td_center = ParagraphStyle('TDC', parent=styles['Normal'], fontSize=9, textColor=dark_gray, fontName='Helvetica', alignment=TA_CENTER)
+    title_style = ParagraphStyle('Title', parent=styles['Normal'], fontSize=20, textColor=black, fontName='Helvetica-Bold', alignment=TA_RIGHT)
+    label_style = ParagraphStyle('Label', parent=styles['Normal'], fontSize=8, textColor=black, fontName='Helvetica-Bold', leading=10)
+    normal_style = ParagraphStyle('Normal2', parent=styles['Normal'], fontSize=9, textColor=black, fontName='Helvetica', leading=12)
+    bold_style = ParagraphStyle('Bold', parent=styles['Normal'], fontSize=10, textColor=black, fontName='Helvetica-Bold', leading=13)
+    th_style = ParagraphStyle('TH', parent=styles['Normal'], fontSize=9, textColor=black, fontName='Helvetica-Bold', alignment=TA_CENTER)
+    td_style = ParagraphStyle('TD', parent=styles['Normal'], fontSize=9, textColor=black, fontName='Helvetica')
+    td_center = ParagraphStyle('TDC', parent=styles['Normal'], fontSize=9, textColor=black, fontName='Helvetica', alignment=TA_CENTER)
+    td_bold = ParagraphStyle('TDB', parent=styles['Normal'], fontSize=9, textColor=black, fontName='Helvetica-Bold')
     
     elements = []
 
     # ─── HEADER ───
     shipment_info = [
-        Paragraph("<b>PACKING LIST</b>", title_style),
+        Paragraph("PACKING LIST", title_style),
         Spacer(1, 4*mm),
-        Paragraph(f"<b>Delivery #:</b> {delivery_number or 'N/A'}", normal_style),
-        Paragraph(f"<b>Date:</b> {doc_date}", normal_style),
-        Paragraph(f"<b>Shipment #:</b> {shipment.shipment_number}", normal_style),
+        Paragraph(f"<b>SHIPMENT ID:</b> {shipment.shipment_number}", ParagraphStyle('Meta', parent=normal_style, alignment=TA_RIGHT)),
+        Paragraph(f"<b>DATE:</b> {doc_date} (ET)", ParagraphStyle('Meta', parent=normal_style, alignment=TA_RIGHT)),
     ]
 
     company_lines = [
-        Paragraph("FreightPro", ParagraphStyle('CompName', parent=bold_style, fontSize=18, leading=22, spaceAfter=2, textColor=primary_color)),
+        Paragraph("FreightPro", ParagraphStyle('CompName', parent=bold_style, fontSize=24, leading=28, textColor=colors.HexColor('#1e40af'))),
         Paragraph("Logistics & Freight Services", normal_style),
         Paragraph("123 Logistics Way, Chicago, IL 60601", normal_style),
     ]
 
-    header_table = Table([[company_lines, shipment_info]], colWidths=[100*mm, 80*mm])
-    header_table.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'TOP')]))
-    elements.append(header_table)
-    elements.append(Spacer(1, 8*mm))
-    elements.append(HRFlowable(width="100%", thickness=1, color=colors.grey, spaceBefore=0, spaceAfter=8*mm))
-
-    # ─── PARTIES ───
-    shipper_box = [Paragraph("SHIPPER", label_style), Spacer(1, 1*mm)]
-    s = shipment.shipper or (shipment.order.supplier if shipment.order else None)
-    if s:
-        shipper_box.append(Paragraph(s.name, bold_style))
-        shipper_box.append(Paragraph(shipment.origin_address or "", normal_style))
-        shipper_box.append(Paragraph(f"{shipment.origin_city}, {shipment.origin_state} {shipment.origin_postal_code}", normal_style))
-
-    consignee_box = [Paragraph("CONSIGNEE", label_style), Spacer(1, 1*mm)]
-    c = shipment.consignee or (shipment.order.receiver if shipment.order else None)
-    if c:
-        consignee_box.append(Paragraph(c.name, bold_style))
-        consignee_box.append(Paragraph(shipment.destination_address or "", normal_style))
-        consignee_box.append(Paragraph(f"{shipment.destination_city}, {shipment.destination_state} {shipment.destination_postal_code}", normal_style))
-
-    parties_table = Table([[shipper_box, consignee_box]], colWidths=[90*mm, 90*mm])
-    parties_table.setStyle(TableStyle([
-        ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
+    header_table = Table([[company_lines, shipment_info]], colWidths=[110*mm, 70*mm])
+    header_table.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
-        ('LEFTPADDING', (0,0), (-1,-1), 8),
-        ('RIGHTPADDING', (0,0), (-1,-1), 8),
-        ('TOPPADDING', (0,0), (-1,-1), 8),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 8),
+        ('LEFTPADDING', (0,0), (-1,-1), 0),
+        ('RIGHTPADDING', (0,0), (-1,-1), 0),
     ]))
-    elements.append(parties_table)
-    elements.append(Spacer(1, 10*mm))
+    elements.append(header_table)
+    elements.append(Spacer(1, 6*mm))
+
+    # ─── PARTIES (SHIP FROM / TO) ───
+    def make_party_box(header_text, content):
+        box_data = [
+            [Paragraph(header_text, th_style)],
+            [content]
+        ]
+        box = Table(box_data, colWidths=[88*mm])
+        box.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), sagar_blue),
+            ('GRID', (0,0), (-1,-1), 0.5, black),
+            ('VALIGN', (0,0), (-1,-1), 'TOP'),
+            ('BOTTOMPADDING', (0,0), (-1,0), 2),
+            ('TOPPADDING', (0,0), (-1,0), 2),
+            ('LEFTPADDING', (0,1), (-1,1), 6),
+            ('RIGHTPADDING', (0,1), (-1,1), 6),
+            ('BOTTOMPADDING', (0,1), (-1,1), 6),
+        ]))
+        return box
+
+    # Shipper Content
+    s_party = shipment.shipper or (shipment.order.supplier if shipment.order else shipment.customer)
+    s_content = [Paragraph(s_party.name, bold_style)]
+    s_content.append(Paragraph(shipment.origin_address or s_party.address_line1 or "", normal_style))
+    csz = f"{shipment.origin_city or s_party.city}, {shipment.origin_state or s_party.state} {shipment.origin_postal_code or s_party.postal_code}, {shipment.origin_country or s_party.country}".strip(', ')
+    s_content.append(Paragraph(csz, normal_style))
+    if s_party.phone: s_content.append(Paragraph(f"Phone: {s_party.phone}", normal_style))
+    
+    # Receiver Content
+    r_party = shipment.consignee or (shipment.order.receiver if shipment.order else None)
+    if r_party:
+        r_content = [Paragraph(r_party.name, bold_style)]
+        r_content.append(Paragraph(shipment.destination_address or r_party.address_line1 or "", normal_style))
+        csz = f"{shipment.destination_city or r_party.city}, {shipment.destination_state or r_party.state} {shipment.destination_postal_code or r_party.postal_code}, {shipment.destination_country or r_party.country}".strip(', ')
+        r_content.append(Paragraph(csz, normal_style))
+        if r_party.phone: r_content.append(Paragraph(f"Phone: {r_party.phone}", normal_style))
+    else:
+        r_content = [Paragraph("TO BE NOTIFIED", bold_style)]
+
+    parties_grid = Table([[make_party_box("Ship From:", s_content), Spacer(4*mm, 1), make_party_box("Ship To:", r_content)]], colWidths=[88*mm, 4*mm, 88*mm])
+    parties_grid.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('LEFTPADDING', (0,0), (-1,-1), 0),
+        ('RIGHTPADDING', (0,0), (-1,-1), 0),
+    ]))
+    elements.append(parties_grid)
+    elements.append(Spacer(1, 6*mm))
 
     # ─── ITEM TABLE ───
     cargo_data = [[
         Paragraph("#", th_style), 
-        Paragraph("ITEM", th_style), 
-        Paragraph(f"GROSS ({unit})", th_style), 
-        Paragraph(f"TARE ({unit})", th_style), 
-        Paragraph(f"NET ({unit})", th_style),
-        Paragraph("PACKAGING", th_style)
+        Paragraph("Item", th_style), 
+        Paragraph("Gross Wt.", th_style), 
+        Paragraph("Tare Wt.", th_style), 
+        Paragraph("Net wt.", th_style),
+        Paragraph("Packaging", th_style)
     ]]
     
     for idx, item in enumerate(manifest_data, 1):
         cargo_data.append([
-            Paragraph(str(idx), td_style),
+            Paragraph(str(idx), td_center),
             Paragraph(item['item'], td_style),
-            Paragraph(f"{item['gross']:,.1f}", td_style),
-            Paragraph(f"{item['tare']:,.1f}", td_style),
-            Paragraph(f"{item['net']:,.1f}", td_style),
-            Paragraph(item['packaging'], td_style)
+            Paragraph(f"{item['gross']:,.1f} {unit}", td_style),
+            Paragraph(f"{item['tare']:,.1f} {unit}", td_style),
+            Paragraph(f"{item['net']:,.1f} {unit}", td_style),
+            Paragraph(item['packaging'], td_center)
         ])
         
-    # Totals row
+    # Totals row (Integrated)
     cargo_data.append([
         "",
-        Paragraph("<b>TOTALS</b>", ParagraphStyle('tot', parent=td_style, alignment=TA_RIGHT)),
-        Paragraph(f"<b>{total_gross:,.1f}</b>", td_style),
-        Paragraph(f"<b>{total_tare:,.1f}</b>", td_style),
-        Paragraph(f"<b>{total_net:,.1f}</b>", td_style),
+        Paragraph("Totals", td_bold),
+        Paragraph(f"{total_gross:,.1f} {unit}", td_bold),
+        Paragraph(f"{total_tare:,.1f} {unit}", td_bold),
+        Paragraph(f"{total_net:,.1f} {unit}", td_bold),
         ""
     ])
 
-    cargo_table = Table(cargo_data, colWidths=[10*mm, 60*mm, 25*mm, 25*mm, 25*mm, 35*mm])
-    cargo_table.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,0), primary_color),
-        ('GRID', (0,0), (-1,-2), 0.5, colors.grey),
+    cargo_table = Table(cargo_data, colWidths=[12*mm, 62*mm, 26*mm, 26*mm, 26*mm, 28*mm])
+    
+    # Style logic for table
+    t_style = [
+        ('BACKGROUND', (0,0), (-1,0), sagar_blue),
+        ('GRID', (0,0), (-1,-1), 0.5, black),
         ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
         ('LEFTPADDING', (0,0), (-1,-1), 5),
-        ('TOPPADDING', (0,0), (-1,-1), 5),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 5),
-    ]))
-    elements.append(cargo_table)
-    
-    # Signature
-    elements.append(Spacer(1, 20*mm))
-    sig_line = [
-        Paragraph("_________________________", normal_style),
-        Paragraph("Authorized Signature", label_style)
+        ('RIGHTPADDING', (0,0), (-1,-1), 5),
     ]
-    sig_table = Table([[sig_line]], colWidths=[70*mm])
-    sig_table.setStyle(TableStyle([('ALIGN', (0,0), (-1,-1), 'LEFT')]))
+    
+    # Alternating row colors
+    for i in range(1, len(cargo_data) - 1):
+        if i % 2 == 1:
+            t_style.append(('BACKGROUND', (0,i), (-1,i), light_grey))
+    
+    # Total row special style
+    t_style.append(('BACKGROUND', (0, -1), (-1, -1), colors.white))
+    t_style.append(('LINEABOVE', (0, -1), (-1, -1), 1, black))
+
+    cargo_table.setStyle(TableStyle(t_style))
+    elements.append(cargo_table)
+    elements.append(Spacer(1, 8*mm))
+    
+    # ─── SIGNATURE / DATE BOX ───
+    sig_content = [
+        [
+            [Spacer(1, 8*mm), Paragraph("_________________________", normal_style), Paragraph("Signature", ParagraphStyle('tiny', parent=normal_style, fontSize=7))],
+            [Spacer(1, 8*mm), Paragraph("_________________________", normal_style), Paragraph("Date", ParagraphStyle('tiny', parent=normal_style, fontSize=7))]
+        ]
+    ]
+    sig_table = Table(sig_content, colWidths=[110*mm, 70*mm])
+    sig_table.setStyle(TableStyle([
+        ('GRID', (0,0), (-1,-1), 0.5, black),
+        ('LEFTPADDING', (0,0), (-1,-1), 10),
+        ('RIGHTPADDING', (0,0), (-1,-1), 10),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 8),
+        ('VALIGN', (0,0), (-1,-1), 'BOTTOM'),
+    ]))
     elements.append(sig_table)
+
+    doc.build(elements)
+    pdf = buffer.getvalue()
+    buffer.close()
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{file_name}"'
+    response.write(pdf)
+    return response
 
     doc.build(elements)
     
