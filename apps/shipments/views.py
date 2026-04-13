@@ -38,6 +38,32 @@ def _get_tracking_shipment_for_user(user, pk):
     return shipment
 
 
+def _handle_inventory_on_delivery(shipment, user):
+    """Decrease both quantity and reserved_quantity on delivery"""
+    from apps.inventory.models import InventoryTransaction
+    from django.db import transaction
+    
+    with transaction.atomic():
+        for item in shipment.items.all():
+            if item.inventory_item:
+                inv_item = item.inventory_item
+                # Decrease Physical Stock (it has finally left the building)
+                inv_item.quantity -= item.weight
+                # Release Reservation (it is no longer 'committed', it is 'sent')
+                inv_item.reserved_quantity -= item.weight
+                inv_item.save()
+                
+                # Log SHIP Transaction in audit trail
+                InventoryTransaction.objects.create(
+                    item=inv_item,
+                    transaction_type='SHIP',
+                    quantity_change=-item.weight,
+                    new_quantity=inv_item.quantity,
+                    user=user,
+                    notes=f"Shipped/Reserved fulfilled via Shipment {shipment.shipment_number}"
+                )
+
+
 @login_required
 @require_POST
 def shipment_item_update_ajax(request, pk):
@@ -875,8 +901,10 @@ def shipment_tracking_update(request, pk):
         shipment.status = status
         milestone_status = f"Status changed to {shipment.get_status_display()}"
         milestone_notes = f"Updated by {request.user.username} from {previous_status}"
-        if status == 'delivered' and not shipment.actual_delivery_date:
-            shipment.actual_delivery_date = timezone.now().date()
+        if status == 'delivered':
+            if not shipment.actual_delivery_date:
+                shipment.actual_delivery_date = timezone.now().date()
+            _handle_inventory_on_delivery(shipment, request.user)
             
         # Create OrderEvent if linked to an order
         if shipment.order_id:
@@ -1096,16 +1124,27 @@ def shipment_create(request):
                     if item_data['material_id'] and str(item_data['material_id']).isdigit():
                         inv_item = InventoryItem.objects.filter(pk=item_data['material_id']).first()
                         
-                        # Deduct stock if item is from inventory
-                        if inv_item:
+                        # Reserve stock if item is from inventory AND NOT from an order (Order already reserved it)
+                        if inv_item and not shipment.order_id:
                             try:
-                                qty_to_deduct = float(item_data.get('weight') or 0)
-                                if qty_to_deduct > 0:
-                                    inv_item.quantity = max(0, inv_item.quantity - int(qty_to_deduct))
+                                qty_to_reserve = Decimal(str(item_data.get('weight') or 0))
+                                if qty_to_reserve > 0:
+                                    inv_item.reserved_quantity += qty_to_reserve
                                     inv_item.save()
-                                    logger.info(f"Deducted {qty_to_deduct} from {inv_item.product_name} during Shipment {shipment.shipment_number}. New stock: {inv_item.quantity}")
+                                    
+                                    # Log RESERVE Transaction
+                                    from apps.inventory.models import InventoryTransaction
+                                    InventoryTransaction.objects.create(
+                                        item=inv_item,
+                                        transaction_type='RESERVE',
+                                        quantity_change=0,
+                                        new_quantity=inv_item.quantity,
+                                        user=request.user,
+                                        notes=f"Reserved {qty_to_reserve} for Standalone Shipment {shipment.shipment_number}"
+                                    )
+                                    logger.info(f"Reserved {qty_to_reserve} from {inv_item.product_name} during Shipment {shipment.shipment_number}. Available: {inv_item.available_quantity}")
                             except Exception as e:
-                                logger.warning(f"Stock deduction failed for item {item_data['material_id']} in Shipment {shipment.shipment_number}: {e}")
+                                logger.warning(f"Reservation failed for item {item_data['material_id']} in Shipment {shipment.shipment_number}: {e}")
                     
                     try:
                         calculated_weight += float(item_data.get('weight') or 0)
@@ -1494,6 +1533,29 @@ def shipment_delete(request, pk):
     
     if request.method == 'POST':
         shipment_number = shipment.shipment_number
+        
+        # RELEASE RESERVATION before delete
+        if shipment.status != 'delivered':
+            from django.db import transaction
+            from apps.inventory.models import InventoryTransaction
+            with transaction.atomic():
+                for item in shipment.items.all():
+                    if item.inventory_item:
+                        inv_item = item.inventory_item
+                        inv_item.reserved_quantity -= item.weight
+                        inv_item.save()
+                        
+                        # Log UNRESERVE Transaction
+                        InventoryTransaction.objects.create(
+                            item=inv_item,
+                            transaction_type='UNRESERVE',
+                            quantity_change=0,
+                            new_quantity=inv_item.quantity,
+                            user=request.user,
+                            notes=f"Reservation released for {item.weight} due to Shipment {shipment_number} deletion"
+                        )
+                        logger.info(f"Released reservation ({item.weight}) for {inv_item.sku} due to shipment deletion.")
+        
         shipment.delete()
         logger.info(f'Shipment deleted: {shipment_number} by {request.user}')
         messages.success(request, f'Shipment {shipment_number} deleted successfully!')
@@ -2552,6 +2614,7 @@ def update_status(request, pk):
             # Auto-set actual_delivery_date if status is delivered
             if shipment.status == 'delivered' and not shipment.actual_delivery_date:
                 shipment.actual_delivery_date = timezone.now().date()
+                _handle_inventory_on_delivery(shipment, request.user)
                 
             shipment.save()
             ShipmentMilestone.objects.create(

@@ -394,9 +394,33 @@ def order_update_status(request, pk):
         
         if status in dict(Order.STATUS_CHOICES):
             old_status = order.get_status_display()
+            new_status_key = status
             order.status = status
             order.save()
             
+            # ── NEW: Release Reservation if Order is Cancelled ─────────
+            if new_status_key == 'cancelled' and old_status != 'Cancelled':
+                from decimal import Decimal
+                from apps.inventory.models import InventoryTransaction
+                for item in order.manifest_items.all():
+                    if item.inventory_item:
+                        inv_item = item.inventory_item
+                        weight_to_release = Decimal(str(item.weight))
+                        inv_item.reserved_quantity -= weight_to_release
+                        inv_item.save()
+                        
+                        # Log UNRESERVE Transaction
+                        InventoryTransaction.objects.create(
+                            item=inv_item,
+                            transaction_type='UNRESERVE',
+                            quantity_change=0,
+                            new_quantity=inv_item.quantity,
+                            user=request.user,
+                            notes=f"Released {weight_to_release} due to Order #{order.order_number} Cancellation"
+                        )
+                        logger.info(f"Released reservation ({weight_to_release}) for {inv_item.sku} due to order cancellation.")
+            # ──────────────────────────────────────────────────────────
+
             # Create Lifecycle Event
             from .models import OrderEvent
             OrderEvent.objects.create(
@@ -562,43 +586,53 @@ def order_create(request):
             buy_price_val = raw_buy if raw_buy and str(raw_buy).strip() else 0
             sell_price_val = raw_sell if raw_sell and str(raw_sell).strip() else 0
             
-            # ── NEW: Deduct Stock if material is an ID ────────────────
+            # ── NEW: Reserve Stock if material is an ID ────────────────
+            inv_item = None
             try:
+                from decimal import Decimal
                 # Check if materials[i] is an ID (integer)
                 if materials[i].isdigit():
-                    inv_item = InventoryItem.plain_objects.get(pk=materials[i])
-                    material_name = inv_item.product_name # Use product name for manifest
-                    
-                    # Deduct stock
-                    if qty_to_deduct > 0:
-                        inv_item.quantity = max(0, inv_item.quantity - int(qty_to_deduct))
-                        inv_item.save()
-                        logger.info(f"Deducted {qty_to_deduct} from {inv_item.product_name}. New stock: {inv_item.quantity}")
+                    inv_item = InventoryItem.objects.filter(pk=materials[i]).first()
+                    if inv_item:
+                        material_name = inv_item.product_name # Use product name for manifest
                         
-                        # ── NEW: Trigger Low Stock Notification ───────────
-                        if inv_item.quantity <= 10:
-                            send_low_stock_notification(inv_item, request)
-                        # ──────────────────────────────────────────────────
+                        # Reserve stock instead of deducting
+                        if qty_to_deduct > 0:
+                            qty_decimal = Decimal(str(qty_to_deduct))
+                            inv_item.reserved_quantity += qty_decimal
+                            inv_item.save()
+                            
+                            # Log RESERVE Transaction
+                            from apps.inventory.models import InventoryTransaction
+                            InventoryTransaction.objects.create(
+                                item=inv_item,
+                                transaction_type='RESERVE',
+                                quantity_change=0,
+                                new_quantity=inv_item.quantity,
+                                user=request.user,
+                                notes=f"Reserved {qty_decimal} for Order #{order.order_number}"
+                            )
+                            logger.info(f"Reserved {qty_decimal} for order {order.order_number}. Available: {inv_item.available_quantity}")
+                            
+                            # Trigger Low Stock Notification based on Available
+                            if inv_item.available_quantity <= 10:
+                                send_low_stock_notification(inv_item, request)
             except Exception as e:
-                logger.warning(f"Stock deduction failed for item {materials[i]}: {e}")
-            # ──────────────────────────────────────────────────────────
-
-            try:
-                ManifestItem.objects.create(
-                    order=order,
-                    material=material_name,
-                    weight=qty_to_deduct,
-                    weight_unit=weight_units[i] if i < len(weight_units) else "lbs",
-                    buy_price=buy_price_val,
-                    buy_price_unit=buy_price_units[i] if i < len(buy_price_units) else "per lbs",
-                    sell_price=sell_price_val,
-                    sell_price_unit=sell_price_units[i] if i < len(sell_price_units) else "per lbs",
-                    packaging=packagings[i] if i < len(packagings) else "",
-                    is_palletized=is_palletized_list[i].lower() == 'true' if i < len(is_palletized_list) else False 
-                )
-            except Exception as e:
-                logger.error(f"Error creating manifest item {i} ({material_name}): {e}")
-                continue
+                logger.error(f"Inventory reservation failed for item {i}: {e}")
+                
+            ManifestItem.objects.create(
+                order=order,
+                inventory_item=inv_item,
+                material=material_name,
+                weight=qty_to_deduct,
+                weight_unit=weight_units[i] if i < len(weight_units) else 'lbs',
+                buy_price=buy_price_val,
+                buy_price_unit=buy_price_units[i] if i < len(buy_price_units) else 'per lbs',
+                sell_price=sell_price_val,
+                sell_price_unit=sell_price_units[i] if i < len(sell_price_units) else 'per lbs',
+                packaging=packagings[i] if i < len(packagings) else '',
+                is_palletized=is_palletized_list[i] == 'on' if i < len(is_palletized_list) else False
+            )
         
         # ── NEW: Send email notification to supplier ──────────────────
         try:
@@ -943,14 +977,30 @@ def order_purchase_order_pdf(request, pk):
     elements = []
 
     # --- Header ---
+    my_company = request.user.company
+    company_name = my_company.name if my_company else "FreightPro Logistics"
+    company_address = my_company.full_address if my_company else "Address not set"
+    
     header_data = [
-        [Paragraph("PURCHASE ORDER", title_style), Paragraph(f"<b>PO #:</b> {po_number_override}<br/><b>Date:</b> {timezone.now().strftime('%Y-%m-%d')}", right_style)]
+        [
+            Paragraph("PURCHASE ORDER", title_style), 
+            Paragraph(f"<b>{company_name}</b><br/>{company_address}", right_style)
+        ]
     ]
     header_table = Table(header_data, colWidths=[110*mm, 70*mm])
     header_table.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'BOTTOM'), ('LEFTPADDING', (0,0), (-1,-1), 0), ('RIGHTPADDING', (0,0), (-1,-1), 0)]))
     elements.append(header_table)
     elements.append(Spacer(1, 5*mm))
     elements.append(HRFlowable(width="100%", thickness=1, color=primary_color))
+    elements.append(Spacer(1, 5*mm))
+    
+    # PO Info Row
+    po_meta_data = [
+        [Paragraph(f"<b>PO #:</b> {po_number_override}", normal_style), Paragraph(f"<b>Date:</b> {timezone.now().strftime('%Y-%m-%d')}", right_style)]
+    ]
+    po_meta_table = Table(po_meta_data, colWidths=[90*mm, 90*mm])
+    po_meta_table.setStyle(TableStyle([('LEFTPADDING', (0,0), (-1,-1), 0), ('RIGHTPADDING', (0,0), (-1,-1), 0)]))
+    elements.append(po_meta_table)
     elements.append(Spacer(1, 10*mm))
 
     # --- Vendor & Delivery Details ---
@@ -1023,8 +1073,10 @@ def order_purchase_order_pdf(request, pk):
     elements.append(items_table)
 
     # --- Totals ---
+    total_weight = sum(item.weight for item in manifest_items)
     totals_data = [
-        ['', '', '', Paragraph("<b>TOTAL</b>", right_style), Paragraph(f"<b>${total_amount:,.2f}</b>", right_style)]
+        ['', '', '', Paragraph("<b>Total Weight</b>", right_style), Paragraph(f"<b>{total_weight:,.2f}</b>", right_style)],
+        ['', '', '', Paragraph("<b>TOTAL AMOUNT</b>", right_style), Paragraph(f"<b>${total_amount:,.2f}</b>", right_style)]
     ]
     totals_table = Table(totals_data, colWidths=[80*mm, 25*mm, 20*mm, 30*mm, 25*mm])
     totals_table.setStyle(TableStyle([

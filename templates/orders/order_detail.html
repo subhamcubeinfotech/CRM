@@ -242,7 +242,7 @@
                 <div class="ms-4 mt-1" style="width: 300px;">
                     <div class="progress rounded-pill bg-light"
                         style="height: 24px; position: relative; border: 1px solid #e3e6f0;"
-                        title="Manifested: {{ order.total_manifest_weight_in_unit|floatformat:2 }} / Target: {{ order.total_weight_target|floatformat:2 }} {{ order.total_weight_unit }} (Shipped: {{ order.shipped_weight_in_unit|floatformat:2 }} {{ order.total_weight_unit }})">
+                        title="Manifested: {{ order.total_manifest_weight_in_unit|floatformat:2 }} / Total: {{ order.total_weight_target|floatformat:2 }} {{ order.total_weight_unit }} (Shipped: {{ order.shipped_weight_in_unit|floatformat:2 }} {{ order.total_weight_unit }})">
                         <!-- Manifested Progress (Light Blue) -->
                         <div class="progress-bar bg-info opacity-25 position-absolute h-100"
                             style="width: {{ order.manifest_progress_percentage }}%; z-index: 1;"></div>

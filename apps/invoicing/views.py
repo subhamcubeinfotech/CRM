@@ -253,9 +253,8 @@ def invoice_print(request, pk):
     return render(request, 'invoices/print.html', context)
 
 
-@login_required
-def invoice_pdf(request, pk):
-    """Generate a real PDF invoice using ReportLab"""
+def _generate_invoice_pdf_buffer(invoice, request):
+    """Internal helper to generate PDF buffer"""
     from reportlab.lib.pagesizes import A4
     from reportlab.lib import colors
     from reportlab.lib.units import mm
@@ -264,7 +263,6 @@ def invoice_pdf(request, pk):
     from reportlab.lib.enums import TA_RIGHT, TA_CENTER, TA_LEFT
     from io import BytesIO
 
-    invoice = _get_invoice(pk)
     line_items = list(invoice.line_items.all())
 
     buffer = BytesIO()
@@ -301,14 +299,21 @@ def invoice_pdf(request, pk):
         Paragraph(f"<b>DUE:</b> {invoice.due_date.strftime('%m/%d/%Y')} (IT)", normal_style),
     ]
 
+    # --- Dynamic Branding ---
+    my_company = request.user.company
+    company_name = my_company.name if my_company else "FreightPro Logistics"
+    company_address = my_company.full_address if my_company else "Set address in settings"
+    company_phone = my_company.phone if my_company else ""
+    company_email = my_company.email if my_company else ""
+    
     company_info = [
-        Paragraph("FreightPro Logistics", company_style),
-        Paragraph("123 Logistics Way", right_style),
-        Paragraph("Chicago, IL 60601", right_style),
-        Paragraph("(555) 123-4567", right_style),
-        Paragraph("billing@freightpro.com", right_style),
+        Paragraph(company_name, company_style),
+        Paragraph(company_address, right_style),
     ]
+    if company_phone: company_info.append(Paragraph(company_phone, right_style))
+    if company_email: company_info.append(Paragraph(company_email, right_style))
 
+    # --- Header Table ---
     header_table = Table([[invoice_info, company_info]], colWidths=[95*mm, 75*mm])
     header_table.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
@@ -454,9 +459,11 @@ def invoice_pdf(request, pk):
     elements.append(Spacer(1, 4*mm))
 
     # ─── TOTALS ────────────────────────────────────────────
+    total_qty = sum(item.quantity for item in line_items)
     totals_data = [
+        [Paragraph("Total Quantity:", bold_style), Paragraph(f"{total_qty:,.2f} lbs", bold_style)],
         [Paragraph("Subtotal:", bold_style), Paragraph(f"${invoice.subtotal:,.2f}", bold_style)],
-        [Paragraph("Total:", bold_style), Paragraph(f"${invoice.total:,.2f}", bold_style)],
+        [Paragraph("Total Amount:", bold_style), Paragraph(f"${invoice.total:,.2f}", bold_style)],
     ]
     
     totals_table = Table(totals_data, colWidths=[140*mm, 30*mm])
@@ -487,6 +494,15 @@ def invoice_pdf(request, pk):
 
     doc.build(elements)
     buffer.seek(0)
+    return buffer
+
+
+@login_required
+def invoice_pdf(request, pk):
+    """Generate a real PDF invoice using helper"""
+    invoice = _get_invoice(pk)
+    buffer = _generate_invoice_pdf_buffer(invoice, request)
+    
     logger.info(f'PDF generated for invoice {invoice.invoice_number} by {request.user}')
     response = HttpResponse(buffer, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{invoice.invoice_number}.pdf"'
@@ -523,13 +539,57 @@ def add_payment(request, pk):
 
 @login_required
 def send_invoice(request, pk):
-    """Send invoice to customer"""
+    """Send invoice to customer via email with PDF attachment"""
+    from django.core.mail import EmailMessage
+    from django.conf import settings
+    
     invoice = _get_invoice(pk)
     
     if request.method == 'POST':
-        invoice.status = 'sent'
-        invoice.save()
-        messages.success(request, f'Invoice {invoice.invoice_number} marked as sent!')
+        if not invoice.customer.email:
+            messages.error(request, f"Customer {invoice.customer.name} does not have an email address!")
+            return redirect('invoicing:invoice_detail', pk=pk)
+            
+        try:
+            # 1. Generate PDF
+            buffer = _generate_invoice_pdf_buffer(invoice, request)
+            
+            # 2. Compose Email
+            subject = f"Invoice {invoice.invoice_number} from FreightPro Logistics"
+            body = f"""Dear {invoice.customer.name},
+
+Please find attached your invoice {invoice.invoice_number} for the amount of ${invoice.total:,.2f}.
+
+Payment is due by {invoice.invoice_date.strftime('%m/%d/%Y')}.
+
+Thank you for your business!
+
+Best regards,
+The FreightPro Team"""
+            
+            email = EmailMessage(
+                subject=subject,
+                body=body,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[invoice.customer.email],
+            )
+            
+            # 3. Attach PDF
+            email.attach(f"{invoice.invoice_number}.pdf", buffer.getvalue(), 'application/pdf')
+            
+            # 4. Send
+            email.send(fail_silently=False)
+            
+            # 5. Update Status
+            invoice.status = 'sent'
+            invoice.save()
+            
+            messages.success(request, f'Invoice {invoice.invoice_number} sent to {invoice.customer.email} successfully!')
+            logger.info(f'Invoice {invoice.invoice_number} emailed to {invoice.customer.email} by {request.user}')
+        except Exception as e:
+            logger.error(f'Failed to send invoice {invoice.invoice_number}: {str(e)}')
+            messages.error(request, f'Failed to send email: {str(e)}')
+            
         return redirect('invoicing:invoice_detail', pk=pk)
     
     context = {
