@@ -295,10 +295,10 @@ def invoice_pdf(request, pk):
     # ─── HEADER ROW ───────────────────────────────────────
     invoice_info = [
         Paragraph("INVOICE", title_style),
-        Paragraph(f"<b>Invoice #:</b> {invoice.invoice_number}", normal_style),
-        Paragraph(f"<b>Date:</b> {invoice.invoice_date.strftime('%B %d, %Y')}", normal_style),
-        Paragraph(f"<b>Due Date:</b> {invoice.due_date.strftime('%B %d, %Y')}", normal_style),
-        Paragraph(f"<b>Terms:</b> {invoice.terms or 'Net 30'}", normal_style),
+        Paragraph(f"<b>INVOICE #:</b> {invoice.invoice_number}", normal_style),
+        Paragraph(f"<b>DATE:</b> {invoice.invoice_date.strftime('%m/%d/%Y')} (IT)", normal_style),
+        Paragraph(f"<b>PAYMENT TERMS:</b> {invoice.terms or 'NET 30'}", normal_style),
+        Paragraph(f"<b>DUE:</b> {invoice.due_date.strftime('%m/%d/%Y')} (IT)", normal_style),
     ]
 
     company_info = [
@@ -316,104 +316,159 @@ def invoice_pdf(request, pk):
         ('RIGHTPADDING', (0,0), (-1,-1), 0),
     ]))
     elements.append(header_table)
-    elements.append(Spacer(1, 8*mm))
-    elements.append(HRFlowable(width="100%", thickness=1, color=primary_color))
-    elements.append(Spacer(1, 6*mm))
-
-    # ─── BILL TO / SHIPMENT INFO ───────────────────────────
-    cust = invoice.customer
-    bill_to_lines = [
-        Paragraph("BILL TO", label_style),
-        Paragraph(cust.name, bold_style),
-    ]
-    if cust.address_line1:
-        bill_to_lines.append(Paragraph(cust.address_line1, normal_style))
-    if cust.address_line2:
-        bill_to_lines.append(Paragraph(cust.address_line2, normal_style))
-    if cust.city or cust.state:
-        bill_to_lines.append(Paragraph(f"{cust.city}, {cust.state} {cust.postal_code}", normal_style))
-    bill_to_lines.append(Paragraph(cust.country or "USA", normal_style))
-
-    shipment_lines = [Paragraph("SHIPMENT REFERENCE", label_style)]
+    elements.append(Spacer(1, 4*mm))
+    
+    # ─── REFERENCE SECTION ─────────────────────────────
     if invoice.shipment:
         s = invoice.shipment
-        shipment_lines += [
-            Paragraph(f"<b>Shipment #:</b> {s.shipment_number}", normal_style),
-            Paragraph(f"<b>Route:</b> {s.origin_city} → {s.destination_city}", normal_style),
-            Paragraph(f"<b>Delivery:</b> {s.actual_delivery_date.strftime('%B %d, %Y') if s.actual_delivery_date else 'Pending'}", normal_style),
-            Paragraph(f"<b>Status:</b> {s.get_status_display()}", normal_style),
+        ref_data = [
+            [Paragraph(f"<b>SHIPMENT ID:</b> {s.shipment_number}", normal_style)],
+            [Paragraph(f"<b>ORDER ID:</b> {s.order.order_number if s.order else '-'}", normal_style)],
+            [Paragraph(f"<b>PURCHASE ORDER:</b> {s.order.po_number if s.order else '-'}", normal_style)],
         ]
-    else:
-        shipment_lines.append(Paragraph("No shipment linked", normal_style))
+        ref_table = Table(ref_data, colWidths=[170*mm])
+        ref_table.setStyle(TableStyle([
+            ('LEFTPADDING', (0,0), (-1,-1), 0),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 1),
+            ('TOPPADDING', (0,0), (-1,-1), 1),
+        ]))
+        elements.append(ref_table)
+        elements.append(Spacer(1, 6*mm))
 
-    parties_table = Table([[bill_to_lines, shipment_lines]], colWidths=[95*mm, 75*mm])
-    parties_table.setStyle(TableStyle([
+    # ─── SOLD TO / SHIP TO BOXES ───────────────────────────
+    # Sold To Column
+    cust = invoice.customer
+    sold_to_content = [
+        Paragraph(cust.name, bold_style),
+    ]
+    if cust.address_line1: sold_to_content.append(Paragraph(cust.address_line1, normal_style))
+    if cust.address_line2: sold_to_content.append(Paragraph(cust.address_line2, normal_style))
+    city_state = f"{cust.city}, {cust.state} {cust.postal_code}".strip(', ')
+    if city_state: sold_to_content.append(Paragraph(city_state, normal_style))
+    sold_to_content.append(Paragraph(cust.country or "USA", normal_style))
+    if cust.phone: sold_to_content.append(Paragraph(cust.phone, normal_style))
+
+    # Ship To Column
+    ship_to_content = []
+    if invoice.shipment:
+        s = invoice.shipment
+        # Use Consignee if available, otherwise Destination details
+        ship_name = s.consignee.name if s.consignee else (s.customer.name if not s.consignee else "-")
+        ship_to_content.append(Paragraph(ship_name, bold_style))
+        
+        addr = s.destination_address or (s.consignee.address_line1 if s.consignee else "")
+        if addr: ship_to_content.append(Paragraph(addr, normal_style))
+        
+        city = s.destination_city or (s.consignee.city if s.consignee else "")
+        state = s.destination_state or (s.consignee.state if s.consignee else "")
+        zip_code = s.destination_postal_code or (s.consignee.postal_code if s.consignee else "")
+        csz = f"{city}, {state} {zip_code}".strip(', ')
+        if csz: ship_to_content.append(Paragraph(csz, normal_style))
+        
+        country = s.destination_country or (s.consignee.country if s.consignee else "USA")
+        ship_to_content.append(Paragraph(country, normal_style))
+        
+        phone = s.delivery_contact_phone or (s.consignee.phone if s.consignee else "")
+        if phone: ship_to_content.append(Paragraph(phone, normal_style))
+        
+        # Requirements line
+        reqs = s.special_instructions or (s.order.notes if s.order else "")
+        if reqs:
+            ship_to_content.append(Spacer(1, 2*mm))
+            ship_to_content.append(Paragraph(f"<b>Requirements:</b> {reqs}", normal_style))
+    else:
+        ship_to_content.append(Paragraph("No shipment info", normal_style))
+
+    # Create the tables for the boxes with blue headers
+    box_header_style = TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#94a3b8')), # Soft blue-grey like Sagar
+        ('TEXTCOLOR', (0,0), (-1,0), colors.black),
+        ('ALIGN', (0,0), (-1,0), 'CENTER'),
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0,0), (-1,0), 9),
+        ('BOTTOMPADDING', (0,0), (-1,0), 4),
+        ('TOPPADDING', (0,0), (-1,0), 4),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.black),
+        ('VALIGN', (0,1), (-1,-1), 'TOP'),
+        ('LEFTPADDING', (0,1), (-1,-1), 5),
+        ('RIGHTPADDING', (0,1), (-1,-1), 5),
+        ('TOPPADDING', (0,1), (-1,-1), 5),
+        ('BOTTOMPADDING', (0,1), (-1,-1), 10),
+    ])
+
+    sold_to_table = Table([["Sold To:"], [sold_to_content]], colWidths=[82*mm])
+    sold_to_table.setStyle(box_header_style)
+    
+    ship_to_table = Table([["Ship To:"], [ship_to_content]], colWidths=[82*mm])
+    ship_to_table.setStyle(box_header_style)
+
+    box_container = Table([[sold_to_table, Spacer(1, 6*mm), ship_to_table]], colWidths=[82*mm, 6*mm, 82*mm])
+    box_container.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
         ('LEFTPADDING', (0,0), (-1,-1), 0),
         ('RIGHTPADDING', (0,0), (-1,-1), 0),
     ]))
-    elements.append(parties_table)
+    
+    elements.append(box_container)
     elements.append(Spacer(1, 8*mm))
 
     # ─── LINE ITEMS TABLE ──────────────────────────────────
     item_header = [
-        Paragraph("DESCRIPTION", label_style),
-        Paragraph("QTY", label_style),
-        Paragraph("UNIT PRICE", label_style),
-        Paragraph("AMOUNT", label_style),
+        Paragraph("Description", label_style),
+        Paragraph("Quantity", label_style),
+        Paragraph("Unit Price", label_style),
+        Paragraph("Amount", label_style),
     ]
     table_data = [item_header]
     for item in line_items:
         table_data.append([
             Paragraph(item.description, normal_style),
-            Paragraph(str(int(item.quantity) if item.quantity == int(item.quantity) else item.quantity), normal_style),
-            Paragraph(f"${item.unit_price:,.2f}", right_style),
-            Paragraph(f"${item.total:,.2f}", right_style),
+            Paragraph(f"{int(item.quantity) if item.quantity == int(item.quantity) else item.quantity} lbs", normal_style),
+            Paragraph(f"${item.unit_price:,.2f} / lbs", normal_style),
+            Paragraph(f"${item.total:,.2f}", normal_style),
         ])
     if not line_items:
         table_data.append([Paragraph("No items", normal_style), '', '', ''])
 
-    items_table = Table(table_data, colWidths=[95*mm, 20*mm, 35*mm, 20*mm])
+    items_table = Table(table_data, colWidths=[85*mm, 30*mm, 25*mm, 30*mm])
     items_table.setStyle(TableStyle([
         # Header
-        ('BACKGROUND', (0,0), (-1,0), primary_color),
-        ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#94a3b8')),
+        ('TEXTCOLOR', (0,0), (-1,0), colors.black),
         ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0,0), (-1,0), 8),
-        ('BOTTOMPADDING', (0,0), (-1,0), 8),
-        ('TOPPADDING', (0,0), (-1,0), 8),
+        ('FONTSIZE', (0,0), (-1,0), 9),
+        ('ALIGN', (0,0), (-1,0), 'CENTER'),
+        ('BOTTOMPADDING', (0,0), (-1,0), 6),
+        ('TOPPADDING', (0,0), (-1,0), 6),
         # Rows
-        ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, light_gray]),
         ('FONTSIZE', (0,1), (-1,-1), 9),
-        ('TOPPADDING', (0,1), (-1,-1), 6),
-        ('BOTTOMPADDING', (0,1), (-1,-1), 6),
-        ('ALIGN', (2,0), (-1,-1), 'RIGHT'),
-        ('LINEBELOW', (0,-1), (-1,-1), 0.5, colors.HexColor('#e5e7eb')),
-        ('LEFTPADDING', (0,0), (-1,-1), 6),
-        ('RIGHTPADDING', (0,0), (-1,-1), 6),
+        ('TOPPADDING', (0,1), (-1,-1), 4),
+        ('BOTTOMPADDING', (0,1), (-1,-1), 4),
+        ('ALIGN', (1,1), (-1,-1), 'LEFT'),
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.black),
+        ('LEFTPADDING', (0,0), (-1,-1), 5),
+        ('RIGHTPADDING', (0,0), (-1,-1), 5),
     ]))
     elements.append(items_table)
-    elements.append(Spacer(1, 6*mm))
+    elements.append(Spacer(1, 4*mm))
 
     # ─── TOTALS ────────────────────────────────────────────
     totals_data = [
-        [Paragraph("Subtotal:", right_style), Paragraph(f"${invoice.subtotal:,.2f}", right_style)],
-        [Paragraph(f"Tax ({invoice.tax_rate}%):", right_style), Paragraph(f"${invoice.tax_amount:,.2f}", right_style)],
-        [Paragraph("TOTAL:", right_bold_style), Paragraph(f"${invoice.total:,.2f}", right_bold_style)],
+        [Paragraph("Subtotal:", bold_style), Paragraph(f"${invoice.subtotal:,.2f}", bold_style)],
+        [Paragraph("Total:", bold_style), Paragraph(f"${invoice.total:,.2f}", bold_style)],
     ]
-    if invoice.amount_paid > 0:
-        totals_data.append([Paragraph("Amount Paid:", right_style), Paragraph(f"${invoice.amount_paid:,.2f}", right_style)])
-        totals_data.append([Paragraph("Balance Due:", right_bold_style), Paragraph(f"${invoice.balance_due:,.2f}", right_bold_style)])
-
-    totals_table = Table(totals_data, colWidths=[130*mm, 40*mm])
-    total_row = 2
+    
+    totals_table = Table(totals_data, colWidths=[140*mm, 30*mm])
     totals_table.setStyle(TableStyle([
-        ('LEFTPADDING', (0,0), (-1,-1), 4),
-        ('RIGHTPADDING', (0,0), (-1,-1), 4),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.black),
+        ('LEFTPADDING', (0,0), (-1,-1), 10),
+        ('RIGHTPADDING', (0,0), (-1,-1), 10),
         ('TOPPADDING', (0,0), (-1,-1), 4),
         ('BOTTOMPADDING', (0,0), (-1,-1), 4),
-        ('LINEABOVE', (0, total_row), (-1, total_row), 1.5, dark_gray),
-        ('BACKGROUND', (0, total_row), (-1, total_row), light_gray),
+        ('ALIGN', (0,0), (0,-1), 'LEFT'),
+        ('ALIGN', (1,0), (1,-1), 'LEFT'),
+        ('BACKGROUND', (0,0), (-1,-1), colors.white),
     ]))
     elements.append(totals_table)
 
