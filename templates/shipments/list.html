@@ -462,6 +462,8 @@
                                    {% if material in filters.material_list %}checked{% endif %}>
                             <label class="form-check-label" for="mat_{{ forloop.counter }}">{{ material }}</label>
                         </div>
+                        {% empty %}
+                        <div class="p-2 text-muted small text-center">No data found</div>
                         {% endfor %}
                     </div>
                 </div>

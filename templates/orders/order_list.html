@@ -434,6 +434,8 @@
                             <input class="form-check-input material-filter-check" type="checkbox" name="material" value="{{ mat }}" id="material{{ forloop.counter }}" {% if mat in filters.material_list %}checked{% endif %}>
                             <label class="form-check-label w-100" for="material{{ forloop.counter }}">{{ mat }}</label>
                         </div>
+                        {% empty %}
+                        <div class="p-2 text-muted small text-center">No data found</div>
                         {% endfor %}
                     </div>
                 </div>
