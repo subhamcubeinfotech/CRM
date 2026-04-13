@@ -1851,136 +1851,209 @@ def generate_shipping_confirmation_pdf(request, pk):
         Paragraph("SHIPPING CONFIRMATION", title_style),
         Spacer(1, 2*mm),
         Paragraph(f"<b>SHIPMENT ID:</b> {shipment.shipment_number}", right_style),
-        Paragraph(f"<b>ORDER ID:</b> {shipment.order.order_number if shipment.order else 'N/A'}", right_style),
+        Paragraph(f"<b>ORDER ID:</b> {shipment.order.order_number if shipment.order else '-'}", right_style),
         Paragraph(f"<b>DATE:</b> {datetime.now().strftime('%m/%d/%Y')} (ET)", right_style),
     ]
 
     company_lines = [Paragraph("FreightPro Inc.", company_name_style)]
-    if shipment.order and shipment.order.supplier:
-        s = shipment.order.supplier
-        company_lines.append(Paragraph(s.address_line1 or "", normal_style))
-        company_lines.append(Paragraph(f"{s.city}, {s.state} {s.postal_code}, {s.country}", normal_style))
+    # Default company address from tenant/settings can go here, but using supplier as fallback
+    s_comp = shipment.order.supplier if shipment.order else None
+    if s_comp:
+        addr = s_comp.address_line1 or ""
+        city_line = f"{s_comp.city}, {s_comp.state} {s_comp.postal_code}, {s_comp.country}".strip(', ')
+        company_lines.append(Paragraph(addr, normal_style))
+        company_lines.append(Paragraph(city_line, normal_style))
 
     header_table = Table([[company_lines, shipment_info]], colWidths=[100*mm, 80*mm])
-    header_table.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'TOP')]))
+    header_table.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('LEFTPADDING', (0,0), (-1,-1), 0),
+        ('RIGHTPADDING', (0,0), (-1,-1), 0),
+    ]))
     elements.append(header_table)
-    elements.append(Spacer(1, 10*mm))
+    elements.append(Spacer(1, 8*mm))
+
+    # Styles for boxes
+    box_header_style = TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#94a3b8')),
+        ('TEXTCOLOR', (0,0), (-1,0), colors.black),
+        ('ALIGN', (0,0), (-1,0), 'CENTER'),
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0,0), (-1,0), 9),
+        ('BOTTOMPADDING', (0,0), (-1,0), 4),
+        ('TOPPADDING', (0,0), (-1,0), 4),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.black),
+        ('VALIGN', (0,1), (-1,-1), 'TOP'),
+        ('LEFTPADDING', (0,1), (-1,-1), 8),
+        ('RIGHTPADDING', (0,1), (-1,-1), 8),
+        ('TOPPADDING', (0,1), (-1,-1), 6),
+        ('BOTTOMPADDING', (0,1), (-1,-1), 8),
+    ])
 
     # ─── SHIPPER / RECEIVER ───
-    shipper_box = [Paragraph("SHIPPER", label_style)]
-    s = shipment.shipper or (shipment.order.supplier if shipment.order else None)
-    if s:
-        shipper_box.append(Paragraph(s.name, bold_style))
-        shipper_box.append(Paragraph(s.address_line1 or "", normal_style))
-        shipper_box.append(Paragraph(f"{s.city}, {s.state} {s.postal_code}, {s.country}", normal_style))
-        if s.phone: shipper_box.append(Paragraph(f"Phone: {s.phone}", normal_style))
+    # Shipper Box
+    s_party = shipment.shipper or (shipment.order.supplier if shipment.order else None)
+    shipper_content = []
+    if s_party:
+        shipper_content.append(Paragraph(s_party.name, bold_style))
+        shipper_content.append(Paragraph(s_party.address_line1 or "", normal_style))
+        csz = f"{s_party.city}, {s_party.state} {s_party.postal_code}, {s_party.country}".strip(', ')
+        shipper_content.append(Paragraph(csz, normal_style))
+        if s_party.phone: shipper_content.append(Paragraph(f"({s_party.phone[:3]}) {s_party.phone[3:6]}-{s_party.phone[6:]}" if len(s_party.phone)==10 else s_party.phone, normal_style))
+        
+        reqs = shipment.special_instructions or (shipment.order.notes if shipment.order else "")
+        if reqs: shipper_content.append(Paragraph(f"Requirements: {reqs}", normal_style))
+        
+        shipper_content.append(Spacer(1, 3*mm))
+        if shipment.pickup_number: shipper_content.append(Paragraph(f"<b>Pickup #:</b> {shipment.pickup_number}", normal_style))
+        if shipment.pickup_date: shipper_content.append(Paragraph(f"<b>Pickup Date:</b> {shipment.pickup_date.strftime('%m/%d/%Y')} (ET)", normal_style))
+        
+        app_type = shipment.get_pickup_appointment_type_display() if hasattr(shipment, 'get_pickup_appointment_type_display') else "Required"
+        shipper_content.append(Paragraph(f"<b>Pickup Appointment:</b> {app_type}", normal_style))
+        
+        p_contact = shipment.pickup_contact or (s_party.name if s_party else "")
+        shipper_content.append(Paragraph(f"<b>Contact:</b> {p_contact}", normal_style))
+        if shipment.pickup_email: shipper_content.append(Paragraph(shipment.pickup_email, normal_style))
+        if shipment.pickup_contact_phone: shipper_content.append(Paragraph(shipment.pickup_contact_phone, normal_style))
+
+    # Receiver Box
+    r_party = shipment.consignee or (shipment.order.receiver if shipment.order else None)
+    receiver_content = []
+    if r_party:
+        receiver_content.append(Paragraph(r_party.name, bold_style))
+        receiver_content.append(Paragraph(shipment.destination_address or r_party.address_line1 or "", normal_style))
+        csz = f"{shipment.destination_city or r_party.city}, {shipment.destination_state or r_party.state} {shipment.destination_postal_code or r_party.postal_code}, {shipment.destination_country or r_party.country}".strip(', ')
+        receiver_content.append(Paragraph(csz, normal_style))
+        if r_party.phone: receiver_content.append(Paragraph(f"({r_party.phone[:3]}) {r_party.phone[3:6]}-{r_party.phone[6:]}" if len(r_party.phone)==10 else r_party.phone, normal_style))
+        
+        if reqs: receiver_content.append(Paragraph(f"Requirements: {reqs}", normal_style))
+        
+        receiver_content.append(Spacer(1, 3*mm))
+        if shipment.delivery_number: receiver_content.append(Paragraph(f"<b>Delivery #:</b> {shipment.delivery_number}", normal_style))
+        if shipment.estimated_delivery_date: receiver_content.append(Paragraph(f"<b>Delivery Date:</b> {shipment.estimated_delivery_date.strftime('%m/%d/%Y')} (ET)", normal_style))
+        
+        app_type = shipment.get_delivery_appointment_type_display() if hasattr(shipment, 'get_delivery_appointment_type_display') else "Required"
+        receiver_content.append(Paragraph(f"<b>Delivery Appointment:</b> {app_type}", normal_style))
+        
+        d_contact = shipment.delivery_contact or (r_party.name if r_party else "")
+        receiver_content.append(Paragraph(f"<b>Contact:</b> {d_contact}", normal_style))
+        if shipment.delivery_email: receiver_content.append(Paragraph(shipment.delivery_email, normal_style))
+        if shipment.delivery_contact_phone: receiver_content.append(Paragraph(shipment.delivery_contact_phone, normal_style))
+
+    shipper_table = Table([["Shipper"], [shipper_content]], colWidths=[88*mm])
+    shipper_table.setStyle(box_header_style)
     
-    if shipment.pickup_date:
-        shipper_box.append(Spacer(1, 2*mm))
-        shipper_box.append(Paragraph(f"<b>Pickup Date:</b> {shipment.pickup_date.strftime('%m/%d/%Y')}", normal_style))
+    receiver_table = Table([["Receiver"], [receiver_content]], colWidths=[88*mm])
+    receiver_table.setStyle(box_header_style)
 
-    receiver_box = [Paragraph("RECEIVER", label_style)]
-    r = shipment.consignee or (shipment.order.receiver if shipment.order else None)
-    if r:
-        receiver_box.append(Paragraph(r.name, bold_style))
-        receiver_box.append(Paragraph(shipment.destination_address or "", normal_style))
-        receiver_box.append(Paragraph(f"{r.city}, {r.state} {r.postal_code}, {r.country}", normal_style))
-        if r.phone: receiver_box.append(Paragraph(f"Phone: {r.phone}", normal_style))
-
-    if shipment.estimated_delivery_date:
-        receiver_box.append(Spacer(1, 2*mm))
-        receiver_box.append(Paragraph(f"<b>Delivery Date:</b> {shipment.estimated_delivery_date.strftime('%m/%d/%Y')}", normal_style))
-
-    parties_table = Table([[shipper_box, receiver_box]], colWidths=[90*mm, 90*mm])
-    parties_table.setStyle(TableStyle([
-        ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
+    parties_grid = Table([[shipper_table, Spacer(1, 4*mm), receiver_table]], colWidths=[88*mm, 4*mm, 88*mm])
+    parties_grid.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
-        ('LEFTPADDING', (0,0), (-1,-1), 10),
-        ('RIGHTPADDING', (0,0), (-1,-1), 10),
-        ('TOPPADDING', (0,0), (-1,-1), 10),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 10),
+        ('LEFTPADDING', (0,0), (-1,-1), 0),
+        ('RIGHTPADDING', (0,0), (-1,-1), 0),
     ]))
-    elements.append(parties_table)
+    elements.append(parties_grid)
     elements.append(Spacer(1, 6*mm))
 
     # ─── ORDERED BY / CARRIER ───
-    ordered_by = [
-        Paragraph("ORDERED BY", label_style),
+    ordered_by_content = [
+        Paragraph(f"<b>Ordered By:</b>", normal_style),
         Paragraph(shipment.customer.name if shipment.customer else "N/A", bold_style),
-        Paragraph(shipment.customer.email if shipment.customer and shipment.customer.email else "", normal_style),
     ]
     if user_contact:
-        ordered_by.append(Spacer(1, 2*mm))
-        ordered_by.append(Paragraph(f"<b>Contact:</b> {user_contact.get_full_name() or user_contact.username}", normal_style))
+        ordered_by_content.append(Paragraph(f'<font color="#1e40af">{user_contact.email or ""}</font>', normal_style))
+    elif shipment.customer and shipment.customer.email:
+        ordered_by_content.append(Paragraph(f'<font color="#1e40af">{shipment.customer.email}</font>', normal_style))
 
-    carrier_info = [
-        Paragraph("CARRIER / RATE", label_style),
-        Paragraph(shipment.carrier.name if shipment.carrier else "TBD", bold_style),
-        Paragraph(f"Rate: ${shipment.quoted_amount:,.2f}" if shipment.quoted_amount else "Rate: TBD", normal_style),
+    carrier_content = [
+        [Paragraph("<b>Carrier</b>", normal_style)],
+        [Paragraph(shipment.carrier.name if shipment.carrier else "TBD", normal_style)],
+    ]
+    rate_content = [
+        [Paragraph("<b>Rate</b>", normal_style)],
+        [Paragraph(f"${shipment.quoted_amount:,.2f}" if shipment.quoted_amount else "", normal_style)],
     ]
 
-    middle_table = Table([[ordered_by, carrier_info]], colWidths=[90*mm, 90*mm])
-    middle_table.setStyle(TableStyle([
-        ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
-        ('VALIGN', (0,0), (-1,-1), 'TOP'),
-        ('LEFTPADDING', (0,0), (-1,-1), 10),
-        ('TOPPADDING', (0,0), (-1,-1), 10),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 10),
+    carrier_rate_table = Table([
+        [Table(carrier_content, colWidths=[80*mm])], # Reduced from 88 to fit inside wrapper
+        [Table(rate_content, colWidths=[80*mm])]
+    ], colWidths=[88*mm])
+    carrier_rate_table.setStyle(TableStyle([
+        ('GRID', (0,0), (-1,-1), 0.5, colors.black),
+        ('LEFTPADDING', (0,0), (-1,-1), 4),
+        ('RIGHTPADDING', (0,0), (-1,-1), 4),
+        ('TOPPADDING', (0,0), (-1,-1), 2),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 2),
     ]))
-    elements.append(middle_table)
+
+    ordered_by_table = Table([[ordered_by_content]], colWidths=[88*mm])
+    ordered_by_table.setStyle(TableStyle([
+        ('GRID', (0,0), (-1,-1), 0.5, colors.black),
+        ('LEFTPADDING', (0,0), (-1,-1), 8),
+        ('TOPPADDING', (0,0), (-1,-1), 8),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 8),
+    ]))
+
+    middle_grid = Table([[ordered_by_table, Spacer(1, 4*mm), carrier_rate_table]], colWidths=[88*mm, 4*mm, 88*mm])
+    middle_grid.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('LEFTPADDING', (0,0), (-1,-1), 0),
+        ('RIGHTPADDING', (0,0), (-1,-1), 0),
+    ]))
+    elements.append(middle_grid)
     elements.append(Spacer(1, 6*mm))
 
     # ─── MANIFEST ITEMS ───
-    data = [[Paragraph("ITEM DESCRIPTION", th_style), Paragraph("PACKAGING", th_style), Paragraph("WEIGHT", th_style)]]
+    data = [[Paragraph("Item Description", th_style), Paragraph("Packaging", th_style), Paragraph("Weight", th_style)]]
     for item in manifest_items:
         data.append([
             Paragraph(item.material, td_style),
-            Paragraph(item.packaging or "-", td_center),
-            Paragraph(f"{item.weight:,.0f} {item.weight_unit}", td_center)
+            Paragraph(item.packaging or "-", td_style),
+            Paragraph(f"{item.weight:,.0f} {item.weight_unit}", td_style)
         ])
     
-    # Fill empty rows to maintain structure
+    # Fill empty rows
     while len(data) < 7:
         data.append(["", "", ""])
 
+    # Totals Row
     data.append([
-        Paragraph("<b>TOTALS</b>", ParagraphStyle('RightB', parent=td_style, alignment=TA_RIGHT)),
+        Paragraph("<b>TOTALS</b>", ParagraphStyle('CenterB', parent=td_style, alignment=TA_CENTER)),
         "",
-        Paragraph(f"<b>{shipment.total_weight:,.0f} kg</b>", td_center)
+        Paragraph(f"<b>{shipment.total_weight:,.0f} lbs</b>", td_style)
     ])
 
     items_table = Table(data, colWidths=[90*mm, 50*mm, 40*mm])
     items_table.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,0), header_bg),
-        ('GRID', (0,0), (-1,-2), 0.5, colors.grey),
-        ('BOX', (0,-1), (-1,-1), 0.5, colors.grey),
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#94a3b8')),
+        ('TEXTCOLOR', (0,0), (-1,0), colors.black),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.black),
         ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
         ('TOPPADDING', (0,0), (-1,-1), 6),
         ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+        ('LEFTPADDING', (0,0), (-1,-1), 8),
     ]))
     elements.append(items_table)
     elements.append(Spacer(1, 6*mm))
 
-    # ─── INSTRUCTIONS ───
-    instructions_box = [
-        Paragraph("INSTRUCTIONS", label_style),
+    # ─── FOOTER BOXES ───
+    instr_content = [
+        Paragraph("<b>INSTRUCTIONS</b>", label_style),
         Paragraph(custom_instructions or shipment.special_instructions or "None", normal_style)
     ]
-    scale_box = [
-        Paragraph("SCALE REQUIRED", label_style),
+    scale_content = [
+        Paragraph("<b>SCALE REQUIRED</b>", label_style),
         Paragraph("YES" if scale_required else "NO", bold_style if scale_required else normal_style)
     ]
 
-    footer_row = Table([[instructions_box, scale_box]], colWidths=[130*mm, 50*mm])
+    footer_row = Table([[instr_content, scale_content]], colWidths=[130*mm, 50*mm])
     footer_row.setStyle(TableStyle([
-        ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.black),
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
         ('LEFTPADDING', (0,0), (-1,-1), 10),
         ('TOPPADDING', (0,0), (-1,-1), 10),
         ('BOTTOMPADDING', (0,0), (-1,-1), 10),
     ]))
-    elements.append(footer_row)
-
     elements.append(Spacer(1, 15*mm))
     elements.append(Paragraph("Generated by FreightPro", ParagraphStyle('Tiny', fontSize=7, textColor=colors.grey, alignment=TA_RIGHT)))
 
