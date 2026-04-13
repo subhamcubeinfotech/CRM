@@ -17,11 +17,11 @@
             <h1 class="h2">{{ invoice.invoice_number }}</h1>
         </div>
         <div class="btn-group">
-            <a href="{% url 'invoicing:invoice_print' invoice.pk %}" class="btn btn-outline-primary" target="_blank">
+            <a href="{% url 'invoicing:invoice_pdf' invoice.pk %}" class="btn btn-outline-primary" target="_blank">
                 <i class="fas fa-print me-2"></i>Print
             </a>
             <a href="{% url 'invoicing:invoice_pdf' invoice.pk %}" class="btn btn-outline-secondary">
-                <i class="fas fa-download me-2"></i>PDF
+                <i class="fas fa-file-pdf me-2"></i>Download PDF
             </a>
             <a href="{% url 'invoicing:send_invoice' invoice.pk %}" class="btn btn-outline-info">
                 <i class="fas fa-envelope me-2"></i>Email

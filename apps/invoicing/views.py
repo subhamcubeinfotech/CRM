@@ -301,14 +301,21 @@ def invoice_pdf(request, pk):
         Paragraph(f"<b>DUE:</b> {invoice.due_date.strftime('%m/%d/%Y')} (IT)", normal_style),
     ]
 
+    # --- Dynamic Branding ---
+    my_company = request.user.company
+    company_name = my_company.name if my_company else "FreightPro Logistics"
+    company_address = my_company.full_address if my_company else "Set address in settings"
+    company_phone = my_company.phone if my_company else ""
+    company_email = my_company.email if my_company else ""
+    
     company_info = [
-        Paragraph("FreightPro Logistics", company_style),
-        Paragraph("123 Logistics Way", right_style),
-        Paragraph("Chicago, IL 60601", right_style),
-        Paragraph("(555) 123-4567", right_style),
-        Paragraph("billing@freightpro.com", right_style),
+        Paragraph(company_name, company_style),
+        Paragraph(company_address, right_style),
     ]
+    if company_phone: company_info.append(Paragraph(company_phone, right_style))
+    if company_email: company_info.append(Paragraph(company_email, right_style))
 
+    # --- Header Table ---
     header_table = Table([[invoice_info, company_info]], colWidths=[95*mm, 75*mm])
     header_table.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
@@ -454,9 +461,11 @@ def invoice_pdf(request, pk):
     elements.append(Spacer(1, 4*mm))
 
     # ─── TOTALS ────────────────────────────────────────────
+    total_qty = sum(item.quantity for item in line_items)
     totals_data = [
+        [Paragraph("Total Quantity:", bold_style), Paragraph(f"{total_qty:,.2f} lbs", bold_style)],
         [Paragraph("Subtotal:", bold_style), Paragraph(f"${invoice.subtotal:,.2f}", bold_style)],
-        [Paragraph("Total:", bold_style), Paragraph(f"${invoice.total:,.2f}", bold_style)],
+        [Paragraph("Total Amount:", bold_style), Paragraph(f"${invoice.total:,.2f}", bold_style)],
     ]
     
     totals_table = Table(totals_data, colWidths=[140*mm, 30*mm])

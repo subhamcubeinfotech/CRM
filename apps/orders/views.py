@@ -977,14 +977,30 @@ def order_purchase_order_pdf(request, pk):
     elements = []
 
     # --- Header ---
+    my_company = request.user.company
+    company_name = my_company.name if my_company else "FreightPro Logistics"
+    company_address = my_company.full_address if my_company else "Address not set"
+    
     header_data = [
-        [Paragraph("PURCHASE ORDER", title_style), Paragraph(f"<b>PO #:</b> {po_number_override}<br/><b>Date:</b> {timezone.now().strftime('%Y-%m-%d')}", right_style)]
+        [
+            Paragraph("PURCHASE ORDER", title_style), 
+            Paragraph(f"<b>{company_name}</b><br/>{company_address}", right_style)
+        ]
     ]
     header_table = Table(header_data, colWidths=[110*mm, 70*mm])
     header_table.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'BOTTOM'), ('LEFTPADDING', (0,0), (-1,-1), 0), ('RIGHTPADDING', (0,0), (-1,-1), 0)]))
     elements.append(header_table)
     elements.append(Spacer(1, 5*mm))
     elements.append(HRFlowable(width="100%", thickness=1, color=primary_color))
+    elements.append(Spacer(1, 5*mm))
+    
+    # PO Info Row
+    po_meta_data = [
+        [Paragraph(f"<b>PO #:</b> {po_number_override}", normal_style), Paragraph(f"<b>Date:</b> {timezone.now().strftime('%Y-%m-%d')}", right_style)]
+    ]
+    po_meta_table = Table(po_meta_data, colWidths=[90*mm, 90*mm])
+    po_meta_table.setStyle(TableStyle([('LEFTPADDING', (0,0), (-1,-1), 0), ('RIGHTPADDING', (0,0), (-1,-1), 0)]))
+    elements.append(po_meta_table)
     elements.append(Spacer(1, 10*mm))
 
     # --- Vendor & Delivery Details ---
@@ -1057,8 +1073,10 @@ def order_purchase_order_pdf(request, pk):
     elements.append(items_table)
 
     # --- Totals ---
+    total_weight = sum(item.weight for item in manifest_items)
     totals_data = [
-        ['', '', '', Paragraph("<b>TOTAL</b>", right_style), Paragraph(f"<b>${total_amount:,.2f}</b>", right_style)]
+        ['', '', '', Paragraph("<b>Total Weight</b>", right_style), Paragraph(f"<b>{total_weight:,.2f}</b>", right_style)],
+        ['', '', '', Paragraph("<b>TOTAL AMOUNT</b>", right_style), Paragraph(f"<b>${total_amount:,.2f}</b>", right_style)]
     ]
     totals_table = Table(totals_data, colWidths=[80*mm, 25*mm, 20*mm, 30*mm, 25*mm])
     totals_table.setStyle(TableStyle([
