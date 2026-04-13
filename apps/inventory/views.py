@@ -9,7 +9,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Sum, F, Q, ExpressionWrapper, DecimalField, Case, When, IntegerField
-from .models import Warehouse, InventoryItem, Material
+from django.db import transaction
+from .models import Warehouse, InventoryItem, Material, InventoryTransaction
 from .forms import WarehouseForm, InventoryItemForm, MaterialForm
 from apps.accounts.utils import filter_by_user_company, check_company_access
 from apps.orders.models import ManifestItem, Order, Tag, ShippingTerm, PackagingType
@@ -738,13 +739,24 @@ def inventory_item_add_general(request):
             
             form = InventoryItemForm(item_data, user=request.user)
             if form.is_valid():
-                item = form.save(commit=False)
-                item.tenant = request.user.tenant
-                if not item.representative:
-                    item.representative = request.user
-                
-                item.save()
-                form.save_m2m() # Important for tags
+                with transaction.atomic():
+                    item = form.save(commit=False)
+                    item.tenant = request.user.tenant
+                    if not item.representative:
+                        item.representative = request.user
+                    
+                    item.save()
+                    form.save_m2m() # Important for tags
+
+                    # Log Initial Transaction
+                    InventoryTransaction.objects.create(
+                        item=item,
+                        transaction_type='INITIAL',
+                        quantity_change=item.quantity,
+                        new_quantity=item.quantity,
+                        user=request.user,
+                        notes="Bulk entry initial stock"
+                    )
                 created_count += 1
             else:
                 # Collect errors for each invalid item
@@ -821,19 +833,30 @@ def inventory_item_add(request, pk):
 
         form = InventoryItemForm(post_data, user=request.user)
         if form.is_valid():
-            item = form.save(commit=False)
-            item.tenant = request.user.tenant
-            if not item.representative:
-                item.representative = request.user
-            
-            # Sync offered_weight with quantity on creation
-            if not item.pk: # New item
-                item.offered_weight = item.quantity
-                item.offered_weight_unit = item.unit_of_measure
+            with transaction.atomic():
+                item = form.save(commit=False)
+                item.tenant = request.user.tenant
+                if not item.representative:
+                    item.representative = request.user
                 
-            item.save()
+                # Sync offered_weight with quantity on creation
+                if not item.pk: # New item
+                    item.offered_weight = item.quantity
+                    item.offered_weight_unit = item.unit_of_measure
+                    
+                item.save()
+                form.save_m2m()
 
-            form.save_m2m()
+                # Log Initial Transaction
+                InventoryTransaction.objects.create(
+                    item=item,
+                    transaction_type='INITIAL',
+                    quantity_change=item.quantity,
+                    new_quantity=item.quantity,
+                    user=request.user,
+                    notes="Initial stock entry"
+                )
+
             messages.success(request, f"Item '{item.product_name}' successfully added to {warehouse.name}.")
             return redirect('inventory:warehouse_detail', pk=warehouse.pk)
     else:
@@ -888,9 +911,36 @@ def inventory_item_edit(request, pk):
 
         form = InventoryItemForm(post_data, instance=item, user=request.user)
         if form.is_valid():
-            item = form.save()
+            with transaction.atomic():
+                # If no history exists yet (for old items), create an initial entry first
+                if not item.transactions.exists():
+                    InventoryTransaction.objects.create(
+                        item=item,
+                        transaction_type='INITIAL',
+                        quantity_change=item.quantity,
+                        new_quantity=item.quantity,
+                        user=item.representative,
+                        notes="Inventory logging started (Existing stock)"
+                    )
+                
+                old_quantity = item.quantity
+                item = form.save()
+                new_quantity = item.quantity
+                
+                # Log adjustment if quantity changed
+                if old_quantity != new_quantity:
+                    change = new_quantity - old_quantity
+                    InventoryTransaction.objects.create(
+                        item=item,
+                        transaction_type='ADJUST',
+                        quantity_change=change,
+                        new_quantity=new_quantity,
+                        user=request.user,
+                        notes="Manual stock adjustment"
+                    )
+
             messages.success(request, f"Item '{item.product_name}' updated successfully.")
-            return redirect('inventory:warehouse_detail', pk=warehouse.pk)
+            return redirect('inventory:item_detail', pk=item.pk)
     else:
         form = InventoryItemForm(instance=item, user=request.user)
     
