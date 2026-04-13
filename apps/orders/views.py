@@ -477,13 +477,26 @@ def order_create(request):
         import time, random
         order_number = f"STH-O-{request.user.id}-{int(time.time())}-{random.randint(1000, 9999)}"
 
+        # Validate required fields
+        supplier_id = request.POST.get('supplier')
+        receiver_id = request.POST.get('receiver')
+        
+        if not supplier_id or not receiver_id:
+            logger.warning(f"Aborted order creation: Incomplete POST data from {request.user}")
+            # If it's an AJAX request (though it shouldn't be), return JSON. 
+            # Otherwise, just redirect back or show an error.
+            # Since this usually happens from an accidental drawer post, we'll just redirect back.
+            from django.contrib import messages
+            messages.error(request, "Order creation failed: Supplier and Receiver are required.")
+            return redirect('orders:order_create')
+
         # Create the order
         order = Order.objects.create(
             order_number=order_number,
-            po_number=request.POST.get('po_number'),
-            so_number=request.POST.get('so_number'),
-            supplier_id=request.POST.get('supplier') or None,
-            receiver_id=request.POST.get('receiver') or None,
+            po_number=request.POST.get('po_number', ''),
+            so_number=request.POST.get('so_number', ''),
+            supplier_id=supplier_id,
+            receiver_id=receiver_id,
             source_location_id=resolve_location(source_loc_val, request.user) or None,
             destination_location_id=resolve_location(dest_loc_val, request.user) or None,
             total_weight_target=request.POST.get('total_weight_target') or 0,
