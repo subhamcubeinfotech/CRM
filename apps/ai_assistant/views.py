@@ -225,6 +225,10 @@ def approve_all_items(request, email_id):
 @login_required
 def smart_matches_dashboard(request):
     """Show smart demand-supply matches"""
+    # Trigger matching engine to ensure fresh results on page load
+    from .matching import run_matching
+    run_matching(request.user.tenant)
+    
     matches = SmartMatch.objects.filter(
         tenant=request.user.tenant,
         is_dismissed=False,

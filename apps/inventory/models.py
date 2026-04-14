@@ -192,6 +192,7 @@ class InventoryItem(TenantAwareModel):
     
     # Reorder
     reorder_level = models.DecimalField(max_digits=20, decimal_places=2, default=10, help_text='Minimum quantity before reorder')
+    billing_preference = models.CharField(max_length=50, default='standard')
     
     @property
     def effective_image(self):
