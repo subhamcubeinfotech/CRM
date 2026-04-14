@@ -55,3 +55,23 @@ class CustomUserAdmin(UserAdmin):
             'fields': ('username', 'email', 'password1', 'password2', 'role', 'company'),
         }),
     )
+
+
+from .models import LoginAuditLog
+
+@admin.register(LoginAuditLog)
+class LoginAuditLogAdmin(admin.ModelAdmin):
+    """Read-only log view for security auditing"""
+    list_display = ('username', 'ip_address', 'status', 'timestamp')
+    list_filter = ('status', 'timestamp')
+    search_fields = ('username', 'ip_address', 'user_agent')
+    readonly_fields = ('username', 'ip_address', 'user_agent', 'status', 'timestamp')
+    
+    def has_add_permission(self, request):
+        return False
+        
+    def has_change_permission(self, request, obj=None):
+        return False
+    
+    def has_delete_permission(self, request, obj=None):
+        return False # Keeping it for security verification, but usually logs shouldn't be deleted easily

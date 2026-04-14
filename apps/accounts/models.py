@@ -175,3 +175,61 @@ class CompanyHistory(models.Model):
 
     def __str__(self):
         return f"{self.company.name} - {self.action} at {self.created_at}"
+
+
+class LoginAuditLog(models.Model):
+    """Register for tracking every login attempt (pass or fail)"""
+    STATUS_CHOICES = (
+        ('success', 'Success'),
+        ('failed', 'Failed'),
+    )
+    username = models.CharField(max_length=255)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.CharField(max_length=255, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-timestamp']
+        verbose_name = 'Login Audit Log'
+        verbose_name_plural = 'Login Audit Logs'
+        
+    def __str__(self):
+        return f"{self.username} - {self.status} from {self.ip_address} at {self.timestamp}"
+
+
+# --- Security Logic: Watch for Logins ---
+from django.contrib.auth.signals import user_logged_in, user_login_failed
+from django.dispatch import receiver
+
+def get_client_ip(request):
+    """Helper to get user's real IP address from request"""
+    if not request: return None
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        return x_forwarded_for.split(',')[0].strip()
+    return request.META.get('REMOTE_ADDR')
+
+@receiver(user_logged_in)
+def log_successful_login(sender, request, user, **kwargs):
+    """Fires when someone logs in successfully"""
+    ip = get_client_ip(request)
+    ua = request.META.get('HTTP_USER_AGENT', '')[:250] if request else ''
+    LoginAuditLog.objects.create(
+        username=user.username,
+        ip_address=ip,
+        user_agent=ua,
+        status='success'
+    )
+
+@receiver(user_login_failed)
+def log_failed_login(sender, credentials, request, **kwargs):
+    """Fires when a login attempt fails (wrong password etc)"""
+    ip = get_client_ip(request)
+    ua = request.META.get('HTTP_USER_AGENT', '')[:250] if request else ''
+    LoginAuditLog.objects.create(
+        username=credentials.get('username', getattr(credentials, 'email', 'Unknown')),
+        ip_address=ip,
+        user_agent=ua,
+        status='failed'
+    )
