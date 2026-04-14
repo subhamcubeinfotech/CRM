@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Add Credit Memo{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Apply Credit Memo to {{ invoice.invoice_number }}</h6>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small mb-4">
+                        A credit memo will reduce the balance due on this invoice. 
+                        Current Balance: <strong>${{ invoice.balance_due }}</strong>
+                    </p>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">Credit Amount ($)</label>
+                            <input type="number" name="amount" class="form-control" step="0.01" max="{{ invoice.balance_due }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Reason / Notes</label>
+                            <input type="text" name="reason" class="form-control" placeholder="e.g. Return, Overcharge adjustment" required>
+                        </div>
+                        
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary">Apply Credit</button>
+                            <a href="{% url 'invoicing:invoice_detail' pk=invoice.pk %}" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

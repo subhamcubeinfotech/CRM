@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Create Recurring Invoice{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Create Recurring Invoice Template</h1>
+        <p class="text-muted small">Set up a template for automated invoice generation</p>
+    </div>
+
+    <form method="post" id="recurring-form">
+        {% csrf_token %}
+        <div class="row">
+            <div class="col-lg-8">
+                <!-- Basic Info -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Template Details</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Customer</label>
+                                <select name="customer" class="form-select" required>
+                                    <option value="">Select Customer...</option>
+                                    {% for customer in customers %}
+                                    <option value="{{ customer.id }}">{{ customer.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Frequency</label>
+                                <select name="frequency" class="form-select" required>
+                                    {% for key, val in frequencies %}
+                                    <option value="{{ key }}" {% if key == 'monthly' %}selected{% endif %}>{{ val }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Start Date</label>
+                                <input type="date" name="start_date" class="form-control" value="{{ today | date:'Y-m-d' }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Tax Rate (%)</label>
+                                <input type="number" name="tax_rate" class="form-control" step="0.01" value="0">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Line Items -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary">Line Items</h6>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addRow()">
+                            <i class="fas fa-plus me-1"></i>Add Item
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <table class="table" id="items-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 50%;">Description</th>
+                                    <th>Quantity</th>
+                                    <th>Unit Price</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><input type="text" name="description[]" class="form-control" placeholder="Item description" required></td>
+                                    <td><input type="number" name="quantity[]" class="form-control" step="0.01" value="1"></td>
+                                    <td><input type="number" name="unit_price[]" class="form-control" step="0.01" value="0"></td>
+                                    <td></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Settings</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Payment Terms</label>
+                            <input type="text" name="terms" class="form-control" value="Net 30 days">
+                        </div>
+                        <hr>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Save Template</button>
+                            <a href="{% url 'invoicing:recurring_invoice_list' %}" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+    function addRow() {
+        const table = document.getElementById('items-table').getElementsByTagName('tbody')[0];
+        const newRow = table.insertRow();
+        newRow.innerHTML = `
+            <td><input type="text" name="description[]" class="form-control" placeholder="Item description"></td>
+            <td><input type="number" name="quantity[]" class="form-control" step="0.01" value="1"></td>
+            <td><input type="number" name="unit_price[]" class="form-control" step="0.01" value="0"></td>
+            <td><button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('tr').remove()"><i class="fas fa-trash"></i></button></td>
+        `;
+    }
+</script>
+{% endblock %}

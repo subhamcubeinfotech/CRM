@@ -40,15 +40,20 @@
             </div>
         </div>
         <div class="col-md-3 mb-3">
-            <div class="card stat-card warning h-100">
-                <div class="card-body">
-                    <div class="stat-label">Pending Invoices</div>
-                    <div class="stat-value">{{ pending_invoices_count }}</div>
-                    <small class="text-muted">
-                        <i class="fas fa-dollar-sign me-1"></i>${{ pending_invoices_total|floatformat:0|intcomma }} outstanding
-                    </small>
+            <a href="{% url 'invoicing:invoice_list' %}" class="text-decoration-none text-reset">
+                <div class="card stat-card warning h-100">
+                    <div class="card-body">
+                        <div class="stat-label d-flex justify-content-between align-items-center">
+                            <span>Pending Invoices</span>
+                            <i class="fas fa-chevron-right small opacity-50"></i>
+                        </div>
+                        <div class="stat-value">{{ pending_invoices_count }}</div>
+                        <small class="text-muted">
+                            <i class="fas fa-dollar-sign me-1"></i>${{ pending_invoices_total|floatformat:0|intcomma }} outstanding
+                        </small>
+                    </div>
                 </div>
-            </div>
+            </a>
         </div>
         <div class="col-md-3 mb-3">
             <div class="card stat-card success h-100">

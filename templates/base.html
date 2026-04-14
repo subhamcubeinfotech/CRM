@@ -808,18 +808,21 @@
 
     <div class="global-floating-action-stack">
         <div class="global-floating-icon-row">
-            <a href="#" class="global-floating-action-btn help" aria-label="Help" data-bs-toggle="offcanvas" data-bs-target="#globalHelpDrawer">
+            <a href="#" class="global-floating-action-btn help" aria-label="Help" data-bs-toggle="offcanvas"
+                data-bs-target="#globalHelpDrawer">
                 <span class="global-floating-tooltip">Help</span>
                 <i class="fas fa-question"></i>
             </a>
-            <a href="#" class="global-floating-action-btn shipment" aria-label="Book Freight" data-bs-toggle="modal" data-bs-target="#bookFreightModal">
+            <a href="#" class="global-floating-action-btn shipment" aria-label="Book Freight" data-bs-toggle="modal"
+                data-bs-target="#bookFreightModal">
                 <span class="global-floating-tooltip">Book Freight</span>
                 <i class="fas fa-truck"></i>
             </a>
         </div>
     </div>
 
-    <div class="offcanvas offcanvas-end help-drawer" tabindex="-1" id="globalHelpDrawer" aria-labelledby="globalHelpDrawerLabel">
+    <div class="offcanvas offcanvas-end help-drawer" tabindex="-1" id="globalHelpDrawer"
+        aria-labelledby="globalHelpDrawerLabel">
         <div class="offcanvas-header">
             <div>
                 <div class="help-drawer-brand" id="globalHelpDrawerLabel">
@@ -890,7 +893,8 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <button type="button" class="btn btn-link text-dark p-0 border-0" data-bs-dismiss="modal" aria-label="Back">
+                    <button type="button" class="btn btn-link text-dark p-0 border-0" data-bs-dismiss="modal"
+                        aria-label="Back">
                         <i class="fas fa-chevron-left"></i>
                     </button>
                     <h5 class="modal-title mx-auto">Make a suggestion</h5>
@@ -901,20 +905,26 @@
                     <form class="help-ticket-form" data-ticket-type="suggestion">
                         {% csrf_token %}
                         <div class="mb-3">
-                            <label for="suggestionNotifyEmail">Get notified by email<span class="text-danger">*</span></label>
-                            <input type="email" class="form-control" id="suggestionNotifyEmail" name="notify_email" value="subham32032@gmail.com" readonly required>
+                            <label for="suggestionNotifyEmail">Get notified by email<span
+                                    class="text-danger">*</span></label>
+                            <input type="email" class="form-control" id="suggestionNotifyEmail" name="notify_email"
+                                value="subham32032@gmail.com" readonly required>
                             <div class="form-text">Replies and ticket updates will be sent to this email</div>
                         </div>
                         <div class="mb-3">
                             <label for="suggestionTitle">Title<span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="suggestionTitle" name="title" placeholder="Enter text here..." required>
+                            <input type="text" class="form-control" id="suggestionTitle" name="title"
+                                placeholder="Enter text here..." required>
                         </div>
                         <div class="mb-3">
-                            <label for="suggestionDescription">Detailed Description<span class="text-danger">*</span></label>
-                            <textarea class="form-control" id="suggestionDescription" name="description" rows="5" placeholder="Enter text here..." required></textarea>
+                            <label for="suggestionDescription">Detailed Description<span
+                                    class="text-danger">*</span></label>
+                            <textarea class="form-control" id="suggestionDescription" name="description" rows="5"
+                                placeholder="Enter text here..." required></textarea>
                         </div>
                         <div class="help-ticket-actions">
-                            <button type="submit" class="btn btn-primary help-ticket-submit">Create ticket <i class="fas fa-ticket-alt ms-2"></i></button>
+                            <button type="submit" class="btn btn-primary help-ticket-submit">Create ticket <i
+                                    class="fas fa-ticket-alt ms-2"></i></button>
                             <a href="#" class="help-ticket-cancel" data-bs-dismiss="modal">Cancel</a>
                         </div>
                     </form>
@@ -927,7 +937,8 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <button type="button" class="btn btn-link text-dark p-0 border-0" data-bs-dismiss="modal" aria-label="Back">
+                    <button type="button" class="btn btn-link text-dark p-0 border-0" data-bs-dismiss="modal"
+                        aria-label="Back">
                         <i class="fas fa-chevron-left"></i>
                     </button>
                     <h5 class="modal-title mx-auto">Report a bug</h5>
@@ -939,23 +950,28 @@
                         {% csrf_token %}
                         <div class="mb-3">
                             <label for="bugNotifyEmail">Get notified by email<span class="text-danger">*</span></label>
-                            <input type="email" class="form-control" id="bugNotifyEmail" name="notify_email" value="subham32032@gmail.com" readonly required>
+                            <input type="email" class="form-control" id="bugNotifyEmail" name="notify_email"
+                                value="subham32032@gmail.com" readonly required>
                             <div class="form-text">Replies and ticket updates will be sent to this email</div>
                         </div>
                         <div class="mb-3">
                             <label for="bugTitle">Title<span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="bugTitle" name="title" placeholder="Enter text here..." required>
+                            <input type="text" class="form-control" id="bugTitle" name="title"
+                                placeholder="Enter text here..." required>
                         </div>
                         <div class="mb-3">
                             <label for="bugDescription">Description<span class="text-danger">*</span></label>
-                            <textarea class="form-control" id="bugDescription" name="description" rows="4" placeholder="Enter text here..." required></textarea>
+                            <textarea class="form-control" id="bugDescription" name="description" rows="4"
+                                placeholder="Enter text here..." required></textarea>
                         </div>
                         <div class="mb-3">
                             <label for="bugSteps">Steps to Reproduce<span class="text-danger">*</span></label>
-                            <textarea class="form-control" id="bugSteps" name="steps" rows="4" placeholder="Enter text here..." required></textarea>
+                            <textarea class="form-control" id="bugSteps" name="steps" rows="4"
+                                placeholder="Enter text here..." required></textarea>
                         </div>
                         <div class="help-ticket-actions">
-                            <button type="submit" class="btn btn-primary help-ticket-submit">Create ticket <i class="fas fa-ticket-alt ms-2"></i></button>
+                            <button type="submit" class="btn btn-primary help-ticket-submit">Create ticket <i
+                                    class="fas fa-ticket-alt ms-2"></i></button>
                             <a href="#" class="help-ticket-cancel" data-bs-dismiss="modal">Cancel</a>
                         </div>
                     </form>
@@ -975,16 +991,20 @@
                     <form>
                         <div class="mb-4">
                             <label for="freightPickupAddress">Pickup Address <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="freightPickupAddress" placeholder="Insert Pickup Address">
+                            <input type="text" class="form-control" id="freightPickupAddress"
+                                placeholder="Insert Pickup Address">
                         </div>
 
                         <div class="mb-4">
-                            <label for="freightDeliveryAddress">Delivery Address <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="freightDeliveryAddress" placeholder="Insert Delivery Address">
+                            <label for="freightDeliveryAddress">Delivery Address <span
+                                    class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="freightDeliveryAddress"
+                                placeholder="Insert Delivery Address">
                         </div>
 
                         <div class="mb-4">
-                            <label for="freightPickupDateTime">Pickup Date and Time <span class="text-danger">*</span></label>
+                            <label for="freightPickupDateTime">Pickup Date and Time <span
+                                    class="text-danger">*</span></label>
                             <input type="datetime-local" class="form-control" id="freightPickupDateTime">
                         </div>
 
@@ -1007,10 +1027,10 @@
 
     <script>
         // Auto-hide alerts after 5 seconds
-        document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(function() {
+        document.addEventListener('DOMContentLoaded', function () {
+            setTimeout(function () {
                 const alerts = document.querySelectorAll('.alert:not(.alert-permanent)');
-                alerts.forEach(function(alert) {
+                alerts.forEach(function (alert) {
                     const bsAlert = new bootstrap.Alert(alert);
                     bsAlert.close();
                 });
@@ -1024,8 +1044,8 @@
                 return cookieValue || '';
             }
 
-            document.querySelectorAll('.help-ticket-form').forEach(function(form) {
-                form.addEventListener('submit', async function(event) {
+            document.querySelectorAll('.help-ticket-form').forEach(function (form) {
+                form.addEventListener('submit', async function (event) {
                     event.preventDefault();
 
                     if (!form.checkValidity()) {
