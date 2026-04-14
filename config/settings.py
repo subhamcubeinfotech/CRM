@@ -257,3 +257,19 @@ MAP_TILE_SERVER_URL = os.environ.get('MAP_TILE_SERVER_URL', 'https://{s}.basemap
 # Site Configuration for Emails
 SITE_DOMAIN = os.environ.get('SITE_DOMAIN', '127.0.0.1:8000')
 SITE_PROTOCOL = os.environ.get('SITE_PROTOCOL', 'http')
+IMAP_HOST = os.environ.get('IMAP_HOST', 'imap.gmail.com')
+IMAP_PORT = int(os.environ.get('IMAP_PORT', 993))
+IMAP_USE_SSL = os.environ.get('IMAP_USE_SSL', 'True') == 'True'
+
+# Celery configuration
+CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', CELERY_BROKER_URL)
+
+# Celery beat schedule – fetch vendor emails every 5 minutes
+from celery.schedules import crontab
+CELERY_BEAT_SCHEDULE = {
+    'fetch-vendor-emails-every-5-minutes': {
+        'task': 'apps.ai_assistant.tasks.fetch_vendor_emails',
+        'schedule': crontab(minute='*/5'),
+    },
+}

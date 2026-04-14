@@ -1,176 +1,45 @@
-{% extends 'base.html' %}
-{% block title %}Pending Inventory - AI Ingestion{% endblock %}
-
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Pending Inventory{% endblock %}
 {% block content %}
-<div class="container-fluid py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h2 class="mb-1"><i class="fas fa-envelope-open-text text-primary me-2"></i>Pending Inventory</h2>
-            <p class="text-muted mb-0">Review supplier inventory extracted from emails</p>
-        </div>
-        <span class="badge bg-primary fs-6">{{ pending_emails.count }} Pending</span>
-    </div>
-
-    {% if pending_emails %}
-    {% for email in pending_emails %}
-    <div class="card mb-4 border-0 shadow-sm">
-        <div class="card-header bg-gradient" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h5 class="mb-1 text-white"><i class="fas fa-envelope me-2"></i>{{ email.subject }}</h5>
-                    <small class="text-white-50">From: {{ email.sender_name }} &lt;{{ email.sender_email }}&gt; | {{ email.received_at|date:"M d, Y h:i A" }}</small>
-                </div>
-                <div>
-                    {% if email.matched_company %}
-                    <span class="badge bg-success"><i class="fas fa-building me-1"></i>{{ email.matched_company.name }}</span>
+<h2 class="ui header" style="margin-top:20px;">Pending Inventory Emails</h2>
+<div class="ui segment" style="background:rgba(255,255,255,0.9); backdrop-filter:blur(8px);">
+  {% if pending_emails %}
+    <div class="ui relaxed divided list">
+      {% for email in pending_emails %}
+        <div class="item" style="padding:15px; border-bottom:1px solid #eee;">
+          <div class="content">
+            <div class="header" style="font-size:1.2em;">{{ email.subject }}</div>
+            <div class="description" style="margin-top:5px;">
+              <strong>From:</strong> {{ email.sender_name }} &lt;{{ email.sender_email }}&gt;<br>
+              <strong>Received:</strong> {{ email.received_at|date:"M d, Y H:i" }}
+            </div>
+            <div class="ui tiny button" style="margin-top:8px;" onclick="location.href='{% url 'ai_assistant:approve_all' email.id %}'">Approve All Items</div>
+            <div class="ui tiny red button" style="margin-top:8px;" onclick="location.href='{% url 'ai_assistant:reject_item' email.id %}'">Reject All</div>
+            <div class="ui relaxed list" style="margin-top:10px;">
+              {% for item in email.items.all %}
+                <div class="item" style="padding:8px; border:1px solid #ddd; border-radius:4px; margin-bottom:5px;">
+                  <div class="content">
+                    <div class="header">{{ item.product_name }} ({{ item.quantity }} {{ item.unit }})</div>
+                    <div class="description">Price: ${{ item.price }} {{ item.price_unit }}</div>
+                    {% if item.status == 'pending' %}
+                      <div class="ui tiny green button" style="margin-top:5px;" onclick="location.href='{% url 'ai_assistant:approve_item' item.id %}'">Approve</div>
+                      <div class="ui tiny red button" style="margin-top:5px;" onclick="location.href='{% url 'ai_assistant:reject_item' item.id %}'">Reject</div>
+                    {% elif item.status == 'approved' %}
+                      <span style="color:green; font-weight:bold;">Approved</span>
+                    {% else %}
+                      <span style="color:red; font-weight:bold;">Rejected</span>
                     {% endif %}
-                    <button class="btn btn-sm btn-light ms-2" onclick="approveAllItems({{ email.id }})">
-                        <i class="fas fa-check-double me-1"></i>Approve All
-                    </button>
+                  </div>
                 </div>
+              {% endfor %}
             </div>
+          </div>
         </div>
-        <div class="card-body p-0">
-            <div class="row g-0">
-                <!-- Email Body -->
-                <div class="col-md-4 border-end p-3" style="max-height: 400px; overflow-y: auto; background: #f8f9fa;">
-                    <small class="text-muted d-block mb-2"><strong>Original Email:</strong></small>
-                    <pre class="small mb-0" style="white-space: pre-wrap; font-family: inherit;">{{ email.body_text|truncatechars:2000 }}</pre>
-                </div>
-                <!-- Extracted Items -->
-                <div class="col-md-8 p-3">
-                    <small class="text-muted d-block mb-2"><strong>Extracted Items ({{ email.items.count }}):</strong></small>
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Product</th>
-                                    <th>Type</th>
-                                    <th>Quantity</th>
-                                    <th>Price</th>
-                                    <th>Location</th>
-                                    <th class="text-end">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for item in email.items.all %}
-                                <tr id="pending-item-{{ item.id }}" class="{% if item.status == 'approved' %}table-success{% elif item.status == 'rejected' %}table-danger{% endif %}">
-                                    <td>
-                                        <strong>{{ item.product_name }}</strong>
-                                        {% if item.grade %}<br><small class="text-muted">Grade: {{ item.grade }}</small>{% endif %}
-                                    </td>
-                                    <td>{{ item.material_type|default:"-" }}</td>
-                                    <td>{{ item.quantity|default:"-" }} {{ item.unit }}</td>
-                                    <td>{% if item.price %}${{ item.price }} {{ item.price_unit }}{% else %}-{% endif %}</td>
-                                    <td>{{ item.location|default:"-" }}</td>
-                                    <td class="text-end">
-                                        {% if item.status == 'pending' %}
-                                        <button class="btn btn-sm btn-success" onclick="approveItem({{ item.id }})">
-                                            <i class="fas fa-check"></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-danger" onclick="rejectItem({{ item.id }})">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                        {% elif item.status == 'approved' %}
-                                        <span class="badge bg-success"><i class="fas fa-check"></i> Approved</span>
-                                        {% else %}
-                                        <span class="badge bg-danger"><i class="fas fa-times"></i> Rejected</span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
+      {% endfor %}
     </div>
-    {% endfor %}
-    {% else %}
-    <div class="card border-0 shadow-sm">
-        <div class="card-body text-center py-5">
-            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
-            <h4 class="text-muted">No Pending Emails</h4>
-            <p class="text-muted">Run the inbox checker to scan for new supplier emails:<br>
-                <code>python manage.py check_inbox</code>
-            </p>
-        </div>
-    </div>
-    {% endif %}
-
-    {% if recent_emails %}
-    <h4 class="mt-4 mb-3"><i class="fas fa-history me-2"></i>Recently Processed</h4>
-    <div class="table-responsive">
-        <table class="table table-hover">
-            <thead class="table-light">
-                <tr>
-                    <th>Subject</th>
-                    <th>Sender</th>
-                    <th>Status</th>
-                    <th>Processed</th>
-                    <th>By</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for email in recent_emails %}
-                <tr>
-                    <td>{{ email.subject }}</td>
-                    <td>{{ email.sender_email }}</td>
-                    <td>
-                        <span class="badge bg-{% if email.status == 'approved' %}success{% elif email.status == 'rejected' %}danger{% else %}warning{% endif %}">
-                            {{ email.get_status_display }}
-                        </span>
-                    </td>
-                    <td>{{ email.processed_at|date:"M d, Y" }}</td>
-                    <td>{{ email.processed_by.get_full_name|default:email.processed_by.username }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% endif %}
+  {% else %}
+    <p>No pending inventory emails.</p>
+  {% endif %}
 </div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-function approveItem(itemId) {
-    fetch(`/ai/pending-inventory/item/${itemId}/approve/`, {
-        method: 'POST',
-        headers: {'X-CSRFToken': '{{ csrf_token }}'}
-    })
-    .then(r => r.json())
-    .then(data => {
-        const row = document.getElementById('pending-item-' + itemId);
-        row.classList.add('table-success');
-        row.querySelector('td:last-child').innerHTML = '<span class="badge bg-success"><i class="fas fa-check"></i> Approved (SKU: ' + data.sku + ')</span>';
-    });
-}
-
-function rejectItem(itemId) {
-    fetch(`/ai/pending-inventory/item/${itemId}/reject/`, {
-        method: 'POST',
-        headers: {'X-CSRFToken': '{{ csrf_token }}'}
-    })
-    .then(r => r.json())
-    .then(data => {
-        const row = document.getElementById('pending-item-' + itemId);
-        row.classList.add('table-danger');
-        row.querySelector('td:last-child').innerHTML = '<span class="badge bg-danger"><i class="fas fa-times"></i> Rejected</span>';
-    });
-}
-
-function approveAllItems(emailId) {
-    if (!confirm('Approve all items from this email?')) return;
-    fetch(`/ai/pending-inventory/email/${emailId}/approve-all/`, {
-        method: 'POST',
-        headers: {'X-CSRFToken': '{{ csrf_token }}'}
-    })
-    .then(r => r.json())
-    .then(data => {
-        location.reload();
-    });
-}
-</script>
 {% endblock %}
