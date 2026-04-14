@@ -17,16 +17,36 @@
             <h1 class="h2">{{ invoice.invoice_number }}</h1>
         </div>
         <div class="btn-group">
-            <a href="{% url 'invoicing:invoice_pdf' invoice.pk %}" class="btn btn-outline-primary" target="_blank">
-                <i class="fas fa-print me-2"></i>Print
-            </a>
             <a href="{% url 'invoicing:invoice_pdf' invoice.pk %}" class="btn btn-outline-secondary">
                 <i class="fas fa-file-pdf me-2"></i>Download PDF
             </a>
-            <a href="{% url 'invoicing:send_invoice' invoice.pk %}" class="btn btn-outline-info">
-                <i class="fas fa-envelope me-2"></i>Email
+            {% url 'invoicing:public_invoice_detail' token=invoice.portal_token as portal_url %}
+            <button class="btn btn-outline-dark" onclick="copyPortalLink('{{ request.scheme }}://{{ request.get_host }}{{ portal_url }}')">
+                <i class="fas fa-link me-2"></i>Portal Link
+            </button>
+            {% if invoice.status == 'draft' %}
+            <form action="{% url 'invoicing:update_invoice_status' invoice.pk %}" method="post" class="d-inline">
+                {% csrf_token %}
+                <input type="hidden" name="status" value="reviewed">
+                <button type="submit" class="btn btn-outline-warning">
+                    <i class="fas fa-check-circle me-2"></i>Mark Reviewed
+                </button>
+            </form>
+            {% endif %}
+
+            <a href="{% url 'invoicing:add_credit_memo' invoice.pk %}" class="btn btn-outline-danger">
+                <i class="fas fa-minus-circle me-2"></i>Apply Credit Memo
             </a>
-            {% if invoice.status != 'paid' %}
+
+            <form action="{% url 'invoicing:send_invoice' invoice.pk %}" method="post" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-info {% if invoice.status == 'draft' %}disabled{% endif %}" 
+                    {% if invoice.status == 'draft' %}disabled title="Invoice must be reviewed before sending"{% endif %}>
+                    <i class="fas fa-envelope me-2"></i>Email
+                </button>
+            </form>
+            
+            {% if invoice.status != 'paid' and invoice.status != 'cancelled' %}
             <a href="{% url 'invoicing:add_payment' invoice.pk %}" class="btn btn-success">
                 <i class="fas fa-dollar-sign me-2"></i>Mark Paid
             </a>
@@ -130,9 +150,15 @@
                             <td class="text-end fw-bold h5">Total:</td>
                             <td class="text-end fw-bold h5">${{ invoice.total|floatformat:2 }}</td>
                         </tr>
-                        {% if invoice.amount_paid > 0 %}
+                        {% if invoice.amount_paid > 0 or invoice.credit_memos.exists %}
+                        {% for memo in invoice.credit_memos.all %}
                         <tr>
-                            <td class="text-end text-success">Amount Paid:</td>
+                            <td class="text-end text-danger">Credit Memo ({{ memo.reason }}):</td>
+                            <td class="text-end text-danger">-${{ memo.amount|floatformat:2 }}</td>
+                        </tr>
+                        {% endfor %}
+                        <tr>
+                            <td class="text-end text-success">Amount Paid/Credited:</td>
                             <td class="text-end text-success">${{ invoice.amount_paid|floatformat:2 }}</td>
                         </tr>
                         <tr class="table-warning">
@@ -197,4 +223,23 @@
     </div>
     {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function copyPortalLink(url) {
+        navigator.clipboard.writeText(url).then(() => {
+            alert('Portal link copied to clipboard!');
+        }).catch(err => {
+            console.error('Failed to copy: ', err);
+            const input = document.createElement('input');
+            input.value = url;
+            document.body.appendChild(input);
+            input.select();
+            document.execCommand('copy');
+            document.body.removeChild(input);
+            alert('Portal link copied to clipboard! (Fallback)');
+        });
+    }
+</script>
 {% endblock %}

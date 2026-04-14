@@ -2,6 +2,7 @@
 Invoicing Views
 """
 from django.shortcuts import render, get_object_or_404, redirect
+from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import HttpResponse, Http404
@@ -11,7 +12,7 @@ from django.utils import timezone
 from datetime import datetime
 from decimal import Decimal
 
-from .models import Invoice, InvoiceLineItem, Payment
+from .models import Invoice, InvoiceLineItem, Payment, RecurringInvoice, RecurringInvoiceLineItem, CreditMemo
 from apps.accounts.models import Company
 from apps.shipments.models import Shipment
 from apps.accounts.utils import filter_by_user_company, check_company_access
@@ -515,18 +516,62 @@ def add_payment(request, pk):
     invoice = _get_invoice(pk)
     
     if request.method == 'POST':
+        payment_date = request.POST.get('payment_date')
+        if payment_date:
+            try:
+                payment_date = datetime.strptime(payment_date, '%Y-%m-%d').date()
+            except ValueError:
+                payment_date = timezone.now().date()
+        else:
+            payment_date = timezone.now().date()
+            
         payment = Payment(
             invoice=invoice,
-            amount=request.POST.get('amount', 0),
+            amount=Decimal(request.POST.get('amount', 0)),
             payment_method=request.POST.get('payment_method', 'check'),
-            payment_date=request.POST.get('payment_date') or timezone.now().date(),
+            payment_date=payment_date,
             transaction_id=request.POST.get('transaction_id', ''),
             notes=request.POST.get('notes', ''),
             created_by=request.user,
         )
         payment.save()
         
-        messages.success(request, f'Payment of ${payment.amount} recorded successfully!')
+        # Notify Customer via Email
+        if invoice.customer.email:
+            try:
+                from django.core.mail import EmailMessage
+                from django.conf import settings
+                
+                subject = f"Payment Received - Invoice {invoice.invoice_number}"
+                body = f"""Dear {invoice.customer.name},
+                
+Thank you for your payment of ${payment.amount:,.2f} recorded on {payment.payment_date.strftime('%m/%d/%Y')}.
+
+Invoice: {invoice.invoice_number}
+Amount Paid: ${payment.amount:,.2f}
+Remaining Balance: ${invoice.balance_due:,.2f}
+
+You can view the updated invoice and payment history here:
+{request.scheme}://{request.get_host()}{reverse('invoicing:public_invoice_detail', kwargs={'token': invoice.portal_token})}
+
+Thank you for your business!
+Best regards,
+The FreightPro Team"""
+                
+                email = EmailMessage(
+                    subject=subject,
+                    body=body,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    to=[invoice.customer.email],
+                )
+                email.send(fail_silently=True)
+                messages.success(request, f'Payment recorded and confirmation sent to {invoice.customer.email}.')
+            except Exception as e:
+                logger.error(f'Failed to send payment confirmation: {str(e)}')
+                messages.warning(request, f'Payment recorded, but email confirmation failed: {str(e)}')
+        else:
+            messages.success(request, f'Payment of ${payment.amount} recorded successfully!')
+            
         logger.info(f'Payment of ${payment.amount} recorded for invoice {invoice.invoice_number} by {request.user}')
         return redirect('invoicing:invoice_detail', pk=pk)
     
@@ -588,11 +633,248 @@ The FreightPro Team"""
             logger.info(f'Invoice {invoice.invoice_number} emailed to {invoice.customer.email} by {request.user}')
         except Exception as e:
             logger.error(f'Failed to send invoice {invoice.invoice_number}: {str(e)}')
-            messages.error(request, f'Failed to send email: {str(e)}')
-            
         return redirect('invoicing:invoice_detail', pk=pk)
     
+    return redirect('invoicing:invoice_detail', pk=pk)
+    
+@login_required
+def aging_report(request):
+    """
+    Accounts Receivable Aging Report
+    Buckets: Current, 1-30, 31-60, 61-90, 90+ days
+    """
+    now = timezone.now().date()
+    
+    # Get all unpaid invoices
+    unpaid_invoices = Invoice.objects.filter(
+        status__in=['sent', 'overdue', 'partial']
+    ).exclude(status__in=['paid', 'cancelled']).select_related('customer')
+    
+    # Alternatively, any invoice where balance_due > 0
+    # (Using the filter above for safety, but we could also filter by total > amount_paid)
+    
+    aging_data = []
+    customers = Company.objects.filter(invoices__in=unpaid_invoices).distinct()
+    
+    total_current = Decimal('0')
+    total_1_30 = Decimal('0')
+    total_31_60 = Decimal('0')
+    total_61_90 = Decimal('0')
+    total_90_plus = Decimal('0')
+    grand_total = Decimal('0')
+
+    for customer in customers:
+        cust_invoices = unpaid_invoices.filter(customer=customer)
+        
+        row = {
+            'customer': customer,
+            'current': Decimal('0'),
+            '1_30': Decimal('0'),
+            '31_60': Decimal('0'),
+            '61_90': Decimal('0'),
+            '90_plus': Decimal('0'),
+            'total': Decimal('0'),
+        }
+        
+        for inv in cust_invoices:
+            balance = inv.balance_due
+            if balance <= 0:
+                continue
+                
+            days = (now - inv.due_date).days if inv.due_date < now else 0
+            
+            if days <= 0:
+                row['current'] += balance
+                total_current += balance
+            elif days <= 30:
+                row['1_30'] += balance
+                total_1_30 += balance
+            elif days <= 60:
+                row['31_60'] += balance
+                total_31_60 += balance
+            elif days <= 90:
+                row['61_90'] += balance
+                total_61_90 += balance
+            else:
+                row['90_plus'] += balance
+                total_90_plus += balance
+            
+            row['total'] += balance
+            grand_total += balance
+            
+        if row['total'] > 0:
+            aging_data.append(row)
+            
+    context = {
+        'aging_data': aging_data,
+        'report_date': now,
+        'totals': {
+            'current': total_current,
+            '1_30': total_1_30,
+            '31_60': total_31_60,
+            '61_90': total_61_90,
+            '90_plus': total_90_plus,
+            'grand_total': grand_total,
+        }
+    }
+
+@login_required
+def recurring_invoice_list(request):
+    """List all recurring invoice templates"""
+    templates = RecurringInvoice.objects.filter(tenant=request.user.tenant).select_related('customer')
+    context = {
+        'templates': templates,
+    }
+    return render(request, 'invoices/recurring_list.html', context)
+
+
+@login_required
+def recurring_invoice_create(request):
+    """Create a new recurring invoice template"""
+    if request.method == 'POST':
+        customer_id = request.POST.get('customer')
+        frequency = request.POST.get('frequency')
+        start_date = request.POST.get('start_date') or timezone.now().date()
+        tax_rate = Decimal(request.POST.get('tax_rate', 0) or 0)
+        terms = request.POST.get('terms', 'Net 30 days')
+        
+        template = RecurringInvoice.objects.create(
+            customer_id=customer_id,
+            frequency=frequency,
+            start_date=start_date,
+            tax_rate=tax_rate,
+            terms=terms,
+            created_by=request.user,
+            tenant=request.user.tenant,
+        )
+        
+        # Add line items
+        descriptions = request.POST.getlist('description[]')
+        quantities = request.POST.getlist('quantity[]')
+        unit_prices = request.POST.getlist('unit_price[]')
+        
+        for i in range(len(descriptions)):
+            if descriptions[i]:
+                RecurringInvoiceLineItem.objects.create(
+                    recurring_invoice=template,
+                    description=descriptions[i],
+                    quantity=Decimal(quantities[i] or 1),
+                    unit_price=Decimal(unit_prices[i] or 0),
+                )
+        
+        messages.success(request, 'Recurring invoice template created successfully!')
+        return redirect('invoicing:recurring_invoice_list')
+        
+    customers = Company.objects.filter(company_type='customer', is_active=True)
+    context = {
+        'customers': customers,
+        'frequencies': RecurringInvoice.FREQUENCY_CHOICES,
+        'today': timezone.now().date(),
+    }
+    return render(request, 'invoices/recurring_form.html', context)
+
+
+@login_required
+def trigger_recurring_generation(request):
+    """Manually trigger the recurring generation task"""
+    from .tasks import process_recurring_invoices
+    count = process_recurring_invoices()
+    if count > 0:
+        messages.success(request, f'Successfully generated {count} recurring invoices.')
+    else:
+        messages.info(request, 'No invoices were due for generation.')
+    return redirect('invoicing:recurring_invoice_list')
+
+
+@login_required
+def add_credit_memo(request, pk):
+    """Add a credit memo to an invoice"""
+    invoice = _get_invoice(pk)
+    
+    if request.method == 'POST':
+        amount = Decimal(request.POST.get('amount', 0))
+        reason = request.POST.get('reason', 'Adjustment')
+        
+        memo = CreditMemo.objects.create(
+            invoice=invoice,
+            amount=amount,
+            reason=reason,
+            created_by=request.user,
+            tenant=request.user.tenant,
+        )
+        
+        # Notify Customer via Email
+        if invoice.customer.email:
+            try:
+                from django.core.mail import EmailMessage
+                from django.conf import settings
+                
+                subject = f"Credit Memo Applied - Invoice {invoice.invoice_number}"
+                body = f"""Dear {invoice.customer.name},
+                
+A credit memo of ${amount:,.2f} has been applied to your invoice {invoice.invoice_number}.
+Reason: {reason}
+
+Updated Balance Due: ${invoice.balance_due:,.2f}
+
+You can view the updated invoice here:
+{request.scheme}://{request.get_host()}{reverse('invoicing:public_invoice_detail', kwargs={'token': invoice.portal_token})}
+
+Thank you for your business!
+Best regards,
+The FreightPro Team"""
+                
+                email = EmailMessage(
+                    subject=subject,
+                    body=body,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    to=[invoice.customer.email],
+                )
+                email.send(fail_silently=True)
+                messages.success(request, f'Credit memo of ${amount} applied and email sent to {invoice.customer.email}.')
+            except Exception as e:
+                logger.error(f'Failed to send credit memo email: {str(e)}')
+                messages.warning(request, f'Credit memo applied, but email failed: {str(e)}')
+        else:
+            messages.success(request, f'Credit memo of ${amount} applied successfully.')
+            
+        return redirect('invoicing:invoice_detail', pk=pk)
+        
     context = {
         'invoice': invoice,
     }
-    return render(request, 'invoices/send_confirm.html', context)
+    return render(request, 'invoices/add_credit_memo.html', context)
+
+@login_required
+def update_invoice_status(request, pk):
+    """Update invoice status (e.g. Draft -> Reviewed)"""
+    if request.method == 'POST':
+        invoice = _get_invoice(pk)
+        new_status = request.POST.get('status')
+        
+        if new_status in dict(Invoice.STATUS_CHOICES):
+            invoice.status = new_status
+            invoice.save()
+            messages.success(request, f'Invoice status updated to {invoice.get_status_display()}.')
+        else:
+            messages.error(request, 'Invalid status.')
+            
+        return redirect('invoicing:invoice_detail', pk=pk)
+    
+    return redirect('invoicing:invoice_list')
+
+
+def public_invoice_detail(request, token):
+    """Public view of an invoice via a secure token"""
+    try:
+        invoice = Invoice.objects.get(portal_token=token)
+    except Invoice.DoesNotExist:
+        return HttpResponse('Invalid or expired invoice link.', status=404)
+        
+    context = {
+        'invoice': invoice,
+        'line_items': invoice.line_items.all(),
+        'payments': invoice.payments.all(),
+        'public_view': True,
+    }
+    return render(request, 'invoices/public_detail.html', context)
