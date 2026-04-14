@@ -4,6 +4,7 @@ Accounts Models - CustomUser and Company
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.conf import settings
+import uuid
 
 from .models_tenant import Tenant, TenantManager, TenantAwareModel
 
@@ -233,3 +234,22 @@ def log_failed_login(sender, credentials, request, **kwargs):
         user_agent=ua,
         status='failed'
     )
+
+
+class TeamInvitation(models.Model):
+    """Model to track team member invitations sent via email"""
+    email = models.EmailField()
+    role = models.CharField(max_length=20, choices=CustomUser.ROLE_CHOICES, default='sales')
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name='invitations')
+    invited_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='sent_invitations')
+    token = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    is_accepted = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        unique_together = ('email', 'tenant', 'is_accepted')
+        
+    def __str__(self):
+        return f"Invite for {self.email} - {self.role} ({'Accepted' if self.is_accepted else 'Pending'})"
