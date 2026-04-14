@@ -1,5 +1,6 @@
 from django import forms
 from django.core.exceptions import ValidationError
+from django.contrib.auth.password_validation import validate_password
 from .models import TeamInvitation, CustomUser
 
 class TeamInviteForm(forms.ModelForm):
@@ -58,7 +59,10 @@ class InvitationAcceptanceForm(forms.ModelForm):
             self.add_error('confirm_password', "Passwords do not match.")
         
         # Add basic password strength check
-        if password and len(password) < 6:
-            self.add_error('password', "Password must be at least 6 characters.")
+        if password:
+            try:
+                validate_password(password, self.instance)
+            except ValidationError as e:
+                self.add_error('password', e)
 
         return cleaned_data
