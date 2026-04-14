@@ -95,6 +95,13 @@ def chat_clear(request):
 @login_required
 def pending_inventory_list(request):
     """Show all pending inventory emails for review"""
+    # Trigger fetch on page load so it feels automatic
+    from .email_ingestion import fetch_and_process_emails
+    try:
+        fetch_and_process_emails(request.user.tenant, max_emails=5)
+    except Exception as e:
+        logger.error(f"Automatic fetch failed: {e}")
+
     emails = PendingInventoryEmail.objects.filter(
         tenant=request.user.tenant,
         status='pending'
@@ -254,3 +261,52 @@ def dismiss_match(request, match_id):
     match.is_dismissed = True
     match.save()
     return JsonResponse({'status': 'dismissed'})
+
+
+@login_required
+def generate_quote_from_match(request, match_id):
+    """
+    Automated workflow: Smart Match -> Draft Order + Manifest Item.
+    This converts a match into a real business opportunity.
+    """
+    from apps.orders.models import Order, ManifestItem
+    
+    match = get_object_or_404(SmartMatch, id=match_id, tenant=request.user.tenant)
+    
+    # 1. Create the Order
+    import random
+    import string
+    random_suffix = ''.join(random.choices(string.ascii_uppercase + string.digits, k=4))
+    order_no = f"QT-{timezone.now().strftime('%Y%m%d')}-{random_suffix}"
+    
+    order = Order.objects.create(
+        tenant=request.user.tenant,
+        order_number=order_no,
+        status='draft',
+        supplier=match.inventory_item.company,
+        receiver=match.requirement.buyer,
+        source_location=match.inventory_item.warehouse,
+        total_weight_target=match.inventory_item.quantity,
+        total_weight_unit=match.inventory_item.unit_of_measure,
+        created_by=request.user,
+        notes=f"Generated via AI Matchmaker from Match #{match.id}. Reason: {match.match_reason}"
+    )
+    
+    # 2. Create the Manifest Item (the actual product/material)
+    ManifestItem.objects.create(
+        order=order,
+        inventory_item=match.inventory_item,
+        material=match.inventory_item.product_name,
+        weight=match.inventory_item.quantity,
+        weight_unit=match.inventory_item.unit_of_measure,
+        buy_price=match.inventory_item.unit_cost,
+        # Default sell price: 15% margin or requirement max price
+        sell_price=match.requirement.max_price or (match.inventory_item.unit_cost * 1.15)
+    )
+    
+    # 3. Mark match as dismissed (so it doesn't stay on dashboard)
+    match.is_dismissed = True
+    match.save()
+    
+    # 4. Success message or redirect
+    return redirect('orders:order_detail', pk=order.id)

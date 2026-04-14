@@ -11,20 +11,54 @@ from django.db.models import Q
 logger = logging.getLogger('apps.ai_assistant')
 
 
-def compute_similarity(text1, text2):
-    """Compute similarity between two strings (0-100)"""
-    if not text1 or not text2:
-        return 0
+def stem(word):
+    """Simple stemming to handle plurals like 'scraps' -> 'scrap'"""
+    w = word.lower()
+    if len(w) > 4:
+        if w.endswith('ies'): return w[:-3] + 'y'
+        if w.endswith('es'): return w[:-2]
+        if w.endswith('s') and not w.endswith('ss'): return w[:-1]
+    return w
+
+
+def compute_semantic_similarity(text1, text2):
+    """
+    Compute semantic similarity using weighted keyword overlap.
+    Mimics Vector Cosine Similarity without heavy dependencies.
+    """
+    if not text1 or not text2: return 0
     t1 = text1.lower().strip()
     t2 = text2.lower().strip()
-    # Exact match
-    if t1 == t2:
-        return 100
-    # Contains match
-    if t1 in t2 or t2 in t1:
-        return 85
-    # Sequence similarity
-    return int(SequenceMatcher(None, t1, t2).ratio() * 100)
+    
+    # 1. Exact or Substring match (High Confidence)
+    if t1 == t2: return 100
+    if t1 in t2 or t2 in t1: return 90
+    
+    # 2. Tokenize and Stem
+    words1 = [stem(w) for w in re.findall(r'\w+', t1) if len(w) > 2]
+    words2 = [stem(w) for w in re.findall(r'\w+', t2) if len(w) > 2]
+    
+    if not words1 or not words2: return 0
+    
+    set1, set2 = set(words1), set(words2)
+    intersection = set1.intersection(set2)
+    
+    # 3. Calculate overlap ratio
+    # Intersection over Union (Jaccard-like) with bias towards match
+    overlap = len(intersection)
+    total_unique = len(set1.union(set2))
+    
+    score = int((overlap / max(len(set1), len(set2))) * 100)
+    
+    # 4. Fallback to sequence similarity for fuzzy spelling
+    fuzzy_score = int(SequenceMatcher(None, t1, t2).ratio() * 100)
+    
+    return max(score, fuzzy_score)
+
+
+def compute_similarity(text1, text2):
+    """Legacy wrapper for semantic similarity"""
+    return compute_semantic_similarity(text1, text2)
 
 
 def match_requirement_to_inventory(requirement, tenant):

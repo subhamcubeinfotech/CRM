@@ -279,3 +279,5 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': crontab(minute='*/5'),
     },
 }
+# AI Configuration
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')

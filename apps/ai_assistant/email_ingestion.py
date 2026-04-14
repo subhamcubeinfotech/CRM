@@ -61,16 +61,82 @@ def get_email_body(msg):
     return body
 
 
+def extract_inventory_items_llm(body_text):
+    """
+    Uses OpenAI LLM to extract inventory items from unstructured email text.
+    """
+    from openai import OpenAI
+    
+    api_key = getattr(settings, 'OPENAI_API_KEY', '')
+    if not api_key or api_key.startswith('fb2a'):  # Check for placeholder
+        return []
+
+    client = OpenAI(api_key=api_key)
+    
+    prompt = f"""
+    Extract inventory items from the following email text into a JSON list.
+    Each item must have: product_name, quantity, unit (lbs, kgs, etc), price (as number), price_unit (e.g. per lb).
+    
+    Email Text:
+    {body_text}
+    
+    JSON Output format: {{"items": [{{"product_name": "...", "quantity": 0, "unit": "...", "price": 0, "price_unit": "..."}}]}}
+    """
+    
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[{"role": "system", "content": "You are an inventory data extraction assistant. Output ONLY valid JSON."},
+                      {"role": "user", "content": prompt}],
+            response_format={ "type": "json_object" }
+        )
+        data = json.loads(response.choices[0].message.content)
+        return data.get('items', data.get('inventory', []))
+    except Exception as e:
+        logger.error(f"LLM Extraction failed: {e}")
+        return []
+
+
+def handle_attachments(msg):
+    """
+    Extract text or data from PDF/CSV attachments.
+    For now, return text from text-based attachments.
+    """
+    attachment_text = ""
+    for part in msg.walk():
+        if part.get_content_maintype() == 'multipart':
+            continue
+        if part.get('Content-Disposition') is None:
+            continue
+            
+        filename = part.get_filename()
+        content_type = part.get_content_type()
+        
+        if filename:
+            payload = part.get_payload(decode=True)
+            if content_type == 'text/csv' or filename.endswith('.csv'):
+                attachment_text += f"\n[CSV FILE: {filename}]\n" + payload.decode('utf-8', errors='replace')
+            elif content_type == 'application/pdf' or filename.endswith('.pdf'):
+                # In a real setup, use pdfplumber or similar.
+                # For now, acknowledge the PDF and try to extract what's possible
+                attachment_text += f"\n[PDF FILE: {filename}] (Processing text content...)\n"
+    return attachment_text
+
+
 def extract_inventory_items(body_text):
     """
-    Rule-based extraction of inventory items from email text.
-    Looks for patterns like:
-    - Product Name: HDPE, Qty: 40,000 lbs, Price: $0.45/lb
-    - 40,000 lbs of HDPE at $0.45 per lb
-    - HDPE Regrind | 40,000 lbs | $0.45/lb
+    Tries LLM extraction first, falls back to Rule-based.
     """
-    items = []
+    # 1. Try LLM first if API key exists
+    api_key = getattr(settings, 'OPENAI_API_KEY', '')
+    if api_key and not api_key.startswith('fb2a'):
+        llm_items = extract_inventory_items_llm(body_text)
+        if llm_items:
+            return llm_items
 
+    # 2. Fallback to Regex
+    items = []
+    
     # Pattern 1: Pipe/dash separated (common in vendor lists)
     pipe_lines = re.findall(
         r'(.+?)\s*[\|–-]\s*([\d,]+\.?\d*)\s*(lbs?|kgs?|MT|tons?|pcs)\s*[\|–-]\s*\$?([\d,]+\.?\d*)\s*/?\s*(lb|kg|ton|pc)?',
@@ -141,14 +207,17 @@ def fetch_and_process_emails(tenant, max_emails=10):
 
     mail.select('INBOX')
 
-    # Search for unread emails (can be customized with labels/filters)
-    status, messages = mail.search(None, 'UNSEEN')
+    # Search for all emails from the last 24 hours (even if seen) for debugging
+    from datetime import date, timedelta
+    yesterday = (date.today() - timedelta(days=1)).strftime("%d-%b-%Y")
+    status, messages = mail.search(None, f'(SINCE {yesterday})')
     if status != 'OK':
         logger.error("Failed to search inbox")
         mail.logout()
         return 0
 
-    email_ids = messages[0].split()[-max_emails:]  # Get latest N
+    email_ids = messages[0].split()
+    email_ids = email_ids[-max_emails:]  # Get latest N
     processed = 0
 
     for eid in email_ids:
@@ -170,8 +239,14 @@ def fetch_and_process_emails(tenant, max_emails=10):
             continue
 
         # Extract inventory items
+        try:
+            print(f"DEBUG: Checking email: '{subject}' from {sender[1]}")
+        except:
+            print(f"DEBUG: Checking email: [Subject with special chars] from {sender[1]}")
+
         extracted_items = extract_inventory_items(body)
         if not extracted_items:
+            print(f"DEBUG: Skipped '{subject}' - No items found. Body starts with: {body[:50].strip()}...")
             continue  # Skip emails without inventory data
 
         # Try to match sender to a Company
