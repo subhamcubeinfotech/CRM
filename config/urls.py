@@ -59,6 +59,7 @@ urlpatterns = [
     path('companies/', include('apps.accounts.urls')),
     path('portal/', include('apps.customers.urls')),
     path('tools/', include('apps.tools.urls')),
+    path('ai/', include('apps.ai_assistant.urls', namespace='ai_assistant')),
     
     # API
     path('api/', include('apps.shipments.api_urls')),

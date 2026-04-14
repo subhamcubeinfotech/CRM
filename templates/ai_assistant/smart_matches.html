@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+{% block title %}Smart Matches - AI Matchmaker{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1"><i class="fas fa-brain text-primary me-2"></i>Smart Matches</h2>
+            <p class="text-muted mb-0">AI-powered demand ↔ supply matching</p>
+        </div>
+        <span class="badge bg-primary fs-6">{{ matches.count }} Active Matches</span>
+    </div>
+
+    {% if matches %}
+    <div class="row g-4">
+        {% for match in matches %}
+        <div class="col-md-6 col-xl-4">
+            <div class="card border-0 shadow-sm h-100" id="match-{{ match.id }}">
+                <!-- Confidence Header -->
+                <div class="card-header border-0 py-2" 
+                     style="background: linear-gradient(135deg, 
+                        {% if match.confidence_score >= 80 %}#10b981, #059669
+                        {% elif match.confidence_score >= 50 %}#f59e0b, #d97706
+                        {% else %}#ef4444, #dc2626{% endif %});">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-white fw-bold">
+                            <i class="fas fa-percentage me-1"></i>{{ match.confidence_score|floatformat:0 }}% Match
+                        </span>
+                        <button class="btn btn-sm btn-outline-light" onclick="dismissMatch({{ match.id }})">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Buyer Need -->
+                    <div class="mb-3 p-3 rounded" style="background: #fef3c7;">
+                        <small class="text-uppercase text-muted fw-bold d-block mb-1">🔍 Buyer Need</small>
+                        <h6 class="mb-1">{{ match.requirement.material_name }}</h6>
+                        <div class="d-flex gap-3">
+                            <small><i class="fas fa-building me-1"></i>{{ match.requirement.buyer.name }}</small>
+                            {% if match.requirement.quantity_needed %}
+                            <small><i class="fas fa-weight me-1"></i>{{ match.requirement.quantity_needed }} {{ match.requirement.unit }}</small>
+                            {% endif %}
+                        </div>
+                        {% if match.requirement.max_price %}
+                        <small class="text-muted">Max: ${{ match.requirement.max_price }}/{{ match.requirement.unit }}</small>
+                        {% endif %}
+                    </div>
+
+                    <!-- Arrow -->
+                    <div class="text-center my-2">
+                        <i class="fas fa-exchange-alt fa-lg text-primary"></i>
+                    </div>
+
+                    <!-- Supplier Match -->
+                    <div class="p-3 rounded" style="background: #d1fae5;">
+                        <small class="text-uppercase text-muted fw-bold d-block mb-1">📦 Available Inventory</small>
+                        <h6 class="mb-1">{{ match.inventory_item.product_name }}</h6>
+                        <div class="d-flex gap-3 flex-wrap">
+                            <small><i class="fas fa-warehouse me-1"></i>{{ match.inventory_item.warehouse.city }}</small>
+                            <small><i class="fas fa-cubes me-1"></i>{{ match.inventory_item.quantity }} {{ match.inventory_item.unit_of_measure }}</small>
+                            <small><i class="fas fa-tag me-1"></i>${{ match.inventory_item.unit_cost }}/{{ match.inventory_item.price_unit }}</small>
+                        </div>
+                        {% if match.inventory_item.company %}
+                        <small class="text-muted d-block mt-1"><i class="fas fa-building me-1"></i>{{ match.inventory_item.company.name }}</small>
+                        {% endif %}
+                    </div>
+
+                    {% if match.match_reason %}
+                    <div class="mt-2">
+                        <small class="text-muted"><i class="fas fa-info-circle me-1"></i>{{ match.match_reason }}</small>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer bg-transparent d-flex gap-2">
+                    <button class="btn btn-primary btn-sm flex-fill" onclick="alert('Quote generation coming soon!')">
+                        <i class="fas fa-file-invoice-dollar me-1"></i>Generate Quote
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="dismissMatch({{ match.id }})">
+                        <i class="fas fa-eye-slash me-1"></i>Dismiss
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card border-0 shadow-sm">
+        <div class="card-body text-center py-5">
+            <i class="fas fa-brain fa-3x text-muted mb-3"></i>
+            <h4 class="text-muted">No Active Matches</h4>
+            <p class="text-muted">Smart matches will appear here when buyer requirements are matched against available inventory.</p>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if requirements %}
+    <h4 class="mt-5 mb-3"><i class="fas fa-search me-2"></i>Open Buyer Requirements</h4>
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>Buyer</th>
+                    <th>Material Needed</th>
+                    <th>Quantity</th>
+                    <th>Max Price</th>
+                    <th>Source</th>
+                    <th>Created</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for req in requirements %}
+                <tr>
+                    <td>{{ req.buyer.name }}</td>
+                    <td><strong>{{ req.material_name }}</strong> {% if req.material_type %}<small class="text-muted">({{ req.material_type }})</small>{% endif %}</td>
+                    <td>{{ req.quantity_needed|default:"-" }} {{ req.unit }}</td>
+                    <td>{% if req.max_price %}${{ req.max_price }}{% else %}-{% endif %}</td>
+                    <td><span class="badge bg-{% if req.source == 'email' %}info{% else %}secondary{% endif %}">{{ req.get_source_display }}</span></td>
+                    <td>{{ req.created_at|date:"M d, Y" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function dismissMatch(matchId) {
+    fetch(`/ai/smart-matches/${matchId}/dismiss/`, {
+        method: 'POST',
+        headers: {'X-CSRFToken': '{{ csrf_token }}'}
+    })
+    .then(r => r.json())
+    .then(data => {
+        document.getElementById('match-' + matchId).style.display = 'none';
+    });
+}
+</script>
+{% endblock %}
