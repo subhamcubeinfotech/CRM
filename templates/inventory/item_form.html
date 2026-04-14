@@ -48,7 +48,7 @@
     <!-- Main Form Card -->
     <div class="card border-0 shadow-sm" style="border-radius: 12px; background-color: #fff;">
         <div class="card-body p-4 p-md-5">
-            <form method="post" id="inventoryForm">
+            <form method="post" id="inventoryForm" enctype="multipart/form-data">
                 {% csrf_token %}
                 
                 {% if form.errors %}
@@ -221,9 +221,15 @@
                                 </div>
 
                                 <!-- Notes -->
-                                <div class="col-12 mt-4 mb-4">
+                                <div class="col-8 mt-4 mb-4">
                                     <label class="form-label mb-1 text-uppercase fw-bold">Notes</label>
                                     {{ form.description }}
+                                </div>
+
+                                <!-- Image -->
+                                <div class="col-4 mt-4 mb-4">
+                                    <label class="form-label mb-1 text-uppercase fw-bold">Photo</label>
+                                    {{ form.image }}
                                 </div>
                             </div>
                         </div>

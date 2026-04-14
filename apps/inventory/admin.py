@@ -23,7 +23,7 @@ class WarehouseAdmin(GlobalVisibilityMixin, admin.ModelAdmin):
 class InventoryItemAdmin(GlobalVisibilityMixin, admin.ModelAdmin):
     list_display = [
         'sku', 'product_name', 'warehouse', 'location', 
-        'quantity', 'unit_of_measure', 'unit_cost', 'stock_status'
+        'quantity', 'unit_of_measure', 'unit_cost', 'stock_status', 'image'
     ]
     list_filter = ['warehouse', 'unit_of_measure', 'created_at']
     search_fields = ['sku', 'product_name', 'lot_number', 'serial_number']
