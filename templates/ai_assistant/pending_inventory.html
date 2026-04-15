@@ -260,9 +260,12 @@ function getCookie(name) {
 }
 
 function processItem(itemId, action) {
-    const url = action === 'approve' 
-        ? `/ai/pending-inventory/item/${itemId}/approve/` 
-        : `/ai/pending-inventory/item/${itemId}/reject/`;
+    let url;
+    if (action === 'approve') {
+        url = "{% url 'ai_assistant:approve_item' 0 %}".replace('0', itemId);
+    } else {
+        url = "{% url 'ai_assistant:reject_item' 0 %}".replace('0', itemId);
+    }
     
     fetch(url, {
         method: 'POST',
@@ -290,38 +293,33 @@ function processItem(itemId, action) {
 }
 
 function processEmail(emailId, action) {
-    const url = action === 'approve-all' 
-        ? `/ai/pending-inventory/email/${emailId}/approve-all/`
-        : `/ai/pending-inventory/item/${emailId}/reject/`; // Note: Current reject all is mapped to reject_item which takes email_id for consistency or needs a separate view.
-    
-    // Quick fix: Since I don't have a specific reject_all_items view yet, 
-    // I'll stick to approve-all and tell the user to use individual rejects for now, 
-    // OR create the view. Let's create the view if it doesn't exist.
-    
+    let url;
     if (action === 'approve-all') {
-        fetch(url, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': getCookie('csrftoken'),
-                'Content-Type': 'application/json'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status) {
-                const card = document.getElementById('email-card-' + emailId);
-                card.style.transition = 'all 0.5s ease';
-                card.style.opacity = '0';
-                card.style.transform = 'translateX(100px)';
-                setTimeout(() => card.remove(), 500);
-            } else if (data.error) {
-                alert('Error: ' + data.error);
-            }
-        })
-        .catch(error => console.error('Error:', error));
+        url = "{% url 'ai_assistant:approve_all' 0 %}".replace('0', emailId);
     } else {
-        alert('Reject All selected. For security, please reject items individually or use the Admin panel.');
+        url = "{% url 'ai_assistant:reject_all' 0 %}".replace('0', emailId);
     }
+    
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status) {
+            const card = document.getElementById('email-card-' + emailId);
+            card.style.transition = 'all 0.5s ease';
+            card.style.opacity = '0';
+            card.style.transform = 'translateX(100px)';
+            setTimeout(() => card.remove(), 500);
+        } else if (data.error) {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => console.error('Error:', error));
 }
 </script>
 {% endblock %}

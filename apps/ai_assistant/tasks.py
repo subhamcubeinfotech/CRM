@@ -8,16 +8,21 @@ logger = logging.getLogger('apps.ai_assistant')
 
 @shared_task(name='apps.ai_assistant.tasks.fetch_vendor_emails')
 def fetch_vendor_emails():
-    """Celery task that processes new vendor emails for the current tenant.
-    In a multi‑tenant setup you would loop over all active tenants; for now we
-    assume a single tenant context (settings.DEFAULT_TENANT or similar).
-    """
-    # Simplify: use a dummy tenant placeholder – you can replace with actual
-    # tenant logic later.
-    tenant = getattr(settings, 'DEFAULT_TENANT', None)
-    if tenant is None:
-        logger.warning('No tenant configured for email ingestion; skipping.')
+    """Celery task that processes new vendor emails for all active tenants."""
+    from apps.accounts.models import Tenant
+    
+    tenants = Tenant.objects.filter(is_active=True)
+    if not tenants.exists():
+        logger.warning('No active tenants found for email ingestion; skipping.')
         return 0
-    processed = fetch_and_process_emails(tenant)
-    logger.info(f'Email ingestion task processed {processed} emails.')
-    return processed
+        
+    total_processed = 0
+    for tenant in tenants:
+        try:
+            processed = fetch_and_process_emails(tenant)
+            total_processed += processed
+            logger.info(f'Tenant {tenant.name} processed {processed} emails.')
+        except Exception as e:
+            logger.error(f'Error processing emails for tenant {tenant.name}: {e}')
+            
+    return total_processed
