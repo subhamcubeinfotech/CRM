@@ -9,7 +9,7 @@ from django.http import HttpResponse, Http404
 from django.core.paginator import Paginator
 from django.db.models import Sum, Q
 from django.utils import timezone
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 
 from .models import Invoice, InvoiceLineItem, Payment, RecurringInvoice, RecurringInvoiceLineItem, CreditMemo
@@ -139,12 +139,22 @@ def invoice_create(request):
             created_by=request.user,
             tenant=request.user.tenant,
         )
-        # Handle empty date string
+        # Parse dates
         if request.POST.get('invoice_date'):
             try:
                 invoice.invoice_date = datetime.strptime(request.POST.get('invoice_date'), '%Y-%m-%d').date()
             except ValueError:
                 invoice.invoice_date = timezone.now().date()
+        
+        if request.POST.get('due_date'):
+            try:
+                invoice.due_date = datetime.strptime(request.POST.get('due_date'), '%Y-%m-%d').date()
+            except ValueError:
+                # Default to 30 days if invalid
+                invoice.due_date = invoice.invoice_date + timedelta(days=30)
+        else:
+            # Default to 30 days if missing
+            invoice.due_date = invoice.invoice_date + timedelta(days=30)
         
         # Save invoice first
         invoice.save()
@@ -647,7 +657,7 @@ def aging_report(request):
     
     # Get all unpaid invoices
     unpaid_invoices = Invoice.objects.filter(
-        status__in=['sent', 'overdue', 'partial']
+        status__in=['reviewed', 'sent', 'overdue', 'partial']
     ).exclude(status__in=['paid', 'cancelled']).select_related('customer')
     
     # Alternatively, any invoice where balance_due > 0
@@ -717,6 +727,7 @@ def aging_report(request):
             'grand_total': grand_total,
         }
     }
+    return render(request, 'invoices/aging_report.html', context)
 
 @login_required
 def recurring_invoice_list(request):
