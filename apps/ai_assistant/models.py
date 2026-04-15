@@ -138,6 +138,7 @@ class SmartMatch(TenantAwareModel):
     match_reason = models.TextField(blank=True)
     is_dismissed = models.BooleanField(default=False)
     is_quoted = models.BooleanField(default=False)
+    is_notified = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
