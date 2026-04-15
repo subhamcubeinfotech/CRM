@@ -215,7 +215,7 @@ def extract_inventory_items_fallback(body_text):
     return unique_items
 
 
-def fetch_and_process_emails(tenant, max_emails=10):
+def fetch_and_process_emails(tenant, max_emails=10, request_user=None):
     """
     Main entry point: connect to IMAP, fetch new emails, extract inventory items.
     """
@@ -279,9 +279,20 @@ def fetch_and_process_emails(tenant, max_emails=10):
         if domain:
             matched_company = Company.objects.filter(tenant=tenant, email__icontains=domain).first()
             
+            # Fallback: Check if any Contact (User) has this email domain
+            if not matched_company:
+                from django.contrib.auth import get_user_model
+                ContactUser = get_user_model()
+                contact = ContactUser.objects.filter(tenant=tenant, email__icontains=domain, company__isnull=False).first()
+                if contact:
+                    matched_company = contact.company
+            
         if not matched_company and sender_name:
             s_name = str(sender_name)
             matched_company = Company.objects.filter(tenant=tenant, name__icontains=s_name[:10]).first()
+
+        # Assign Owner: Priority 1 = Company Creator, Priority 2 = Requesting User
+        fetched_by = matched_company.created_by if matched_company and matched_company.created_by else request_user
 
         pending_email = PendingInventoryEmail.objects.create(
             tenant=tenant,
@@ -292,6 +303,7 @@ def fetch_and_process_emails(tenant, max_emails=10):
             received_at=timezone.now(),
             matched_company=matched_company,
             raw_extraction=extracted_items,
+            fetched_by=fetched_by,
         )
 
         for item_data in extracted_items:

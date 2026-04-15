@@ -62,7 +62,8 @@ class PendingInventoryEmail(TenantAwareModel):
     matched_company = models.ForeignKey('accounts.Company', on_delete=models.SET_NULL, null=True, blank=True)
     raw_extraction = models.JSONField(default=dict, blank=True, help_text='Raw LLM extraction output')
     processed_at = models.DateTimeField(null=True, blank=True)
-    processed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    processed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='processed_emails')
+    fetched_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='fetched_emails')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -143,4 +144,4 @@ class SmartMatch(TenantAwareModel):
         ordering = ['-confidence_score']
 
     def __str__(self):
-        return f"Match: {self.requirement} ↔ {self.inventory_item} ({self.confidence_score}%)"
+        return f"Match: {self.requirement.material_name} <-> {self.inventory_item.product_name} ({self.confidence_score}%)"

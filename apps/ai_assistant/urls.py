@@ -20,5 +20,4 @@ urlpatterns = [
     # Feature C: Smart Matches
     path('smart-matches/', views.smart_matches_dashboard, name='smart_matches'),
     path('smart-matches/<int:match_id>/dismiss/', views.dismiss_match, name='dismiss_match'),
-    path('smart-matches/<int:match_id>/generate-quote/', views.generate_quote_from_match, name='generate_quote'),
 ]
