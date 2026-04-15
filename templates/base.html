@@ -757,6 +757,12 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link {% if 'invoices' in request.path %}active{% endif %}"
+                            href="{% url 'invoicing:invoice_list' %}">
+                            <i class="fas fa-receipt me-2"></i>Invoices
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link {% if '/shipments/' in request.path %}active{% endif %}"
                             href="{% url 'shipments:shipment_list' %}">
                             <i class="fas fa-box"></i>Shipments
