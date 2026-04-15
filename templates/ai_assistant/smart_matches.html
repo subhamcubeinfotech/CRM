@@ -266,7 +266,30 @@ function dismissMatch(matchId) {
     });
 }
 function notifyBothParties(matchId) {
-    alert('Notifications sent to both Supplier and Buyer! \nConnection established via AI Matchmaker.');
+    const btn = event.currentTarget;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Sending...';
+    btn.disabled = true;
+
+    fetch(`/ai/smart-matches/${matchId}/notify/`, {
+        method: 'POST',
+        headers: {'X-CSRFToken': '{{ csrf_token }}'}
+    })
+    .then(r => r.json())
+    .then(data => {
+        if(data.status === 'success' || data.status === 'partial_success') {
+            btn.innerHTML = '<i class="fas fa-check me-2"></i>Notified!';
+            btn.style.background = '#48bb78';
+            setTimeout(() => {
+                const el = document.getElementById('match-' + matchId);
+                el.style.opacity = '0.7';
+            }, 500);
+        } else {
+            alert('Notification Error: ' + data.message);
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    });
 }
 </script>
 {% endblock %}
