@@ -21,44 +21,99 @@ def stem(word):
     return w
 
 
+# Semantic Dictionary — mapping all variations to a single canonical term
+MATERIAL_SYNONYMS = {
+    'alu': 'aluminum',
+    'aluminium': 'aluminum',
+    'cu': 'copper',
+    'fe': 'iron',
+    'scrap': 'scrap',
+    'waste': 'scrap',
+    'trash': 'scrap',
+    'regrind': 'regrind',
+    'granules': 'regrind',
+    'hdpe': 'hdpe',
+    'polyethylene': 'hdpe',
+    'ldpe': 'ldpe',
+    'pp': 'pp',
+    'polypropylene': 'pp',
+    'pet': 'pet',
+    'pvc': 'pvc',
+    'si': 'silicon',
+    'abs': 'abs',
+}
+
+
+def normalize_material_text(text):
+    """Normalize text and replace common synonyms for better matching"""
+    if not text: return ""
+    tokens = [stem(w) for w in re.findall(r'\w+', text.lower())]
+    normalized = []
+    for t in tokens:
+        normalized.append(MATERIAL_SYNONYMS.get(t, t))
+    return " ".join(normalized)
+
+
 def compute_semantic_similarity(text1, text2):
     """
     Compute semantic similarity using weighted keyword overlap.
     Mimics Vector Cosine Similarity without heavy dependencies.
     """
     if not text1 or not text2: return 0
-    t1 = text1.lower().strip()
-    t2 = text2.lower().strip()
     
-    # 1. Exact or Substring match (High Confidence)
+    # 1. Normalize both texts (Stemming + Synonyms)
+    t1 = normalize_material_text(text1)
+    t2 = normalize_material_text(text2)
+    
+    # 2. Exact or Substring match after normalization (High Confidence)
     if t1 == t2: return 100
     if t1 in t2 or t2 in t1: return 90
     
-    # 2. Tokenize and Stem
-    words1 = [stem(w) for w in re.findall(r'\w+', t1) if len(w) > 2]
-    words2 = [stem(w) for w in re.findall(r'\w+', t2) if len(w) > 2]
+    # 3. Tokenize
+    set1 = set(t1.split())
+    set2 = set(t2.split())
     
-    if not words1 or not words2: return 0
-    
-    set1, set2 = set(words1), set(words2)
+    if not set1 or not set2: return 0
     intersection = set1.intersection(set2)
     
-    # 3. Calculate overlap ratio
-    # Intersection over Union (Jaccard-like) with bias towards match
-    overlap = len(intersection)
-    total_unique = len(set1.union(set2))
+    # 4. Calculate overlap ratio
+    score = int((len(intersection) / max(len(set1), len(set2))) * 100)
     
-    score = int((overlap / max(len(set1), len(set2))) * 100)
-    
-    # 4. Fallback to sequence similarity for fuzzy spelling
+    # 5. Fallback to sequence similarity for fuzzy spelling
     fuzzy_score = int(SequenceMatcher(None, t1, t2).ratio() * 100)
     
     return max(score, fuzzy_score)
 
 
-def compute_similarity(text1, text2):
-    """Legacy wrapper for semantic similarity"""
-    return compute_semantic_similarity(text1, text2)
+def get_ai_match_insight(requirement, item):
+    """
+    Uses LLM to explain why two items match, especially for fuzzy matches.
+    """
+    from django.conf import settings
+    from openai import OpenAI
+    
+    api_key = getattr(settings, 'OPENAI_API_KEY', '')
+    if not api_key or not api_key.startswith('sk-'):
+        return "Matched based on material category and keyword similarity."
+
+    try:
+        client = OpenAI(api_key=api_key)
+        prompt = f"""
+        Analyze if this Buyer Requirement matches this Inventory Item. 
+        Buyer wants: {requirement.material_name} ({requirement.material_type})
+        Inventory has: {item.product_name} ({item.description})
+        
+        Explain in 1 short sentence why this is a good match for a scrap metal/recycling broker.
+        """
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=60
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        logger.error(f"Error getting AI insight: {e}")
+        return "Semantic overlap detected in material grades."
 
 
 def match_requirement_to_inventory(requirement, tenant):
@@ -83,14 +138,14 @@ def match_requirement_to_inventory(requirement, tenant):
         reasons = []
 
         # Name similarity
-        name_sim = compute_similarity(search_term, item.product_name)
+        name_sim = compute_semantic_similarity(search_term, item.product_name)
         if name_sim >= 30:
             score += name_sim * 0.6  # 60% weight on name
             reasons.append(f"Name match: {name_sim}%")
 
         # Material type similarity
         if material_type and hasattr(item, 'description'):
-            type_sim = compute_similarity(material_type, item.description or '')
+            type_sim = compute_semantic_similarity(material_type, item.description or '')
             if type_sim >= 20:
                 score += type_sim * 0.2
                 reasons.append(f"Description match: {type_sim}%")
@@ -143,12 +198,14 @@ def run_matching(tenant):
                 requirement=req,
                 inventory_item=item,
             ).exists():
+                insight = get_ai_match_insight(req, item) if score >= 70 else reason
+                
                 SmartMatch.objects.create(
                     tenant=tenant,
                     requirement=req,
                     inventory_item=item,
                     confidence_score=score,
-                    match_reason=reason,
+                    match_reason=insight,
                 )
                 total_matches += 1
 

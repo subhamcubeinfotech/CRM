@@ -695,7 +695,7 @@ def shipment_detail(request, pk):
     containers = shipment.containers.all()
     
     # Get related invoices
-    invoices = shipment.invoices.all()
+    invoices = Invoice.objects.filter(shipment=shipment)
     
     # Prepare map data
     map_data = {

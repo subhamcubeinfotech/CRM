@@ -695,7 +695,10 @@
                 <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-4">
                     <div>
                         <div class="toolbar-kicker">Directory Workspace</div>
-                        <h1 class="toolbar-title">Company Directory</h1>
+                        <h1 class="toolbar-title">
+                            Company Directory
+                            <span class="badge bg-light text-primary ms-2 border" style="font-size: 0.9rem; vertical-align: middle; padding: 4px 12px; border-radius: 10px;">{{ companies.paginator.count }}</span>
+                        </h1>
                         <p class="toolbar-subtitle">Select filters and they will stay reflected here on the page.</p>
                     </div>
                     <div class="d-flex align-items-center gap-2 flex-wrap">

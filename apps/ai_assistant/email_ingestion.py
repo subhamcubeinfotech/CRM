@@ -77,18 +77,18 @@ def extract_inventory_items_llm(body_text):
     client = OpenAI(api_key=api_key)
     
     prompt = f"""
-    You are a logistics and inventory data specialist. Extract all available inventory items from the following email.
-    Identify:
+    You are a logistics and inventory data specialist. Extract all business materials mentioned in the following email.
+    For each item, determine if the sender HAS the material (Selling/Supply) or NEEDS the material (Buying/Demand).
+    
+    Identify for each item:
+    - intent: "supply" (if they are selling/have it) or "demand" (if they are looking for/need it).
     - product_name: Full descriptive name of the material.
-    - quantity: Numerical value (handle commas and digits).
+    - quantity: Numerical value.
     - unit: Weight or count unit (lbs, kgs, MT, etc.).
     - price: Unit price if available.
     - price_unit: Unit for the price (e.g., per lb, per ton).
     - material_type: Category (e.g., Plastic, Metal).
     - location: Where the item is if mentioned.
-
-    If an item is mentioned as "Needed" or "Looking for", do NOT include it here (that is a requirement, not inventory).
-    ONLY include items that the sender HAS for sale or in stock.
 
     Email Content:
     ---
@@ -99,6 +99,7 @@ def extract_inventory_items_llm(body_text):
     {{
       "items": [
         {{
+          "intent": "supply|demand",
           "product_name": "...", 
           "quantity": 0.0, 
           "unit": "...", 
@@ -124,8 +125,45 @@ def extract_inventory_items_llm(body_text):
         data = json.loads(response.choices[0].message.content)
         return data.get('items', [])
     except Exception as e:
-        logger.error(f"LLM Extraction failed: {e}")
-        return []
+        logger.error(f"LLM Extraction failed: {e}. Falling back to Regex extraction.")
+        return extract_items_regex_fallback(body_text)
+
+def extract_items_regex_fallback(body_text):
+    """Consolidated regex fallback for testing (Dual-Intent)"""
+    import re
+    items = []
+    
+    # 1. Demand Patterns (Looking for, Need, Buy)
+    demand_patterns = [
+        r"(?:need|looking for|require|buy|want|seek)\s*([\d,.]+)?\s*(tons?|lbs?|kg|mt)?\s*(?:of)?\s*([^.\n,]+)",
+    ]
+    # 2. Supply Patterns (Available, Have, Selling, Stock)
+    supply_patterns = [
+        r"(?:available|have|selling|stock|offer|sending)\s*([\d,.]+)?\s*(tons?|lbs?|kg|mt)?\s*(?:of)?\s*([^.\n,]+)",
+    ]
+
+    for p in demand_patterns:
+        matches = re.finditer(p, body_text, re.IGNORECASE)
+        for m in matches:
+            if m.group(3).strip():
+                items.append({
+                    "intent": "demand",
+                    "product_name": m.group(3).strip(),
+                    "quantity": float(m.group(1).replace(',', '')) if m.group(1) else 0.0,
+                    "unit": m.group(2) if m.group(2) else "lbs",
+                })
+
+    for p in supply_patterns:
+        matches = re.finditer(p, body_text, re.IGNORECASE)
+        for m in matches:
+            if m.group(3).strip():
+                items.append({
+                    "intent": "supply",
+                    "product_name": m.group(3).strip(),
+                    "quantity": float(m.group(1).replace(',', '')) if m.group(1) else 0.0,
+                    "unit": m.group(2) if m.group(2) else "lbs",
+                })
+    return items
 
 
 def handle_attachments(msg):
@@ -166,8 +204,8 @@ def extract_inventory_items(body_text):
     if llm_items:
         return llm_items
 
-    # 2. Fallback to Regex (already defined below)
-    return extract_inventory_items_fallback(body_text)
+    # 2. Fallback to Regex
+    return extract_items_regex_fallback(body_text)
 
 
 def extract_inventory_items_fallback(body_text):
@@ -215,7 +253,7 @@ def extract_inventory_items_fallback(body_text):
     return unique_items
 
 
-def fetch_and_process_emails(tenant, max_emails=10):
+def fetch_and_process_emails(tenant, max_emails=10, request_user=None):
     """
     Main entry point: connect to IMAP, fetch new emails, extract inventory items.
     """
@@ -279,9 +317,20 @@ def fetch_and_process_emails(tenant, max_emails=10):
         if domain:
             matched_company = Company.objects.filter(tenant=tenant, email__icontains=domain).first()
             
+            # Fallback: Check if any Contact (User) has this email domain
+            if not matched_company:
+                from django.contrib.auth import get_user_model
+                ContactUser = get_user_model()
+                contact = ContactUser.objects.filter(tenant=tenant, email__icontains=domain, company__isnull=False).first()
+                if contact:
+                    matched_company = contact.company
+            
         if not matched_company and sender_name:
             s_name = str(sender_name)
             matched_company = Company.objects.filter(tenant=tenant, name__icontains=s_name[:10]).first()
+
+        # Assign Owner: Priority 1 = Company Creator, Priority 2 = Requesting User
+        fetched_by = matched_company.created_by if matched_company and matched_company.created_by else request_user
 
         pending_email = PendingInventoryEmail.objects.create(
             tenant=tenant,
@@ -292,19 +341,50 @@ def fetch_and_process_emails(tenant, max_emails=10):
             received_at=timezone.now(),
             matched_company=matched_company,
             raw_extraction=extracted_items,
+            fetched_by=fetched_by,
         )
 
         for item_data in extracted_items:
-            PendingInventoryItem.objects.create(
-                email=pending_email,
-                product_name=item_data.get('product_name', 'Unknown Material'),
-                quantity=item_data.get('quantity'),
-                unit=item_data.get('unit', 'lbs'),
-                price=item_data.get('price'),
-                price_unit=item_data.get('price_unit', 'per lb'),
-                material_type=item_data.get('material_type', ''),
-                location=item_data.get('location', ''),
-            )
+            intent = item_data.get('intent', 'supply')
+            
+            if intent == 'demand':
+                # AUTOMATED: Create Buyer Requirement directly from email
+                from .models import BuyerRequirement
+                from apps.accounts.models import Company
+                
+                buyer = matched_company
+                if not buyer:
+                    buyer, _ = Company.objects.get_or_create(
+                        tenant=tenant,
+                        name=f"Email Lead: {sender_email}",
+                        defaults={'is_active': False, 'description': 'Auto-created from requirement email'}
+                    )
+
+                BuyerRequirement.objects.create(
+                    tenant=tenant,
+                    buyer=buyer,
+                    source='email',
+                    source_email=pending_email,
+                    material_name=item_data.get('product_name', 'Unknown'),
+                    material_type=item_data.get('material_type', ''),
+                    quantity_needed=item_data.get('quantity', 0.0),
+                    unit=item_data.get('unit', 'lbs'),
+                    max_price=item_data.get('price'),
+                    notes=f"Auto-ingested from email: {subject}"
+                )
+                logger.info(f"Automated: Created Buyer Requirement for {item_data.get('product_name')}")
+            else:
+                # Default: Pending Inventory Item (Supply) for approval
+                PendingInventoryItem.objects.create(
+                    email=pending_email,
+                    product_name=item_data.get('product_name', 'Unknown Material'),
+                    quantity=item_data.get('quantity'),
+                    unit=item_data.get('unit', 'lbs'),
+                    price=item_data.get('price'),
+                    price_unit=item_data.get('price_unit', 'per lb'),
+                    material_type=item_data.get('material_type', ''),
+                    location=item_data.get('location', ''),
+                )
 
         processed += 1
 
