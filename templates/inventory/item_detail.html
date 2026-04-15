@@ -34,6 +34,14 @@
                 </div>
                 <div class="card-body">
                     <div class="row g-4">
+                        {% if item.effective_image %}
+                        <div class="col-md-12 mb-3">
+                            <label class="small text-muted mb-2">Item Photo</label>
+                            <div class="text-center bg-light p-3 rounded-3">
+                                <img src="{{ item.effective_image.url }}" class="img-fluid rounded shadow-sm" style="max-height: 400px;" alt="{{ item.product_name }}">
+                            </div>
+                        </div>
+                        {% endif %}
                         <div class="col-md-12">
                             <label class="small text-muted mb-1">Description</label>
                             <p>{{ item.description|default:"No description provided." }}</p>

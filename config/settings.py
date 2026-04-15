@@ -23,6 +23,7 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -30,6 +31,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.humanize',
+    'channels',
     'rest_framework',
     'apps.accounts',
     'apps.shipments',
@@ -90,12 +92,18 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {
+            'min_length': 10,
+        }
     },
     {
         'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
     },
     {
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
+    {
+        'NAME': 'apps.accounts.validators.ComplexityValidator',
     },
 ]
 
@@ -257,3 +265,43 @@ MAP_TILE_SERVER_URL = os.environ.get('MAP_TILE_SERVER_URL', 'https://{s}.basemap
 # Site Configuration for Emails
 SITE_DOMAIN = os.environ.get('SITE_DOMAIN', '127.0.0.1:8000')
 SITE_PROTOCOL = os.environ.get('SITE_PROTOCOL', 'http')
+IMAP_HOST = os.environ.get('IMAP_HOST', 'imap.gmail.com')
+IMAP_PORT = int(os.environ.get('IMAP_PORT', 993))
+IMAP_USE_SSL = os.environ.get('IMAP_USE_SSL', 'True') == 'True'
+
+# Celery configuration
+CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', CELERY_BROKER_URL)
+
+# Channels configuration
+ASGI_APPLICATION = 'config.asgi.application'
+
+REDIS_URL = os.environ.get('REDIS_URL')
+if REDIS_URL:
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels_redis.core.RedisChannelLayer',
+            'CONFIG': {
+                "hosts": [REDIS_URL],
+            },
+        },
+    }
+else:
+    # Fallback for local development without Redis
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer"
+        }
+    }
+
+
+# Celery beat schedule – fetch vendor emails every 5 minutes
+from celery.schedules import crontab
+CELERY_BEAT_SCHEDULE = {
+    'fetch-vendor-emails-every-5-minutes': {
+        'task': 'apps.ai_assistant.tasks.fetch_vendor_emails',
+        'schedule': crontab(minute='*/5'),
+    },
+}
+# AI Configuration
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')

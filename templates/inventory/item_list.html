@@ -438,6 +438,7 @@
         <table class="table inventory-table">
             <thead>
                 <tr>
+                    <th style="width: 50px;">Image</th>
                     <th>SKU / Product</th>
                     <th>Warehouse</th>
                     <th>Company</th>
@@ -451,6 +452,15 @@
             <tbody>
                 {% for item in items %}
                 <tr>
+                    <td>
+                        {% if item.effective_image %}
+                            <img src="{{ item.effective_image.url }}" class="rounded shadow-sm" style="width: 48px; height: 48px; object-fit: cover;" alt="{{ item.product_name }}">
+                        {% else %}
+                            <div class="bg-light rounded d-flex align-items-center justify-content-center text-muted" style="width: 48px; height: 48px;">
+                                <i class="fas fa-image"></i>
+                            </div>
+                        {% endif %}
+                    </td>
                     <td>
                         <div class="d-flex align-items-center">
                             <div class="flex-grow-1">

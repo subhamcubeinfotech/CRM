@@ -188,9 +188,24 @@ class InventoryItem(TenantAwareModel):
     # Financial
     unit_cost = models.DecimalField(max_digits=20, decimal_places=2, default=0)
     price_unit = models.CharField(max_length=20, default='per lbs')
+    image = models.ImageField(upload_to='inventory/items/', null=True, blank=True)
     
     # Reorder
     reorder_level = models.DecimalField(max_digits=20, decimal_places=2, default=10, help_text='Minimum quantity before reorder')
+    billing_preference = models.CharField(max_length=50, default='standard')
+    
+    @property
+    def effective_image(self):
+        """Returns the item-specific image if available, else falls back to the Material's image"""
+        if self.image:
+            return self.image
+        
+        # Try to find a Material with a matching name in the same tenant
+        from .models import Material
+        material = Material.objects.filter(tenant=self.tenant, name=self.product_name).first()
+        if material and material.image:
+            return material.image
+        return None
     
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)

@@ -14,15 +14,16 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h2"><i class="fas fa-users-cog me-2 text-primary"></i>Team Management</h1>
         {% if request.user.role == 'admin' %}
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
-            <i class="fas fa-user-plus me-1"></i>Add Team Member
-        </button>
+        <a href="{% url 'accounts:team_invite' %}" class="btn btn-primary">
+            <i class="fas fa-user-plus me-1"></i>Invite Team Member
+        </a>
         {% endif %}
     </div>
 
-    <div class="card shadow-sm border-0">
+    <!-- Active Team Members -->
+    <div class="card shadow-sm border-0 mb-5">
         <div class="card-header bg-white py-3">
-            <h5 class="card-title mb-0">Members of {{ request.user.tenant.name }}</h5>
+            <h5 class="card-title mb-0">Active Members of {{ request.user.tenant.name }}</h5>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -64,7 +65,7 @@
                             </td>
                             {% if request.user.role == 'admin' %}
                             <td class="text-end pe-4">
-                                <button class="btn btn-sm btn-outline-secondary"><i class="fas fa-edit"></i></button>
+                                <button class="btn btn-sm btn-outline-secondary"><i class="fas fa-id-card"></i></button>
                                 {% if member != request.user %}
                                 <button class="btn btn-sm btn-outline-danger ms-1"><i class="fas fa-user-minus"></i></button>
                                 {% endif %}
@@ -77,25 +78,50 @@
             </div>
         </div>
     </div>
-</div>
 
-<!-- Modal for adding user (Simplified for now) -->
-<div class="modal fade" id="addUserModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Add Team Member</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p class="text-muted">This feature will allow you to invite new members to your tenant with specific roles.</p>
-                <!-- Form would go here -->
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary">Invite Member</button>
+    <!-- Pending Invitations -->
+    {% if pending_invites %}
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-warning bg-opacity-10 border-warning border-opacity-25 py-3">
+            <h5 class="card-title mb-0 text-warning-emphasis"><i class="fas fa-envelope-open-text me-2"></i>Pending Invitations</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Invited Email</th>
+                            <th>Requested Role</th>
+                            <th>Invited By</th>
+                            <th>Sent Date</th>
+                            <th class="text-end pe-4">Invitation Link</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for invite in pending_invites %}
+                        <tr>
+                            <td class="ps-4 fw-medium">{{ invite.email }}</td>
+                            <td>
+                                <span class="badge bg-secondary bg-opacity-10 text-secondary">
+                                    {{ invite.get_role_display }}
+                                </span>
+                            </td>
+                            <td>{{ invite.invited_by.get_full_name|default:invite.invited_by.username }}</td>
+                            <td class="text-muted small">{{ invite.created_at|date:"M d, Y" }}</td>
+                            <td class="text-end pe-4">
+                                <div class="input-group input-group-sm justify-content-end">
+                                    <input type="text" class="form-control form-control-sm bg-light" style="max-width: 250px;" 
+                                           value="{{ request.scheme }}://{{ request.get_host }}{% url 'accounts:accept_invitation' invite.token %}" readonly>
+                                    <button class="btn btn-outline-primary" onclick="navigator.clipboard.writeText(this.previousElementSibling.value); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy', 2000)">Copy</button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
+    {% endif %}
 </div>
 {% endblock %}

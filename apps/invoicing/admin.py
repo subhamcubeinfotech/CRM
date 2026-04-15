@@ -3,6 +3,7 @@ Invoicing Admin Configuration
 """
 from django.contrib import admin
 from .models import Invoice, InvoiceLineItem, Payment
+from apps.accounts.admin import GlobalVisibilityMixin
 
 
 class InvoiceLineItemInline(admin.TabularInline):
@@ -17,7 +18,7 @@ class PaymentInline(admin.TabularInline):
 
 
 @admin.register(Invoice)
-class InvoiceAdmin(admin.ModelAdmin):
+class InvoiceAdmin(GlobalVisibilityMixin, admin.ModelAdmin):
     list_display = [
         'invoice_number', 'customer', 'invoice_date', 'due_date', 
         'total', 'status', 'balance_due', 'file_name'
@@ -58,13 +59,13 @@ class InvoiceAdmin(admin.ModelAdmin):
 
 
 @admin.register(InvoiceLineItem)
-class InvoiceLineItemAdmin(admin.ModelAdmin):
+class InvoiceLineItemAdmin(GlobalVisibilityMixin, admin.ModelAdmin):
     list_display = ['invoice', 'description', 'quantity', 'unit_price', 'total']
     search_fields = ['description', 'invoice__invoice_number']
 
 
 @admin.register(Payment)
-class PaymentAdmin(admin.ModelAdmin):
+class PaymentAdmin(GlobalVisibilityMixin, admin.ModelAdmin):
     list_display = ['invoice', 'amount', 'payment_method', 'payment_date', 'transaction_id']
     list_filter = ['payment_method', 'payment_date']
     search_fields = ['invoice__invoice_number', 'transaction_id', 'notes']

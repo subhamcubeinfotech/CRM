@@ -23,8 +23,13 @@ class ChatMessageAdmin(admin.ModelAdmin):
 
 @admin.register(PendingInventoryEmail)
 class PendingInventoryEmailAdmin(admin.ModelAdmin):
-    list_display = ['subject', 'sender_email', 'status', 'received_at']
-    list_filter = ['status']
+    list_display = ['subject', 'sender_email', 'status', 'received_at', 'tenant']
+    list_filter = ['status', 'tenant']
+
+    def get_queryset(self, request):
+        if request.user.is_superuser:
+            return PendingInventoryEmail.plain_objects.all()
+        return super().get_queryset(request)
 
 
 @admin.register(PendingInventoryItem)
@@ -35,8 +40,25 @@ class PendingInventoryItemAdmin(admin.ModelAdmin):
 
 @admin.register(BuyerRequirement)
 class BuyerRequirementAdmin(admin.ModelAdmin):
-    list_display = ['buyer', 'material_name', 'quantity_needed', 'source', 'is_fulfilled']
-    list_filter = ['source', 'is_fulfilled']
+    list_display = ['buyer', 'material_name', 'quantity_needed', 'source', 'is_fulfilled', 'tenant']
+    list_filter = ['source', 'is_fulfilled', 'tenant']
+
+    def get_queryset(self, request):
+        if request.user.is_superuser:
+            return BuyerRequirement.plain_objects.all()
+        return super().get_queryset(request)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if request.user.is_superuser:
+            from apps.accounts.models import Company, Tenant
+            if db_field.name == "buyer":
+                kwargs["queryset"] = Company.plain_objects.all()
+            if db_field.name == "tenant":
+                kwargs["queryset"] = Tenant.objects.all()
+            if db_field.name == "source_email":
+                from .models import PendingInventoryEmail
+                kwargs["queryset"] = PendingInventoryEmail.plain_objects.all()
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 @admin.register(SmartMatch)
