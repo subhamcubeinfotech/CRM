@@ -133,36 +133,47 @@ def extract_items_regex_fallback(body_text):
     import re
     items = []
     
-    # 1. Demand Patterns (Looking for, Need, Buy)
+    # Clean text: handle asterisks, underscores, and extra spaces
+    clean_text = body_text.replace('*', '').replace('_', '')
+    
+    # Pre-check for overall intent
+    is_demand = any(word in clean_text.lower() for word in ['require', 'requirement', 'looking for', 'need to buy', 'inquiry', 'purchasing'])
+    
+    # 1. Demand Patterns
     demand_patterns = [
-        r"(?:need|looking for|require|buy|want|seek)\s*([\d,.]+)?\s*(tons?|lbs?|kg|mt)?\s*(?:of)?\s*([^.\n,]+)",
+        r"(?:looking for|require|need|buy|want|seek)\s*([\d,.]+)?\s*(tons?|lbs?|kg|mt)?\s*(?:of)?\s*([^.\n\?\!\*,]+)",
     ]
-    # 2. Supply Patterns (Available, Have, Selling, Stock)
+    # 2. Supply Patterns
     supply_patterns = [
-        r"(?:available|have|selling|stock|offer|sending)\s*([\d,.]+)?\s*(tons?|lbs?|kg|mt)?\s*(?:of)?\s*([^.\n,]+)",
+        r"(?:selling|offer|available|stock|have)\s*([\d,.]+)?\s*(tons?|lbs?|kg|mt)?\s*(?:of)?\s*([^.\n\?\!\*,]+)",
     ]
 
     for p in demand_patterns:
-        matches = re.finditer(p, body_text, re.IGNORECASE)
+        matches = re.finditer(p, clean_text, re.IGNORECASE)
         for m in matches:
-            if m.group(3).strip():
+            prod = m.group(3).strip()
+            if prod and len(prod) > 2 and prod.lower() not in ['available', 'needed', 'stock', 'info']:
                 items.append({
                     "intent": "demand",
-                    "product_name": m.group(3).strip(),
+                    "product_name": prod,
                     "quantity": float(m.group(1).replace(',', '')) if m.group(1) else 0.0,
                     "unit": m.group(2) if m.group(2) else "lbs",
                 })
 
-    for p in supply_patterns:
-        matches = re.finditer(p, body_text, re.IGNORECASE)
-        for m in matches:
-            if m.group(3).strip():
-                items.append({
-                    "intent": "supply",
-                    "product_name": m.group(3).strip(),
-                    "quantity": float(m.group(1).replace(',', '')) if m.group(1) else 0.0,
-                    "unit": m.group(2) if m.group(2) else "lbs",
-                })
+    # Only look for supply if we didn't find clear demand or if it's explicitly selling
+    if not items or not is_demand:
+        for p in supply_patterns:
+            matches = re.finditer(p, clean_text, re.IGNORECASE)
+            for m in matches:
+                prod = m.group(3).strip()
+                if prod and len(prod) > 2 and prod.lower() not in ['available', 'needed', 'stock', 'info']:
+                    items.append({
+                        "intent": "supply",
+                        "product_name": prod,
+                        "quantity": float(m.group(1).replace(',', '')) if m.group(1) else 0.0,
+                        "unit": m.group(2) if m.group(2) else "lbs",
+                    })
+
     return items
 
 
@@ -294,6 +305,12 @@ def fetch_and_process_emails(tenant, max_emails=10, request_user=None):
             subject = decode_email_subject(msg)
             sender_raw = msg.get('From', '')
             sender_name, sender_email = email.utils.parseaddr(sender_raw)
+            sender_email = sender_email.lower()
+
+            # SPAM FILTER: Skip common junk domains
+            junk_domains = ['jeevansathi.com', 'shaadi.com', 'linkedin.com', 'facebook.com', 'instagram.com', 'noreply', 'notifications']
+            if any(junk in sender_email for junk in junk_domains):
+                continue
         
         except Exception as e:
             logger.error(f"Error fetching email {eid}: {e}")
@@ -310,24 +327,27 @@ def fetch_and_process_emails(tenant, max_emails=10, request_user=None):
             continue
 
         # Intelligent Company Matching
-        # First by email domain, then by sender name fuzzy match
-        domain = sender_email.split('@')[-1].lower() if '@' in sender_email else ''
-        matched_company = None
-        
-        if domain:
-            matched_company = Company.objects.filter(tenant=tenant, email__icontains=domain).first()
+        matched_company = Company.objects.filter(tenant=tenant, email=sender_email).first()
+
+        if not matched_company:
+            domain = sender_email.split('@')[-1].lower() if '@' in sender_email else ''
             
-            # Fallback: Check if any Contact (User) has this email domain
-            if not matched_company:
-                from django.contrib.auth import get_user_model
-                ContactUser = get_user_model()
-                contact = ContactUser.objects.filter(tenant=tenant, email__icontains=domain, company__isnull=False).first()
-                if contact:
-                    matched_company = contact.company
-            
+            # Domain match only for non-generic providers
+            if domain and domain not in ['gmail.com', 'outlook.com', 'yahoo.com', 'hotmail.com', 'icloud.com']:
+                matched_company = Company.objects.filter(tenant=tenant, email__icontains=domain).first()
+                if not matched_company:
+                    # Try matching by contact email
+                    from django.contrib.auth import get_user_model
+                    ContactUser = get_user_model()
+                    contact = ContactUser.objects.filter(tenant=tenant, email=sender_email, company__isnull=False).first()
+                    if contact:
+                        matched_company = contact.company
+
+        # Fallback: Matching by sender name (least reliable)
         if not matched_company and sender_name:
-            s_name = str(sender_name)
-            matched_company = Company.objects.filter(tenant=tenant, name__icontains=s_name[:10]).first()
+            s_name = str(sender_name).strip()
+            if len(s_name) > 3:
+                matched_company = Company.objects.filter(tenant=tenant, name__icontains=s_name[:15]).first()
 
         # Assign Owner: Priority 1 = Company Creator, Priority 2 = Requesting User
         fetched_by = matched_company.created_by if matched_company and matched_company.created_by else request_user
@@ -372,6 +392,10 @@ def fetch_and_process_emails(tenant, max_emails=10, request_user=None):
                     max_price=item_data.get('price'),
                     notes=f"Auto-ingested from email: {subject}"
                 )
+                # Mark email as approved/processed immediately for Demand
+                pending_email.status = 'approved'
+                pending_email.processed_at = timezone.now()
+                pending_email.save()
                 logger.info(f"Automated: Created Buyer Requirement for {item_data.get('product_name')}")
             else:
                 # Default: Pending Inventory Item (Supply) for approval
