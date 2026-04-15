@@ -737,7 +737,13 @@ def inventory_item_add_general(request):
             }
 
             
-            form = InventoryItemForm(item_data, user=request.user)
+            images = request.FILES.getlist('image')
+            
+            form = InventoryItemForm(item_data, request.FILES if i < len(images) else None, user=request.user)
+            # If multiple images are sent in bulk, we need to pick the right one for this item.
+            # In a standard formset it would be easier, but here we try to map by index if possible.
+            if i < len(images):
+                form.files = {'image': images[i]}
             if form.is_valid():
                 with transaction.atomic():
                     item = form.save(commit=False)
@@ -831,7 +837,7 @@ def inventory_item_add(request, pk):
         if not post_data.get('unit_of_measure'):
             post_data['unit_of_measure'] = post_data.get('offered_weight_unit', 'lbs')
 
-        form = InventoryItemForm(post_data, user=request.user)
+        form = InventoryItemForm(post_data, request.FILES, user=request.user)
         if form.is_valid():
             with transaction.atomic():
                 item = form.save(commit=False)
@@ -909,7 +915,7 @@ def inventory_item_edit(request, pk):
         if not post_data.get('unit_of_measure'):
             post_data['unit_of_measure'] = post_data.get('offered_weight_unit', 'lbs')
 
-        form = InventoryItemForm(post_data, instance=item, user=request.user)
+        form = InventoryItemForm(post_data, request.FILES, instance=item, user=request.user)
         if form.is_valid():
             with transaction.atomic():
                 # If no history exists yet (for old items), create an initial entry first

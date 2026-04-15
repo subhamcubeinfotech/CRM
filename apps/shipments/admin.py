@@ -3,6 +3,7 @@ Shipments Admin Configuration
 """
 from django.contrib import admin
 from .models import Shipment, Container, ShipmentMilestone, Document, ShipmentItem
+from apps.accounts.admin import GlobalVisibilityMixin
 
 
 class ContainerInline(admin.TabularInline):
@@ -29,7 +30,7 @@ class ShipmentItemInline(admin.TabularInline):
 
 
 @admin.register(Shipment)
-class ShipmentAdmin(admin.ModelAdmin):
+class ShipmentAdmin(GlobalVisibilityMixin, admin.ModelAdmin):
     list_display = [
         'shipment_number', 'customer', 'origin_city', 'destination_city', 
         'status', 'shipment_type', 'created_at'
@@ -127,14 +128,14 @@ class ShipmentAdmin(admin.ModelAdmin):
 
 
 @admin.register(Container)
-class ContainerAdmin(admin.ModelAdmin):
+class ContainerAdmin(GlobalVisibilityMixin, admin.ModelAdmin):
     list_display = ['container_number', 'shipment', 'size', 'weight']
     list_filter = ['size']
     search_fields = ['container_number', 'seal_number', 'shipment__shipment_number']
 
 
 @admin.register(ShipmentMilestone)
-class ShipmentMilestoneAdmin(admin.ModelAdmin):
+class ShipmentMilestoneAdmin(GlobalVisibilityMixin, admin.ModelAdmin):
     list_display = ['shipment', 'status', 'location', 'timestamp']
     list_filter = ['status', 'timestamp']
     search_fields = ['shipment__shipment_number', 'location', 'status']
@@ -142,7 +143,7 @@ class ShipmentMilestoneAdmin(admin.ModelAdmin):
 
 
 @admin.register(Document)
-class DocumentAdmin(admin.ModelAdmin):
+class DocumentAdmin(GlobalVisibilityMixin, admin.ModelAdmin):
     list_display = ['title', 'shipment', 'document_type', 'uploaded_by', 'uploaded_at']
     list_filter = ['document_type', 'uploaded_at']
     search_fields = ['title', 'shipment__shipment_number']

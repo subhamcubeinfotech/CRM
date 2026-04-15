@@ -733,7 +733,7 @@
         <div class="row">
             <!-- Sidebar -->
             <nav class="col-md-2 d-none d-md-block sidebar py-3">
-                {% if user.is_staff %}
+                {% if user.is_staff or user.role == 'customer' %}
                 <div class="d-flex gap-1 mb-3 px-2">
                     <a href="{% url 'ai_assistant:pending_inventory' %}" class="btn btn-sm {% if '/ai/pending-inventory' in request.path %}btn-primary{% else %}btn-outline-primary{% endif %} flex-fill" title="Pending Inventory">
                         <i class="fas fa-envelope-open-text me-1"></i>Inbox
@@ -1219,12 +1219,40 @@
     const chatMessages = document.getElementById('ai-chat-messages');
     const chatInput = document.getElementById('ai-chat-input');
     const typingIndicator = document.getElementById('ai-typing');
+    
+    // Connect WebSocket
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    let chatSocket = null;
+    
+    function connectWebSocket() {
+        chatSocket = new WebSocket(`${wsProtocol}//${window.location.host}/ws/ai_chat/`);
+        
+        chatSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            typingIndicator.style.display = 'none';
+            if (data.response) {
+                addMessage(data.role || 'assistant', data.response);
+            }
+        };
+        
+        chatSocket.onclose = function(e) {
+            console.error('Chat socket closed unexpectedly. Reconnecting in 3s...');
+            setTimeout(connectWebSocket, 3000);
+        };
+    }
+    
+    // Lazy connect on first open
+    let wsConnected = false;
 
     window.toggleAIChat = function() {
         chatWindow.classList.toggle('show');
         chatFab.classList.toggle('open');
         if (chatWindow.classList.contains('show')) {
             chatInput.focus();
+            if (!wsConnected) {
+                connectWebSocket();
+                wsConnected = true;
+            }
         }
     };
 
@@ -1265,23 +1293,12 @@
         typingIndicator.style.display = 'block';
         chatMessages.scrollTop = chatMessages.scrollHeight;
 
-        fetch("{% url 'ai_assistant:chat_api' %}", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token }}'
-            },
-            body: JSON.stringify({ message: message })
-        })
-        .then(r => r.json())
-        .then(data => {
+        if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+            chatSocket.send(JSON.stringify({ message: message }));
+        } else {
             typingIndicator.style.display = 'none';
-            addMessage('assistant', data.response || data.error || 'No response');
-        })
-        .catch(err => {
-            typingIndicator.style.display = 'none';
-            addMessage('assistant', '⚠️ Connection error. Please try again.');
-        });
+            addMessage('assistant', '⚠️ Connection error. WebSocket is not open.');
+        }
     };
 })();
 </script>

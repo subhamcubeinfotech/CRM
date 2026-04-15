@@ -3,6 +3,7 @@ from django import forms
 from django.contrib.auth.forms import PasswordResetForm
 from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
+from django.contrib.auth.password_validation import validate_password
 from .models import Company
 
 class TagInputField(forms.MultipleChoiceField):
@@ -315,18 +316,10 @@ class SignupStep1Form(forms.ModelForm):
     def clean_password(self):
         password = self.cleaned_data.get('password')
         if password:
-            if len(password) < 5:
-                raise ValidationError("Password must be at least 5 characters long.")
-            
-            # Strong password criteria
-            if not any(c.isupper() for c in password):
-                raise ValidationError("Password must contain at least one uppercase letter.")
-            if not any(c.islower() for c in password):
-                raise ValidationError("Password must contain at least one lowercase letter.")
-            if not any(c.isdigit() for c in password):
-                raise ValidationError("Password must contain at least one number.")
-            if not any(c in "!@#$%^&*()_+-=[]{}|;:,.<>?" for c in password):
-                raise ValidationError("Password must contain at least one special character.")
+            try:
+                validate_password(password, self.instance)
+            except ValidationError as e:
+                raise ValidationError(e)
         return password
 
     def clean(self):
