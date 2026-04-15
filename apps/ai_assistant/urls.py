@@ -15,6 +15,7 @@ urlpatterns = [
     path('pending-inventory/item/<int:item_id>/approve/', views.approve_pending_item, name='approve_item'),
     path('pending-inventory/item/<int:item_id>/reject/', views.reject_pending_item, name='reject_item'),
     path('pending-inventory/email/<int:email_id>/approve-all/', views.approve_all_items, name='approve_all'),
+    path('pending-inventory/email/<int:email_id>/reject-all/', views.reject_all_items, name='reject_all'),
     
     # Feature C: Smart Matches
     path('smart-matches/', views.smart_matches_dashboard, name='smart_matches'),
