@@ -191,8 +191,8 @@ def reject_pending_item(request, item_id):
 @require_POST
 def approve_all_items(request, email_id):
     """Bulk approve all pending items from an email"""
-    email = get_object_or_404(PendingInventoryEmail, id=email_id, tenant=request.user.tenant)
     from apps.inventory.models import InventoryItem, Warehouse
+    email = get_object_or_404(PendingInventoryEmail, id=email_id, tenant=request.user.tenant)
     
     warehouse = Warehouse.objects.filter(tenant=request.user.tenant, is_active=True).first()
     if not warehouse:
@@ -201,7 +201,8 @@ def approve_all_items(request, email_id):
     import time
     created = 0
     for item in email.items.filter(status='pending'):
-        sku = f"EML-{int(time.time()) % 99999:05d}-{item.id}"
+        timestamp = int(time.time()) % 100000
+        sku = f"EML-{timestamp:05d}-{item.id}"
         inv_item = InventoryItem.objects.create(
             tenant=request.user.tenant,
             sku=sku,
@@ -219,12 +220,29 @@ def approve_all_items(request, email_id):
         item.save()
         created += 1
     
-    email.status = 'approved'
+    if not email.items.filter(status='pending').exists():
+        email.status = 'approved'
+        email.processed_at = timezone.now()
+        email.processed_by = request.user
+        email.save()
+    
+    return JsonResponse({'status': 'approved', 'count': created})
+
+
+@login_required
+@require_POST
+def reject_all_items(request, email_id):
+    """Bulk reject all pending items from an email"""
+    email = get_object_or_404(PendingInventoryEmail, id=email_id, tenant=request.user.tenant)
+    
+    updated = email.items.filter(status='pending').update(status='rejected')
+    
+    email.status = 'rejected'
     email.processed_at = timezone.now()
     email.processed_by = request.user
     email.save()
     
-    return JsonResponse({'status': 'approved', 'count': created})
+    return JsonResponse({'status': 'rejected', 'count': updated})
 
 
 # ─── FEATURE C: Smart Matches ───────────────────────────────────────────────
