@@ -119,10 +119,16 @@ def pending_inventory_list(request):
     ).exclude(status='pending').order_by('-processed_at')[:10]
     
     from apps.accounts.models import Company
+    # Admin Sees all companies. Normal users see only their tenant's.
+    if request.user.is_superuser or getattr(request.user, 'is_admin', False):
+        all_companies = Company.objects.all()
+    else:
+        all_companies = Company.objects.filter(tenant=request.user.tenant)
+
     context = {
         'pending_emails': emails,
         'recent_emails': recent,
-        'companies': Company.objects.filter(tenant=request.user.tenant),
+        'companies': all_companies,
     }
     return render(request, 'ai_assistant/pending_inventory.html', context)
 

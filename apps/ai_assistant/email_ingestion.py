@@ -481,35 +481,17 @@ def fetch_and_process_emails(tenant, max_emails=10, request_user=None):
         if not extracted_items:
             continue
 
-        # Intelligent Company Matching
-        if tenant:
-            matched_company = Company.objects.filter(tenant=tenant, email=sender_email).first()
-        else:
-            # Global lookup across all tenants
-            matched_company = Company.plain_objects.filter(email=sender_email).first()
-            if matched_company:
-                tenant = matched_company.tenant
-
+        # Intelligent Company Matching - GLOBAL Fallback
+        matched_company = Company.objects.filter(email=sender_email).first()
         if not matched_company:
             domain = sender_email.split('@')[-1].lower() if '@' in sender_email else ''
-            
-            # Domain match only for non-generic providers
             if domain and domain not in ['gmail.com', 'outlook.com', 'yahoo.com', 'hotmail.com', 'icloud.com']:
-                matched_company = Company.objects.filter(tenant=tenant, email__icontains=domain).first()
-                if not matched_company:
-                    # Try matching by contact email
-                    from django.contrib.auth import get_user_model
-                    ContactUser = get_user_model()
-                    contact = ContactUser.objects.filter(tenant=tenant, email=sender_email, company__isnull=False).first()
-                    if contact:
-                        matched_company = contact.company
+                matched_company = Company.objects.filter(email__icontains=domain).first()
 
-        # Fallback: Matching by sender name (least reliable)
-        if not matched_company and sender_name:
-            s_name = str(sender_name).strip()
-            if len(s_name) > 3:
-                matched_company = Company.objects.filter(tenant=tenant, name__icontains=s_name[:15]).first()
-
+        # Update tenant if matched globally
+        if matched_company and matched_company.tenant:
+            tenant = matched_company.tenant
+        
         # Assign Owner: Priority 1 = Company Creator, Priority 2 = Requesting User
         fetched_by = matched_company.created_by if matched_company and matched_company.created_by else request_user
 
