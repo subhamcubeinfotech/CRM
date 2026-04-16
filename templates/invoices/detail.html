@@ -20,10 +20,6 @@
             <a href="{% url 'invoicing:invoice_pdf' invoice.pk %}" class="btn btn-outline-secondary">
                 <i class="fas fa-file-pdf me-2"></i>Download PDF
             </a>
-            {% url 'invoicing:public_invoice_detail' token=invoice.portal_token as portal_url %}
-            <button class="btn btn-outline-dark" onclick="copyPortalLink('{{ request.scheme }}://{{ request.get_host }}{{ portal_url }}')">
-                <i class="fas fa-link me-2"></i>Portal Link
-            </button>
             {% if invoice.status == 'draft' %}
             <form action="{% url 'invoicing:update_invoice_status' invoice.pk %}" method="post" class="d-inline">
                 {% csrf_token %}
@@ -225,21 +221,3 @@
 </div>
 {% endblock %}
 
-{% block extra_js %}
-<script>
-    function copyPortalLink(url) {
-        navigator.clipboard.writeText(url).then(() => {
-            alert('Portal link copied to clipboard!');
-        }).catch(err => {
-            console.error('Failed to copy: ', err);
-            const input = document.createElement('input');
-            input.value = url;
-            document.body.appendChild(input);
-            input.select();
-            document.execCommand('copy');
-            document.body.removeChild(input);
-            alert('Portal link copied to clipboard! (Fallback)');
-        });
-    }
-</script>
-{% endblock %}
