@@ -163,6 +163,13 @@ INTENT_PATTERNS = [
     (r'(?:dashboard|summary|overview|stats|statistics|report)', 'dashboard_stats'),
     (r'(?:how.is|what.is)\s+(?:the\s+)?(?:business|performance)', 'dashboard_stats'),
     
+    # Numbered shortcuts
+    (r'^1$', 'shipment_status_filter'),
+    (r'^2$', 'order_open'),
+    (r'^3$', 'inventory_low_stock'),
+    (r'^4$', 'dashboard_stats'),
+    (r'^5$', 'help'),
+
     # Greetings
     (r'^(?:hi|hello|hey|good\s+(?:morning|afternoon|evening)|namaste|hola)', 'greeting'),
     (r'^(?:help|what can you do|commands)', 'help'),
@@ -237,22 +244,21 @@ def process_query(user, message):
     
     if intent == 'help':
         return (
-            "Here are some things you can ask:\n\n"
+            "Here are some things you can ask (Type the **Number** or the command):\n\n"
+            "1️⃣ **Show pending shipments** (Type **1**)\n"
+            "2️⃣ **Show open orders** (Type **2**)\n"
+            "3️⃣ **Show low stock items** (Type **3**)\n"
+            "4️⃣ **Dashboard stats** (Type **4**)\n"
+            "5️⃣ **Get help** (Type **5**)\n\n"
             "📦 **Shipments:**\n"
             "• \"Status of shipment SHP-2026-00001\"\n"
-            "• \"Show pending shipments\"\n"
             "• \"How many shipments are in transit?\"\n\n"
             "📋 **Orders:**\n"
-            "• \"Show open orders\"\n"
             "• \"Order ORD-2026-00001\"\n\n"
             "📊 **Inventory:**\n"
-            "• \"Show low stock items\"\n"
             "• \"Inventory in warehouse X\"\n\n"
             "🏢 **Companies:**\n"
-            "• \"List all vendors\"\n"
-            "• \"Find company ABC\"\n\n"
-            "📈 **Dashboard:**\n"
-            "• \"Show me the dashboard stats\""
+            "• \"Find company ABC\""
         )
     
     # ── Shipment queries ──
@@ -382,7 +388,7 @@ def process_query(user, message):
     
     if intent == 'order_open':
         from apps.orders.models import Order
-        open_orders = Order.objects.filter(tenant=tenant).exclude(status__in=['closed', 'cancelled'])
+        open_orders = Order.objects.filter(tenant=tenant).exclude(status__in=['delivered', 'closed', 'cancelled'])
         if open_orders.exists():
             result = f"📋 **{open_orders.count()} Open Orders:**\n\n"
             result += "\n\n".join(format_order(o) for o in open_orders[:10])
@@ -501,12 +507,11 @@ def _smart_fallback(tenant, message):
         return "🔍 **Found Inventory:**\n\n" + format_inventory(item)
     
     return (
-        "🤔 I'm not sure what you're asking. Here are some things I can help with:\n\n"
-        "• \"Show pending shipments\"\n"
-        "• \"Status of shipment SHP-2026-00001\"\n"
-        "• \"List all vendors\"\n"
-        "• \"Show low stock items\"\n"
-        "• \"Dashboard stats\"\n"
-        "• \"Open orders\"\n\n"
-        "Type **help** for more examples!"
+        "🤔 I'm not sure what you're asking. Here are some quick actions:\n\n"
+        "1️⃣ **1** — Show pending shipments\n"
+        "2️⃣ **2** — Show open orders\n"
+        "3️⃣ **3** — Show low stock items\n"
+        "4️⃣ **4** — Dashboard stats\n"
+        "5️⃣ **5** — Help / Examples\n\n"
+        "Just type the **number** or ask me anything! 🚀"
     )

@@ -137,7 +137,7 @@ def extract_items_regex_fallback(body_text):
     clean_text = body_text.replace('*', '').replace('_', '')
     
     # Pre-check for overall intent
-    is_demand = any(word in clean_text.lower() for word in ['require', 'requirement', 'looking for', 'need to buy', 'inquiry', 'purchasing'])
+    is_demand = any(word in clean_text.lower() for word in ['require', 'requirement', 'looking for', 'need', 'buy', 'want', 'purchasing'])
     
     # 1. Demand Patterns
     demand_patterns = [
@@ -268,7 +268,7 @@ def fetch_and_process_emails(tenant, max_emails=10, request_user=None):
     """
     Main entry point: connect to IMAP, fetch new emails, extract inventory items.
     """
-    from .models import PendingInventoryEmail, PendingInventoryItem
+    from .models import PendingInventoryEmail, PendingInventoryItem, BuyerRequirement
     from apps.accounts.models import Company
 
     try:
@@ -305,6 +305,7 @@ def fetch_and_process_emails(tenant, max_emails=10, request_user=None):
             subject = decode_email_subject(msg)
             sender_raw = msg.get('From', '')
             sender_name, sender_email = email.utils.parseaddr(sender_raw)
+            message_id = msg.get('Message-ID', f"{subject}-{sender_email}") # Fallback to subject-sender if ID missing
             sender_email = sender_email.lower()
 
             # SPAM FILTER: Skip common junk domains
@@ -315,11 +316,32 @@ def fetch_and_process_emails(tenant, max_emails=10, request_user=None):
         except Exception as e:
             logger.error(f"Error fetching email {eid}: {e}")
             continue
-        if PendingInventoryEmail.objects.filter(tenant=tenant, subject=subject, sender_email=sender_email).exists():
-            continue
+        # GLOBAL Deduplication Check: Use Message-ID for precision
+        existing_email = PendingInventoryEmail.plain_objects.filter(message_id=message_id).first()
+        if not existing_email:
+            # Also fallback to subject check if needed, but allow new dates
+            existing_email = PendingInventoryEmail.plain_objects.filter(subject=subject, sender_email=sender_email).last()
+        
+        if existing_email:
+            # Only skip if it has data AND was approved
+            has_requirements = BuyerRequirement.plain_objects.filter(source_email=existing_email).exists()
+            has_pending_items = PendingInventoryItem.objects.filter(email=existing_email).exists()
+            
+            if (has_requirements or has_pending_items) and existing_email.status != 'pending' and existing_email.message_id == message_id:
+                continue
+        
+        pending_email = existing_email
+        if not pending_email:
+            # Create new email record
+            body = get_email_body(msg)
+            attachments_info = handle_attachments(msg)
+            full_text = body + "\n" + attachments_info
+            
+            # (routing logic continues...)
+        else:
+            body = pending_email.body_text
+            attachments_info = "" # Assuming we don't re-process attachments if already in DB
 
-        body = get_email_body(msg)
-        attachments_info = handle_attachments(msg)
         full_text = body + "\n" + attachments_info
 
         extracted_items = extract_inventory_items(full_text)
@@ -327,7 +349,13 @@ def fetch_and_process_emails(tenant, max_emails=10, request_user=None):
             continue
 
         # Intelligent Company Matching
-        matched_company = Company.objects.filter(tenant=tenant, email=sender_email).first()
+        if tenant:
+            matched_company = Company.objects.filter(tenant=tenant, email=sender_email).first()
+        else:
+            # Global lookup across all tenants
+            matched_company = Company.plain_objects.filter(email=sender_email).first()
+            if matched_company:
+                tenant = matched_company.tenant
 
         if not matched_company:
             domain = sender_email.split('@')[-1].lower() if '@' in sender_email else ''
@@ -352,12 +380,18 @@ def fetch_and_process_emails(tenant, max_emails=10, request_user=None):
         # Assign Owner: Priority 1 = Company Creator, Priority 2 = Requesting User
         fetched_by = matched_company.created_by if matched_company and matched_company.created_by else request_user
 
+        if not tenant:
+            # Fallback to default tenant if still not found
+            from apps.accounts.models import Tenant
+            tenant = Tenant.objects.filter(name__icontains='Default').first() or Tenant.objects.first()
+
         pending_email = PendingInventoryEmail.objects.create(
             tenant=tenant,
             sender_email=sender_email,
             sender_name=sender_name,
             subject=subject,
             body_text=body,
+            message_id=message_id,
             received_at=timezone.now(),
             matched_company=matched_company,
             raw_extraction=extracted_items,
@@ -369,9 +403,12 @@ def fetch_and_process_emails(tenant, max_emails=10, request_user=None):
             
             if intent == 'demand':
                 # AUTOMATED: Create Buyer Requirement directly from email
-                from .models import BuyerRequirement
-                from apps.accounts.models import Company
                 
+                # Deduplication Check: Don't create if already exists for this email
+                if BuyerRequirement.objects.filter(tenant=tenant, source_email=pending_email, material_name=item_data.get('product_name')).exists():
+                    logger.info(f"Skipping duplicate Requirement for {item_data.get('product_name')}")
+                    continue
+
                 buyer = matched_company
                 if not buyer:
                     buyer, _ = Company.objects.get_or_create(
