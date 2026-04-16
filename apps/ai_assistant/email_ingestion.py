@@ -136,23 +136,23 @@ def extract_items_regex_fallback(body_text):
     # Clean text: handle asterisks, underscores, and extra spaces
     clean_text = body_text.replace('*', '').replace('_', '')
     
-    # Pre-check for overall intent
-    is_demand = any(word in clean_text.lower() for word in ['require', 'requirement', 'looking for', 'need', 'buy', 'want', 'purchasing'])
+    # Pre-check for overall intent using word boundaries to avoid partial matches (e.g., 'buyers')
+    is_demand = any(re.search(rf"\b{word}\b", clean_text.lower()) for word in ['require', 'requirement', 'looking for', 'need', 'buy', 'want', 'purchasing'])
     
-    # 1. Demand Patterns
+    # 1. Demand Patterns (Improved with word boundaries)
     demand_patterns = [
-        r"(?:looking for|require|need|buy|want|seek)\s*([\d,.]+)?\s*(tons?|lbs?|kg|mt)?\s*(?:of)?\s*([^.\n\?\!\*,]+)",
+        r"\b(?:looking for|require|need|buy|want|seek)\b\s*([\d,.]+)?\s*(tons?|lbs?|kg|mt)?\s*(?:of)?\s*([^.\n\?\!\*,]+)",
     ]
-    # 2. Supply Patterns
+    # 2. Supply Patterns (Improved with word boundaries)
     supply_patterns = [
-        r"(?:selling|offer|available|stock|have)\s*([\d,.]+)?\s*(tons?|lbs?|kg|mt)?\s*(?:of)?\s*([^.\n\?\!\*,]+)",
+        r"\b(?:selling|offer|available|stock|have)\b\s*([\d,.]+)?\s*(tons?|lbs?|kg|mt)?\s*(?:of)?\s*([^.\n\?\!\*,]+)",
     ]
 
     for p in demand_patterns:
         matches = re.finditer(p, clean_text, re.IGNORECASE)
         for m in matches:
-            prod = m.group(3).strip()
-            if prod and len(prod) > 2 and prod.lower() not in ['available', 'needed', 'stock', 'info']:
+            prod = m.group(3).strip() if m.group(3) else ""
+            if prod and len(prod) > 2 and prod.lower() not in ['available', 'needed', 'stock', 'info', 'material']:
                 items.append({
                     "intent": "demand",
                     "product_name": prod,
@@ -165,8 +165,8 @@ def extract_items_regex_fallback(body_text):
         for p in supply_patterns:
             matches = re.finditer(p, clean_text, re.IGNORECASE)
             for m in matches:
-                prod = m.group(3).strip()
-                if prod and len(prod) > 2 and prod.lower() not in ['available', 'needed', 'stock', 'info']:
+                prod = m.group(3).strip() if m.group(3) else ""
+                if prod and len(prod) > 2 and prod.lower() not in ['available', 'needed', 'stock', 'info', 'material']:
                     items.append({
                         "intent": "supply",
                         "product_name": prod,
@@ -317,7 +317,12 @@ def fetch_and_process_emails(tenant, max_emails=10, request_user=None):
             logger.error(f"Error fetching email {eid}: {e}")
             continue
         # GLOBAL Deduplication Check: Use Message-ID for precision
-        existing_email = PendingInventoryEmail.plain_objects.filter(message_id=message_id).first()
+        model_fields = [f.name for f in PendingInventoryEmail._meta.get_fields()]
+        existing_email = None
+        
+        if 'message_id' in model_fields:
+            existing_email = PendingInventoryEmail.plain_objects.filter(message_id=message_id).first()
+        
         if not existing_email:
             # Also fallback to subject check if needed, but allow new dates
             existing_email = PendingInventoryEmail.plain_objects.filter(subject=subject, sender_email=sender_email).last()

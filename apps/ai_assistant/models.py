@@ -1,6 +1,7 @@
 """
 AI Assistant Models - Chat sessions, pending inventory, buyer requirements
 """
+# Models last refreshed to ensure field synchronization
 from django.db import models
 from django.conf import settings
 from apps.accounts.models import TenantAwareModel

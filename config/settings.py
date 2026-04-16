@@ -183,24 +183,14 @@ LOGGING = {
         },
 
         'file': {
-            'class': 'logging.handlers.TimedRotatingFileHandler',
-            'filename': str(LOGS_DIR / 'freightpro.log'),
-            'when': 'midnight',     
-            'interval': 1,         
-            'backupCount': 7,      
+            'class': 'logging.StreamHandler',
             'formatter': 'verbose',
-            'encoding': 'utf-8',
         },
    
         'error_file': {
-            'class': 'logging.handlers.TimedRotatingFileHandler',
-            'filename': str(LOGS_DIR / 'errors.log'),
-            'when': 'midnight',
-            'interval': 1,
-            'backupCount': 7,       
+            'class': 'logging.StreamHandler',
             'level': 'ERROR',
             'formatter': 'verbose',
-            'encoding': 'utf-8',
         },
     },
 
