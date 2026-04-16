@@ -19,8 +19,8 @@ logger = logging.getLogger('apps.ai_assistant')
 
 def connect_imap():
     """Connect to Gmail IMAP server using credentials from .env"""
-    host = getattr(settings, 'EMAIL_IMAP_HOST', 'imap.gmail.com')
-    port = int(getattr(settings, 'EMAIL_IMAP_PORT', 993))
+    host = getattr(settings, 'IMAP_HOST', 'imap.gmail.com')
+    port = int(getattr(settings, 'IMAP_PORT', 993))
     username = getattr(settings, 'EMAIL_HOST_USER', '')
     password = getattr(settings, 'EMAIL_HOST_PASSWORD', '')
 
@@ -101,8 +101,6 @@ def get_email_body(msg):
         try:
             raw_body = msg.get_payload(decode=True).decode('utf-8', errors='replace')
             if content_type == 'text/html':
-                # Convert HTML to text
-                import re
                 final_body = re.sub(r'<[^>]+>', '', raw_body)
                 final_body = re.sub(r'\s+', ' ', final_body).strip()
             else:
@@ -200,9 +198,35 @@ def extract_inventory_items_llm(body_text):
         logger.error(f"LLM Extraction failed: {e}. Falling back to Regex extraction.")
         return extract_items_regex_fallback(body_text)
 
+def clean_product_name(name):
+    """Deep clean of captured material names to remove boilerplate and noise."""
+    if not name: return ""
+    
+    # 1. Strip lead-in boilerplate
+    noise_prefixes = [
+        r"^we\s+have\s+", r"^currently\s+in\s+stock\s+", r"^available\s+(?:at|in|on)\s+", 
+        r"^inventory\s+of\s+", r"^requirement\s+for\s+", r"^looking\s+for\s+", r"^hi,?\s+",
+        r"^new\s+inventory(?:\s+test)?\s+", r"^i\s+have\s+"
+    ]
+    name = name.strip()
+    for pattern in noise_prefixes:
+        name = re.sub(pattern, "", name, flags=re.IGNORECASE).strip()
+    
+    # 2. Strip trailing noise
+    noise_suffixes = [
+        r"\s+and$", r"\s+available$", r"\s+at\s+our\s+.*$", r"\s+with$", r"\s+for$"
+    ]
+    for pattern in noise_suffixes:
+        name = re.sub(pattern, "", name, flags=re.IGNORECASE).strip()
+        
+    # 3. Final polish
+    name = name.strip(' ,.-:*_')
+    
+    # Capitalize first letter of every word for professional look
+    return ' '.join(word.capitalize() for word in name.split()) if name else ""
+
 def extract_items_regex_fallback(body_text):
-    """Robust regex fallback for logistics data when LLM is unavailable"""
-    import re
+    """Robust regex extraction for logistics data using multi-pass patterns"""
     items = []
     
     # 1. Cleaner: Focus on the actual content
@@ -211,36 +235,37 @@ def extract_items_regex_fallback(body_text):
     # Identify intent
     is_demand = any(re.search(rf"\b{word}\b", clean_text.lower()) for word in ['require', 'requirement', 'looking for', 'need', 'buy', 'want', 'purchasing'])
     
-    # 2. Strategic Patterns
-    # Pattern A: [Quantity] [Unit] [Product Name] - Stops before next number/unit pair
-    # Pattern B: [Product Name] [Quantity] [Unit]
+    # 2. Specialized Patterns
     patterns = [
-        # Catch: 1200 lbs of Aluminum Wire Scrap
-        r"([\d,.]+)\s*(?:lbs?|tons?|kg|mt)?\s*(lbs?|tons?|kg|mt)\s*(?:of)?\s*(.*?)(?=\s*[\d,.]+\s*(?:lbs?|tons?|kg|mt)|\.\s|\n|$)",
-        # Catch: Aluminum Wire Scrap 1200 lbs
-        r"([^.\n\?\!\*,]{3,})\s+([\d,.]+)\s*(lbs?|tons?|kg|mt)",
+        # Pattern A: [Quantity] [Unit] [Product Name] - Stops at punctuation or "and"
+        # Example: "4500 lbs of Aluminum Siding"
+        r"([\d,.]+)\s*(?:lbs?|tons?|kg|mt)?\s*(lbs?|tons?|kg|mt)\s+(?:of\s+)?(.*?)(?=\s+and\s+|\s+[\d,.]+\s*(?:lbs?|tons?|kg|mt)|[.,\n!]|$)",
+        
+        # Pattern B: [Product Name] [Quantity] [Unit]
+        # Example: "Aluminum Siding 4500 lbs"
+        # Limited look-behind to 40 characters to prevent catching whole sentences
+        r"([^.\n!?,:]{3,40})\s+([\d,.]+)\s*(lbs?|tons?|kg|mt)",
+        
+        # Pattern C: Price detection (Price at end of line or after @/at)
+        # Example: "... Aluminum at $0.90/lb"
+        r"(.*?)\s+(?:at|@)\s+\$?\s*([\d,.]+)\s*/?\s*(lb|kg|ton|mt|lbs)?"
     ]
     
-    for p in patterns:
+    # Pass 1: Primary extraction
+    for i, p in enumerate(patterns[:2]): # Only look at A and B first
         for m in re.finditer(p, clean_text, re.IGNORECASE):
-            # Sort out which group is quantity vs product
-            if m.re.pattern == patterns[0]:
+            if i == 0: # Pattern A
                 qty_str, unit, prod = m.group(1), m.group(2), m.group(3)
-            else:
+            else: # Pattern B
                 prod, qty_str, unit = m.group(1), m.group(2), m.group(3)
             
-            prod = prod.strip()
+            prod = clean_product_name(prod)
             if not prod or len(prod) < 3: continue
             
-            # Validation: Filter out common non-product noise
-            blacklist = ['available', 'hello', 'regards', 'team', 'warehouse', 'any buyers', 'subject', 'fwd', 'date', 'april', 'may', 'june', 'july', '2026', 'from:', 'to:']
+            # Validation: Filter out common noise
+            blacklist = ['regards', 'team', 'warehouse', 'any buyers', 'subject', 'fwd', 'date', 'april', 'may', 'june', 'july', 'best regards', 'thanks']
             if any(noise in prod.lower() for noise in blacklist):
                  continue
-            
-            # Only keep if it looks like a material (or has enough words to be a name)
-            materials = ['scrap', 'wire', 'aluminum', 'copper', 'plastic', 'metal', 'steel', 'iron', 'brass', 'hms', 'grade']
-            if not any(mat in prod.lower() for mat in materials) and len(prod.split()) > 4:
-                continue
 
             try:
                 qty = float(qty_str.replace(',', ''))
@@ -252,13 +277,27 @@ def extract_items_regex_fallback(body_text):
                 "product_name": prod,
                 "quantity": qty,
                 "unit": unit or "lbs",
+                "price": None,
+                "price_unit": f"per {unit}" if unit else "per lb"
             })
+
+    # Pass 2: Price matching enrichment
+    # Look for $X.XX/lb patterns and try to attach to the last item
+    price_pattern = r"\$?\s*([\d,.]+)\s*/\s*(lb|kg|ton|mt|lbs?)"
+    prices_found = re.findall(price_pattern, clean_text, re.IGNORECASE)
+    if prices_found and items:
+        # If there's only one price mentioned, it usually applies to all or the last mentioned item
+        last_price, last_p_unit = prices_found[-1]
+        try:
+            items[-1]['price'] = float(last_price)
+            items[-1]['price_unit'] = f"per {last_p_unit}"
+        except: pass
 
     # 3. Deduplicate
     seen = set()
     unique_items = []
     for itm in items:
-        key = (itm['product_name'].lower()[:30], itm['quantity'])
+        key = (itm['product_name'].lower()[:20], itm['quantity'])
         if key not in seen:
             seen.add(key)
             unique_items.append(itm)
