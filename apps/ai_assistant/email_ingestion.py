@@ -42,24 +42,96 @@ def decode_email_subject(msg):
     return subject
 
 
+def html_to_text(html):
+    """Simple HTML to text converter using regex"""
+    if not html:
+        return ""
+    # Remove script and style elements
+    text = re.sub(r'<(script|style)[^>]*>.*?</\1>', '', html, flags=re.DOTALL | re.IGNORECASE)
+    # Remove all other tags
+    text = re.sub(r'<[^>]+>', ' ', text)
+    # Handle common entities
+    text = text.replace('&nbsp;', ' ').replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>')
+    # Clean up whitespace
+    text = re.sub(r'\s+', ' ', text).strip()
+    return text
+
+
 def get_email_body(msg):
-    """Extract text body from email"""
+    """Extract text body from email - improved for HTML emails"""
     body = ""
+    html_body = ""
+    
     if msg.is_multipart():
         for part in msg.walk():
             content_type = part.get_content_type()
+            content_disposition = str(part.get('Content-Disposition', ''))
+            
+            # Skip attachments
+            if 'attachment' in content_disposition:
+                continue
+                
             if content_type == 'text/plain':
                 try:
-                    body = part.get_payload(decode=True).decode('utf-8', errors='replace')
-                except:
-                    body = str(part.get_payload())
-                break
+                    plain_text = part.get_payload(decode=True).decode('utf-8', errors='replace')
+                    if plain_text.strip():
+                        body = plain_text
+                except Exception as e:
+                    logger.warning(f"Error decoding plain text: {e}")
+                    try:
+                        body = str(part.get_payload())
+                    except:
+                        pass
+                        
+            elif content_type == 'text/html' and not html_body:
+                try:
+                    html_text = part.get_payload(decode=True).decode('utf-8', errors='replace')
+                    if html_text.strip():
+                        # Enhanced HTML to text conversion
+                        html_body = html_to_text(html_text)
+                except Exception as e:
+                    logger.warning(f"Error decoding HTML text: {e}")
+        
+        # Prefer plain text, fall back to converted HTML
+        final_body = body if body.strip() else html_body
+        
     else:
+        # Single part email
+        content_type = msg.get_content_type()
         try:
-            body = msg.get_payload(decode=True).decode('utf-8', errors='replace')
-        except:
-            body = str(msg.get_payload())
-    return body
+            raw_body = msg.get_payload(decode=True).decode('utf-8', errors='replace')
+            if content_type == 'text/html':
+                # Convert HTML to text
+                import re
+                final_body = re.sub(r'<[^>]+>', '', raw_body)
+                final_body = re.sub(r'\s+', ' ', final_body).strip()
+            else:
+                final_body = raw_body
+        except Exception as e:
+            logger.warning(f"Error decoding single part email: {e}")
+            try:
+                final_body = str(msg.get_payload())
+            except:
+                final_body = ""
+    
+    # Clean up the final body - but don't over-clean if it nukes data
+    if final_body:
+        # Only remove headers if they are at the very beginning (frequently in forwards)
+        lines = final_body.split('\n')
+        clean_lines = []
+        for line in lines:
+            # Skip noise lines but keep content that looks like inventory
+            if re.match(r'^(Subject|From|To|Date|Sent):', line, re.I) and not any(kw in line.lower() for kw in ['lbs', 'tons', 'kg', 'scrap', 'material']):
+                continue
+            clean_lines.append(line)
+        
+        final_body = '\n'.join(clean_lines)
+        final_body = re.sub(r'On .* wrote:', '', final_body)
+        final_body = re.sub(r'-{2,}.*?-{2,}', '', final_body, flags=re.DOTALL)
+        final_body = re.sub(r'\n{3,}', '\n\n', final_body)
+        final_body = final_body.strip()
+    
+    return final_body or ""
 
 
 def extract_inventory_items_llm(body_text):
@@ -129,52 +201,69 @@ def extract_inventory_items_llm(body_text):
         return extract_items_regex_fallback(body_text)
 
 def extract_items_regex_fallback(body_text):
-    """Consolidated regex fallback for testing (Dual-Intent)"""
+    """Robust regex fallback for logistics data when LLM is unavailable"""
     import re
     items = []
     
-    # Clean text: handle asterisks, underscores, and extra spaces
+    # 1. Cleaner: Focus on the actual content
     clean_text = body_text.replace('*', '').replace('_', '')
     
-    # Pre-check for overall intent using word boundaries to avoid partial matches (e.g., 'buyers')
+    # Identify intent
     is_demand = any(re.search(rf"\b{word}\b", clean_text.lower()) for word in ['require', 'requirement', 'looking for', 'need', 'buy', 'want', 'purchasing'])
     
-    # 1. Demand Patterns (Improved with word boundaries)
-    demand_patterns = [
-        r"\b(?:looking for|require|need|buy|want|seek)\b\s*([\d,.]+)?\s*(tons?|lbs?|kg|mt)?\s*(?:of)?\s*([^.\n\?\!\*,]+)",
+    # 2. Strategic Patterns
+    # Pattern A: [Quantity] [Unit] [Product Name] - Stops before next number/unit pair
+    # Pattern B: [Product Name] [Quantity] [Unit]
+    patterns = [
+        # Catch: 1200 lbs of Aluminum Wire Scrap
+        r"([\d,.]+)\s*(?:lbs?|tons?|kg|mt)?\s*(lbs?|tons?|kg|mt)\s*(?:of)?\s*(.*?)(?=\s*[\d,.]+\s*(?:lbs?|tons?|kg|mt)|\.\s|\n|$)",
+        # Catch: Aluminum Wire Scrap 1200 lbs
+        r"([^.\n\?\!\*,]{3,})\s+([\d,.]+)\s*(lbs?|tons?|kg|mt)",
     ]
-    # 2. Supply Patterns (Improved with word boundaries)
-    supply_patterns = [
-        r"\b(?:selling|offer|available|stock|have)\b\s*([\d,.]+)?\s*(tons?|lbs?|kg|mt)?\s*(?:of)?\s*([^.\n\?\!\*,]+)",
-    ]
+    
+    for p in patterns:
+        for m in re.finditer(p, clean_text, re.IGNORECASE):
+            # Sort out which group is quantity vs product
+            if m.re.pattern == patterns[0]:
+                qty_str, unit, prod = m.group(1), m.group(2), m.group(3)
+            else:
+                prod, qty_str, unit = m.group(1), m.group(2), m.group(3)
+            
+            prod = prod.strip()
+            if not prod or len(prod) < 3: continue
+            
+            # Validation: Filter out common non-product noise
+            blacklist = ['available', 'hello', 'regards', 'team', 'warehouse', 'any buyers', 'subject', 'fwd', 'date', 'april', 'may', 'june', 'july', '2026', 'from:', 'to:']
+            if any(noise in prod.lower() for noise in blacklist):
+                 continue
+            
+            # Only keep if it looks like a material (or has enough words to be a name)
+            materials = ['scrap', 'wire', 'aluminum', 'copper', 'plastic', 'metal', 'steel', 'iron', 'brass', 'hms', 'grade']
+            if not any(mat in prod.lower() for mat in materials) and len(prod.split()) > 4:
+                continue
 
-    for p in demand_patterns:
-        matches = re.finditer(p, clean_text, re.IGNORECASE)
-        for m in matches:
-            prod = m.group(3).strip() if m.group(3) else ""
-            if prod and len(prod) > 2 and prod.lower() not in ['available', 'needed', 'stock', 'info', 'material']:
-                items.append({
-                    "intent": "demand",
-                    "product_name": prod,
-                    "quantity": float(m.group(1).replace(',', '')) if m.group(1) else 0.0,
-                    "unit": m.group(2) if m.group(2) else "lbs",
-                })
+            try:
+                qty = float(qty_str.replace(',', ''))
+            except:
+                qty = 0.0
+                
+            items.append({
+                "intent": "demand" if is_demand else "supply",
+                "product_name": prod,
+                "quantity": qty,
+                "unit": unit or "lbs",
+            })
 
-    # Only look for supply if we didn't find clear demand or if it's explicitly selling
-    if not items or not is_demand:
-        for p in supply_patterns:
-            matches = re.finditer(p, clean_text, re.IGNORECASE)
-            for m in matches:
-                prod = m.group(3).strip() if m.group(3) else ""
-                if prod and len(prod) > 2 and prod.lower() not in ['available', 'needed', 'stock', 'info', 'material']:
-                    items.append({
-                        "intent": "supply",
-                        "product_name": prod,
-                        "quantity": float(m.group(1).replace(',', '')) if m.group(1) else 0.0,
-                        "unit": m.group(2) if m.group(2) else "lbs",
-                    })
+    # 3. Deduplicate
+    seen = set()
+    unique_items = []
+    for itm in items:
+        key = (itm['product_name'].lower()[:30], itm['quantity'])
+        if key not in seen:
+            seen.add(key)
+            unique_items.append(itm)
 
-    return items
+    return unique_items
 
 
 def handle_attachments(msg):
