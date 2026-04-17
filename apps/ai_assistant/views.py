@@ -3,15 +3,24 @@ AI Assistant Views - Chat API and Pending Inventory management
 """
 import json
 import logging
+from decimal import Decimal
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST, require_GET
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
+from django.db.models import Q
 
-from .models import ChatSession, ChatMessage, PendingInventoryEmail, PendingInventoryItem, BuyerRequirement, SmartMatch
+from .models import (
+    ChatSession, ChatMessage, PendingInventoryEmail, PendingInventoryItem,
+    BuyerRequirement, SmartMatch, DemandForecastSnapshot, QuoteDraft, DocumentVisionRecord
+)
 from .engine import process_query
+from .enhancements import (
+    refresh_demand_forecasts, build_quote_draft, send_quote_draft,
+    extract_document_with_ai
+)
 
 logger = logging.getLogger('apps.ai_assistant')
 
@@ -309,6 +318,7 @@ def smart_matches_dashboard(request):
         'matches': matches,
         'requirements': requirements,
         'pending_supply_emails': pending_supply_emails,
+        'recent_quote_drafts': QuoteDraft.objects.filter(tenant=request.user.tenant).select_related('buyer', 'supplier', 'inventory_item')[:8],
     }
     return render(request, 'ai_assistant/smart_matches.html', context)
 
@@ -356,9 +366,16 @@ def notify_match_parties(request, match_id):
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[supplier.email],
             )
-            
+
+        # Auto-create a draft quote so sales team can review/send quickly.
+        try:
+            build_quote_draft(match, request.user)
+            match.is_quoted = True
+        except Exception as quote_exc:
+            logger.warning("Quote draft auto-generation skipped for match %s: %s", match.id, quote_exc)
+
         match.is_notified = True
-        match.save()
+        match.save(update_fields=['is_notified', 'is_quoted'])
         
         return JsonResponse({
             'status': 'success', 
@@ -409,4 +426,130 @@ def find_match_for_requirement(request, requirement_id):
         'status': 'success',
         'created_count': created_count,
         'total_matches': len(matches)
+    })
+
+
+# ─────────────────── FEATURE E: AI Enhancements ───────────────────
+
+@login_required
+def enhancements_dashboard(request):
+    """Unified dashboard for demand forecasting, quote automation, sentiment and OCR."""
+
+    forecasts = DemandForecastSnapshot.objects.filter(
+        tenant=request.user.tenant
+    ).select_related('inventory_item', 'inventory_item__warehouse').order_by('days_to_runout', '-computed_at')[:25]
+
+    sentiment_emails = PendingInventoryEmail.objects.filter(
+        tenant=request.user.tenant,
+    ).exclude(sentiment_label='neutral').order_by('-received_at')[:20]
+
+    quote_drafts = QuoteDraft.objects.filter(
+        tenant=request.user.tenant
+    ).select_related('buyer', 'supplier', 'inventory_item', 'requirement').order_by('-created_at')[:25]
+
+    recent_matches = SmartMatch.objects.filter(
+        tenant=request.user.tenant,
+        is_dismissed=False,
+    ).select_related('requirement', 'requirement__buyer', 'inventory_item', 'inventory_item__company').order_by('-created_at')[:20]
+
+    vision_records = DocumentVisionRecord.objects.filter(
+        tenant=request.user.tenant
+    ).order_by('-created_at')[:20]
+
+    context = {
+        'forecasts': forecasts,
+        'sentiment_emails': sentiment_emails,
+        'quote_drafts': quote_drafts,
+        'recent_matches': recent_matches,
+        'vision_records': vision_records,
+    }
+    return render(request, 'ai_assistant/enhancements.html', context)
+
+
+@login_required
+@require_POST
+def draft_quote_for_match(request, match_id):
+    """Create an automated quote draft from a SmartMatch."""
+    match = get_object_or_404(
+        SmartMatch.objects.select_related('requirement', 'requirement__buyer', 'inventory_item', 'inventory_item__company'),
+        id=match_id,
+        tenant=request.user.tenant,
+    )
+    markup_percent = request.POST.get('markup_percent') or request.GET.get('markup_percent') or '12.5'
+    try:
+        draft = build_quote_draft(match, request.user, markup_percent=Decimal(str(markup_percent)))
+    except Exception as e:
+        logger.error("Quote draft generation failed for match %s: %s", match_id, e)
+        return JsonResponse({'status': 'error', 'message': 'Failed to create quote draft.'}, status=500)
+
+    match.is_quoted = True
+    match.save(update_fields=['is_quoted'])
+
+    return JsonResponse({
+        'status': 'success',
+        'draft_id': draft.id,
+        'quoted_unit_price': float(draft.quoted_unit_price),
+        'total_amount': float(draft.total_amount),
+        'subject': draft.subject,
+    })
+
+
+@login_required
+@require_POST
+def send_quote_draft_view(request, draft_id):
+    draft = get_object_or_404(QuoteDraft, id=draft_id, tenant=request.user.tenant)
+    ok, message = send_quote_draft(draft)
+    return JsonResponse({
+        'status': 'success' if ok else 'error',
+        'message': message,
+        'draft_status': draft.status,
+    }, status=200 if ok else 400)
+
+
+@login_required
+@require_POST
+def refresh_forecasts(request):
+    touched = refresh_demand_forecasts(request.user.tenant)
+    return JsonResponse({'status': 'success', 'updated_records': touched})
+
+
+@login_required
+@require_POST
+def document_vision_upload(request):
+    """
+    Upload a photo/scan and run OCR-style extraction.
+    Supports image + text files; image OCR quality depends on OPENAI_API_KEY.
+    """
+    upload = request.FILES.get('file')
+    if not upload:
+        return JsonResponse({'status': 'error', 'message': 'No file uploaded.'}, status=400)
+
+    # Size guardrail to prevent very large payload uploads in sync request cycle.
+    if upload.size > 12 * 1024 * 1024:
+        return JsonResponse({'status': 'error', 'message': 'File too large (max 12MB).'}, status=400)
+
+    content = upload.read()
+    mime = getattr(upload, 'content_type', None)
+    result = extract_document_with_ai(content, upload.name, mime_type=mime)
+
+    record = DocumentVisionRecord.objects.create(
+        tenant=request.user.tenant,
+        source_type='general',
+        uploaded_file=upload,
+        extracted_text=result.get('extracted_text', ''),
+        extracted_json=result.get('extracted_json', {}),
+        confidence_score=result.get('confidence_score', 0.0) or 0.0,
+        status=result.get('status', 'failed'),
+        error_message=result.get('error_message', ''),
+        created_by=request.user,
+    )
+
+    return JsonResponse({
+        'status': 'success' if record.status == 'completed' else 'partial_success',
+        'record_id': record.id,
+        'ocr_status': record.status,
+        'confidence_score': record.confidence_score,
+        'extracted_text': record.extracted_text[:2000],
+        'extracted_json': record.extracted_json,
+        'error_message': record.error_message,
     })

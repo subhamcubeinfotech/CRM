@@ -22,4 +22,11 @@ urlpatterns = [
     path('smart-matches/<int:match_id>/dismiss/', views.dismiss_match, name='dismiss_match'),
     path('smart-matches/<int:match_id>/notify/', views.notify_match_parties, name='notify_match_parties'),
     path('smart-matches/requirement/<int:requirement_id>/find/', views.find_match_for_requirement, name='find_match_for_requirement'),
+    path('smart-matches/<int:match_id>/draft-quote/', views.draft_quote_for_match, name='draft_quote_for_match'),
+
+    # Feature E: Additional AI Enhancements
+    path('enhancements/', views.enhancements_dashboard, name='enhancements_dashboard'),
+    path('enhancements/forecasts/refresh/', views.refresh_forecasts, name='refresh_forecasts'),
+    path('enhancements/quote-drafts/<int:draft_id>/send/', views.send_quote_draft_view, name='send_quote_draft'),
+    path('enhancements/ocr/upload/', views.document_vision_upload, name='document_vision_upload'),
 ]

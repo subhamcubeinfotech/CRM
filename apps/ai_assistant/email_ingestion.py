@@ -14,6 +14,8 @@ from datetime import datetime
 from django.utils import timezone
 from django.conf import settings
 
+from .enhancements import analyze_email_sentiment
+
 logger = logging.getLogger('apps.ai_assistant')
 
 
@@ -500,6 +502,8 @@ def fetch_and_process_emails(tenant, max_emails=10, request_user=None):
             from apps.accounts.models import Tenant
             tenant = Tenant.objects.filter(name__icontains='Default').first() or Tenant.objects.first()
 
+        sentiment_data = analyze_email_sentiment(subject, body)
+
         pending_email = PendingInventoryEmail.objects.create(
             tenant=tenant,
             sender_email=sender_email,
@@ -510,6 +514,10 @@ def fetch_and_process_emails(tenant, max_emails=10, request_user=None):
             received_at=timezone.now(),
             matched_company=matched_company,
             raw_extraction=extracted_items,
+            sentiment_label=sentiment_data.get('sentiment_label', 'neutral'),
+            sentiment_score=sentiment_data.get('sentiment_score', 0.0),
+            priority_level=sentiment_data.get('priority_level', 'medium'),
+            sentiment_reason=sentiment_data.get('sentiment_reason', ''),
             fetched_by=fetched_by,
         )
 

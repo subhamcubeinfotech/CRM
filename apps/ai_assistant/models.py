@@ -63,6 +63,10 @@ class PendingInventoryEmail(TenantAwareModel):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     matched_company = models.ForeignKey('accounts.Company', on_delete=models.SET_NULL, null=True, blank=True)
     raw_extraction = models.JSONField(default=dict, blank=True, help_text='Raw LLM extraction output')
+    sentiment_label = models.CharField(max_length=20, default='neutral')
+    sentiment_score = models.FloatField(default=0.0, help_text='-1.0 (negative) to +1.0 (positive)')
+    priority_level = models.CharField(max_length=20, default='medium')
+    sentiment_reason = models.TextField(blank=True)
     processed_at = models.DateTimeField(null=True, blank=True)
     processed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='processed_emails')
     fetched_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='fetched_emails')
@@ -148,3 +152,101 @@ class SmartMatch(TenantAwareModel):
 
     def __str__(self):
         return f"Match: {self.requirement.material_name} <-> {self.inventory_item.product_name} ({self.confidence_score}%)"
+
+
+class DemandForecastSnapshot(TenantAwareModel):
+    """Snapshot of predicted inventory depletion for proactive planning."""
+    ALERT_LEVEL_CHOICES = [
+        ('healthy', 'Healthy'),
+        ('watch', 'Watch'),
+        ('risk', 'Risk'),
+        ('critical', 'Critical'),
+    ]
+
+    inventory_item = models.ForeignKey('inventory.InventoryItem', on_delete=models.CASCADE, related_name='forecast_snapshots')
+    current_quantity = models.DecimalField(max_digits=20, decimal_places=2, default=0)
+    avg_daily_usage = models.DecimalField(max_digits=20, decimal_places=4, default=0)
+    days_to_runout = models.IntegerField(null=True, blank=True)
+    predicted_runout_date = models.DateField(null=True, blank=True)
+    confidence_score = models.FloatField(default=0.0)
+    alert_level = models.CharField(max_length=20, choices=ALERT_LEVEL_CHOICES, default='healthy')
+    notes = models.TextField(blank=True)
+    computed_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['days_to_runout', '-computed_at']
+        unique_together = ('tenant', 'inventory_item')
+
+    def __str__(self):
+        return f"{self.inventory_item.sku} -> {self.days_to_runout or 'N/A'} days"
+
+
+class QuoteDraft(TenantAwareModel):
+    """Auto-drafted quote generated from a smart match."""
+    STATUS_CHOICES = [
+        ('draft', 'Draft'),
+        ('sent', 'Sent'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+
+    smart_match = models.ForeignKey(SmartMatch, on_delete=models.SET_NULL, null=True, blank=True, related_name='quote_drafts')
+    requirement = models.ForeignKey(BuyerRequirement, on_delete=models.CASCADE, related_name='quote_drafts')
+    inventory_item = models.ForeignKey('inventory.InventoryItem', on_delete=models.CASCADE, related_name='quote_drafts')
+    buyer = models.ForeignKey('accounts.Company', on_delete=models.CASCADE, related_name='incoming_quote_drafts')
+    supplier = models.ForeignKey('accounts.Company', on_delete=models.SET_NULL, null=True, blank=True, related_name='outgoing_quote_drafts')
+    quantity = models.DecimalField(max_digits=20, decimal_places=2, default=0)
+    unit = models.CharField(max_length=30, default='lbs')
+    supplier_unit_price = models.DecimalField(max_digits=20, decimal_places=4, default=0)
+    markup_percent = models.DecimalField(max_digits=8, decimal_places=2, default=0)
+    quoted_unit_price = models.DecimalField(max_digits=20, decimal_places=4, default=0)
+    total_amount = models.DecimalField(max_digits=20, decimal_places=2, default=0)
+    currency = models.CharField(max_length=10, default='USD')
+    subject = models.CharField(max_length=255)
+    body_text = models.TextField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    sent_at = models.DateTimeField(null=True, blank=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_quote_drafts')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Quote {self.id} for {self.requirement.material_name}"
+
+
+class DocumentVisionRecord(TenantAwareModel):
+    """OCR + structured extraction output for uploaded logistics documents."""
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+    ]
+    SOURCE_CHOICES = [
+        ('general', 'General Upload'),
+        ('shipment', 'Shipment Document'),
+        ('order', 'Order Document'),
+        ('company', 'Company Document'),
+    ]
+
+    source_type = models.CharField(max_length=20, choices=SOURCE_CHOICES, default='general')
+    shipment_document = models.ForeignKey('shipments.Document', on_delete=models.SET_NULL, null=True, blank=True, related_name='vision_records')
+    order_document = models.ForeignKey('orders.OrderDocument', on_delete=models.SET_NULL, null=True, blank=True, related_name='vision_records')
+    company_document = models.ForeignKey('accounts.CompanyDocument', on_delete=models.SET_NULL, null=True, blank=True, related_name='vision_records')
+    uploaded_file = models.FileField(upload_to='ai_vision/%Y/%m/', null=True, blank=True)
+    extracted_text = models.TextField(blank=True)
+    extracted_json = models.JSONField(default=dict, blank=True)
+    confidence_score = models.FloatField(default=0.0)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    error_message = models.TextField(blank=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='vision_records')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Vision #{self.id} ({self.status})"

@@ -2,7 +2,8 @@ from django.contrib import admin
 from .models import (
     ChatSession, ChatMessage,
     PendingInventoryEmail, PendingInventoryItem,
-    BuyerRequirement, SmartMatch
+    BuyerRequirement, SmartMatch,
+    DemandForecastSnapshot, QuoteDraft, DocumentVisionRecord
 )
 
 
@@ -23,8 +24,8 @@ class ChatMessageAdmin(admin.ModelAdmin):
 
 @admin.register(PendingInventoryEmail)
 class PendingInventoryEmailAdmin(admin.ModelAdmin):
-    list_display = ['subject', 'sender_email', 'status', 'received_at', 'tenant']
-    list_filter = ['status', 'tenant']
+    list_display = ['subject', 'sender_email', 'status', 'priority_level', 'sentiment_label', 'received_at', 'tenant']
+    list_filter = ['status', 'priority_level', 'sentiment_label', 'tenant']
 
     def get_queryset(self, request):
         if request.user.is_superuser:
@@ -65,3 +66,23 @@ class BuyerRequirementAdmin(admin.ModelAdmin):
 class SmartMatchAdmin(admin.ModelAdmin):
     list_display = ['requirement', 'inventory_item', 'confidence_score', 'is_dismissed']
     list_filter = ['is_dismissed']
+
+
+@admin.register(DemandForecastSnapshot)
+class DemandForecastSnapshotAdmin(admin.ModelAdmin):
+    list_display = ['inventory_item', 'alert_level', 'days_to_runout', 'avg_daily_usage', 'predicted_runout_date', 'tenant']
+    list_filter = ['alert_level', 'tenant']
+    search_fields = ['inventory_item__sku', 'inventory_item__product_name']
+
+
+@admin.register(QuoteDraft)
+class QuoteDraftAdmin(admin.ModelAdmin):
+    list_display = ['id', 'buyer', 'supplier', 'quoted_unit_price', 'total_amount', 'status', 'created_at']
+    list_filter = ['status', 'tenant']
+    search_fields = ['subject', 'buyer__name', 'supplier__name', 'inventory_item__product_name']
+
+
+@admin.register(DocumentVisionRecord)
+class DocumentVisionRecordAdmin(admin.ModelAdmin):
+    list_display = ['id', 'source_type', 'status', 'confidence_score', 'created_at', 'tenant']
+    list_filter = ['source_type', 'status', 'tenant']
