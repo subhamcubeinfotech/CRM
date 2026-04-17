@@ -11,16 +11,23 @@
                     <h6 class="m-0 font-weight-bold text-primary">Apply Credit Memo to {{ invoice.invoice_number }}</h6>
                 </div>
                 <div class="card-body">
-                    <p class="text-muted small mb-4">
-                        A credit memo will reduce the balance due on this invoice. 
-                        Current Balance: <strong>${{ invoice.balance_due }}</strong>
-                    </p>
+                    {% if invoice.balance_due < 0 %}
+                    <div class="alert alert-warning py-2 mb-4" style="font-size: 0.85rem;">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Note:</strong> This invoice already has a negative balance (Credit).
+                    </div>
+                    {% endif %}
                     
                     <form method="post">
                         {% csrf_token %}
                         <div class="mb-3">
                             <label class="form-label">Credit Amount ($)</label>
-                            <input type="number" name="amount" class="form-control" step="0.01" max="{{ invoice.balance_due }}" required>
+                            <input type="number" name="amount" class="form-control" step="0.01" 
+                                {% if invoice.balance_due > 0 %}max="{{ invoice.balance_due }}"{% endif %} 
+                                placeholder="Amount to credit" required>
+                            {% if invoice.balance_due > 0 %}
+                            <div class="form-text small">Max allowed: ${{ invoice.balance_due }}</div>
+                            {% endif %}
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Reason / Notes</label>

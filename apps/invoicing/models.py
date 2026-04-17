@@ -34,11 +34,11 @@ class Invoice(TenantAwareModel):
     paid_date = models.DateField(null=True, blank=True)
     
     # Financial
-    subtotal = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    tax_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0, help_text='Tax rate percentage')
-    tax_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    total = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    amount_paid = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    subtotal = models.DecimalField(max_digits=20, decimal_places=2, default=0)
+    tax_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text='Tax rate percentage')
+    tax_amount = models.DecimalField(max_digits=20, decimal_places=2, default=0)
+    total = models.DecimalField(max_digits=20, decimal_places=2, default=0)
+    amount_paid = models.DecimalField(max_digits=20, decimal_places=2, default=0)
     portal_token = models.CharField(max_length=64, unique=True, null=True, blank=True)
     
     # Status and notes
@@ -177,8 +177,8 @@ class InvoiceLineItem(models.Model):
     invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='line_items')
     description = models.CharField(max_length=200)
     quantity = models.DecimalField(max_digits=10, decimal_places=2, default=1)
-    unit_price = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    total = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    unit_price = models.DecimalField(max_digits=20, decimal_places=2, default=0)
+    total = models.DecimalField(max_digits=20, decimal_places=2, default=0)
     
     class Meta:
         ordering = ['id']
@@ -204,7 +204,7 @@ class Payment(models.Model):
     ]
     
     invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='payments')
-    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    amount = models.DecimalField(max_digits=20, decimal_places=2)
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, default='check')
     payment_date = models.DateField(default=timezone.now)
     transaction_id = models.CharField(max_length=100, blank=True)
@@ -237,7 +237,7 @@ class RecurringInvoice(TenantAwareModel):
     frequency = models.CharField(max_length=20, choices=FREQUENCY_CHOICES, default='monthly')
     
     # Financial Template
-    tax_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    tax_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     terms = models.TextField(blank=True, default='Net 30 days')
     payment_instructions = models.TextField(blank=True)
     
@@ -287,7 +287,7 @@ class RecurringInvoiceLineItem(models.Model):
 class CreditMemo(TenantAwareModel):
     """Credit memo for refunds or adjustments"""
     invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='credit_memos')
-    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    amount = models.DecimalField(max_digits=20, decimal_places=2)
     reason = models.CharField(max_length=200)
     memo_date = models.DateField(default=timezone.now)
     

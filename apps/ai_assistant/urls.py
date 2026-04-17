@@ -21,4 +21,5 @@ urlpatterns = [
     path('smart-matches/', views.smart_matches_dashboard, name='smart_matches'),
     path('smart-matches/<int:match_id>/dismiss/', views.dismiss_match, name='dismiss_match'),
     path('smart-matches/<int:match_id>/notify/', views.notify_match_parties, name='notify_match_parties'),
+    path('smart-matches/requirement/<int:requirement_id>/find/', views.find_match_for_requirement, name='find_match_for_requirement'),
 ]
