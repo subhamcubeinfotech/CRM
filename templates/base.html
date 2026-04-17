@@ -1162,29 +1162,65 @@
     .ai-msg.assistant strong { color: #a78bfa; }
     .ai-msg.assistant code { background: #1a1d23; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
 
-    .ai-typing { align-self: flex-start; padding: 10px 18px; background: #2a2d35; border-radius: 14px; display: none; }
-    .ai-typing span { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #667eea; margin: 0 2px; animation: typingBounce 1.4s infinite; }
-    .ai-typing span:nth-child(2) { animation-delay: 0.2s; }
-    .ai-typing span:nth-child(3) { animation-delay: 0.4s; }
-    @keyframes typingBounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
+    /* Rich Widgets */
+    .ai-widget { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+    .ai-card { background: #2a2d35; border: 1px solid #3a3d45; border-radius: 12px; padding: 12px; display: flex; align-items: center; gap: 12px; transition: transform 0.2s; text-decoration: none; color: inherit; }
+    .ai-card:hover { transform: scale(1.02); border-color: #667eea; color: inherit; }
+    .ai-card-icon { width: 36px; height: 36px; border-radius: 8px; background: rgba(102,126,234,0.15); color: #667eea; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .ai-card-info { flex: 1; }
+    .ai-card-title { font-weight: 600; font-size: 13px; margin: 0; display: block; }
+    .ai-card-sub { font-size: 11px; color: #888; display: block; margin-top: 2px; }
+    .ai-card-badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: #3a3d45; color: #aaa; margin-left: 6px; }
+    
+    .ai-stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+    .ai-stat-box { background: #2a2d35; border-radius: 10px; padding: 10px; text-align: center; border: 1px solid #3a3d45; }
+    .ai-stat-val { display: block; font-size: 16px; font-weight: 700; color: #fff; }
+    .ai-stat-lbl { font-size: 10px; color: #888; text-transform: uppercase; }
+    
+    .ai-quick-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+    .ai-btn-action { background: #2a2d35; border: 1px solid #3a3d45; color: #e0e0e0; padding: 6px 12px; border-radius: 20px; font-size: 12px; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+    .ai-btn-action:hover { background: #667eea; border-color: #667eea; color: #fff; }
+    .ai-btn-action i { margin-right: 5px; }
 
+    /* Input Area */
     .ai-chat-input-area {
-        padding: 12px 14px; border-top: 1px solid #2a2d35; display: flex; gap: 8px; align-items: center;
+        padding: 16px; 
+        background: #1a1d23;
+        border-top: 1px solid rgba(102,126,234,0.2);
+        display: flex;
+        align-items: center;
+        gap: 12px;
     }
     #ai-chat-input {
-        flex: 1; background: #2a2d35; border: 1px solid #3a3d45; border-radius: 10px;
-        padding: 10px 14px; color: #e0e0e0; font-size: 13px; outline: none; resize: none;
-        font-family: inherit; max-height: 60px;
+        flex: 1;
+        background: #2a2d35;
+        border: 1px solid #3a3d45;
+        border-radius: 12px;
+        padding: 10px 14px;
+        color: #fff;
+        font-size: 14px;
+        resize: none;
+        outline: none;
+        transition: border-color 0.2s;
+        height: 42px;
+        line-height: 20px;
     }
     #ai-chat-input:focus { border-color: #667eea; }
-    #ai-chat-input::placeholder { color: #666; }
     #ai-chat-send {
-        width: 38px; height: 38px; border-radius: 10px; border: none;
-        background: linear-gradient(135deg, #667eea, #764ba2); color: #fff;
-        font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center;
-        transition: transform 0.2s;
+        width: 42px; height: 42px; border-radius: 50%;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        border: none; color: #fff; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        transition: all 0.2s; font-size: 16px;
+        box-shadow: 0 4px 12px rgba(102,126,234,0.3);
     }
-    #ai-chat-send:hover { transform: scale(1.08); }
+    #ai-chat-send:hover { transform: scale(1.1); box-shadow: 0 6px 15px rgba(102,126,234,0.4); }
+
+    .ai-typing { padding: 10px 20px; display: none; gap: 4px; }
+    .ai-typing span { width: 6px; height: 6px; background: #667eea; border-radius: 50%; animation: ai-bounce 1s infinite alternate; }
+    .ai-typing span:nth-child(2) { animation-delay: 0.2s; }
+    .ai-typing span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes ai-bounce { from { opacity: 0.3; transform: translateY(0); } to { opacity: 1; transform: translateY(-4px); } }
 
     @media (max-width: 480px) {
         #ai-chat-window { width: calc(100vw - 20px); right: 10px; bottom: 80px; max-height: 70vh; }
@@ -1236,8 +1272,8 @@
         chatSocket.onmessage = function(e) {
             const data = JSON.parse(e.data);
             typingIndicator.style.display = 'none';
-            if (data.response) {
-                addMessage(data.role || 'assistant', data.response);
+            if (data.response || data.text) {
+                addMessage('assistant', data);
             }
         };
         
@@ -1284,10 +1320,73 @@
     function addMessage(role, content) {
         const div = document.createElement('div');
         div.className = 'ai-msg ' + role;
-        div.innerHTML = formatMarkdown(content);
+        
+        let text = "";
+        let bodyHtml = "";
+
+        if (typeof content === 'object') {
+            text = formatMarkdown(content.text || content.response || "");
+            
+            // Render widgets based on type
+            if (content.widget_type === 'shipment_list' || content.widget_type === 'inventory_list') {
+                let itemsHtml = (content.items || []).map(item => `
+                    <a href="${item.url}" class="ai-card">
+                        <div class="ai-card-icon"><i class="${item.icon}"></i></div>
+                        <div class="ai-card-info">
+                            <span class="ai-card-title">${item.number || item.sku} <span class="ai-card-badge">${item.status || item.stock}</span></span>
+                            <span class="ai-card-sub">${item.route || item.name}</span>
+                        </div>
+                        <i class="fas fa-chevron-right text-muted small"></i>
+                    </a>
+                `).join('');
+                bodyHtml += `<div class="ai-widget">${itemsHtml}</div>`;
+            } 
+            else if (content.widget_type === 'shipment_card') {
+                const s = content.data;
+                bodyHtml += `
+                    <div class="ai-widget">
+                        <a href="${s.url}" class="ai-card" style="border-left: 3px solid #667eea">
+                            <div class="ai-card-icon"><i class="${s.icon}"></i></div>
+                            <div class="ai-card-info">
+                                <span class="ai-card-title">${s.number} <span class="ai-card-badge">${s.status}</span></span>
+                                <span class="ai-card-sub">${s.route}</span>
+                                <span class="ai-card-sub text-info">${s.customer}</span>
+                            </div>
+                        </a>
+                    </div>`;
+            }
+            else if (content.widget_type === 'stats_grid') {
+                let statsHtml = (content.stats || []).map(s => `
+                    <div class="ai-stat-box">
+                        <span class="ai-stat-val text-${s.status}">${s.value}</span>
+                        <span class="ai-stat-lbl">${s.label}</span>
+                    </div>
+                `).join('');
+                bodyHtml += `<div class="ai-stats-grid">${statsHtml}</div>`;
+            }
+
+            // Render Quick Actions (Buttons)
+            if (content.quick_actions) {
+                let buttonsHtml = content.quick_actions.map(btn => `
+                    <button class="ai-btn-action" onclick="${btn.cmd ? `executeAICmd('${btn.cmd}')` : `window.location.href='${btn.url}'`}">
+                        <i class="${btn.icon}"></i> ${btn.label}
+                    </button>
+                `).join('');
+                bodyHtml += `<div class="ai-quick-actions">${buttonsHtml}</div>`;
+            }
+        } else {
+            text = formatMarkdown(content);
+        }
+
+        div.innerHTML = text + bodyHtml;
         chatMessages.appendChild(div);
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
+
+    window.executeAICmd = function(cmd) {
+        chatInput.value = cmd;
+        sendAIMessage();
+    };
 
     window.sendAIMessage = function() {
         const message = chatInput.value.trim();

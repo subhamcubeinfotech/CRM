@@ -85,11 +85,11 @@ class Order(TenantAwareModel):
     representative = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='represented_orders')
     
     # Weight tracking
-    total_weight_target = models.DecimalField(max_digits=15, decimal_places=2, help_text="Target weight in the selected unit")
+    total_weight_target = models.DecimalField(max_digits=20, decimal_places=2, help_text="Target weight in the selected unit")
     total_weight_unit = models.CharField(max_length=10, choices=WEIGHT_UNIT_CHOICES, default='lbs')
     
     # Financial details
-    freight_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0, help_text="Total estimated freight shipment cost")
+    freight_cost = models.DecimalField(max_digits=20, decimal_places=2, default=0, help_text="Total estimated freight shipment cost")
     
     # Schedule
     expected_pickup_date = models.DateField(null=True, blank=True)
@@ -308,13 +308,13 @@ class ManifestItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='manifest_items')
     inventory_item = models.ForeignKey('inventory.InventoryItem', on_delete=models.SET_NULL, null=True, blank=True, related_name='manifest_items')
     material = models.CharField(max_length=200)
-    weight = models.DecimalField(max_digits=12, decimal_places=2)
+    weight = models.DecimalField(max_digits=20, decimal_places=2)
     weight_unit = models.CharField(max_length=10, default='lbs')
     
-    buy_price = models.DecimalField(max_digits=12, decimal_places=4)
+    buy_price = models.DecimalField(max_digits=20, decimal_places=4)
     buy_price_unit = models.CharField(max_length=20, default='per lbs')
     
-    sell_price = models.DecimalField(max_digits=12, decimal_places=4)
+    sell_price = models.DecimalField(max_digits=20, decimal_places=4)
     sell_price_unit = models.CharField(max_length=20, default='per lbs')
     
     packaging = models.CharField(max_length=100, blank=True)

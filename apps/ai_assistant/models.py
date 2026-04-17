@@ -1,6 +1,7 @@
 """
 AI Assistant Models - Chat sessions, pending inventory, buyer requirements
 """
+# Models last refreshed to ensure field synchronization
 from django.db import models
 from django.conf import settings
 from apps.accounts.models import TenantAwareModel
@@ -58,6 +59,7 @@ class PendingInventoryEmail(TenantAwareModel):
     subject = models.CharField(max_length=500)
     body_text = models.TextField()
     received_at = models.DateTimeField()
+    message_id = models.CharField(max_length=500, blank=True, null=True, db_index=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     matched_company = models.ForeignKey('accounts.Company', on_delete=models.SET_NULL, null=True, blank=True)
     raw_extraction = models.JSONField(default=dict, blank=True, help_text='Raw LLM extraction output')

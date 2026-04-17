@@ -87,9 +87,6 @@ class CustomUser(AbstractUser):
     ROLE_CHOICES = [
         ('admin', 'Administrator'),
         ('customer', 'Customer'),
-        ('driver', 'Driver'),
-        ('warehouse', 'Warehouse Staff'),
-        ('sales', 'Sales'),
     ]
     
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='customer')
@@ -116,13 +113,7 @@ class CustomUser(AbstractUser):
     def is_admin(self):
         return self.role == 'admin'
     
-    @property
-    def is_driver(self):
-        return self.role == 'driver'
     
-    @property
-    def is_warehouse_staff(self):
-        return self.role == 'warehouse'
     
 
 class SignupOTP(models.Model):
@@ -239,7 +230,7 @@ def log_failed_login(sender, credentials, request, **kwargs):
 class TeamInvitation(models.Model):
     """Model to track team member invitations sent via email"""
     email = models.EmailField()
-    role = models.CharField(max_length=20, choices=CustomUser.ROLE_CHOICES, default='sales')
+    role = models.CharField(max_length=20, choices=CustomUser.ROLE_CHOICES, default='admin')
     tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name='invitations')
     invited_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='sent_invitations')
     token = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)

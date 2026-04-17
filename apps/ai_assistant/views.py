@@ -119,10 +119,16 @@ def pending_inventory_list(request):
     ).exclude(status='pending').order_by('-processed_at')[:10]
     
     from apps.accounts.models import Company
+    # Admin Sees all companies. Normal users see only their tenant's.
+    if request.user.is_superuser or getattr(request.user, 'is_admin', False):
+        all_companies = Company.objects.all()
+    else:
+        all_companies = Company.objects.filter(tenant=request.user.tenant)
+
     context = {
         'pending_emails': emails,
         'recent_emails': recent,
-        'companies': Company.objects.filter(tenant=request.user.tenant),
+        'companies': all_companies,
     }
     return render(request, 'ai_assistant/pending_inventory.html', context)
 
@@ -271,8 +277,15 @@ def reject_all_items(request, email_id):
 
 @login_required
 def smart_matches_dashboard(request):
-    """Show smart demand-supply matches"""
-    # Trigger matching engine to ensure fresh results on page load
+    # 1. Trigger Email Fetch to get new requirements
+    from .email_ingestion import fetch_and_process_emails
+    try:
+        # We pass None to allow global routing (matches sender to company/tenant)
+        fetch_and_process_emails(tenant=None, max_emails=5) 
+    except Exception as e:
+        logger.error(f"Auto-fetch failed: {e}")
+
+    # 2. Trigger matching engine to ensure fresh results on page load
     from .matching import run_matching
     run_matching(request.user.tenant)
     
@@ -284,11 +297,18 @@ def smart_matches_dashboard(request):
     requirements = BuyerRequirement.objects.filter(
         tenant=request.user.tenant,
         is_fulfilled=False,
-    ).select_related('buyer')
+    ).select_related('buyer').order_by('-created_at')
+
+    # 3. Fetch Pending Supplier Leads (Emails with pending inventory items)
+    pending_supply_emails = PendingInventoryEmail.objects.filter(
+        tenant=request.user.tenant,
+        status='pending',
+    ).prefetch_related('items').order_by('-received_at')
     
     context = {
         'matches': matches,
         'requirements': requirements,
+        'pending_supply_emails': pending_supply_emails,
     }
     return render(request, 'ai_assistant/smart_matches.html', context)
 
@@ -355,3 +375,38 @@ def notify_match_parties(request, match_id):
         })
 
 
+
+@login_required
+@require_POST
+def find_match_for_requirement(request, requirement_id):
+    """Trigger matching engine for a specific requirement"""
+    from .matching import match_requirement_to_inventory, get_ai_match_insight
+    
+    requirement = get_object_or_404(BuyerRequirement, id=requirement_id, tenant=request.user.tenant)
+    
+    matches = match_requirement_to_inventory(requirement, request.user.tenant)
+    created_count = 0
+    
+    for item, score, reason in matches:
+        # Don't create duplicate matches
+        if not SmartMatch.objects.filter(
+            tenant=request.user.tenant,
+            requirement=requirement,
+            inventory_item=item,
+        ).exists():
+            insight = get_ai_match_insight(requirement, item) if score >= 70 else reason
+            
+            SmartMatch.objects.create(
+                tenant=request.user.tenant,
+                requirement=requirement,
+                inventory_item=item,
+                confidence_score=score,
+                match_reason=insight,
+            )
+            created_count += 1
+            
+    return JsonResponse({
+        'status': 'success',
+        'created_count': created_count,
+        'total_matches': len(matches)
+    })

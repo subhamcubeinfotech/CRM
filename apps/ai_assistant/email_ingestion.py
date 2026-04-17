@@ -19,8 +19,8 @@ logger = logging.getLogger('apps.ai_assistant')
 
 def connect_imap():
     """Connect to Gmail IMAP server using credentials from .env"""
-    host = getattr(settings, 'EMAIL_IMAP_HOST', 'imap.gmail.com')
-    port = int(getattr(settings, 'EMAIL_IMAP_PORT', 993))
+    host = getattr(settings, 'IMAP_HOST', 'imap.gmail.com')
+    port = int(getattr(settings, 'IMAP_PORT', 993))
     username = getattr(settings, 'EMAIL_HOST_USER', '')
     password = getattr(settings, 'EMAIL_HOST_PASSWORD', '')
 
@@ -42,24 +42,94 @@ def decode_email_subject(msg):
     return subject
 
 
+def html_to_text(html):
+    """Simple HTML to text converter using regex"""
+    if not html:
+        return ""
+    # Remove script and style elements
+    text = re.sub(r'<(script|style)[^>]*>.*?</\1>', '', html, flags=re.DOTALL | re.IGNORECASE)
+    # Remove all other tags
+    text = re.sub(r'<[^>]+>', ' ', text)
+    # Handle common entities
+    text = text.replace('&nbsp;', ' ').replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>')
+    # Clean up whitespace
+    text = re.sub(r'\s+', ' ', text).strip()
+    return text
+
+
 def get_email_body(msg):
-    """Extract text body from email"""
+    """Extract text body from email - improved for HTML emails"""
     body = ""
+    html_body = ""
+    
     if msg.is_multipart():
         for part in msg.walk():
             content_type = part.get_content_type()
+            content_disposition = str(part.get('Content-Disposition', ''))
+            
+            # Skip attachments
+            if 'attachment' in content_disposition:
+                continue
+                
             if content_type == 'text/plain':
                 try:
-                    body = part.get_payload(decode=True).decode('utf-8', errors='replace')
-                except:
-                    body = str(part.get_payload())
-                break
+                    plain_text = part.get_payload(decode=True).decode('utf-8', errors='replace')
+                    if plain_text.strip():
+                        body = plain_text
+                except Exception as e:
+                    logger.warning(f"Error decoding plain text: {e}")
+                    try:
+                        body = str(part.get_payload())
+                    except:
+                        pass
+                        
+            elif content_type == 'text/html' and not html_body:
+                try:
+                    html_text = part.get_payload(decode=True).decode('utf-8', errors='replace')
+                    if html_text.strip():
+                        # Enhanced HTML to text conversion
+                        html_body = html_to_text(html_text)
+                except Exception as e:
+                    logger.warning(f"Error decoding HTML text: {e}")
+        
+        # Prefer plain text, fall back to converted HTML
+        final_body = body if body.strip() else html_body
+        
     else:
+        # Single part email
+        content_type = msg.get_content_type()
         try:
-            body = msg.get_payload(decode=True).decode('utf-8', errors='replace')
-        except:
-            body = str(msg.get_payload())
-    return body
+            raw_body = msg.get_payload(decode=True).decode('utf-8', errors='replace')
+            if content_type == 'text/html':
+                final_body = re.sub(r'<[^>]+>', '', raw_body)
+                final_body = re.sub(r'\s+', ' ', final_body).strip()
+            else:
+                final_body = raw_body
+        except Exception as e:
+            logger.warning(f"Error decoding single part email: {e}")
+            try:
+                final_body = str(msg.get_payload())
+            except:
+                final_body = ""
+    
+    # Clean up the final body - but don't over-clean if it nukes data
+    if final_body:
+        # Only remove headers if they are at the very beginning (frequently in forwards)
+        lines = final_body.split('\n')
+        clean_lines = []
+        for line in lines:
+            # Skip noise lines but keep content that looks like inventory
+            if re.match(r'^(Subject|From|To|Date|Sent):', line, re.I) and not any(kw in line.lower() for kw in ['lbs', 'tons', 'kg', 'scrap', 'material']):
+                continue
+            clean_lines.append(line)
+        
+        final_body = '\n'.join(clean_lines)
+        final_body = re.sub(r'On .* wrote:', '', final_body)
+        final_body = re.sub(r'-{2,}.*?-{2,}', '', final_body, flags=re.DOTALL)
+        final_body = re.sub(r'\n{3,}', '\n\n', final_body)
+        final_body = final_body.strip()
+    
+    return final_body or ""
 
 
 def extract_inventory_items_llm(body_text):
@@ -128,53 +198,111 @@ def extract_inventory_items_llm(body_text):
         logger.error(f"LLM Extraction failed: {e}. Falling back to Regex extraction.")
         return extract_items_regex_fallback(body_text)
 
+def clean_product_name(name):
+    """Deep clean of captured material names to remove boilerplate and noise."""
+    if not name: return ""
+    
+    # 1. Strip lead-in boilerplate
+    noise_prefixes = [
+        r"^we\s+have\s+", r"^currently\s+in\s+stock\s+", r"^available\s+(?:at|in|on)\s+", 
+        r"^inventory\s+of\s+", r"^requirement\s+for\s+", r"^looking\s+for\s+", r"^hi,?\s+",
+        r"^new\s+inventory(?:\s+test)?\s+", r"^i\s+have\s+"
+    ]
+    name = name.strip()
+    for pattern in noise_prefixes:
+        name = re.sub(pattern, "", name, flags=re.IGNORECASE).strip()
+    
+    # 2. Strip trailing noise
+    noise_suffixes = [
+        r"\s+and$", r"\s+available$", r"\s+at\s+our\s+.*$", r"\s+with$", r"\s+for$"
+    ]
+    for pattern in noise_suffixes:
+        name = re.sub(pattern, "", name, flags=re.IGNORECASE).strip()
+        
+    # 3. Final polish
+    name = name.strip(' ,.-:*_')
+    
+    # Capitalize first letter of every word for professional look
+    return ' '.join(word.capitalize() for word in name.split()) if name else ""
+
 def extract_items_regex_fallback(body_text):
-    """Consolidated regex fallback for testing (Dual-Intent)"""
-    import re
+    """Robust regex extraction for logistics data using multi-pass patterns"""
     items = []
     
-    # Clean text: handle asterisks, underscores, and extra spaces
+    # 1. Cleaner: Focus on the actual content
     clean_text = body_text.replace('*', '').replace('_', '')
     
-    # Pre-check for overall intent
-    is_demand = any(word in clean_text.lower() for word in ['require', 'requirement', 'looking for', 'need to buy', 'inquiry', 'purchasing'])
+    # Identify intent
+    is_demand = any(re.search(rf"\b{word}\b", clean_text.lower()) for word in ['require', 'requirement', 'looking for', 'need', 'buy', 'want', 'purchasing'])
     
-    # 1. Demand Patterns
-    demand_patterns = [
-        r"(?:looking for|require|need|buy|want|seek)\s*([\d,.]+)?\s*(tons?|lbs?|kg|mt)?\s*(?:of)?\s*([^.\n\?\!\*,]+)",
+    # 2. Specialized Patterns
+    patterns = [
+        # Pattern A: [Quantity] [Unit] [Product Name] - Stops at punctuation or "and"
+        # Example: "4500 lbs of Aluminum Siding"
+        r"([\d,.]+)\s*(?:lbs?|tons?|kg|mt)?\s*(lbs?|tons?|kg|mt)\s+(?:of\s+)?(.*?)(?=\s+and\s+|\s+[\d,.]+\s*(?:lbs?|tons?|kg|mt)|[.,\n!]|$)",
+        
+        # Pattern B: [Product Name] [Quantity] [Unit]
+        # Example: "Aluminum Siding 4500 lbs"
+        # Limited look-behind to 40 characters to prevent catching whole sentences
+        r"([^.\n!?,:]{3,40})\s+([\d,.]+)\s*(lbs?|tons?|kg|mt)",
+        
+        # Pattern C: Price detection (Price at end of line or after @/at)
+        # Example: "... Aluminum at $0.90/lb"
+        r"(.*?)\s+(?:at|@)\s+\$?\s*([\d,.]+)\s*/?\s*(lb|kg|ton|mt|lbs)?"
     ]
-    # 2. Supply Patterns
-    supply_patterns = [
-        r"(?:selling|offer|available|stock|have)\s*([\d,.]+)?\s*(tons?|lbs?|kg|mt)?\s*(?:of)?\s*([^.\n\?\!\*,]+)",
-    ]
+    
+    # Pass 1: Primary extraction
+    for i, p in enumerate(patterns[:2]): # Only look at A and B first
+        for m in re.finditer(p, clean_text, re.IGNORECASE):
+            if i == 0: # Pattern A
+                qty_str, unit, prod = m.group(1), m.group(2), m.group(3)
+            else: # Pattern B
+                prod, qty_str, unit = m.group(1), m.group(2), m.group(3)
+            
+            prod = clean_product_name(prod)
+            if not prod or len(prod) < 3: continue
+            
+            # Validation: Filter out common noise
+            blacklist = ['regards', 'team', 'warehouse', 'any buyers', 'subject', 'fwd', 'date', 'april', 'may', 'june', 'july', 'best regards', 'thanks']
+            if any(noise in prod.lower() for noise in blacklist):
+                 continue
 
-    for p in demand_patterns:
-        matches = re.finditer(p, clean_text, re.IGNORECASE)
-        for m in matches:
-            prod = m.group(3).strip()
-            if prod and len(prod) > 2 and prod.lower() not in ['available', 'needed', 'stock', 'info']:
-                items.append({
-                    "intent": "demand",
-                    "product_name": prod,
-                    "quantity": float(m.group(1).replace(',', '')) if m.group(1) else 0.0,
-                    "unit": m.group(2) if m.group(2) else "lbs",
-                })
+            try:
+                qty = float(qty_str.replace(',', ''))
+            except:
+                qty = 0.0
+                
+            items.append({
+                "intent": "demand" if is_demand else "supply",
+                "product_name": prod,
+                "quantity": qty,
+                "unit": unit or "lbs",
+                "price": None,
+                "price_unit": f"per {unit}" if unit else "per lb"
+            })
 
-    # Only look for supply if we didn't find clear demand or if it's explicitly selling
-    if not items or not is_demand:
-        for p in supply_patterns:
-            matches = re.finditer(p, clean_text, re.IGNORECASE)
-            for m in matches:
-                prod = m.group(3).strip()
-                if prod and len(prod) > 2 and prod.lower() not in ['available', 'needed', 'stock', 'info']:
-                    items.append({
-                        "intent": "supply",
-                        "product_name": prod,
-                        "quantity": float(m.group(1).replace(',', '')) if m.group(1) else 0.0,
-                        "unit": m.group(2) if m.group(2) else "lbs",
-                    })
+    # Pass 2: Price matching enrichment
+    # Look for $X.XX/lb patterns and try to attach to the last item
+    price_pattern = r"\$?\s*([\d,.]+)\s*/\s*(lb|kg|ton|mt|lbs?)"
+    prices_found = re.findall(price_pattern, clean_text, re.IGNORECASE)
+    if prices_found and items:
+        # If there's only one price mentioned, it usually applies to all or the last mentioned item
+        last_price, last_p_unit = prices_found[-1]
+        try:
+            items[-1]['price'] = float(last_price)
+            items[-1]['price_unit'] = f"per {last_p_unit}"
+        except: pass
 
-    return items
+    # 3. Deduplicate
+    seen = set()
+    unique_items = []
+    for itm in items:
+        key = (itm['product_name'].lower()[:20], itm['quantity'])
+        if key not in seen:
+            seen.add(key)
+            unique_items.append(itm)
+
+    return unique_items
 
 
 def handle_attachments(msg):
@@ -268,7 +396,7 @@ def fetch_and_process_emails(tenant, max_emails=10, request_user=None):
     """
     Main entry point: connect to IMAP, fetch new emails, extract inventory items.
     """
-    from .models import PendingInventoryEmail, PendingInventoryItem
+    from .models import PendingInventoryEmail, PendingInventoryItem, BuyerRequirement
     from apps.accounts.models import Company
 
     try:
@@ -305,6 +433,7 @@ def fetch_and_process_emails(tenant, max_emails=10, request_user=None):
             subject = decode_email_subject(msg)
             sender_raw = msg.get('From', '')
             sender_name, sender_email = email.utils.parseaddr(sender_raw)
+            message_id = msg.get('Message-ID', f"{subject}-{sender_email}") # Fallback to subject-sender if ID missing
             sender_email = sender_email.lower()
 
             # SPAM FILTER: Skip common junk domains
@@ -315,42 +444,61 @@ def fetch_and_process_emails(tenant, max_emails=10, request_user=None):
         except Exception as e:
             logger.error(f"Error fetching email {eid}: {e}")
             continue
-        if PendingInventoryEmail.objects.filter(tenant=tenant, subject=subject, sender_email=sender_email).exists():
-            continue
+        # GLOBAL Deduplication Check: Use Message-ID for precision
+        model_fields = [f.name for f in PendingInventoryEmail._meta.get_fields()]
+        existing_email = None
+        
+        if 'message_id' in model_fields:
+            existing_email = PendingInventoryEmail.plain_objects.filter(message_id=message_id).first()
+        
+        if not existing_email:
+            # Also fallback to subject check if needed, but allow new dates
+            existing_email = PendingInventoryEmail.plain_objects.filter(subject=subject, sender_email=sender_email).last()
+        
+        if existing_email:
+            # Only skip if it has data AND was approved
+            has_requirements = BuyerRequirement.plain_objects.filter(source_email=existing_email).exists()
+            has_pending_items = PendingInventoryItem.objects.filter(email=existing_email).exists()
+            
+            if (has_requirements or has_pending_items) and existing_email.status != 'pending' and existing_email.message_id == message_id:
+                continue
+        
+        pending_email = existing_email
+        if not pending_email:
+            # Create new email record
+            body = get_email_body(msg)
+            attachments_info = handle_attachments(msg)
+            full_text = body + "\n" + attachments_info
+            
+            # (routing logic continues...)
+        else:
+            body = pending_email.body_text
+            attachments_info = "" # Assuming we don't re-process attachments if already in DB
 
-        body = get_email_body(msg)
-        attachments_info = handle_attachments(msg)
         full_text = body + "\n" + attachments_info
 
         extracted_items = extract_inventory_items(full_text)
         if not extracted_items:
             continue
 
-        # Intelligent Company Matching
-        matched_company = Company.objects.filter(tenant=tenant, email=sender_email).first()
-
+        # Intelligent Company Matching - GLOBAL Fallback
+        matched_company = Company.objects.filter(email=sender_email).first()
         if not matched_company:
             domain = sender_email.split('@')[-1].lower() if '@' in sender_email else ''
-            
-            # Domain match only for non-generic providers
             if domain and domain not in ['gmail.com', 'outlook.com', 'yahoo.com', 'hotmail.com', 'icloud.com']:
-                matched_company = Company.objects.filter(tenant=tenant, email__icontains=domain).first()
-                if not matched_company:
-                    # Try matching by contact email
-                    from django.contrib.auth import get_user_model
-                    ContactUser = get_user_model()
-                    contact = ContactUser.objects.filter(tenant=tenant, email=sender_email, company__isnull=False).first()
-                    if contact:
-                        matched_company = contact.company
+                matched_company = Company.objects.filter(email__icontains=domain).first()
 
-        # Fallback: Matching by sender name (least reliable)
-        if not matched_company and sender_name:
-            s_name = str(sender_name).strip()
-            if len(s_name) > 3:
-                matched_company = Company.objects.filter(tenant=tenant, name__icontains=s_name[:15]).first()
-
+        # Update tenant if matched globally
+        if matched_company and matched_company.tenant:
+            tenant = matched_company.tenant
+        
         # Assign Owner: Priority 1 = Company Creator, Priority 2 = Requesting User
         fetched_by = matched_company.created_by if matched_company and matched_company.created_by else request_user
+
+        if not tenant:
+            # Fallback to default tenant if still not found
+            from apps.accounts.models import Tenant
+            tenant = Tenant.objects.filter(name__icontains='Default').first() or Tenant.objects.first()
 
         pending_email = PendingInventoryEmail.objects.create(
             tenant=tenant,
@@ -358,6 +506,7 @@ def fetch_and_process_emails(tenant, max_emails=10, request_user=None):
             sender_name=sender_name,
             subject=subject,
             body_text=body,
+            message_id=message_id,
             received_at=timezone.now(),
             matched_company=matched_company,
             raw_extraction=extracted_items,
@@ -369,9 +518,12 @@ def fetch_and_process_emails(tenant, max_emails=10, request_user=None):
             
             if intent == 'demand':
                 # AUTOMATED: Create Buyer Requirement directly from email
-                from .models import BuyerRequirement
-                from apps.accounts.models import Company
                 
+                # Deduplication Check: Don't create if already exists for this email
+                if BuyerRequirement.objects.filter(tenant=tenant, source_email=pending_email, material_name=item_data.get('product_name')).exists():
+                    logger.info(f"Skipping duplicate Requirement for {item_data.get('product_name')}")
+                    continue
+
                 buyer = matched_company
                 if not buyer:
                     buyer, _ = Company.objects.get_or_create(

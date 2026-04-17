@@ -10,19 +10,16 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         tenant_id = options.get('tenant_id')
-        
         if tenant_id:
             try:
                 tenant = Tenant.objects.get(id=tenant_id)
-                tenants = [tenant]
+                self.stdout.write(f'Fetching emails specifically for tenant: {tenant.name}...')
+                processed = fetch_and_process_emails(tenant)
+                self.stdout.write(self.style.SUCCESS(f'Successfully processed {processed} emails for {tenant.name}'))
             except Tenant.DoesNotExist:
                 self.stderr.write(self.style.ERROR(f'Tenant {tenant_id} not found'))
                 return
         else:
-            # Default to all tenants or just the first one for testing
-            tenants = Tenant.objects.all()
-
-        for tenant in tenants:
-            self.stdout.write(f'Fetching emails for tenant: {tenant.name} (ID: {tenant.id})...')
-            processed = fetch_and_process_emails(tenant)
-            self.stdout.write(self.style.SUCCESS(f'Successfully processed {processed} emails for {tenant.name}'))
+            self.stdout.write('Fetching emails and routing to correct tenants...')
+            processed = fetch_and_process_emails(None) # None = global routing
+            self.stdout.write(self.style.SUCCESS(f'Successfully processed {processed} emails globally.'))
