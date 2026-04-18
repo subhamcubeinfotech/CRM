@@ -1,7 +1,3 @@
-"""
-Email Ingestion Utility - Fetches supplier emails via IMAP and extracts inventory data.
-Uses rule-based parsing (upgradeable to LLM when API key is available).
-"""
 import imaplib
 import email
 import email.utils
@@ -136,17 +132,17 @@ def get_email_body(msg):
 
 def extract_inventory_items_llm(body_text):
     """
-    Uses OpenAI LLM to extract inventory items from unstructured email text.
+    Uses Anthropic Claude LLM to extract inventory items from unstructured email text.
     Handles multiple items, different units, and cleans up common email garbage.
     """
-    from openai import OpenAI
+    import anthropic
     
-    api_key = getattr(settings, 'OPENAI_API_KEY', '')
-    if not api_key or api_key.startswith('fb2a'):
-        logger.warning("OpenAI API key missing or placeholder. Skipping LLM extraction.")
+    api_key = getattr(settings, 'ANTHROPIC_API_KEY', '')
+    if not api_key:
+        logger.warning("Anthropic API key missing. Skipping LLM extraction.")
         return []
 
-    client = OpenAI(api_key=api_key)
+    client = anthropic.Anthropic(api_key=api_key)
     
     prompt = f"""
     You are a logistics and inventory data specialist. Extract all business materials mentioned in the following email.
@@ -185,19 +181,26 @@ def extract_inventory_items_llm(body_text):
     """
     
     try:
-        response = client.chat.completions.create(
-            model="gpt-4o",
+        response = client.messages.create(
+            model="claude-3-5-sonnet-20240620",
+            max_tokens=2048,
+            temperature=0,
+            system="You extract structured inventory data from business emails. Output valid JSON only.",
             messages=[
-                {"role": "system", "content": "You extract structured inventory data from business emails. Output valid JSON only."},
                 {"role": "user", "content": prompt}
-            ],
-            response_format={ "type": "json_object" },
-            temperature=0
+            ]
         )
-        data = json.loads(response.choices[0].message.content)
+        content = response.content[0].text
+        # Extract JSON if Claude adds conversational filler
+        if "```json" in content:
+            content = content.split("```json")[1].split("```")[0].strip()
+        elif "```" in content:
+            content = content.split("```")[1].split("```")[0].strip()
+            
+        data = json.loads(content)
         return data.get('items', [])
     except Exception as e:
-        logger.error(f"LLM Extraction failed: {e}. Falling back to Regex extraction.")
+        logger.error(f"Claude Extraction failed: {e}. Falling back to Regex extraction.")
         return extract_items_regex_fallback(body_text)
 
 def clean_product_name(name):

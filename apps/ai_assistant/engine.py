@@ -12,6 +12,8 @@ from decimal import Decimal
 
 from django.db.models import Q, Sum, Count, Avg
 from django.utils import timezone
+from django.conf import settings
+import anthropic
 
 logger = logging.getLogger('apps.ai_assistant')
 
@@ -475,11 +477,67 @@ def process_query(user, message):
         )
     
     # ── Unknown intent: Try smart fallback ──
-    return _smart_fallback(tenant, message)
+    result = _smart_fallback(tenant, message)
+    if result:
+        return result
+        
+    return _conversational_fallback(user, message)
+
+
+def _conversational_fallback(user, message):
+    """Use Claude to provide a smart conversational response when regex parsing fails."""
+    api_key = getattr(settings, 'ANTHROPIC_API_KEY', '')
+    if not api_key:
+        return _static_fallback(message)
+
+    try:
+        stats = get_dashboard_stats(user.tenant)
+        client = anthropic.Anthropic(api_key=api_key)
+        
+        system_prompt = f"""
+        You are the FreightPro AI Logistics Assistant. You help users manage their CRM data.
+        Current System Stats for context:
+        - Shipments: {stats['total_shipments']} ({stats['pending_shipments']} pending, {stats['in_transit_shipments']} in transit, {stats['delivered_shipments']} delivered)
+        - Orders: {stats['total_orders']} ({stats['open_orders']} open)
+        - Inventory: {stats['total_inventory_items']} items ({stats['low_stock_items']} low stock)
+        - Companies: {stats['total_companies']} ({stats['vendors']} vendors, {stats['customers']} customers)
+        - Current Revenue: ${stats['total_revenue']:,.2f}
+        
+        Guidelines:
+        - Be professional, helpful, and concise.
+        - If you can't find specific data mentioned (like a specific shipment number), ask the user for more details.
+        - Encourage them to use the dashboard or search if needed.
+        - Mention that you are powered by Claude 3.5 Sonnet.
+        """
+        
+        response = client.messages.create(
+            model="claude-3-5-sonnet-20240620",
+            max_tokens=600,
+            system=system_prompt,
+            messages=[
+                {"role": "user", "content": message}
+            ]
+        )
+        return response.content[0].text
+    except Exception as e:
+        logger.error(f"Claude fallback failed: {e}")
+        return _static_fallback(message)
+
+
+def _static_fallback(message):
+    return (
+        "🤔 I'm not sure what you're asking. Here are some quick actions:\n\n"
+        "1️⃣ **1** — Show pending shipments\n"
+        "2️⃣ **2** — Show open orders\n"
+        "3️⃣ **3** — Show low stock items\n"
+        "4️⃣ **4** — Dashboard stats\n"
+        "5️⃣ **5** — Help / Examples\n\n"
+        "Just type the **number** or ask me anything! 🚀"
+    )
 
 
 def _smart_fallback(tenant, message):
-    """Try to find something relevant when intent is unclear"""
+    """Try to find something relevant when intent is unclear (Legacy/Fast check)"""
     msg = message.lower().strip()
     
     # Try as shipment number
@@ -494,24 +552,4 @@ def _smart_fallback(tenant, message):
     if order:
         return "🔍 **Found Order:**\n\n" + format_order(order)
     
-    # Try as company name
-    from apps.accounts.models import Company
-    company = Company.objects.filter(tenant=tenant, name__icontains=msg, is_active=True).first()
-    if company:
-        return f"🔍 **Found Company:**\n\n{format_company(company)}"
-    
-    # Try as product
-    from apps.inventory.models import InventoryItem
-    item = InventoryItem.objects.filter(tenant=tenant, product_name__icontains=msg).first()
-    if item:
-        return "🔍 **Found Inventory:**\n\n" + format_inventory(item)
-    
-    return (
-        "🤔 I'm not sure what you're asking. Here are some quick actions:\n\n"
-        "1️⃣ **1** — Show pending shipments\n"
-        "2️⃣ **2** — Show open orders\n"
-        "3️⃣ **3** — Show low stock items\n"
-        "4️⃣ **4** — Dashboard stats\n"
-        "5️⃣ **5** — Help / Examples\n\n"
-        "Just type the **number** or ask me anything! 🚀"
-    )
+    return None # Let the caller handle conversational fallback
