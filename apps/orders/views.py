@@ -276,7 +276,25 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
                     output_field=IntegerField()
                 )
             ).order_by('-is_my_company', 'name')
-        context['warehouses'] = warehouses
+        def get_unique_warehouses(qs):
+            unique = {}
+            for w in qs:
+                # Normalize address for deduplication
+                import re
+                addr_norm = re.sub(r'[^\w\s]', '', w.full_address).lower().strip()
+                if addr_norm not in unique:
+                    unique[addr_norm] = w
+            return list(unique.values())
+
+        # Main warehouses for Edit Order (deduplicated)
+        context['warehouses'] = get_unique_warehouses(warehouses)
+
+        # Filtered lists for Add Shipment
+        s_warehouses = Warehouse.plain_objects.filter(tenant=user_tenant, company=self.object.supplier)
+        r_warehouses = Warehouse.plain_objects.filter(tenant=user_tenant, company=self.object.receiver)
+
+        context['supplier_warehouses'] = get_unique_warehouses(s_warehouses)
+        context['receiver_warehouses'] = get_unique_warehouses(r_warehouses)
         
         # Show ONLY the currently selected shipping term
         if self.object.shipping_terms_id:
@@ -472,24 +490,32 @@ def resolve_location(val, user, company_obj=None):
         from apps.inventory.models import Warehouse
         raw_address = str(val).replace('temp_addr_', '')[:200]
         
+        # Normalize and look for existing warehouse first to prevent duplicates
+        existing = Warehouse.objects.filter(
+            company=company,
+            tenant=company.tenant,
+            name=raw_address
+        ).first()
+        
+        if existing:
+            return existing.id
+
         # Generate a unique code
         import random
         unique_code = f"LOC-{company.id}-{random.randint(1000, 9999)}"[:20]
         
-        hq, created = Warehouse.objects.get_or_create(
+        hq = Warehouse.objects.create(
             company=company,
             tenant=company.tenant,
             name=raw_address,
-            defaults={
-                'code': unique_code,
-                'address': company.address_line1[:255] if hasattr(company, 'address_line1') else '',
-                'city': company.city[:100] if hasattr(company, 'city') else '',
-                'state': company.state[:100] if hasattr(company, 'state') else '',
-                'country': company.country[:100] if hasattr(company, 'country') else 'USA',
-                'postal_code': company.postal_code[:20] if hasattr(company, 'postal_code') else '',
-                'phone': company.phone[:20] if hasattr(company, 'phone') else '',
-                'is_storage': False
-            }
+            code=unique_code,
+            address=company.address_line1[:255] if hasattr(company, 'address_line1') else '',
+            city=company.city[:100] if hasattr(company, 'city') else '',
+            state=company.state[:100] if hasattr(company, 'state') else '',
+            country=company.country[:100] if hasattr(company, 'country') else 'USA',
+            postal_code=company.postal_code[:20] if hasattr(company, 'postal_code') else '',
+            phone=company.phone[:20] if hasattr(company, 'phone') else '',
+            is_storage=False
         )
         return hq.id
     return val
