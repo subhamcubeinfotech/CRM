@@ -7,9 +7,17 @@
     <!-- Page Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h2"><i class="fas fa-file-invoice-dollar me-2 text-primary"></i>Invoices</h1>
-        <a href="{% url 'invoicing:invoice_create' %}" class="btn btn-primary">
-            <i class="fas fa-plus me-2"></i>Create Invoice
-        </a>
+        <div class="btn-group">
+            <a href="{% url 'invoicing:aging_report' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-history me-2"></i>Aging Report
+            </a>
+            <a href="{% url 'invoicing:recurring_invoice_list' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-redo me-2"></i>Recurring Invoices
+            </a>
+            <a href="{% url 'invoicing:invoice_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Create Invoice
+            </a>
+        </div>
     </div>
     
     <!-- Filters -->

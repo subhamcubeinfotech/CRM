@@ -33,7 +33,13 @@ urlpatterns = [
 
     # Status update
     path('<int:pk>/update-status/', views.update_status, name='update_status'),
+    path('<int:pk>/comment/add/', views.add_comment, name='add_comment'),
+    path('<int:pk>/commission/add/', views.shipment_commission_add, name='shipment_commission_add'),
 
     # Tracking
     path('track/<str:tracking_number>/', views.public_tracking, name='public_tracking'),
+
+    # Shipment item edits (AJAX)
+    path('item/<int:pk>/update/', views.shipment_item_update_ajax, name='shipment_item_update_ajax'),
+    path('item/<int:pk>/delete/', views.shipment_item_delete_ajax, name='shipment_item_delete_ajax'),
 ]

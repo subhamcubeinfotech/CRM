@@ -3,23 +3,92 @@ from django import forms
 from django.contrib.auth.forms import PasswordResetForm
 from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
+from django.contrib.auth.password_validation import validate_password
 from .models import Company
+
+class TagInputField(forms.MultipleChoiceField):
+    """Custom field to allow any value typed in Select2 tags, bypassing choice validation."""
+    def valid_value(self, value):
+        return True
 
 class CompanyForm(forms.ModelForm):
     email = forms.EmailField(required=True, widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Email Address'}))
+    
+    services_provided = TagInputField(
+        choices=[],
+        required=False,
+        widget=forms.SelectMultiple(attrs={
+            'class': 'form-select select2-tags',
+            'multiple': 'multiple',
+            'data-placeholder': 'Type a service and press Enter...'
+        }),
+        label="Services Provided"
+    )
+
+    material_tags = TagInputField(
+        choices=[],
+        required=False,
+        widget=forms.SelectMultiple(attrs={
+            'class': 'form-select select2-tags',
+            'multiple': 'multiple',
+            'data-placeholder': 'Type and press Enter to add...'
+        }),
+        label="Materials"
+    )
+
+    company_tags = TagInputField(
+        choices=[],
+        required=False,
+        widget=forms.SelectMultiple(attrs={
+            'class': 'form-select select2-tags',
+            'multiple': 'multiple',
+            'data-placeholder': 'Type and press Enter to add...'
+        }),
+        label="Company Tags"
+    )
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
+        
+        # Add labels to make them look like the screenshot
+        self.fields['legal_name'].label = "Legal Name"
+
+        # If editing, populate the choices with EXISTING linked items only
+
+        # If editing, populate the choices with EXISTING linked items only
+        # so they show up as tags in the searchable box
+        if self.instance and self.instance.pk:
+            # For JSON field (Services)
+            if self.instance.services_provided:
+                self.fields['services_provided'].initial = self.instance.services_provided
+                self.fields['services_provided'].widget.choices = [(s, s) for s in self.instance.services_provided]
+            
+            # For M2M (Materials)
+            linked_materials = self.instance.material_tags.all()
+            if linked_materials:
+                self.fields['material_tags'].initial = [m.pk for m in linked_materials]
+                # Provide IDs as choices so Select2 can map them
+                self.fields['material_tags'].widget.choices = [(m.pk, m.name) for m in linked_materials]
+            
+            # For M2M (Tags)
+            linked_tags = self.instance.company_tags.all()
+            if linked_tags:
+                self.fields['company_tags'].initial = [t.pk for t in linked_tags]
+                self.fields['company_tags'].widget.choices = [(t.pk, t.name) for t in linked_tags]
+
+        # Make financial fields optional for now so they don't block save
+        self.fields['payment_terms'].required = False
+        self.fields['credit_limit'].required = False
 
     class Meta:
         model = Company
         fields = [
-            'name', 'company_type', 'tax_id',
+            'name', 'legal_name', 'company_type', 'tax_id',
             'phone', 'email', 'website',
             'description', 'logo',
             'address_line1', 'address_line2', 'city', 'state', 'postal_code', 'country',
-            'payment_terms', 'credit_limit', 'is_active'
+            'payment_terms', 'credit_limit', 'crm_status', 'last_touch', 'next_touch', 'is_active',
         ]
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Company Name'}),
@@ -38,7 +107,11 @@ class CompanyForm(forms.ModelForm):
             'country': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Country'}),
             'payment_terms': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Days (e.g., 30)'}),
             'credit_limit': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Credit Limit'}),
-            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'})
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'legal_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Company Legal Name'}),
+            'crm_status': forms.Select(attrs={'class': 'form-select'}),
+            'last_touch': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'next_touch': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
         }
 
     def clean_phone(self):
@@ -70,15 +143,28 @@ class CompanyForm(forms.ModelForm):
 
     def clean_credit_limit(self):
         credit_limit = self.cleaned_data.get('credit_limit')
-        if credit_limit is not None and credit_limit < 0:
+        if credit_limit is None:
+            return 0
+        if credit_limit < 0:
             raise ValidationError("Credit limit cannot be negative.")
         return credit_limit
 
     def clean_payment_terms(self):
         payment_terms = self.cleaned_data.get('payment_terms')
-        if payment_terms is not None and payment_terms < 0:
+        if payment_terms is None:
+            return 30
+        if payment_terms < 0:
             raise ValidationError("Payment terms cannot be negative.")
         return payment_terms
+
+    def clean_services_provided(self):
+        services = self.cleaned_data.get('services_provided')
+        if not services and 'services_provided' in self.data:
+            services = self.data.getlist('services_provided')
+        
+        if isinstance(services, str):
+            return [s.strip() for s in services.split(',') if s.strip()]
+        return services or []
 
     def clean_name(self):
         name = self.cleaned_data.get('name')
@@ -100,6 +186,96 @@ class CompanyForm(forms.ModelForm):
             if queryset.exists():
                 raise ValidationError(f"A company with the name '{name}' already exists.")
         return name
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        
+        # Manually capture services_provided since it's a JSONField and 
+        # not in Meta.fields to avoid standard field handling issues
+        services = self.cleaned_data.get('services_provided')
+        if not services and 'services_provided' in self.data:
+            services = self.data.getlist('services_provided')
+        
+        if services is not None:
+            if isinstance(services, str):
+                instance.services_provided = [s.strip() for s in services.split(',') if s.strip()]
+            else:
+                instance.services_provided = services
+
+        if commit:
+            instance.save()
+            self.process_m2m_data()
+        return instance
+
+    def save_m2m(self):
+        """Ensure custom materials/tags processing runs for commit=False save flows."""
+        self.process_m2m_data()
+
+    def process_m2m_data(self):
+        """Custom method to handle auto-creation of Tags and Materials."""
+        instance = self.instance
+        
+        # 0. Set Tenant if missing (critical for Material creation)
+        if not instance.tenant:
+            if hasattr(self, 'user') and self.user and hasattr(self.user, 'tenant'):
+                instance.tenant = self.user.tenant
+            elif 'request' in self.data and hasattr(self.data['request'], 'user'):
+                 instance.tenant = self.data['request'].user.tenant
+
+        # 1. Handle Materials (ManyToMany)
+        # Be extremely aggressive in capturing the data
+        material_data = self.cleaned_data.get('material_tags')
+        if not material_data:
+            material_data = self.data.getlist('material_tags')
+        
+        # Normalize to list of strings
+        if isinstance(material_data, str):
+            material_data = [v.strip() for v in material_data.split(',') if v.strip()]
+        elif isinstance(material_data, list) and len(material_data) == 1 and ',' in str(material_data[0]):
+            material_data = [v.strip() for v in material_data[0].split(',') if v.strip()]
+        
+        material_objs = []
+        if material_data:
+            from apps.inventory.models import Material
+            for item in material_data:
+                item_str = str(item).strip() if item else ""
+                if not item_str: continue
+                try:
+                    if item_str.isdigit():
+                        mat = Material.objects.get(pk=int(item_str))
+                    else:
+                        mat, created = Material.objects.get_or_create(
+                            tenant=instance.tenant,
+                            name=item_str
+                        )
+                    material_objs.append(mat)
+                except:
+                    pass
+            
+            instance.material_tags.set(material_objs)
+        else:
+            instance.material_tags.clear()
+        
+        # 2. Handle Tags (ManyToMany)
+        tag_data = self.cleaned_data.get('company_tags') or self.data.getlist('company_tags')
+        if tag_data:
+            from apps.orders.models import Tag
+            tag_objs = []
+            for item in tag_data:
+                item_str = str(item).strip()
+                if not item_str: continue
+                try:
+                    if item_str.isdigit():
+                        tag_objs.append(Tag.objects.get(pk=int(item_str)))
+                    else:
+                        tag, _ = Tag.objects.get_or_create(tenant=instance.tenant, name=item_str)
+                        tag_objs.append(tag)
+                except Exception as e:
+                    print(f"Error saving tag '{item}': {e}")
+            
+            instance.company_tags.set(tag_objs)
+        else:
+            instance.company_tags.clear()
 
 class CustomPasswordResetForm(PasswordResetForm):
     def clean_email(self):
@@ -140,18 +316,10 @@ class SignupStep1Form(forms.ModelForm):
     def clean_password(self):
         password = self.cleaned_data.get('password')
         if password:
-            if len(password) < 5:
-                raise ValidationError("Password must be at least 5 characters long.")
-            
-            # Strong password criteria
-            if not any(c.isupper() for c in password):
-                raise ValidationError("Password must contain at least one uppercase letter.")
-            if not any(c.islower() for c in password):
-                raise ValidationError("Password must contain at least one lowercase letter.")
-            if not any(c.isdigit() for c in password):
-                raise ValidationError("Password must contain at least one number.")
-            if not any(c in "!@#$%^&*()_+-=[]{}|;:,.<>?" for c in password):
-                raise ValidationError("Password must contain at least one special character.")
+            try:
+                validate_password(password, self.instance)
+            except ValidationError as e:
+                raise ValidationError(e)
         return password
 
     def clean(self):

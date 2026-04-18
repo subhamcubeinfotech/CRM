@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}AR Aging Report{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">AR Aging Report</h1>
+            <p class="text-muted small">As of {{ report_date | date:"M d, Y" }}</p>
+        </div>
+        <div>
+            <button onclick="window.print()" class="btn btn-outline-primary no-print">
+                <i class="fas fa-print me-2"></i>Print Report
+            </button>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Outstanding</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">${{ totals.grand_total | intcomma }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-file-invoice-dollar fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                90+ Days Overdue</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">${{ totals.90_plus | intcomma }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Aging Table -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Customer Aging Detail</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" width="100%" cellspacing="0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>Customer</th>
+                            <th class="text-end">Current</th>
+                            <th class="text-end">1-30 Days</th>
+                            <th class="text-end">31-60 Days</th>
+                            <th class="text-end">61-90 Days</th>
+                            <th class="text-end">90+ Days</th>
+                            <th class="text-end font-weight-bold">Total Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in aging_data %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'invoicing:invoice_list' %}?customer={{ row.customer.id }}" class="text-decoration-none font-weight-bold text-primary">
+                                    {{ row.customer.name }}
+                                </a>
+                            </td>
+                            <td class="text-end">${{ row.current | intcomma }}</td>
+                            <td class="text-end {% if row.1_30 > 0 %}text-warning{% endif %}">${{ row.1_30 | intcomma }}</td>
+                            <td class="text-end {% if row.31_60 > 0 %}text-orange{% endif %}">${{ row.31_60 | intcomma }}</td>
+                            <td class="text-end {% if row.61_90 > 0 %}text-danger{% endif %}">${{ row.61_90 | intcomma }}</td>
+                            <td class="text-end {% if row.90_plus > 0 %}text-danger font-weight-bold{% endif %}">${{ row.90_plus | intcomma }}</td>
+                            <td class="text-end font-weight-bold border-start bg-light">${{ row.total | intcomma }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">No outstanding invoices found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot class="bg-dark text-white font-weight-bold">
+                        <tr>
+                            <td>TOTALS</td>
+                            <td class="text-end">${{ totals.current | intcomma }}</td>
+                            <td class="text-end">${{ totals.1_30 | intcomma }}</td>
+                            <td class="text-end">${{ totals.31_60 | intcomma }}</td>
+                            <td class="text-end">${{ totals.61_90 | intcomma }}</td>
+                            <td class="text-end">${{ totals.90_plus | intcomma }}</td>
+                            <td class="text-end">${{ totals.grand_total | intcomma }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .text-orange { color: #fd7e14; }
+    @media print {
+        .no-print { display: none !important; }
+        .card { border: none !important; shadow: none !important; }
+        .table { width: 100% !important; }
+    }
+</style>
+{% endblock %}

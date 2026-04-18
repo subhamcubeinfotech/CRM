@@ -3,6 +3,8 @@
 {% block title %}{{ shipment.shipment_number }} - FreightPro{% endblock %}
 
 {% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet">
 <style>
     .shipment-header-card {
         background: #fff;
@@ -273,41 +275,150 @@
         border-color: #0a58ca !important;
         color: #0a58ca !important;
     }
-    .btn-add-outline i {
-        font-size: 1rem;
-    }
-
-    .tracking-card {
-        border-radius: 14px;
-        overflow: hidden;
-    }
-
-    .tracking-map {
-        height: 220px;
+    .conversation-input-wrapper {
+        border: 1px solid #e9ecef;
         border-radius: 12px;
         overflow: hidden;
-        background: #e9ecef;
+        margin-bottom: 0.5rem;
+        background: #fff;
+        transition: border-color 0.2s;
+    }
+    .conversation-input-wrapper:focus-within {
+        border-color: #1c7ed6;
+        box-shadow: 0 0 0 3px rgba(28, 126, 214, 0.1);
+    }
+    .conversation-toolbar {
+        display: flex;
+        gap: 4px;
+        padding: 8px 12px;
+        background: #f8fafc;
+        border-bottom: 1px solid #f1f5f9;
+        flex-wrap: wrap;
+    }
+    .toolbar-btn {
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        color: #64748b;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+        background: transparent;
+        font-size: 0.85rem;
+    }
+    .toolbar-btn:hover {
+        background: #f1f5f9;
+        color: #1c7ed6;
+    }
+    .conversation-submit-btn:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
     }
 
-    .tracking-stat {
-        background: #f8f9fa;
-        border-radius: 12px;
-        padding: 0.8rem 0.9rem;
+    /* Link Editor */
+    .conversation-link-editor {
+        display: none;
+        padding: 8px 12px;
+        background: #fff;
+        border-top: 1px solid #f1f3f5;
+        align-items: center;
+        gap: 8px;
+    }
+    .conversation-link-input {
+        flex: 1;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 4px 10px;
+        font-size: 0.85rem;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+    .conversation-link-input:focus {
+        border-color: #1c7ed6;
+    }
+    .link-editor-btn {
+        background: none;
+        border: none;
+        padding: 4px;
+        border-radius: 4px;
+        color: #1c7ed6;
+        cursor: pointer;
+        transition: background 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .link-editor-btn:hover {
+        background: #f1f3f5;
+    }
+    .link-editor-btn.cancel {
+        color: #fa5252;
     }
 
-    .tracking-label {
-        font-size: 0.72rem;
-        text-transform: uppercase;
-        color: #868e96;
-        font-weight: 700;
-        letter-spacing: 0.04em;
+    .conversation-editor {
+        width: 100%;
+        min-height: 80px;
+        max-height: 300px;
+        padding: 12px;
+        font-size: 0.9rem;
+        color: #334155;
+        overflow-y: auto;
+        outline: none;
+        line-height: 1.5;
+        background: white;
+    }
+    .conversation-editor:empty:before {
+        content: attr(data-placeholder);
+        color: #94a3b8;
+        cursor: text;
+    }
+    .toolbar-btn.active {
+        background: #e7f5ff;
+        color: #1c7ed6;
+        border-color: #1c7ed6;
     }
 
-    .tracking-value {
-        font-size: 0.95rem;
-        font-weight: 700;
-        color: #212529;
+    .conversation-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-top: 4px;
     }
+    .conversation-tip {
+        font-size: 0.75rem;
+        color: #94a3b8;
+    }
+    .conversation-submit-btn {
+        background: #1c7ed6;
+        color: #fff;
+        border: none;
+        padding: 6px 18px;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+    .conversation-submit-btn:hover {
+        background: #1971c2;
+        box-shadow: 0 2px 8px rgba(28, 126, 214, 0.2);
+    }
+    .conversation-empty {
+        text-align: center;
+        padding: 2rem 0;
+        color: #94a3b8;
+    }
+    .conversation-empty i {
+        font-size: 1.5rem;
+        display: block;
+        margin-bottom: 0.5rem;
+        opacity: 0.5;
+    }
+
+
+
 
     .logistics-section-title {
         font-size: 1.35rem;
@@ -534,6 +645,64 @@
         background: #fee2e2;
         color: #ef4444;
     }
+
+    /* Location Modal Styles */
+    .location-modal .modal-content {
+        border-radius: 24px;
+        border: none;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.12);
+        overflow: hidden;
+    }
+    .location-modal .modal-header {
+        padding: 32px 32px 20px;
+        border-bottom: none;
+        background: #fff;
+    }
+    .location-modal .modal-body {
+        padding: 0 32px 32px;
+    }
+    .location-modal .modal-footer {
+        padding: 0 32px 32px;
+        border-top: none;
+        justify-content: flex-start;
+    }
+    .location-modal .detail-item {
+        margin-bottom: 24px;
+    }
+    .location-modal .detail-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #64748b;
+        margin-bottom: 8px;
+    }
+    .location-modal .detail-value {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #1e293b;
+        line-height: 1.4;
+    }
+    .location-modal .btn-view-more {
+        background: #2563eb;
+        color: #fff;
+        border-radius: 12px;
+        padding: 12px 24px;
+        font-weight: 700;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        transition: all 0.2s;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+    }
+    .location-modal .btn-view-more:hover {
+        background: #1d4ed8;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3);
+        color: #fff;
+    }
 </style>
 {% endblock %}
 
@@ -627,13 +796,24 @@
 
 
 
-        <!-- Supplier & Receiver -->
         <div class="row g-4">
             <div class="col-md-5">
                 <div class="party-label mb-1">Supplier</div>
                 <div class="party-name">{{ shipment.shipper.name|default:shipment.customer.name }}</div>
                 {% if shipment.shipper %}
-                <div class="party-detail"><i class="fas fa-map-marker-alt text-primary me-1"></i>{{ shipment.shipper.full_address }}</div>
+                <div class="party-detail">
+                    <a href="javascript:void(0)" class="text-primary text-decoration-none location-modal-trigger fw-semibold"
+                       data-address="{{ shipment.shipper.full_address }}"
+                       data-name="{{ shipment.shipper.name }}"
+                       data-phone="{{ shipment.shipper.phone|default:'-' }}"
+                       data-shipping-req="{{ shipment.shipper.shipping_requirements|default:'-' }}"
+                       data-pickup-appt="{{ shipment.get_pickup_appointment_type_display }}"
+                       data-delivery-appt="{{ shipment.get_delivery_appointment_type_display }}"
+                       data-id="{% if shipment.pickup_location %}{{ shipment.pickup_location.pk }}{% endif %}"
+                       data-company-id="{{ shipment.shipper.id }}">
+                        <i class="fas fa-map-marker-alt me-1"></i> {{ shipment.shipper.full_address }}
+                    </a>
+                </div>
                 {% endif %}
                 <div class="party-detail"><i class="fas fa-hashtag me-1 text-muted"></i>P/U No: {{ shipment.pickup_number|default:"-" }}</div>
                 <div class="party-detail mt-1"><i class="fas fa-handshake me-1 text-muted"></i>FOB Origin</div>
@@ -651,11 +831,47 @@
                     {% endif %}
                 </div>
                 {% if shipment.destination_address %}
-                <div class="party-detail"><i class="fas fa-map-marker-alt text-primary me-1"></i>{{ shipment.destination_address }}{% if shipment.destination_city or shipment.destination_state or shipment.destination_postal_code or shipment.destination_country %}, {{ shipment.destination_city }}{% if shipment.destination_state %}, {{ shipment.destination_state }}{% endif %}{% if shipment.destination_postal_code %} {{ shipment.destination_postal_code }}{% endif %}{% if shipment.destination_country %}, {{ shipment.destination_country }}{% endif %}{% endif %}</div>
+                <div class="party-detail">
+                    <a href="javascript:void(0)" class="text-primary text-decoration-none location-modal-trigger fw-semibold"
+                       data-address="{{ shipment.destination_address }}{% if shipment.destination_city or shipment.destination_state or shipment.destination_postal_code or shipment.destination_country %}, {{ shipment.destination_city }}{% if shipment.destination_state %}, {{ shipment.destination_state }}{% endif %}{% if shipment.destination_postal_code %} {{ shipment.destination_postal_code }}{% endif %}{% if shipment.destination_country %}, {{ shipment.destination_country }}{% endif %}{% endif %}"
+                       data-name="{% if shipment.consignee %}{{ shipment.consignee.name }}{% else %}{{ shipment.customer.name }}{% endif %}"
+                       data-phone="{% if shipment.consignee %}{{ shipment.consignee.phone|default:'-' }}{% else %}-{% endif %}"
+                       data-shipping-req="{% if shipment.consignee %}{{ shipment.consignee.shipping_requirements|default:'-' }}{% else %}-{% endif %}"
+                       data-pickup-appt="{{ shipment.get_pickup_appointment_type_display }}"
+                       data-delivery-appt="{{ shipment.get_delivery_appointment_type_display }}"
+                       data-id="{% if shipment.destination_location %}{{ shipment.destination_location.pk }}{% endif %}"
+                       data-company-id="{% if shipment.consignee %}{{ shipment.consignee.id }}{% else %}{{ shipment.customer.id }}{% endif %}">
+                        <i class="fas fa-map-marker-alt me-1"></i> {{ shipment.destination_address }}{% if shipment.destination_city or shipment.destination_state or shipment.destination_postal_code or shipment.destination_country %}, {{ shipment.destination_city }}{% if shipment.destination_state %}, {{ shipment.destination_state }}{% endif %}{% if shipment.destination_postal_code %} {{ shipment.destination_postal_code }}{% endif %}{% if shipment.destination_country %}, {{ shipment.destination_country }}{% endif %}{% endif %}
+                    </a>
+                </div>
                 {% elif shipment.consignee %}
-                <div class="party-detail"><i class="fas fa-map-marker-alt text-primary me-1"></i>{{ shipment.consignee.full_address }}</div>
+                <div class="party-detail">
+                    <a href="javascript:void(0)" class="text-primary text-decoration-none location-modal-trigger fw-semibold"
+                       data-address="{{ shipment.consignee.full_address }}"
+                       data-name="{{ shipment.consignee.name }}"
+                       data-phone="{{ shipment.consignee.phone|default:'-' }}"
+                       data-shipping-req="{{ shipment.consignee.shipping_requirements|default:'-' }}"
+                       data-pickup-appt="{{ shipment.get_pickup_appointment_type_display }}"
+                       data-delivery-appt="{{ shipment.get_delivery_appointment_type_display }}"
+                       data-id="{% if shipment.destination_location %}{{ shipment.destination_location.pk }}{% endif %}"
+                       data-company-id="{{ shipment.consignee.id }}">
+                        <i class="fas fa-map-marker-alt me-1"></i> {{ shipment.consignee.full_address }}
+                    </a>
+                </div>
                 {% elif shipment.order and shipment.order.receiver %}
-                <div class="party-detail"><i class="fas fa-map-marker-alt text-primary me-1"></i>{{ shipment.order.receiver.full_address }}</div>
+                <div class="party-detail">
+                    <a href="javascript:void(0)" class="text-primary text-decoration-none location-modal-trigger fw-semibold"
+                       data-address="{{ shipment.order.receiver.full_address }}"
+                       data-name="{{ shipment.order.receiver.name }}"
+                       data-phone="{{ shipment.order.receiver.phone|default:'-' }}"
+                       data-shipping-req="{{ shipment.order.receiver.shipping_requirements|default:'-' }}"
+                       data-pickup-appt="{{ shipment.get_pickup_appointment_type_display }}"
+                       data-delivery-appt="{{ shipment.get_delivery_appointment_type_display }}"
+                       data-id="{% if shipment.destination_location %}{{ shipment.destination_location.pk }}{% endif %}"
+                       data-company-id="{{ shipment.order.receiver.id }}">
+                        <i class="fas fa-map-marker-alt me-1"></i> {{ shipment.order.receiver.full_address }}
+                    </a>
+                </div>
                 {% endif %}
                 <div class="party-detail"><i class="fas fa-hashtag me-1 text-muted"></i>Del No: {{ shipment.delivery_number|default:"-" }}</div>
                 <div class="party-detail mt-1"><i class="fas fa-handshake me-1 text-muted"></i>FOB Destination</div>
@@ -701,7 +917,20 @@
                                     <tbody>
                                         {% if shipment.items.exists %}
                                             {% for item in shipment.items.all %}
-                                            <tr>
+                                            <tr class="manifest-item-row"
+                                                data-item-id="{{ item.id }}"
+                                                data-weight="{{ item.weight }}"
+                                                data-weight-unit="{{ item.weight_unit }}"
+                                                data-gross-weight="{{ item.gross_weight|default_if_none:'' }}"
+                                                data-gross-weight-unit="{{ item.gross_weight_unit|default:item.weight_unit }}"
+                                                data-tare-weight="{{ item.tare_weight|default_if_none:'' }}"
+                                                data-tare-weight-unit="{{ item.tare_weight_unit|default:item.weight_unit }}"
+                                                data-pieces="{{ item.pieces|default_if_none:'' }}"
+                                                data-packaging="{{ item.packaging|default:'' }}"
+                                                data-is-palletized="{{ item.is_palletized|yesno:'1,0' }}"
+                                                data-buy-price="{{ item.buy_price }}"
+                                                data-sell-price="{{ item.sell_price }}"
+                                                data-price-unit="{{ item.price_unit }}">
                                                 <td class="py-3 px-2">
                                                     <div class="fw-bold">
                                                         <a href="{% url 'materials:material_lookup' %}?name={{ item.material_name|urlencode }}" class="text-primary text-decoration-none">
@@ -709,21 +938,21 @@
                                                         </a>
                                                     </div>
                                                 </td>
-                                                <td>${{ item.buy_price|floatformat:4 }} / {{ item.price_unit }}</td>
-                                                <td>${{ item.sell_price|floatformat:4 }} / {{ item.price_unit }}</td>
-                                                <td>
+                                                <td class="manifest-edit-cell">${{ item.buy_price|floatformat:4 }} / {{ item.price_unit }}</td>
+                                                <td class="manifest-edit-cell">${{ item.sell_price|floatformat:4 }} / {{ item.price_unit }}</td>
+                                                <td class="manifest-edit-cell">
                                                     {{ item.weight|floatformat:2 }} {{ item.weight_unit }}
                                                 </td>
-                                                <td>
+                                                <td class="manifest-edit-cell">
                                                     {{ item.gross_weight|floatformat:2 }} {{ item.gross_weight_unit|default:item.weight_unit }}
                                                 </td>
-                                                <td>
+                                                <td class="manifest-edit-cell">
                                                     {{ item.tare_weight|floatformat:2 }} {{ item.tare_weight_unit|default:item.weight_unit }}
                                                 </td>
-                                                <td>
-                                                    {{ item.pieces|default:"-" }} pcs
+                                                <td class="manifest-edit-cell">
+                                                    {{ item.pieces|default_if_none:"-" }} pcs
                                                 </td>
-                                                <td>{{ item.packaging|default:"-" }}</td>
+                                                <td class="manifest-edit-cell">{{ item.packaging|default:"-" }}</td>
                                             </tr>
                                             {% endfor %}
                                         {% elif shipment.order %}
@@ -842,12 +1071,51 @@
 
                                 <!-- Scales (upload only) -->
                                 <div>
-                                    <button class="gen-doc-btn" type="button" onclick="triggerUpload('other')">
+                                    <button class="gen-doc-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#scaleUploadDrawer">
                                         <i class="fas fa-balance-scale text-danger"></i>Scales
                                         <span style="font-size:0.7rem; color:#aaa;">(upload)</span>
                                     </button>
                                 </div>
 
+                            </div>
+
+                            <!-- Upload Scale Offcanvas -->
+                            <div class="offcanvas offcanvas-end" tabindex="-1" id="scaleUploadDrawer" aria-labelledby="scaleUploadDrawerLabel" style="width: 520px; z-index: 1080;">
+                                <div class="offcanvas-header border-bottom px-4 py-3">
+                                    <h5 class="offcanvas-title fw-bold" id="scaleUploadDrawerLabel">Upload Scale</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                                </div>
+                                <div class="offcanvas-body px-4 py-4 d-flex flex-column" style="gap: 16px;">
+                                    <form id="scaleUploadForm" method="post"
+                                        action="{% url 'shipments:document_upload' shipment.pk %}"
+                                        enctype="multipart/form-data" class="d-flex flex-column" style="gap: 16px; flex: 1;">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="document_type" value="other">
+                                        <input type="hidden" name="title" id="scale-upload-title" value="Scale">
+
+                                        <div id="scale-dropzone" class="border rounded-3 p-4 text-center"
+                                            style="border-style: dashed !important; background: #fbfdff;">
+                                            <input type="file" name="file" id="scale-upload-file" class="d-none" required>
+                                            <button type="button" class="btn btn-outline-primary" id="scale-upload-btn">
+                                                <i class="fas fa-upload me-2"></i>Upload file
+                                            </button>
+                                            <span class="text-muted ms-2">or drop file here</span>
+                                            <div class="small text-muted mt-2" id="scale-upload-filename"></div>
+                                        </div>
+
+                                        <div>
+                                            <label class="form-label fw-bold small text-uppercase mb-1">Document Type <span class="text-danger">*</span></label>
+                                            <select class="form-select" id="scale-doc-type" required>
+                                                <option value="Light" selected>Light</option>
+                                                <option value="Heavy">Heavy</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="mt-auto d-grid pt-2">
+                                            <button type="submit" class="btn btn-primary fw-bold py-2" style="border-radius:10px;">Upload</button>
+                                        </div>
+                                    </form>
+                                </div>
                             </div>
 
                             <!-- Hidden typed upload form -->
@@ -860,6 +1128,127 @@
                                 <input type="file" name="file" id="upload-file-input" onchange="submitTypedUpload()">
                             </form>
 
+                        </div>
+                    </div>
+
+                    <!-- Edit Manifest Item Offcanvas -->
+                    <div class="offcanvas offcanvas-end" tabindex="-1" id="editManifestItemDrawer" aria-labelledby="editManifestItemDrawerLabel" style="width: 520px; z-index: 1080;">
+                        <div class="offcanvas-header border-bottom px-4 py-3">
+                            <h5 class="offcanvas-title fw-bold" id="editManifestItemDrawerLabel">Edit Item</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                        </div>
+                        <div class="offcanvas-body px-4 py-4">
+                            <form id="editManifestItemForm">
+                                <input type="hidden" id="editItemId">
+
+                                <div class="row g-3 mb-3">
+                                    <div class="col-8">
+                                        <label class="form-label fw-bold small text-uppercase mb-1">Net Weight</label>
+                                        <input type="number" step="0.01" class="form-control" id="editWeight">
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="form-label fw-bold small text-uppercase mb-1">Unit</label>
+                                        <select class="form-select" id="editWeightUnit">
+                                            <option value="lbs">lbs</option>
+                                            <option value="kgs">kgs</option>
+                                            <option value="mt">MT</option>
+                                            <option value="st">ST</option>
+                                            <option value="pcs">pcs</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="row g-3 mb-3">
+                                    <div class="col-8">
+                                        <label class="form-label fw-bold small text-uppercase mb-1">Gross Weight</label>
+                                        <input type="number" step="0.01" class="form-control" id="editGrossWeight">
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="form-label fw-bold small text-uppercase mb-1">Unit</label>
+                                        <select class="form-select" id="editGrossUnit">
+                                            <option value="lbs">lbs</option>
+                                            <option value="kgs">kgs</option>
+                                            <option value="mt">MT</option>
+                                            <option value="st">ST</option>
+                                            <option value="pcs">pcs</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="row g-3 mb-3">
+                                    <div class="col-8">
+                                        <label class="form-label fw-bold small text-uppercase mb-1">Tare Weight</label>
+                                        <input type="number" step="0.01" class="form-control" id="editTareWeight">
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="form-label fw-bold small text-uppercase mb-1">Unit</label>
+                                        <select class="form-select" id="editTareUnit">
+                                            <option value="lbs">lbs</option>
+                                            <option value="kgs">kgs</option>
+                                            <option value="mt">MT</option>
+                                            <option value="st">ST</option>
+                                            <option value="pcs">pcs</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="row g-3 mb-3">
+                                    <div class="col-8">
+                                        <label class="form-label fw-bold small text-uppercase mb-1">Packaging</label>
+                                        <input type="text" class="form-control" id="editPackaging">
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="form-label fw-bold small text-uppercase mb-1">Pieces</label>
+                                        <input type="number" class="form-control" id="editPieces" min="0">
+                                    </div>
+                                </div>
+
+                                <div class="form-check mb-4">
+                                    <input class="form-check-input" type="checkbox" id="editIsPalletized">
+                                    <label class="form-check-label" for="editIsPalletized">Is the packaging palletized?</label>
+                                </div>
+
+                                <div class="row g-3 mb-3">
+                                    <div class="col-8">
+                                        <label class="form-label fw-bold small text-uppercase mb-1">Buy Price</label>
+                                        <input type="number" step="0.0001" class="form-control" id="editBuyPrice">
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="form-label fw-bold small text-uppercase mb-1">Unit</label>
+                                        <select class="form-select" id="editPriceUnit">
+                                            <option value="per lbs">per lbs</option>
+                                            <option value="per kgs">per kgs</option>
+                                            <option value="per mt">per MT</option>
+                                            <option value="per st">per ST</option>
+                                            <option value="per pcs">per pcs</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="row g-3 mb-4">
+                                    <div class="col-8">
+                                        <label class="form-label fw-bold small text-uppercase mb-1">Sell Price</label>
+                                        <input type="number" step="0.0001" class="form-control" id="editSellPrice">
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="form-label fw-bold small text-uppercase mb-1">Unit</label>
+                                        <select class="form-select" id="editSellPriceUnit" disabled>
+                                            <option value="per lbs">per lbs</option>
+                                            <option value="per kgs">per kgs</option>
+                                            <option value="per mt">per MT</option>
+                                            <option value="per st">per ST</option>
+                                            <option value="per pcs">per pcs</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex gap-2 justify-content-end">
+                                    <button type="button" class="btn btn-outline-danger fw-bold py-2 px-4"
+                                        id="editManifestItemDeleteBtn" style="border-radius:10px;">Delete</button>
+                                    <button type="submit" class="btn btn-primary fw-bold py-2 px-4"
+                                        style="border-radius:10px;">Submit</button>
+                                </div>
+                            </form>
                         </div>
                     </div>
 
@@ -894,7 +1283,7 @@
                                     <div class="mb-0">
                                         <div class="d-flex justify-content-between align-items-center mb-2">
                                             <label class="logistics-label mb-0">Contact</label>
-                                            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="offcanvas" data-bs-target="#contactOffcanvas" data-contact-select-target="logistics-pickup-contact-select">
+                                            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#contactOffcanvas" data-contact-select-target="logistics-pickup-contact-select">
                                                 <i class="fas fa-plus-circle me-1"></i>Add
                                             </button>
                                         </div>
@@ -938,7 +1327,7 @@
                                     <div class="mb-0">
                                         <div class="d-flex justify-content-between align-items-center mb-2">
                                             <label class="logistics-label mb-0">Contact</label>
-                                            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="offcanvas" data-bs-target="#contactOffcanvas" data-contact-select-target="logistics-delivery-contact-select">
+                                            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#contactOffcanvas" data-contact-select-target="logistics-delivery-contact-select">
                                                 <i class="fas fa-plus-circle me-1"></i>Add
                                             </button>
                                         </div>
@@ -1013,11 +1402,11 @@
                                 </tr>
                                 <tr>
                                     <td class="summary-label">Commissions</td>
-                                    <td class="summary-value">$0.00</td>
+                                    <td class="summary-value">${{ commission_total|floatformat:2 }}</td>
                                 </tr>
                                 <tr class="highlight-bold" style="border-top: 2px solid #e2e8f0;">
                                     <td class="summary-label">Net Profit</td>
-                                    <td class="summary-value">${{ shipment.gross_profit|floatformat:2 }}</td>
+                                    <td class="summary-value">${{ net_profit|floatformat:2 }}</td>
                                 </tr>
                             </table>
                         </div>
@@ -1059,7 +1448,100 @@
                                     </tbody>
                                 </table>
                             </div>
+
+                            <div class="mt-4">
+                                <div class="ledger-header">
+                                    <h5 class="fw-bold mb-0">Commissions</h5>
+                                    <button class="btn btn-sm btn-outline-primary px-3 fw-bold" style="border-radius: 8px;"
+                                            data-bs-toggle="offcanvas" data-bs-target="#commissionDrawer">Add Commission</button>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table ledger-table mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Representative</th>
+                                                <th>Type</th>
+                                                <th>Percentage</th>
+                                                <th>Amount</th>
+                                                <th>Paid Date</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for c in commissions %}
+                                            <tr>
+                                                <td class="fw-semibold text-dark">{{ c.representative.get_full_name|default:c.representative.username|default:"-" }}</td>
+                                                <td class="text-muted">{{ c.get_commission_type_display }}</td>
+                                                <td class="text-muted">{% if c.percentage is not None %}{{ c.percentage }}%{% else %}-{% endif %}</td>
+                                                <td class="ledger-amount-neg">(${{ c.amount|floatformat:2 }})</td>
+                                                <td class="text-muted">{% if c.paid_date %}{{ c.paid_date|date:'Y-m-d' }}{% else %}-{% endif %}</td>
+                                            </tr>
+                                            {% empty %}
+                                            <tr>
+                                                <td colspan="5" class="text-muted text-center py-3">No commissions</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Commission Drawer (Offcanvas) -->
+                <div class="offcanvas offcanvas-end" tabindex="-1" id="commissionDrawer" aria-labelledby="commissionDrawerLabel"
+                    style="width: 520px; z-index: 1080;">
+                    <div class="offcanvas-header border-bottom px-4 py-3">
+                        <h5 class="offcanvas-title fw-bold" id="commissionDrawerLabel">Add Commission</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                    </div>
+                    <div class="offcanvas-body px-4 py-4">
+                        <form method="post" action="{% url 'shipments:shipment_commission_add' shipment.pk %}" id="commissionForm">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small text-uppercase mb-1">Representative <span class="text-danger">*</span></label>
+                                <select name="representative" class="form-select" required>
+                                    {% if shipment.representative %}
+                                    <option value="{{ shipment.representative.pk }}" selected>{{ shipment.representative.get_full_name|default:shipment.representative.username }}</option>
+                                    {% else %}
+                                    <option value="">Select representative</option>
+                                    {% endif %}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small text-uppercase mb-1">Type <span class="text-danger">*</span></label>
+                                <select name="commission_type" class="form-select" id="commissionType" required>
+                                    <option value="">Select a commission type</option>
+                                    <option value="fixed">Fixed</option>
+                                    <option value="gross_profit_pct">% Gross Profit</option>
+                                    <option value="material_cost_pct">% Material Cost</option>
+                                    <option value="material_sale_pct">% Material Sale</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small text-uppercase mb-1">Percentage</label>
+                                <input type="number" step="0.0001" name="percentage" class="form-control" id="commissionPercentage" placeholder="Enter percentage">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small text-uppercase mb-1">Amount</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" step="0.01" name="amount" class="form-control" id="commissionAmount" placeholder="Enter amount">
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-bold small text-uppercase mb-1">Paid Date</label>
+                                <input type="date" name="paid_date" class="form-control">
+                            </div>
+
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary fw-bold py-2" style="border-radius:10px;">Submit</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
 
@@ -1200,81 +1682,73 @@
 
         <!-- Sidebar: Conversation + Shipment Info -->
         <div class="col-lg-4">
-            <div class="card border-0 shadow-sm mb-4 tracking-card">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start mb-3">
-                        <div>
-                            <h5 class="fw-bold mb-1">Live Tracking</h5>
-                            <div class="small text-muted">Free mobile GPS based tracking</div>
-                        </div>
-                        <span class="badge {% if shipment.tracking_active %}bg-success-subtle text-success{% else %}bg-secondary-subtle text-secondary{% endif %}" id="tracking-active-badge">
-                            {% if shipment.tracking_active %}Active{% else %}Idle{% endif %}
-                        </span>
-                    </div>
 
-                    <div id="tracking-map" class="tracking-map mb-3"></div>
-
-                    <div class="row g-2 mb-3">
-                        <div class="col-6">
-                            <div class="tracking-stat">
-                                <div class="tracking-label">Current Location</div>
-                                <div class="tracking-value" id="tracking-current-location">{{ shipment.current_location_display }}</div>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="tracking-stat">
-                                <div class="tracking-label">Last Updated</div>
-                                <div class="tracking-value" id="tracking-last-updated">
-                                    {% if shipment.last_location_updated_at %}{{ shipment.last_location_updated_at|date:"M d, H:i" }}{% else %}Not yet{% endif %}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="tracking-stat">
-                                <div class="tracking-label">Vehicle</div>
-                                <div class="tracking-value" id="tracking-vehicle">{{ shipment.vehicle_number|default:"Not assigned" }}</div>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="tracking-stat">
-                                <div class="tracking-label">Driver</div>
-                                <div class="tracking-value" id="tracking-driver">{{ shipment.driver_name|default:"Not assigned" }}</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="d-grid gap-2">
-                        <a class="btn btn-primary" href="{% url 'shipments:shipment_tracking_mobile' shipment.pk %}">
-                            <i class="fas fa-mobile-screen-button me-2"></i>Open Mobile Tracking
-                        </a>
-                        {% if shipment.driver_phone %}
-                        <a class="btn btn-outline-secondary" href="tel:{{ shipment.driver_phone }}">
-                            <i class="fas fa-phone me-2"></i>{{ shipment.driver_phone }}
-                        </a>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
 
             <!-- Conversation -->
             <div class="card border-0 shadow-sm mb-4" style="border-radius:14px;">
                 <div class="card-body">
                     <h5 class="fw-bold mb-3">Conversation</h5>
-                    {% if shipment.internal_notes %}
-                    <div class="chat-bubble">
-                        <small class="text-muted">Internal Notes</small>
-                        <p class="mb-0 mt-1">{{ shipment.internal_notes }}</p>
+                    
+                    <div class="conversation-input-container mb-4">
+                        <div class="conversation-input-wrapper">
+                            <div class="conversation-toolbar">
+                                <button type="button" class="toolbar-btn" data-command="at" title="Mention"><i class="fas fa-at"></i></button>
+                                <button type="button" class="toolbar-btn" data-command="hash" title="Reference"><i class="fas fa-hashtag"></i></button>
+                                <div class="vr mx-1 my-1 text-muted opacity-25"></div>
+                                <button type="button" class="toolbar-btn" data-command="bold" title="Bold"><i class="fas fa-bold"></i></button>
+                                <button type="button" class="toolbar-btn" data-command="italic" title="Italic"><i class="fas fa-italic"></i></button>
+                                <button type="button" class="toolbar-btn" data-command="underline" title="Underline"><i class="fas fa-underline"></i></button>
+                                <button type="button" class="toolbar-btn" data-command="strikethrough" title="Strikethrough"><i class="fas fa-strikethrough"></i></button>
+                                <button type="button" class="toolbar-btn" data-command="link" title="Link"><i class="fas fa-link"></i></button>
+                            </div>
+                            <div class="conversation-link-editor">
+                                <input type="text" class="conversation-link-input" placeholder="https://" value="https://">
+                                <button type="button" class="link-editor-btn cancel" title="Cancel"><i class="fas fa-trash-alt"></i></button>
+                                <button type="button" class="link-editor-btn confirm" title="Confirm"><i class="fas fa-check"></i></button>
+                            </div>
+                            <div class="conversation-editor" contenteditable="true" data-placeholder="Join the conversation..."></div>
+                        </div>
+                        <div class="conversation-footer">
+                            <div class="conversation-tip text-muted small">Tip: Notify someone with @</div>
+                            <button type="button" class="conversation-submit-btn shadow-none">Submit</button>
+                        </div>
                     </div>
-                    {% else %}
-                    <p class="text-muted small text-center py-2"><i class="fas fa-info-circle me-1"></i>No comments yet
-                    </p>
-                    {% endif %}
-                    {% if shipment.special_instructions %}
-                    <div class="chat-bubble bg-light">
-                        <small class="text-muted">Special Instructions</small>
-                        <p class="mb-0 mt-1">{{ shipment.special_instructions }}</p>
+
+                    <div id="conversation-messages" class="mt-4">
+                        {% for comment in comments %}
+                        <div class="chat-bubble {% if comment.user == request.user %}bg-primary-subtle border-primary-subtle{% else %}bg-light border{% endif %} mb-3 shadow-sm" 
+                             style="border-radius: 12px; transition: all 0.2s;">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="small fw-bold {% if comment.user == request.user %}text-primary{% else %}text-dark{% endif %}">
+                                    {{ comment.user.get_full_name|default:comment.user.username }}
+                                </span>
+                                <span class="text-muted" style="font-size: 0.7rem;">{{ comment.created_at|date:"M d, H:i" }}</span>
+                            </div>
+                            <p class="mb-0 small text-dark" style="line-height: 1.4;">{{ comment.text|safe }}</p>
+                        </div>
+                        {% endfor %}
+
+                        {% if not comments and not shipment.internal_notes and not shipment.special_instructions %}
+                            <div class="conversation-empty py-4">
+                                <i class="far fa-comments fa-2x mb-2 text-muted opacity-25"></i>
+                                <p class="small text-muted mb-0">No comments yet</p>
+                            </div>
+                        {% endif %}
+
+                        {% if shipment.internal_notes %}
+                        <div class="chat-bubble bg-light-subtle border mb-3">
+                            <span class="d-block small fw-bold text-primary mb-1">Internal Notes</span>
+                            <p class="mb-0 small">{{ shipment.internal_notes }}</p>
+                        </div>
+                        {% endif %}
+                        
+                        {% if shipment.special_instructions %}
+                        <div class="chat-bubble bg-light-subtle border mb-3">
+                            <span class="d-block small fw-bold text-secondary mb-1">Special Instructions</span>
+                            <p class="mb-0 small">{{ shipment.special_instructions }}</p>
+                        </div>
+                        {% endif %}
                     </div>
-                    {% endif %}
                 </div>
             </div>
 
@@ -1462,9 +1936,19 @@
             </div>
 
             <div class="mb-4">
-                <div class="form-check form-switch d-flex align-items-center gap-2">
-                    <input class="form-check-input" type="checkbox" role="switch" name="blind_shipment" id="blindSwitch">
-                    <label class="form-check-label small fw-bold text-muted text-uppercase mb-0" for="blindSwitch">Blind Shipment?</label>
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="form-check form-switch d-flex align-items-center gap-2">
+                        <input class="form-check-input" type="checkbox" role="switch" name="blind_shipment" id="blindSwitch">
+                        <label class="form-check-label small fw-bold text-muted text-uppercase mb-0" for="blindSwitch">Blind Shipment?</label>
+                    </div>
+                    
+                    <div id="blindButtonsContainer" style="display: none;">
+                        <input type="hidden" name="bol_type" id="bolTypeInput" value="">
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button type="button" class="btn btn-outline-primary" id="btnBolReceiver" onclick="setBolType('receiver')">Receiver BoL</button>
+                            <button type="button" class="btn btn-outline-primary" id="btnBolShipper" onclick="setBolType('shipper')">Shipper BoL</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -1535,7 +2019,9 @@
                     <label class="small fw-bold text-muted text-uppercase mb-0">Unit <span class="text-danger">*</span></label>
                     <select name="unit" id="plWeightUnit" class="form-select form-select-sm" style="width: 80px;" onchange="updatePlUnitLabels()">
                         <option value="lbs" selected>lbs</option>
-                        <option value="kg">kg</option>
+                        <option value="kgs">kgs</option>
+                        <option value="MT">MT</option>
+                        <option value="ST">ST</option>
                     </select>
                 </div>
             </div>
@@ -1568,19 +2054,19 @@
                                 </td>
                                 <td>
                                     <div class="input-group input-group-sm">
-                                        <input type="number" step="0.1" name="gross[]" class="form-control border-0 bg-transparent pl-gross" placeholder="0" value="{{ item.gross_weight|default:item.weight|floatformat:1 }}" oninput="calculatePlNet(this)">
+                                        <input type="number" step="0.1" name="gross[]" class="form-control border-0 bg-transparent pl-gross" placeholder="0" oninput="calculatePlNet(this)">
                                         <span class="input-group-text border-0 bg-transparent small text-muted px-1 pl-unit-label">{{ item.weight_unit|default:'lbs' }}</span>
                                     </div>
                                 </td>
                                 <td>
                                     <div class="input-group input-group-sm">
-                                        <input type="number" step="0.1" name="tare[]" class="form-control border-0 bg-transparent pl-tare" placeholder="0" value="{{ item.tare_weight|default:'0'|floatformat:1 }}" oninput="calculatePlNet(this)">
+                                        <input type="number" step="0.1" name="tare[]" class="form-control border-0 bg-transparent pl-tare" placeholder="0" oninput="calculatePlNet(this)">
                                         <span class="input-group-text border-0 bg-transparent small text-muted px-1 pl-unit-label">{{ item.weight_unit|default:'lbs' }}</span>
                                     </div>
                                 </td>
                                 <td>
                                     <div class="input-group input-group-sm">
-                                        <input type="number" step="0.1" name="net[]" class="form-control border-0 bg-light pl-net" placeholder="0" value="{{ item.weight|floatformat:1 }}" readonly>
+                                        <input type="number" step="0.1" name="net[]" class="form-control border-0 bg-light pl-net" placeholder="0" readonly>
                                         <span class="input-group-text border-0 bg-light small text-muted px-1 pl-unit-label">{{ item.weight_unit|default:'lbs' }}</span>
                                     </div>
                                 </td>
@@ -1614,19 +2100,19 @@
                                 </td>
                                 <td>
                                     <div class="input-group input-group-sm">
-                                        <input type="number" step="0.1" name="gross[]" class="form-control border-0 bg-transparent pl-gross" placeholder="0" value="{{ item.weight|floatformat:1 }}" oninput="calculatePlNet(this)">
+                                        <input type="number" step="0.1" name="gross[]" class="form-control border-0 bg-transparent pl-gross" placeholder="0" oninput="calculatePlNet(this)">
                                         <span class="input-group-text border-0 bg-transparent small text-muted px-1 pl-unit-label">lbs</span>
                                     </div>
                                 </td>
                                 <td>
                                     <div class="input-group input-group-sm">
-                                        <input type="number" step="0.1" name="tare[]" class="form-control border-0 bg-transparent pl-tare" placeholder="0" value="0.0" oninput="calculatePlNet(this)">
+                                        <input type="number" step="0.1" name="tare[]" class="form-control border-0 bg-transparent pl-tare" placeholder="0" oninput="calculatePlNet(this)">
                                         <span class="input-group-text border-0 bg-transparent small text-muted px-1 pl-unit-label">lbs</span>
                                     </div>
                                 </td>
                                 <td>
                                     <div class="input-group input-group-sm">
-                                        <input type="number" step="0.1" name="net[]" class="form-control border-0 bg-light pl-net" placeholder="0" value="{{ item.weight|floatformat:1 }}" readonly>
+                                        <input type="number" step="0.1" name="net[]" class="form-control border-0 bg-light pl-net" placeholder="0" readonly>
                                         <span class="input-group-text border-0 bg-light small text-muted px-1 pl-unit-label">lbs</span>
                                     </div>
                                 </td>
@@ -1805,130 +2291,7 @@
         'customs': 'Customs Document',
         'pod': 'Proof of Delivery',
     };
-    const TRACKING_API_URL = "{% url 'api_shipment_tracking' shipment.pk %}";
-    const INITIAL_MAP_DATA = JSON.parse('{{ map_data|escapejs }}');
-    let trackingMap;
-    let trackingMarkers = {};
 
-    function formatTrackingTime(value) {
-        if (!value) return 'Not yet';
-        const date = new Date(value);
-        if (Number.isNaN(date.getTime())) return value;
-        return date.toLocaleString([], { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' });
-    }
-
-    function initTrackingMap() {
-        const mapElement = document.getElementById('tracking-map');
-        if (!mapElement || trackingMap) return;
-
-        trackingMap = L.map(mapElement).setView([20.5937, 78.9629], 4);
-        L.tileLayer('{{ request.map_tile_server_url|default:"https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" }}', {
-            maxZoom: 19,
-            attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(trackingMap);
-
-        updateTrackingMap(INITIAL_MAP_DATA);
-    }
-
-    function updateTrackingMap(mapData) {
-        if (!trackingMap || !mapData) return;
-
-        ['origin', 'destination', 'current'].forEach((key) => {
-            const point = mapData[key];
-            if (!point || point.lat === null || point.lng === null) return;
-
-            const latLng = [point.lat, point.lng];
-            if (!trackingMarkers[key]) {
-                trackingMarkers[key] = L.marker(latLng).addTo(trackingMap);
-            } else {
-                trackingMarkers[key].setLatLng(latLng);
-            }
-
-            let label = point.city || point.label || key;
-            if (key === 'current') label = point.label || 'Current vehicle position';
-            trackingMarkers[key].bindPopup(label);
-        });
-
-        const bounds = [];
-        Object.values(trackingMarkers).forEach((marker) => bounds.push(marker.getLatLng()));
-        if (bounds.length) {
-            trackingMap.fitBounds(bounds, { padding: [30, 30], maxZoom: bounds.length === 1 ? 12 : 8 });
-        }
-    }
-
-    function renderTrackingHistory(history) {
-        const historyList = document.getElementById('tracking-history-list');
-        if (!historyList) return;
-
-        if (!history || !history.length) {
-            historyList.innerHTML = `
-                <div class="text-center py-5 text-muted">
-                    <div class="mb-3 opacity-25">
-                        <i class="fas fa-history fa-3x"></i>
-                    </div>
-                    <p class="mb-0">No history history recorded yet</p>
-                    <small>Activity and updates will appear here</small>
-                </div>
-            `;
-            return;
-        }
-
-        historyList.innerHTML = history.map((item) => {
-            const iconClass = item.icon || 'fas fa-map-marker-alt';
-            const iconBg = item.icon ? 'bg-primary-subtle text-primary' : 'bg-light text-secondary';
-            const title = item.action || item.status;
-            const description = item.description || item.notes || '';
-            const locationLine = item.location ? `<div class="text-primary mt-1" style="font-size: 0.75rem; font-weight: 600;"><i class="fas fa-map-marker-alt me-1"></i>${item.location}</div>` : '';
-            const userName = item.user_name || 'System';
-            const timeStr = item.timestamp || item.created_at;
-            
-            return `
-                <div class="history-item d-flex">
-                    <div class="history-icon-wrapper me-3">
-                        <div class="history-icon ${iconBg}">
-                            <i class="${iconClass}"></i>
-                        </div>
-                        <div class="history-line"></div>
-                    </div>
-                    <div class="history-content flex-grow-1">
-                        <div class="d-flex justify-content-between align-items-start mb-1">
-                            <div>
-                                <div class="fw-bold text-dark" style="font-size: 0.95rem;">${title}</div>
-                                <div class="text-secondary small">${description}</div>
-                                ${locationLine}
-                            </div>
-                            <div class="text-end ms-3" style="min-width: 100px;">
-                                <div class="small fw-bold text-dark mb-0">${userName}</div>
-                                <div class="text-muted" style="font-size: 0.75rem;">just now</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }).join('');
-    }
-
-    function updateTrackingSummary(data) {
-        document.getElementById('tracking-current-location').innerText = data.current_location || 'Awaiting live update';
-        document.getElementById('tracking-last-updated').innerText = formatTrackingTime(data.last_location_updated_at);
-        document.getElementById('tracking-vehicle').innerText = data.vehicle_number || 'Not assigned';
-        document.getElementById('tracking-driver').innerText = data.driver_name || 'Not assigned';
-
-        const badge = document.getElementById('tracking-active-badge');
-        badge.innerText = data.tracking_active ? 'Active' : 'Idle';
-        badge.className = `badge ${data.tracking_active ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary'}`;
-    }
-
-    function refreshTrackingPanel() {
-        fetch(TRACKING_API_URL, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-            .then((response) => response.json())
-            .then((data) => {
-                updateTrackingSummary(data);
-                updateTrackingMap(data.map_data);
-                renderTrackingHistory(data.milestones);
-            })
-            .catch(() => {});
-    }
 
     function triggerUpload(docType = 'other') {
         const input = document.getElementById('upload-file-input');
@@ -2121,11 +2484,33 @@
         form.target = originalTarget;
     }
 
+    // Blind Shipment BoL Type Management
+    const blindSwitch = document.getElementById('blindSwitch');
+    if (blindSwitch) {
+        blindSwitch.addEventListener('change', function() {
+            const container = document.getElementById('blindButtonsContainer');
+            container.style.display = this.checked ? 'block' : 'none';
+        });
+    }
+
+    function setBolType(type) {
+        document.getElementById('bolTypeInput').value = type;
+        
+        const btnReceiver = document.getElementById('btnBolReceiver');
+        const btnShipper = document.getElementById('btnBolShipper');
+        
+        if (type === 'receiver') {
+            btnReceiver.classList.add('active');
+            btnShipper.classList.remove('active');
+        } else {
+            btnReceiver.classList.remove('active');
+            btnShipper.classList.add('active');
+        }
+    }
+
     // Auto-close offcanvas on form submission for document generation
     document.addEventListener('DOMContentLoaded', function() {
-        initTrackingMap();
-        refreshTrackingPanel();
-        setInterval(refreshTrackingPanel, 30000);
+
 
         const formsToCloseCanvas = ['bolForm', 'shipConfirmForm', 'packingListForm'];
         formsToCloseCanvas.forEach(formId => {
@@ -2143,6 +2528,152 @@
                 });
             }
         });
+
+        // Conversation Submission Logic
+        const conversationBtn = document.querySelector('.conversation-submit-btn');
+        const conversationEditor = document.querySelector('.conversation-editor');
+        const messagesContainer = document.getElementById('conversation-messages');
+        const toolbarBtns = document.querySelectorAll('.toolbar-btn');
+        const linkEditor = document.querySelector('.conversation-link-editor');
+        const linkInput = document.querySelector('.conversation-link-input');
+        const linkConfirmBtn = document.querySelector('.link-editor-btn.confirm');
+        const linkCancelBtn = document.querySelector('.link-editor-btn.cancel');
+
+        if (conversationBtn && conversationEditor) {
+            // Toolbar Button Logic
+            toolbarBtns.forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const command = this.getAttribute('data-command');
+
+                    if (command === 'link') {
+                        linkEditor.style.display = 'flex';
+                        linkInput.focus();
+                        return;
+                    } else if (command === 'at') {
+                        insertTextAtCursor('@');
+                        return;
+                    } else if (command === 'hash') {
+                        insertTextAtCursor('#');
+                        return;
+                    }
+
+                    // Apply native browser formatting
+                    document.execCommand(command, false, null);
+                    updateToolbarActiveStates();
+                    conversationEditor.focus();
+                });
+            });
+
+            function insertTextAtCursor(text) {
+                const sel = window.getSelection();
+                if (sel.getRangeAt && sel.rangeCount) {
+                    const range = sel.getRangeAt(0);
+                    range.deleteContents();
+                    range.insertNode(document.createTextNode(text));
+                    // Move cursor after inserted text
+                    range.collapse(false);
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                } else {
+                    conversationEditor.innerText += text;
+                }
+                conversationEditor.focus();
+            }
+
+            function updateToolbarActiveStates() {
+                toolbarBtns.forEach(btn => {
+                    const cmd = btn.getAttribute('data-command');
+                    if (['bold', 'italic', 'underline', 'strikethrough'].includes(cmd)) {
+                        if (document.queryCommandState(cmd)) {
+                            btn.classList.add('active');
+                        } else {
+                            btn.classList.remove('active');
+                        }
+                    }
+                });
+            }
+
+            // Update active states on selection or click
+            conversationEditor.addEventListener('keyup', updateToolbarActiveStates);
+            conversationEditor.addEventListener('mouseup', updateToolbarActiveStates);
+
+            // Inline Link Editor Logic
+            if (linkConfirmBtn && linkCancelBtn) {
+                linkConfirmBtn.addEventListener('click', function() {
+                    const url = linkInput.value.trim() || 'https://';
+                    conversationEditor.focus();
+                    document.execCommand('createLink', false, url);
+                    linkEditor.style.display = 'none';
+                });
+
+                linkCancelBtn.addEventListener('click', function() {
+                    linkEditor.style.display = 'none';
+                    conversationEditor.focus();
+                });
+
+                linkInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        linkConfirmBtn.click();
+                    }
+                });
+            }
+
+            conversationBtn.addEventListener('click', function() {
+                const text = conversationEditor.innerHTML.trim();
+                // Check if empty (or just tags)
+                if (!text || text === '<br>') return;
+
+                conversationBtn.disabled = true;
+                conversationBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+                const formData = new FormData();
+                formData.append('text', text);
+                formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+                fetch("{% url 'shipments:add_comment' shipment.pk %}", {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.ok) {
+                        // Prepend new comment
+                        const commentHtml = `
+                            <div class="chat-bubble bg-primary-subtle border-primary-subtle mb-3 shadow-sm animate__animated animate__fadeIn" 
+                                 style="border-radius: 12px;">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="small fw-bold text-primary">${data.comment.user}</span>
+                                    <span class="text-muted" style="font-size: 0.7rem;">Just now</span>
+                                </div>
+                                <div class="mb-0 small text-dark" style="line-height: 1.4;">${data.comment.text}</div>
+                            </div>
+                        `;
+                        
+                        // Remove empty state if present
+                        const emptyState = messagesContainer.querySelector('.conversation-empty');
+                        if (emptyState) emptyState.remove();
+
+                        messagesContainer.insertAdjacentHTML('afterbegin', commentHtml);
+                        conversationEditor.innerHTML = '';
+                    } else {
+                        alert('Error: ' + (data.error || 'Could not post comment'));
+                    }
+                })
+                .catch(err => {
+                    console.error('Error posting comment:', err);
+                    alert('An error occurred. Please try again.');
+                })
+                .finally(() => {
+                    conversationBtn.disabled = false;
+                    conversationBtn.innerText = 'Submit';
+                });
+            });
+        }
 
         {% if download_invoice_id %}
         // Auto-download invoice PDF
@@ -2265,7 +2796,7 @@
                     <div class="col-md-6">
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <label class="form-label small fw-bold text-muted text-uppercase mb-0">Pickup Contact</label>
-                            <button type="button" class="btn btn-add-outline py-0" data-bs-toggle="offcanvas" data-bs-target="#contactOffcanvas" data-contact-select-target="edit-pickup-contact-select"><i class="fas fa-plus-circle me-1"></i>Add</button>
+                            <button type="button" class="btn btn-add-outline py-0" data-bs-toggle="modal" data-bs-target="#contactOffcanvas" data-contact-select-target="edit-pickup-contact-select"><i class="fas fa-plus-circle me-1"></i>Add</button>
                         </div>
                         <select name="pickup_contact_ui" id="edit-pickup-contact-select" class="form-select">
                             <option value="">Select a contact</option>
@@ -2329,7 +2860,7 @@
                     <div class="col-md-6">
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <label class="form-label small fw-bold text-muted text-uppercase mb-0">Delivery Contact</label>
-                            <button type="button" class="btn btn-add-outline py-0" data-bs-toggle="offcanvas" data-bs-target="#contactOffcanvas" data-contact-select-target="edit-delivery-contact-select"><i class="fas fa-plus-circle me-1"></i>Add</button>
+                            <button type="button" class="btn btn-add-outline py-0" data-bs-toggle="modal" data-bs-target="#contactOffcanvas" data-contact-select-target="edit-delivery-contact-select"><i class="fas fa-plus-circle me-1"></i>Add</button>
                         </div>
                         <select name="delivery_contact_ui" id="edit-delivery-contact-select" class="form-select">
                             <option value="">Select a contact</option>
@@ -2372,10 +2903,8 @@
             <!-- Logistics & Commercial Section -->
             <div class="mb-4">
                 <label class="form-label small fw-bold text-muted text-uppercase mb-1">Tags</label>
-                <select name="tags_ui" class="form-select mb-3" multiple style="min-height: 50px;">
-                    {% for tag in tags %}
-                    <option value="{{ tag.pk }}" {% if tag in shipment.tags.all %}selected{% endif %}>{{ tag.name }}</option>
-                    {% endfor %}
+                <select name="tags_ui" id="edit-tags-select" class="form-select mb-3" multiple style="width: 100%;">
+                    <!-- Existing tags intentionally omitted so dropdown stays empty -->
                 </select>
 
                 <div class="mb-3">
@@ -2408,14 +2937,16 @@
 </div>
 
 <!-- Add Contact Offcanvas -->
-<div class="offcanvas offcanvas-end" tabindex="-1" id="contactOffcanvas" aria-labelledby="contactOffcanvasLabel" style="width: 500px; z-index: 1070;">
-    <div class="offcanvas-header border-bottom px-4 py-3">
-        <h5 class="offcanvas-title fw-bold text-dark" id="contactOffcanvasLabel" style="font-size: 1.25rem;">Add Contact</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-    </div>
-    <div class="offcanvas-body p-0 d-flex flex-column" style="height: 100%;">
-        <div class="px-4 py-4 flex-grow-1" style="overflow-y: auto;">
-            <form id="contactOffcanvasForm">
+<div class="modal fade" id="contactOffcanvas" tabindex="-1" aria-labelledby="contactOffcanvasLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 500px;">
+        <div class="modal-content shadow-lg border-0" style="border-radius: 12px;">
+            <div class="modal-header border-bottom px-4 py-3">
+                <h5 class="modal-title fw-bold text-dark" id="contactOffcanvasLabel" style="font-size: 1.25rem;">Add Contact</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0 d-flex flex-column">
+                <div class="px-4 py-4 flex-grow-1" style="overflow-y: auto;">
+                    <form id="contactOffcanvasForm">
                 <div class="mb-4">
                     <label class="form-label small fw-bold text-dark mb-2">Name <span class="text-danger">*</span></label>
                     <input type="text" id="contactModalName" class="form-control" placeholder="Full name">
@@ -2439,23 +2970,25 @@
                 
                 <div class="mb-4">
                     <label class="form-label small fw-bold text-dark mb-2">Mobile number</label>
-                    <input type="text" id="contactModalMobile" class="form-control" placeholder="(000) 000-0000">
+                    <input type="text" id="contactModalMobile" class="form-control" placeholder="(000) 000-0000" inputmode="numeric" maxlength="14">
                 </div>
                 
                 <div class="row g-3">
                     <div class="col-8">
                         <label class="form-label small fw-bold text-dark mb-2">Office Number</label>
-                        <input type="text" id="contactModalOffice" class="form-control" placeholder="(000) 000-0000">
+                        <input type="text" id="contactModalOffice" class="form-control" placeholder="(000) 000-0000" inputmode="numeric" maxlength="14">
                     </div>
                     <div class="col-4">
                         <label class="form-label small fw-bold text-dark mb-2">Extension</label>
-                        <input type="text" id="contactModalExt" class="form-control" placeholder="00000" style="background-color: #f1f5f9;">
+                        <input type="text" id="contactModalExt" class="form-control" placeholder="00000" inputmode="numeric" maxlength="6" style="background-color: #f1f5f9;">
                     </div>
                 </div>
-            </form>
-        </div>
-        <div class="px-4 py-3 border-top" style="background-color: #f8fafc; text-align: center;">
-            <button type="button" id="contactModalSubmit" class="btn btn-primary px-5 py-2 fw-semibold" style="border-radius: 6px;">Submit</button>
+                    </form>
+                </div>
+                <div class="px-4 py-3 border-top" style="background-color: #f8fafc; text-align: center;">
+                    <button type="button" id="contactModalSubmit" class="btn btn-primary px-5 py-2 fw-semibold" style="border-radius: 6px;">Submit</button>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -2512,8 +3045,36 @@
     </div>
 </div>
 
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        if (window.jQuery && $.fn.select2) {
+            $('#edit-tags-select').select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                placeholder: 'Select or type to create tags...',
+                tags: true,
+                tokenSeparators: [','],
+                createTag: function(params) {
+                    var term = $.trim(params.term);
+                    if (term === '') return null;
+                    return {
+                        id: term,
+                        text: term,
+                        newTag: true
+                    };
+                },
+                templateResult: function(data) {
+                    if (data.newTag) {
+                        return "Hit Enter to create new '" + data.text + "'";
+                    }
+                    return data.text;
+                },
+                dropdownParent: $('#editShipmentDrawer')
+            });
+        }
+
         // Representative Assignment
         const assignBtn = document.getElementById('assignYourselfBtn');
         const repSelect = document.getElementById('representativeSelect');
@@ -2540,8 +3101,285 @@
         document.querySelectorAll('[data-contact-select-target]').forEach(function(button) {
             button.addEventListener('click', function() {
                 activeContactSelectId = this.dataset.contactSelectTarget || '';
+                document.getElementById('contactOffcanvasForm')?.reset();
             });
         });
+
+        const formatPhoneNumber = (digits) => {
+            const cleaned = (digits || '').replace(/\D/g, '').slice(0, 10);
+            if (!cleaned) return '';
+            if (cleaned.length <= 3) return `(${cleaned}`;
+            if (cleaned.length <= 6) return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3)}`;
+            return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
+        };
+
+        const enforceNumericLimit = (inputId, maxLength, formatter) => {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+
+            input.addEventListener('input', function() {
+                const digits = (this.value || '').replace(/\D/g, '').slice(0, maxLength);
+                this.value = formatter ? formatter(digits) : digits;
+            });
+        };
+
+        enforceNumericLimit('contactModalMobile', 10, formatPhoneNumber);
+        enforceNumericLimit('contactModalOffice', 10, formatPhoneNumber);
+        enforceNumericLimit('contactModalExt', 6);
+
+        // Manifest item edit drawer (click any cell except Material)
+        const editDrawerEl = document.getElementById('editManifestItemDrawer');
+        const editForm = document.getElementById('editManifestItemForm');
+        const setVal = (id, value) => {
+            const el = document.getElementById(id);
+            if (el) el.value = value ?? '';
+        };
+        const setChecked = (id, checked) => {
+            const el = document.getElementById(id);
+            if (el) el.checked = !!checked;
+        };
+
+        document.querySelectorAll('tr.manifest-item-row td.manifest-edit-cell').forEach((cell) => {
+            cell.style.cursor = 'pointer';
+            cell.addEventListener('click', function() {
+                const row = this.closest('tr.manifest-item-row');
+                if (!row || !editDrawerEl || !window.bootstrap?.Offcanvas) return;
+
+                const ds = row.dataset;
+                setVal('editItemId', ds.itemId);
+                setVal('editWeight', ds.weight);
+                setVal('editWeightUnit', ds.weightUnit || 'lbs');
+                setVal('editGrossWeight', ds.grossWeight);
+                setVal('editGrossUnit', ds.grossWeightUnit || ds.weightUnit || 'lbs');
+                setVal('editTareWeight', ds.tareWeight);
+                setVal('editTareUnit', ds.tareWeightUnit || ds.weightUnit || 'lbs');
+                setVal('editPackaging', ds.packaging || '');
+                setVal('editPieces', ds.pieces || '');
+                setChecked('editIsPalletized', ds.isPalletized === '1');
+                setVal('editBuyPrice', ds.buyPrice);
+                setVal('editSellPrice', ds.sellPrice);
+                setVal('editPriceUnit', ds.priceUnit || 'per lbs');
+                setVal('editSellPriceUnit', ds.priceUnit || 'per lbs');
+
+                const drawer = bootstrap.Offcanvas.getOrCreateInstance(editDrawerEl);
+                drawer.show();
+            });
+        });
+
+        editForm?.addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (!editDrawerEl) return;
+            const itemId = document.getElementById('editItemId')?.value;
+            if (!itemId) return;
+
+            const formData = new FormData();
+            formData.append('weight', document.getElementById('editWeight')?.value || '');
+            formData.append('weight_unit', document.getElementById('editWeightUnit')?.value || '');
+            formData.append('gross_weight', document.getElementById('editGrossWeight')?.value || '');
+            formData.append('gross_weight_unit', document.getElementById('editGrossUnit')?.value || '');
+            formData.append('tare_weight', document.getElementById('editTareWeight')?.value || '');
+            formData.append('tare_weight_unit', document.getElementById('editTareUnit')?.value || '');
+            formData.append('packaging', document.getElementById('editPackaging')?.value || '');
+            formData.append('pieces', document.getElementById('editPieces')?.value || '');
+            if (document.getElementById('editIsPalletized')?.checked) {
+                formData.append('is_palletized', '1');
+            }
+            formData.append('buy_price', document.getElementById('editBuyPrice')?.value || '');
+            formData.append('sell_price', document.getElementById('editSellPrice')?.value || '');
+            formData.append('price_unit', document.getElementById('editPriceUnit')?.value || '');
+
+            fetch(`/shipments/item/${itemId}/update/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData,
+            })
+            .then(r => r.json().then(j => ({ ok: r.ok, j })))
+            .then(({ ok, j }) => {
+                if (!ok || j.status !== 'success') {
+                    alert(j.message || 'Error saving item');
+                    return;
+                }
+                const updated = j.item;
+                const row = document.querySelector(`tr.manifest-item-row[data-item-id="${updated.id}"]`);
+                if (row) {
+                    row.dataset.weight = updated.weight;
+                    row.dataset.weightUnit = updated.weight_unit;
+                    row.dataset.grossWeight = updated.gross_weight;
+                    row.dataset.grossWeightUnit = updated.gross_weight_unit;
+                    row.dataset.tareWeight = updated.tare_weight;
+                    row.dataset.tareWeightUnit = updated.tare_weight_unit;
+                    row.dataset.pieces = updated.pieces;
+                    row.dataset.packaging = updated.packaging;
+                    row.dataset.isPalletized = updated.is_palletized ? '1' : '0';
+                    row.dataset.buyPrice = updated.buy_price;
+                    row.dataset.sellPrice = updated.sell_price;
+                    row.dataset.priceUnit = updated.price_unit;
+
+                    const cells = row.querySelectorAll('td.manifest-edit-cell');
+                    if (cells.length >= 7) {
+                        cells[0].textContent = `$${updated.buy_price} / ${updated.price_unit}`;
+                        cells[1].textContent = `$${updated.sell_price} / ${updated.price_unit}`;
+                        cells[2].textContent = `${updated.weight} ${updated.weight_unit}`;
+                        cells[3].textContent = updated.gross_weight ? `${updated.gross_weight} ${updated.gross_weight_unit}` : `- ${updated.gross_weight_unit}`;
+                        cells[4].textContent = updated.tare_weight ? `${updated.tare_weight} ${updated.tare_weight_unit}` : `- ${updated.tare_weight_unit}`;
+                        cells[5].textContent = `${updated.pieces || '-'} pcs`;
+                        cells[6].textContent = updated.packaging || '-';
+                    }
+                }
+
+                if (window.bootstrap?.Offcanvas) {
+                    bootstrap.Offcanvas.getOrCreateInstance(editDrawerEl).hide();
+                }
+            })
+            .catch(() => alert('Connection error'));
+        });
+
+        // Delete manifest item from the drawer
+        (function() {
+            const deleteBtn = document.getElementById('editManifestItemDeleteBtn');
+            if (!deleteBtn) return;
+
+            deleteBtn.addEventListener('click', function() {
+                const itemId = document.getElementById('editItemId')?.value;
+                if (!itemId) return;
+                if (!confirm('Delete this item?')) return;
+
+                fetch(`/shipments/item/${itemId}/delete/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(r => r.json().then(j => ({ ok: r.ok, j })))
+                .then(({ ok, j }) => {
+                    if (!ok || j.status !== 'success') {
+                        alert(j.message || 'Error deleting item');
+                        return;
+                    }
+                    const row = document.querySelector(`tr.manifest-item-row[data-item-id="${itemId}"]`);
+                    row?.remove();
+                    if (window.bootstrap?.Offcanvas && editDrawerEl) {
+                        bootstrap.Offcanvas.getOrCreateInstance(editDrawerEl).hide();
+                    }
+                })
+                .catch(() => alert('Connection error'));
+            });
+        })();
+
+        // Keep units in sync inside the drawer
+        (function() {
+            const netUnit = document.getElementById('editWeightUnit');
+            const grossUnit = document.getElementById('editGrossUnit');
+            const tareUnit = document.getElementById('editTareUnit');
+            const priceUnit = document.getElementById('editPriceUnit');
+            const sellPriceUnit = document.getElementById('editSellPriceUnit');
+
+            let isSyncing = false;
+            const syncSelects = (value, selects) => {
+                if (isSyncing) return;
+                isSyncing = true;
+                selects.forEach((sel) => {
+                    if (!sel) return;
+                    sel.value = value;
+                });
+                isSyncing = false;
+            };
+
+            const syncWeightUnits = (value) => syncSelects(value, [netUnit, grossUnit, tareUnit]);
+            netUnit?.addEventListener('change', () => syncWeightUnits(netUnit.value));
+            grossUnit?.addEventListener('change', () => syncWeightUnits(grossUnit.value));
+            tareUnit?.addEventListener('change', () => syncWeightUnits(tareUnit.value));
+
+            const syncPriceUnits = (value) => syncSelects(value, [priceUnit, sellPriceUnit]);
+            priceUnit?.addEventListener('change', () => syncPriceUnits(priceUnit.value));
+            sellPriceUnit?.addEventListener('change', () => syncPriceUnits(sellPriceUnit.value));
+        })();
+
+        // Scale upload drawer behavior (Heavy/Light + file upload)
+        (function() {
+            const drawerEl = document.getElementById('scaleUploadDrawer');
+            const formEl = document.getElementById('scaleUploadForm');
+            const fileInput = document.getElementById('scale-upload-file');
+            const pickBtn = document.getElementById('scale-upload-btn');
+            const fileNameEl = document.getElementById('scale-upload-filename');
+            const docTypeSelect = document.getElementById('scale-doc-type');
+            const titleInput = document.getElementById('scale-upload-title');
+            const dropzone = document.getElementById('scale-dropzone');
+
+            if (!drawerEl || !formEl || !fileInput || !docTypeSelect || !titleInput) return;
+
+            const updateTitle = () => {
+                const kind = docTypeSelect.value || 'Light';
+                titleInput.value = `Scale - ${kind}`;
+            };
+
+            const resetUi = () => {
+                formEl.reset();
+                updateTitle();
+                if (fileNameEl) fileNameEl.textContent = '';
+            };
+
+            updateTitle();
+
+            pickBtn?.addEventListener('click', () => fileInput.click());
+            docTypeSelect.addEventListener('change', updateTitle);
+
+            fileInput.addEventListener('change', () => {
+                const f = fileInput.files?.[0];
+                if (fileNameEl) fileNameEl.textContent = f ? f.name : '';
+            });
+
+            // Drag/drop support
+            if (dropzone) {
+                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach((evt) => {
+                    dropzone.addEventListener(evt, (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    });
+                });
+                ['dragenter', 'dragover'].forEach((evt) => {
+                    dropzone.addEventListener(evt, () => dropzone.classList.add('bg-primary-subtle', 'border-primary'));
+                });
+                ['dragleave', 'drop'].forEach((evt) => {
+                    dropzone.addEventListener(evt, () => dropzone.classList.remove('bg-primary-subtle', 'border-primary'));
+                });
+                dropzone.addEventListener('drop', (e) => {
+                    const files = e.dataTransfer?.files;
+                    if (files && files.length > 0) {
+                        fileInput.files = files;
+                        const f = fileInput.files?.[0];
+                        if (fileNameEl) fileNameEl.textContent = f ? f.name : '';
+                    }
+                });
+            }
+
+            drawerEl.addEventListener('show.bs.offcanvas', resetUi);
+        })();
+
+        // Commission drawer: toggle percentage/amount expectations
+        (function() {
+            const typeSel = document.getElementById('commissionType');
+            const pct = document.getElementById('commissionPercentage');
+            const amt = document.getElementById('commissionAmount');
+            if (!typeSel || !pct || !amt) return;
+
+            const apply = () => {
+                const t = typeSel.value;
+                if (t === 'fixed') {
+                    amt.disabled = false;
+                    amt.required = true;
+                } else {
+                    amt.required = false; // allow override amount if user wants
+                }
+            };
+
+            typeSel.addEventListener('change', apply);
+            apply();
+        })();
 
         // Contact Change Handler for Edit Drawer & Logistics Section
         const handleEditContactChange = (idPrefix) => {
@@ -2642,9 +3480,9 @@
 
                 // Close the Offcanvas
                 const contactOffcanvasElement = document.getElementById('contactOffcanvas');
-                if (contactOffcanvasElement && window.bootstrap?.Offcanvas) {
-                    const offcanvas = bootstrap.Offcanvas.getInstance(contactOffcanvasElement);
-                    if (offcanvas) offcanvas.hide();
+                if (contactOffcanvasElement && window.bootstrap?.Modal) {
+                    const contactModal = bootstrap.Modal.getOrCreateInstance(contactOffcanvasElement);
+                    contactModal.hide();
                 }
 
                 // Reset form
@@ -2719,7 +3557,89 @@
             calculatePlTotals();
             updatePlUnitLabels();
         }
+
+        // Location Modal Logic
+        const modalTriggers = document.querySelectorAll('.location-modal-trigger');
+        const locModal = new bootstrap.Modal(document.getElementById('locationDetailModal'));
+        
+        modalTriggers.forEach(el => {
+            el.addEventListener('click', function() {
+                const data = this.dataset;
+                document.getElementById('locModalTitle').innerText = data.address;
+                document.getElementById('locModalAddress').innerText = data.address;
+                document.getElementById('locModalName').innerText = data.name;
+                document.getElementById('locModalPhone').innerText = data.phone;
+                document.getElementById('locModalShippingReq').innerText = data.shippingReq;
+                document.getElementById('locModalPickupAppt').innerText = data.pickupAppt;
+                document.getElementById('locModalDeliveryAppt').innerText = data.deliveryAppt;
+                
+                const viewMoreBtn = document.getElementById('locModalViewMore');
+                if (data.companyId) {
+                    viewMoreBtn.href = `/companies/${data.companyId}/?tab=locations`;
+                    viewMoreBtn.style.display = 'flex';
+                } else if (data.id) {
+                    viewMoreBtn.href = `/inventory/warehouses/${data.id}/`;
+                    viewMoreBtn.style.display = 'flex';
+                } else {
+                    viewMoreBtn.style.display = 'none';
+                }
+                
+                locModal.show();
+            });
+        });
     });
 </script>
+
+<!-- Location Detail Modal -->
+<div class="modal fade location-modal" id="locationDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header d-block position-relative">
+                <button type="button" class="btn btn-outline-secondary rounded-circle p-0 position-absolute d-flex align-items-center justify-content-center bg-white" 
+                        style="top: 24px; right: 24px; width: 36px; height: 36px; border-color: #cbd5e1;" data-bs-dismiss="modal">
+                    <i class="fas fa-times" style="font-size: 1rem; color: #475569;"></i>
+                </button>
+                <div class="d-flex align-items-center text-muted mb-2 fw-medium" style="font-size: 1rem;">
+                    <i class="far fa-paper-plane me-2"></i> Location
+                </div>
+                <h3 class="modal-title fw-bold text-dark pe-5" id="locModalTitle" style="font-size: 1.75rem; line-height: 1.2;">-</h3>
+            </div>
+            <div class="modal-body">
+                <div class="detail-item">
+                    <div class="detail-label">Address</div>
+                    <div class="detail-value d-flex align-items-start">
+                        <i class="fas fa-map-marker-alt text-muted mt-1 me-2" style="font-size: 0.9rem;"></i>
+                        <span id="locModalAddress">-</span>
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Name</div>
+                    <div class="detail-value" id="locModalName">-</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Phone Number</div>
+                    <div class="detail-value" id="locModalPhone">-</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Shipping Requirements</div>
+                    <div class="detail-value" id="locModalShippingReq">-</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Pickup Appointment</div>
+                    <div class="detail-value text-uppercase" id="locModalPickupAppt">-</div>
+                </div>
+                <div class="detail-item mb-0">
+                    <div class="detail-label">Delivery Appointment</div>
+                    <div class="detail-value text-uppercase" id="locModalDeliveryAppt">-</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a href="#" class="btn btn-view-more" id="locModalViewMore">
+                    View more <i class="fas fa-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
 
 {% endblock %}

@@ -1,5 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
+from django.http import JsonResponse
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
@@ -9,6 +11,8 @@ from django.utils import timezone
 from .models import Order, ManifestItem, Tag, ShippingTerm, PackagingType
 from apps.accounts.models import Company
 from apps.inventory.models import Warehouse, InventoryItem, Material
+from apps.inventory.forms import MaterialForm
+from apps.shipments.models import Shipment
 from apps.accounts.utils import filter_by_user_company, check_company_access
 import logging
 
@@ -149,20 +153,44 @@ class OrderListView(LoginRequiredMixin, ListView):
         
         # --- Context for Advanced Filters Drawer ---
         user_tenant = self.request.user.tenant
-        # Companies: use all companies (match order_create behavior)
-        all_companies = Company.plain_objects.all().order_by('name')
+        user_company = self.request.user.company
+        all_companies = Company.plain_objects.filter(is_active=True).filter(
+            Q(tenant=user_tenant) | Q(tenant__isnull=True)
+        )
+        if not getattr(self.request.user, 'is_admin', False):
+            if user_company:
+                all_companies = all_companies.filter(
+                    Q(created_by=self.request.user) | Q(pk=user_company.pk)
+                )
+            else:
+                all_companies = all_companies.filter(created_by=self.request.user)
+        all_companies = all_companies.order_by('name')
         
         context['status_choices'] = Order.STATUS_CHOICES
         context['suppliers'] = all_companies
         context['receivers'] = all_companies
         
-        # Unique materials from both Material model and existing orders
-        m_model = set(Material.objects.all().values_list('name', flat=True))
-        m_items = set(ManifestItem.objects.all().values_list('material', flat=True))
-        context['materials'] = sorted(list(m_model | m_items))
+        # Unique materials from companies visible to the current user
+        visible_company_ids = all_companies.values_list('id', flat=True)
+        m_model = set(
+            Material.objects.filter(
+                Q(company_id__in=visible_company_ids) |
+                Q(company__isnull=True, tenant=user_tenant)
+            ).values_list('name', flat=True)
+        )
+        m_items = set(
+            ManifestItem.objects.filter(
+                Q(order__supplier_id__in=visible_company_ids) |
+                Q(order__receiver_id__in=visible_company_ids)
+            ).values_list('material', flat=True)
+        )
+        context['materials'] = [] # Emptied as requested
         
         # Unique material types from Material model
-        context['material_types'] = Material.objects.filter(tenant=user_tenant).values_list('material_type', flat=True).distinct().order_by('material_type')
+        context['material_types'] = Material.objects.filter(
+            Q(company_id__in=visible_company_ids) |
+            Q(company__isnull=True, tenant=user_tenant)
+        ).values_list('material_type', flat=True).distinct().order_by('material_type')
         
         # Packaging types from both PackagingType model and existing orders
         p_model = set(PackagingType.objects.all().values_list('name', flat=True))
@@ -171,7 +199,7 @@ class OrderListView(LoginRequiredMixin, ListView):
         
         context['tags'] = Tag.plain_objects.filter(Q(tenant=user_tenant) | Q(tenant__isnull=True)).order_by('name')
         context['shipping_terms'] = ShippingTerm.plain_objects.filter(Q(tenant=user_tenant) | Q(tenant__isnull=True)).order_by('name')
-        context['representatives'] = get_user_model().objects.filter(tenant=user_tenant, is_active=True).order_by('first_name', 'username')
+        context['representatives'] = get_user_model().objects.filter(pk=self.request.user.pk)
         
         # Preserve filter states to pre-fill the drawer inputs
         context['filters'] = {
@@ -201,6 +229,10 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
 
     def get_object(self, queryset=None):
         obj = super().get_object(queryset)
+        
+        # Trigger automatic 'overdue' check (Net 30)
+        obj.check_payment_status()
+        
         # Allow creator to see the order even if they are not the receiver
         if obj.created_by == self.request.user:
             return obj
@@ -212,15 +244,25 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
         context['manifest_items'] = self.object.manifest_items.all()
         context['shipments'] = self.object.shipments.all()
         context['invoices'] = self.object.invoices.all()
-        context['events'] = self.object.events.all()
+        context['events'] = self.object.events.filter(
+            Q(event_type__in=['order_created', 'shipment_created', 'note_added', 'document_added', 'payment_status_updated']) |
+            Q(event_type='status_updated', description__icontains='Order status is now')
+        )
         context['documents'] = self.object.documents.all()
         
         # Context for Edit Offcanvas
         user_tenant = self.request.user.tenant
         user_company = self.request.user.company
         assign_company = user_company or Company.objects.filter(tenant=user_tenant).first()
-        # Show all active companies (tenant-specific + global)
+        
+        # Show companies (filtered by creator OR user's own company unless admin)
         all_companies = Company.plain_objects.filter(is_active=True).filter(Q(tenant=user_tenant) | Q(tenant__isnull=True))
+        if not getattr(self.request.user, 'is_admin', False):
+            if user_company:
+                all_companies = all_companies.filter(Q(created_by=self.request.user) | Q(pk=user_company.pk))
+            else:
+                all_companies = all_companies.filter(created_by=self.request.user)
+        
         context['suppliers'] = all_companies
         context['receivers'] = all_companies
         
@@ -234,7 +276,25 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
                     output_field=IntegerField()
                 )
             ).order_by('-is_my_company', 'name')
-        context['warehouses'] = warehouses
+        def get_unique_warehouses(qs):
+            unique = {}
+            for w in qs:
+                # Normalize address for deduplication
+                import re
+                addr_norm = re.sub(r'[^\w\s]', '', w.full_address).lower().strip()
+                if addr_norm not in unique:
+                    unique[addr_norm] = w
+            return list(unique.values())
+
+        # Main warehouses for Edit Order (deduplicated)
+        context['warehouses'] = get_unique_warehouses(warehouses)
+
+        # Filtered lists for Add Shipment
+        s_warehouses = Warehouse.plain_objects.filter(tenant=user_tenant, company=self.object.supplier)
+        r_warehouses = Warehouse.plain_objects.filter(tenant=user_tenant, company=self.object.receiver)
+
+        context['supplier_warehouses'] = get_unique_warehouses(s_warehouses)
+        context['receiver_warehouses'] = get_unique_warehouses(r_warehouses)
         
         # Show ONLY the currently selected shipping term
         if self.object.shipping_terms_id:
@@ -255,13 +315,52 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
         context['all_tags'] = Tag.plain_objects.filter(Q(tenant=user_tenant) | Q(tenant__isnull=True)).order_by('name')
         context['all_shipping_terms'] = ShippingTerm.plain_objects.filter(Q(tenant=user_tenant) | Q(tenant__isnull=True)).order_by('name')
         context['all_representatives'] = get_user_model().objects.filter(tenant=user_tenant, is_active=True).order_by('first_name', 'username')
+        context['shipment_types'] = Shipment.SHIPMENT_TYPE_CHOICES
             
-        # Context for Add Item Offcanvas
-        context['inventory_items'] = InventoryItem.plain_objects.filter(
-            warehouse__company=self.object.supplier,
-            tenant=self.object.tenant,
-            quantity__gt=0
+        inventory_items_qs = InventoryItem.plain_objects.filter(
+            company=self.object.supplier,
+            tenant=self.object.tenant
         )
+
+        # Calculation for remaining manifest balance
+        from apps.shipments.models import ShipmentItem
+        shipped_weights = ShipmentItem.objects.filter(
+            shipment__order=self.object
+        ).values('material_name').annotate(total_shipped=Sum('weight'))
+        
+        shipped_map = {sw['material_name'].lower(): sw['total_shipped'] for sw in shipped_weights if sw['material_name']}
+        manifest_items = list(context['manifest_items'])
+        manifest_map = {mi.material.lower(): mi.weight for mi in manifest_items if mi.material}
+        manifest_prices = {mi.material.lower(): (mi.buy_price, mi.sell_price, mi.buy_price_unit, mi.sell_price_unit) for mi in manifest_items if mi.material}
+        
+        # If there's only one manifest item, use the larger of manifest weight or total target
+        if len(manifest_items) == 1:
+            mi = manifest_items[0]
+            if mi.material:
+                manifest_map[mi.material.lower()] = max(mi.weight, self.object.total_weight_target)
+        
+        inventory_items = list(inventory_items_qs)
+        for item in inventory_items:
+            product_lower = item.product_name.lower() if item.product_name else ""
+            m_weight = manifest_map.get(product_lower, 0)
+            if m_weight > 0:
+                s_weight = shipped_map.get(product_lower, 0)
+                # Use Decimal for precise subtraction
+                from decimal import Decimal
+                diff = Decimal(str(m_weight)) - Decimal(str(s_weight))
+                item.order_balance = max(0, diff)
+            else:
+                item.order_balance = None
+            
+            # Attach prices from manifest
+            prices = manifest_prices.get(product_lower)
+            if prices:
+                item.manifest_buy_price = prices[0]
+                item.manifest_sell_price = prices[1]
+                item.manifest_buy_unit = prices[2]
+                item.manifest_sell_unit = prices[3]
+        
+        context['inventory_items'] = inventory_items
         context['assign_company'] = assign_company
         context['packaging_types'] = PackagingType.objects.all()
         
@@ -295,6 +394,7 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
 
         context['previous_pickup_contacts'] = pickup_contacts
         context['previous_delivery_contacts'] = delivery_contacts
+        context['material_form'] = MaterialForm()
         
         return context
 
@@ -312,9 +412,33 @@ def order_update_status(request, pk):
         
         if status in dict(Order.STATUS_CHOICES):
             old_status = order.get_status_display()
+            new_status_key = status
             order.status = status
             order.save()
             
+            # ── NEW: Release Reservation if Order is Cancelled ─────────
+            if new_status_key == 'cancelled' and old_status != 'Cancelled':
+                from decimal import Decimal
+                from apps.inventory.models import InventoryTransaction
+                for item in order.manifest_items.all():
+                    if item.inventory_item:
+                        inv_item = item.inventory_item
+                        weight_to_release = Decimal(str(item.weight))
+                        inv_item.reserved_quantity -= weight_to_release
+                        inv_item.save()
+                        
+                        # Log UNRESERVE Transaction
+                        InventoryTransaction.objects.create(
+                            item=inv_item,
+                            transaction_type='UNRESERVE',
+                            quantity_change=0,
+                            new_quantity=inv_item.quantity,
+                            user=request.user,
+                            notes=f"Released {weight_to_release} due to Order #{order.order_number} Cancellation"
+                        )
+                        logger.info(f"Released reservation ({weight_to_release}) for {inv_item.sku} due to order cancellation.")
+            # ──────────────────────────────────────────────────────────
+
             # Create Lifecycle Event
             from .models import OrderEvent
             OrderEvent.objects.create(
@@ -346,75 +470,129 @@ def order_update_status(request, pk):
         # ──────────────────────────────────────────────────────────
     return redirect('orders:order_detail', pk=pk)
 
+def resolve_location(val, user, company_obj=None):
+    """
+    Resolves a location value from the UI. 
+    If 'val' is a temporary address string, it creates/finds a Warehouse for the given company_obj.
+    """
+    if not val: return None
+    # If it's a numeric ID (as a string or int), return it as is
+    if str(val).isdigit():
+        return val
+
+    if str(val).startswith('temp_addr_') or str(val).startswith('http') or len(str(val)) > 15:
+        # Use provided company (Supplier/Receiver) or fallback to user's company
+        company = company_obj or user.company
+        if not company: 
+            print("No company found to associate location with!")
+            return None
+        
+        from apps.inventory.models import Warehouse
+        raw_address = str(val).replace('temp_addr_', '')[:200]
+        
+        # Normalize and look for existing warehouse first to prevent duplicates
+        existing = Warehouse.objects.filter(
+            company=company,
+            tenant=company.tenant,
+            name=raw_address
+        ).first()
+        
+        if existing:
+            return existing.id
+
+        # Generate a unique code
+        import random
+        unique_code = f"LOC-{company.id}-{random.randint(1000, 9999)}"[:20]
+        
+        hq = Warehouse.objects.create(
+            company=company,
+            tenant=company.tenant,
+            name=raw_address,
+            code=unique_code,
+            address=company.address_line1[:255] if hasattr(company, 'address_line1') else '',
+            city=company.city[:100] if hasattr(company, 'city') else '',
+            state=company.state[:100] if hasattr(company, 'state') else '',
+            country=company.country[:100] if hasattr(company, 'country') else 'USA',
+            postal_code=company.postal_code[:20] if hasattr(company, 'postal_code') else '',
+            phone=company.phone[:20] if hasattr(company, 'phone') else '',
+            is_storage=False
+        )
+        return hq.id
+    return val
+
+
+
 @login_required
 def order_create(request):
     if request.method == 'POST':
-        # Handle dynamic location creation for "my company address"
+        # Handle dynamic location creation
         source_loc_val = request.POST.get('source_location')
         dest_loc_val = request.POST.get('destination_location')
         
-        print(f"\n--- ORDER CREATE DEBUG ---")
-        print(f"Original Source: {source_loc_val}")
-        print(f"Original Dest: {dest_loc_val}")
-        
-        def resolve_location(val, user):
-            if not val: return None
-            if str(val).startswith('temp_addr_') or str(val).startswith('http') or len(str(val)) > 10:
-                print(f"Resolving dynamic address: {val}")
-                company = user.company
-                if not company: 
-                    print("User has no company!")
-                    return None
-                
-                raw_address = str(val).replace('temp_addr_', '')[:200]
-                
-                # Generate a unique code to avoid IntegrityError if a location with MAIN-<id> already exists
-                import random
-                unique_code = f"LOC-{company.id}-{random.randint(1000, 9999)}"[:20]
-                
-                hq, created = Warehouse.objects.get_or_create(
-                    company=company,
-                    tenant=company.tenant,
-                    name=raw_address,
-                    defaults={
-                        'code': unique_code,
-                        'address': company.address_line1,
-                        'city': company.city[:100],
-                        'state': company.state[:100],
-                        'country': company.country[:100],
-                        'postal_code': company.postal_code[:20],
-                        'phone': company.phone[:20],
-                        'is_storage': False
-                    }
-                )
-                print(f"Resolved to Warehouse ID: {hq.id} (Created: {created})")
-                return hq.id
-            return val
+        supplier_id = request.POST.get('supplier')
+        receiver_id = request.POST.get('receiver')
+
+        if not supplier_id or not receiver_id:
+            from django.contrib import messages
+            messages.error(request, "Order creation failed: Supplier and Receiver are required.")
+            return redirect('orders:order_create')
+
+        # Get company objects for location resolution
+        supplier = Company.objects.filter(pk=supplier_id).first()
+        receiver = Company.objects.filter(pk=receiver_id).first()
+
 
         # Generate a unique order number on the backend
         import time, random
         order_number = f"STH-O-{request.user.id}-{int(time.time())}-{random.randint(1000, 9999)}"
 
+        # Validate required fields
+        supplier_id = request.POST.get('supplier')
+        receiver_id = request.POST.get('receiver')
+        
+        if not supplier_id or not receiver_id:
+            logger.warning(f"Aborted order creation: Incomplete POST data from {request.user}")
+            # If it's an AJAX request (though it shouldn't be), return JSON. 
+            # Otherwise, just redirect back or show an error.
+            # Since this usually happens from an accidental drawer post, we'll just redirect back.
+            from django.contrib import messages
+            messages.error(request, "Order creation failed: Supplier and Receiver are required.")
+            return redirect('orders:order_create')
+
         # Create the order
         order = Order.objects.create(
             order_number=order_number,
-            po_number=request.POST.get('po_number'),
-            so_number=request.POST.get('so_number'),
-            supplier_id=request.POST.get('supplier'),
-            receiver_id=request.POST.get('receiver'),
-            source_location_id=resolve_location(source_loc_val, request.user),
-            destination_location_id=resolve_location(dest_loc_val, request.user),
+            po_number=request.POST.get('po_number', ''),
+            so_number=request.POST.get('so_number', ''),
+            supplier_id=supplier_id,
+            receiver_id=receiver_id,
+            source_location_id=resolve_location(source_loc_val, request.user, supplier) or None,
+            destination_location_id=resolve_location(dest_loc_val, request.user, receiver) or None,
             total_weight_target=request.POST.get('total_weight_target') or 0,
+            total_weight_unit=request.POST.get('total_weight_unit') or 'lbs',
             freight_cost=request.POST.get('freight_cost') or 0,
             expected_pickup_date=request.POST.get('expected_pickup_date') or None,
             expected_delivery_date=request.POST.get('expected_delivery_date') or None,
-            shipping_terms_id=request.POST.get('shipping_terms'),
-            representative_id=request.POST.get('representative'),
+            shipping_terms_id=request.POST.get('shipping_terms') or None,
+            representative_id=request.POST.get('representative') or None,
             status='confirmed', # Default to confirmed for manual entries
             payment_status='pending',
             created_by=request.user,
             tenant=request.user.tenant
         )
+        
+        # Handle Tags (support dynamic creation)
+        tag_input = request.POST.getlist('tags')
+        tag_ids = []
+        for val in tag_input:
+            # Only treat as existing ID if it's numeric AND exists in DB
+            if val.isdigit() and Tag.objects.filter(id=val, tenant=request.user.tenant).exists():
+                tag_ids.append(val)
+            elif val.strip():
+                # Treat as a new tag name (even if numeric)
+                tag, _ = Tag.objects.get_or_create(tenant=request.user.tenant, name=val.strip())
+                tag_ids.append(tag.id)
+        order.tags.set(tag_ids)
         
         # Create Lifecycle Event
         from .models import OrderEvent
@@ -453,43 +631,53 @@ def order_create(request):
             buy_price_val = raw_buy if raw_buy and str(raw_buy).strip() else 0
             sell_price_val = raw_sell if raw_sell and str(raw_sell).strip() else 0
             
-            # ── NEW: Deduct Stock if material is an ID ────────────────
+            # ── NEW: Reserve Stock if material is an ID ────────────────
+            inv_item = None
             try:
+                from decimal import Decimal
                 # Check if materials[i] is an ID (integer)
                 if materials[i].isdigit():
-                    inv_item = InventoryItem.plain_objects.get(pk=materials[i])
-                    material_name = inv_item.product_name # Use product name for manifest
-                    
-                    # Deduct stock
-                    if qty_to_deduct > 0:
-                        inv_item.quantity = max(0, inv_item.quantity - int(qty_to_deduct))
-                        inv_item.save()
-                        logger.info(f"Deducted {qty_to_deduct} from {inv_item.product_name}. New stock: {inv_item.quantity}")
+                    inv_item = InventoryItem.objects.filter(pk=materials[i]).first()
+                    if inv_item:
+                        material_name = inv_item.product_name # Use product name for manifest
                         
-                        # ── NEW: Trigger Low Stock Notification ───────────
-                        if inv_item.quantity <= 10:
-                            send_low_stock_notification(inv_item, request)
-                        # ──────────────────────────────────────────────────
+                        # Reserve stock instead of deducting
+                        if qty_to_deduct > 0:
+                            qty_decimal = Decimal(str(qty_to_deduct))
+                            inv_item.reserved_quantity += qty_decimal
+                            inv_item.save()
+                            
+                            # Log RESERVE Transaction
+                            from apps.inventory.models import InventoryTransaction
+                            InventoryTransaction.objects.create(
+                                item=inv_item,
+                                transaction_type='RESERVE',
+                                quantity_change=0,
+                                new_quantity=inv_item.quantity,
+                                user=request.user,
+                                notes=f"Reserved {qty_decimal} for Order #{order.order_number}"
+                            )
+                            logger.info(f"Reserved {qty_decimal} for order {order.order_number}. Available: {inv_item.available_quantity}")
+                            
+                            # Trigger Low Stock Notification based on Available
+                            if inv_item.available_quantity <= 10:
+                                send_low_stock_notification(inv_item, request)
             except Exception as e:
-                logger.warning(f"Stock deduction failed for item {materials[i]}: {e}")
-            # ──────────────────────────────────────────────────────────
-
-            try:
-                ManifestItem.objects.create(
-                    order=order,
-                    material=material_name,
-                    weight=qty_to_deduct,
-                    weight_unit=weight_units[i] if i < len(weight_units) else "lbs",
-                    buy_price=buy_price_val,
-                    buy_price_unit=buy_price_units[i] if i < len(buy_price_units) else "per lbs",
-                    sell_price=sell_price_val,
-                    sell_price_unit=sell_price_units[i] if i < len(sell_price_units) else "per lbs",
-                    packaging=packagings[i] if i < len(packagings) else "",
-                    is_palletized=is_palletized_list[i].lower() == 'true' if i < len(is_palletized_list) else False 
-                )
-            except Exception as e:
-                logger.error(f"Error creating manifest item {i} ({material_name}): {e}")
-                continue
+                logger.error(f"Inventory reservation failed for item {i}: {e}")
+                
+            ManifestItem.objects.create(
+                order=order,
+                inventory_item=inv_item,
+                material=material_name,
+                weight=qty_to_deduct,
+                weight_unit=weight_units[i] if i < len(weight_units) else 'lbs',
+                buy_price=buy_price_val,
+                buy_price_unit=buy_price_units[i] if i < len(buy_price_units) else 'per lbs',
+                sell_price=sell_price_val,
+                sell_price_unit=sell_price_units[i] if i < len(sell_price_units) else 'per lbs',
+                packaging=packagings[i] if i < len(packagings) else '',
+                is_palletized=is_palletized_list[i] == 'on' if i < len(is_palletized_list) else False
+            )
         
         # ── NEW: Send email notification to supplier ──────────────────
         try:
@@ -519,13 +707,24 @@ def order_create(request):
     user_company = request.user.company
     assign_company = user_company or Company.objects.filter(tenant=request.user.tenant).first()
     
-    # Show all companies in supplier/receiver dropdowns
+    # Filter companies by creator OR user's own company unless admin
     company_qs = Company.plain_objects.all()
+    if not getattr(request.user, 'is_admin', False):
+        if user_company:
+            company_qs = company_qs.filter(Q(created_by=request.user) | Q(pk=user_company.pk))
+        else:
+            company_qs = company_qs.filter(created_by=request.user)
     
     suppliers = company_qs
     receivers = company_qs
     
-    inventory_items = InventoryItem.plain_objects.all()
+    if not getattr(request.user, 'is_admin', False):
+        inventory_items = InventoryItem.plain_objects.filter(
+            Q(company__in=company_qs) | Q(warehouse__company__in=company_qs),
+            tenant=request.user.tenant
+        ).distinct()
+    else:
+        inventory_items = InventoryItem.plain_objects.filter(tenant=request.user.tenant)
 
     # Show all warehouses in tenant, prioritize user's company
     from django.db.models import Case, When, IntegerField
@@ -550,6 +749,7 @@ def order_create(request):
         'tags': Tag.plain_objects.filter(Q(tenant=request.user.tenant) | Q(tenant__isnull=True)),
         'team_members': get_user_model().objects.filter(tenant=request.user.tenant),
         'packaging_types': PackagingType.objects.all(),
+        'material_form': MaterialForm(),
     }
     return render(request, 'orders/order_form.html', context)
 
@@ -565,19 +765,34 @@ def order_edit(request, pk):
             order.supplier_id = request.POST.get('supplier')
             order.receiver_id = request.POST.get('receiver')
         
-        order.source_location_id = request.POST.get('source_location')
-        order.destination_location_id = request.POST.get('destination_location')
+        # Get possibly changed parties for location resolution
+        supplier = Company.objects.filter(pk=order.supplier_id).first()
+        receiver = Company.objects.filter(pk=order.receiver_id).first()
+
+        order.source_location_id = resolve_location(request.POST.get('source_location'), request.user, supplier) or None
+        order.destination_location_id = resolve_location(request.POST.get('destination_location'), request.user, receiver) or None
         order.po_number = request.POST.get('po_number')
         order.so_number = request.POST.get('so_number')
-        order.shipping_terms_id = request.POST.get('shipping_terms')
-        order.representative_id = request.POST.get('representative')
+        order.shipping_terms_id = request.POST.get('shipping_terms') or None
+        order.representative_id = request.POST.get('representative') or None
         order.freight_cost = request.POST.get('freight_cost') or 0
+        order.total_weight_target = request.POST.get('total_weight_target') or 0
+        order.total_weight_unit = request.POST.get('total_weight_unit') or 'lbs'
         order.expected_pickup_date = request.POST.get('expected_pickup_date') or None
         order.expected_delivery_date = request.POST.get('expected_delivery_date') or None
         
-        # Handle Tags
-        tag_ids = request.POST.getlist('tags')
-        if tag_ids:
+        # Handle Tags (support dynamic creation)
+        tag_input = request.POST.getlist('tags')
+        if tag_input:
+            tag_ids = []
+            for val in tag_input:
+                # Only treat as existing ID if it's numeric AND exists in DB
+                if val.isdigit() and Tag.objects.filter(id=val, tenant=request.user.tenant).exists():
+                    tag_ids.append(val)
+                elif val.strip():
+                    # Treat as a new tag name (even if numeric)
+                    tag, _ = Tag.objects.get_or_create(tenant=request.user.tenant, name=val.strip())
+                    tag_ids.append(tag.id)
             order.tags.set(tag_ids)
         else:
             order.tags.clear()
@@ -811,14 +1026,30 @@ def order_purchase_order_pdf(request, pk):
     elements = []
 
     # --- Header ---
+    my_company = request.user.company
+    company_name = my_company.name if my_company else "FreightPro Logistics"
+    company_address = my_company.full_address if my_company else "Address not set"
+    
     header_data = [
-        [Paragraph("PURCHASE ORDER", title_style), Paragraph(f"<b>PO #:</b> {po_number_override}<br/><b>Date:</b> {timezone.now().strftime('%Y-%m-%d')}", right_style)]
+        [
+            Paragraph("PURCHASE ORDER", title_style), 
+            Paragraph(f"<b>{company_name}</b><br/>{company_address}", right_style)
+        ]
     ]
     header_table = Table(header_data, colWidths=[110*mm, 70*mm])
     header_table.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'BOTTOM'), ('LEFTPADDING', (0,0), (-1,-1), 0), ('RIGHTPADDING', (0,0), (-1,-1), 0)]))
     elements.append(header_table)
     elements.append(Spacer(1, 5*mm))
     elements.append(HRFlowable(width="100%", thickness=1, color=primary_color))
+    elements.append(Spacer(1, 5*mm))
+    
+    # PO Info Row
+    po_meta_data = [
+        [Paragraph(f"<b>PO #:</b> {po_number_override}", normal_style), Paragraph(f"<b>Date:</b> {timezone.now().strftime('%Y-%m-%d')}", right_style)]
+    ]
+    po_meta_table = Table(po_meta_data, colWidths=[90*mm, 90*mm])
+    po_meta_table.setStyle(TableStyle([('LEFTPADDING', (0,0), (-1,-1), 0), ('RIGHTPADDING', (0,0), (-1,-1), 0)]))
+    elements.append(po_meta_table)
     elements.append(Spacer(1, 10*mm))
 
     # --- Vendor & Delivery Details ---
@@ -891,8 +1122,10 @@ def order_purchase_order_pdf(request, pk):
     elements.append(items_table)
 
     # --- Totals ---
+    total_weight = sum(item.weight for item in manifest_items)
     totals_data = [
-        ['', '', '', Paragraph("<b>TOTAL</b>", right_style), Paragraph(f"<b>${total_amount:,.2f}</b>", right_style)]
+        ['', '', '', Paragraph("<b>Total Weight</b>", right_style), Paragraph(f"<b>{total_weight:,.2f}</b>", right_style)],
+        ['', '', '', Paragraph("<b>TOTAL AMOUNT</b>", right_style), Paragraph(f"<b>${total_amount:,.2f}</b>", right_style)]
     ]
     totals_table = Table(totals_data, colWidths=[80*mm, 25*mm, 20*mm, 30*mm, 25*mm])
     totals_table.setStyle(TableStyle([
@@ -1061,3 +1294,81 @@ def order_upload_document(request, pk):
     except Exception as e:
         logger.error(f"Error uploading document: {e}")
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+@login_required
+@require_POST
+def order_add_note(request, pk):
+    """
+    AJAX view to add a note/comment to an order's history.
+    """
+    order = get_object_or_404(Order, pk=pk)
+    
+    # Check access
+    if order.created_by != request.user:
+        check_company_access(order.receiver, request.user)
+        
+    note_content = request.POST.get('note', '').strip()
+    
+    if not note_content:
+        return JsonResponse({'success': False, 'error': 'Note content cannot be empty'}, status=400)
+    
+    try:
+        from .models import OrderEvent
+        event = OrderEvent.objects.create(
+            order=order,
+            event_type='note_added',
+            description=note_content,
+            created_by=request.user
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'event': {
+                'id': event.id,
+                'type_display': event.get_event_type_display(),
+                'description': event.description,
+                'created_at_display': event.created_at.strftime('%b %d, %Y %H:%M'),
+                'created_at_relative': "just now"
+            }
+        })
+    except Exception as e:
+        logger.error(f"Error adding note to order {pk}: {e}")
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+@login_required
+@require_POST
+def order_edit_manifest_item(request, item_pk):
+    """
+    Update a single manifest item from the order detail page.
+    """
+    from .models import ManifestItem, OrderEvent
+    item = get_object_or_404(ManifestItem, pk=item_pk)
+    
+    # Check access
+    if item.order.tenant != request.user.tenant:
+        return redirect('orders:order_list')
+        
+    try:
+        item.weight = request.POST.get('weight') or item.weight
+        item.weight_unit = request.POST.get('weight_unit') or item.weight_unit
+        item.buy_price = request.POST.get('buy_price') or item.buy_price
+        item.buy_price_unit = request.POST.get('buy_price_unit') or item.buy_price_unit
+        item.sell_price = request.POST.get('sell_price') or item.sell_price
+        item.sell_price_unit = request.POST.get('sell_price_unit') or item.sell_price_unit
+        item.packaging = request.POST.get('packaging') or ""
+        item.is_palletized = request.POST.get('is_palletized') == 'on' or request.POST.get('is_palletized') == 'true'
+        item.save()
+        
+        # Create Lifecycle Event
+        OrderEvent.objects.create(
+            order=item.order,
+            event_type='status_updated',
+            description=f"Manifest item '{item.material}' updated.",
+            created_by=request.user
+        )
+        
+        logger.info(f"Manifest item {item_pk} updated by {request.user}")
+    except Exception as e:
+        logger.error(f"Error updating manifest item {item_pk}: {e}")
+        
+    return redirect('orders:order_detail', pk=item.order.pk)

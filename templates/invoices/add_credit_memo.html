@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Add Credit Memo{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Apply Credit Memo to {{ invoice.invoice_number }}</h6>
+                </div>
+                <div class="card-body">
+                    {% if invoice.balance_due < 0 %}
+                    <div class="alert alert-warning py-2 mb-4" style="font-size: 0.85rem;">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Note:</strong> This invoice already has a negative balance (Credit).
+                    </div>
+                    {% endif %}
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">Credit Amount ($)</label>
+                            <input type="number" name="amount" class="form-control" step="0.01" 
+                                {% if invoice.balance_due > 0 %}max="{{ invoice.balance_due }}"{% endif %} 
+                                placeholder="Amount to credit" required>
+                            {% if invoice.balance_due > 0 %}
+                            <div class="form-text small">Max allowed: ${{ invoice.balance_due }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Reason / Notes</label>
+                            <input type="text" name="reason" class="form-control" placeholder="e.g. Return, Overcharge adjustment" required>
+                        </div>
+                        
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary">Apply Credit</button>
+                            <a href="{% url 'invoicing:invoice_detail' pk=invoice.pk %}" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

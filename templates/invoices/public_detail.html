@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{# Use a simplified base or specialized public base if available #}
+
+{% block title %}Invoice {{ invoice.invoice_number }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="alert alert-info d-flex justify-content-between align-items-center mb-4 no-print">
+                <span><i class="fas fa-info-circle me-2"></i>You are viewing this invoice via a secure portal link.</span>
+                <a href="javascript:window.print()" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-print me-2"></i>Print / Save PDF
+                </a>
+            </div>
+
+            {% include "invoices/detail.html" with public_view=True %}
+        </div>
+    </div>
+</div>
+{% endblock %}

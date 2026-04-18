@@ -27,7 +27,15 @@
         border-color: #86b7fe;
         box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
     }
+
+    /* Select2 Bootstrap 5 Theme */
+    .select2-container--bootstrap-5 .select2-selection {
+        border: 1px solid #dee2e6 !important;
+        border-radius: 6px !important;
+    }
 </style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
 {% endblock %}
 
 {% block content %}
@@ -40,7 +48,7 @@
     <!-- Main Form Card -->
     <div class="card border-0 shadow-sm" style="border-radius: 12px; background-color: #fff;">
         <div class="card-body p-4 p-md-5">
-            <form method="post" id="inventoryForm">
+            <form method="post" id="inventoryForm" enctype="multipart/form-data">
                 {% csrf_token %}
                 
                 {% if form.errors %}
@@ -61,11 +69,6 @@
                     <div class="col-12">
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <label class="form-label mb-0 text-uppercase fw-bold">Company<span class="text-danger">*</span></label>
-                            {% if not form.company.field.disabled %}
-                            <button type="button" class="btn btn-outline-primary btn-add-custom d-flex align-items-center px-2 py-1" title="Add Company">
-                                <i class="fas fa-plus me-1"></i> Add
-                            </button>
-                            {% endif %}
                         </div>
                         <div class="d-flex align-items-center gap-2 mb-1">
                             <div class="flex-grow-1">
@@ -95,13 +98,15 @@
                             <div class="flex-grow-1">
                                 <select name="warehouse" id="id_warehouse" class="form-select" required onchange="syncLocationSelectState('id_warehouse')">
                                     <option value="">Select location</option>
-                                    {% if assign_company and not hq_exists %}
-                                    <option value="temp_addr_{{ assign_company.full_address }}" data-company-id="{{ assign_company.id }}">
-                                        {{ assign_company.full_address }} (Your Address)
-                                    </option>
-                                    {% endif %}
+                                    {% for comp in form.fields.company.queryset %}
+                                        {% if comp.full_address %}
+                                        <option value="temp_addr_{{ comp.full_address }}" data-company-id="{{ comp.id }}" data-is-company-address="true" {% if form.warehouse.value|stringformat:"s" == 'temp_addr_'|add:comp.full_address %}selected{% endif %}>
+                                            {{ comp.full_address }}
+                                        </option>
+                                        {% endif %}
+                                    {% endfor %}
                                     {% for wh in warehouses %}
-                                    <option value="{{ wh.id }}" data-company-id="{{ wh.company_id }}" {% if form.warehouse.value|stringformat:"s" == wh.id|stringformat:"s" %}selected{% endif %}>
+                                    <option value="{{ wh.id }}" data-wh-company-id="{{ wh.company_id }}" {% if form.warehouse.value|stringformat:"s" == wh.id|stringformat:"s" %}selected{% endif %} {% if form.company.value %}style="display:none;"{% endif %}>
                                         {{ wh.city|title }}, {{ wh.city|upper }}, {{ wh.address }}, {{ wh.state }} {{ wh.postal_code }}
                                     </option>
                                     {% endfor %}
@@ -140,18 +145,24 @@
                         {{ form.po_number }}
                     </div>
 
+                    <!-- Lot Number (Global) -->
+                    <div class="col-12">
+                        <label class="form-label mb-1 text-uppercase fw-bold">Lot Number</label>
+                        {{ form.lot_number }}
+                    </div>
+
                     <!-- Lot Number moved inside group -->
 
                     <!-- Grouped Inventory Container -->
                     <div id="inventoryItemsContainer">
-                        <div class="inventory-item-group pt-4 mt-5 position-relative">
+                        <div class="inventory-item-group pt-2 mt-2 position-relative">
                             <button type="button" class="btn btn-outline-danger position-absolute top-0 end-0 mt-3 me-0 btn-remove-group align-items-center justify-content-center p-0" title="Remove" style="display: none; z-index: 10; width: 32px; height: 32px; border-radius: 6px; transform: translate(0, -45px);">
                                 <i class="fas fa-minus small"></i>
                             </button>
 
                             <!-- Material Section -->
                             <div class="row g-4">
-                                <div class="col-12 mt-4">
+                                <div class="col-12">
                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                         <label class="form-label mb-0 text-uppercase fw-bold">Material<span class="text-danger">*</span></label>
                                         <button type="button" class="btn btn-outline-primary btn-add-custom d-flex align-items-center px-2 py-1" 
@@ -173,12 +184,13 @@
                                 <!-- Offered Weight & Unit -->
                                 <div class="col-md-7">
                                     <label class="form-label mb-1 text-uppercase fw-bold">Offered Weight<span class="text-danger">*</span></label>
-                                    {{ form.quantity }}
+                                    {{ form.offered_weight }}
                                 </div>
                                 <div class="col-md-5">
                                     <label class="form-label mb-1 text-uppercase fw-bold">Unit</label>
-                                    {{ form.unit_of_measure }}
+                                    {{ form.offered_weight_unit }}
                                 </div>
+
 
                                 <!-- Price & Unit -->
                                 <div class="col-md-7">
@@ -200,12 +212,7 @@
                                     {{ form.pieces }}
                                 </div>
 
-                                <!-- Lot Number & Palletized -->
-                                <div class="col-md-7">
-                                    <label class="form-label mb-1 text-uppercase fw-bold">Lot Number</label>
-                                    <input type="text" name="lot_number" class="form-control" placeholder="Lot Number" value="{{ form.lot_number.value|default:'' }}">
-                                </div>
-                                <div class="col-md-5">
+                                <div class="col-md-12">
                                     <label class="form-label mb-1 text-uppercase fw-bold">Palletized</label>
                                     <select name="is_palletized" class="form-select">
                                         <option value="no" {% if not form.is_palletized.value %}selected{% endif %}>No</option>
@@ -214,9 +221,15 @@
                                 </div>
 
                                 <!-- Notes -->
-                                <div class="col-12 mt-4 mb-4">
+                                <div class="col-8 mt-4 mb-4">
                                     <label class="form-label mb-1 text-uppercase fw-bold">Notes</label>
                                     {{ form.description }}
+                                </div>
+
+                                <!-- Image -->
+                                <div class="col-4 mt-4 mb-4">
+                                    <label class="form-label mb-1 text-uppercase fw-bold">Photo</label>
+                                    {{ form.image }}
                                 </div>
                             </div>
                         </div>
@@ -341,6 +354,105 @@
     // Initialize state on load
     document.addEventListener('DOMContentLoaded', () => {
         syncLocationSelectState('id_warehouse');
+        
+        const companySelect = document.getElementById('id_company');
+        const locationSelect = document.getElementById('id_warehouse');
+        
+        if (companySelect && locationSelect) {
+
+            function fetchLocations(companyId, currentValue) {
+                if (!companyId) {
+                    locationSelect.innerHTML = '<option value="">Select location</option>';
+                    syncLocationSelectState('id_warehouse');
+                    return;
+                }
+
+                fetch(`{% url 'inventory:ajax_locations_for_company' %}?company_id=${companyId}`, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(r => r.json())
+                .then(data => {
+                    locationSelect.innerHTML = '<option value="">Select location</option>';
+                    data.locations.forEach(loc => {
+                        const opt = document.createElement('option');
+                        opt.value = loc.value;
+                        opt.textContent = loc.label;
+                        if (currentValue && loc.value === currentValue) {
+                            opt.selected = true;
+                        }
+                        locationSelect.appendChild(opt);
+                    });
+                    // Auto-select first if nothing matched
+                    if (!locationSelect.value && locationSelect.options.length > 1) {
+                        locationSelect.selectedIndex = 1;
+                    }
+                    syncLocationSelectState('id_warehouse');
+                })
+                .catch(err => console.warn('Location fetch failed:', err));
+            }
+
+            function fetchMaterials(companyId, currentVal) {
+                if (!companyId) return;
+                fetch(`{% url 'inventory:ajax_materials_for_company' %}?company_id=${companyId}`, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(r => r.json())
+                .then(data => {
+                    const materialDropdowns = document.querySelectorAll('select[name="product_name"]');
+                    materialDropdowns.forEach(dropdown => {
+                        const prevValue = currentVal || dropdown.value;
+                        dropdown.innerHTML = '<option value="">Select a material</option>';
+                        data.materials.forEach(m => {
+                            const opt = document.createElement('option');
+                            opt.value = m.value;
+                            opt.textContent = m.label;
+                            if (prevValue === m.value) opt.selected = true;
+                            dropdown.appendChild(opt);
+                        });
+                    });
+                })
+                .catch(err => console.warn('Material fetch failed:', err));
+            }
+
+            // Native change event
+            companySelect.addEventListener('change', function() {
+                fetchLocations(this.value, '');
+                fetchMaterials(this.value, '');
+                
+                // Update company context in Material offcanvas
+                const companyIdContext = document.querySelector('input[name="company_id_context"]');
+                if (companyIdContext) companyIdContext.value = this.value;
+                const companyHidden = document.querySelector('#offcanvasAddMaterial input[name="company"]');
+                if (companyHidden) companyHidden.value = this.value;
+            });
+            // jQuery/Select2 change
+            if (typeof $ !== 'undefined') {
+                $(companySelect).on('select2:select select2:unselect', function() {
+                    fetchLocations(this.value, '');
+                    fetchMaterials(this.value, '');
+                    
+                    const companyIdContext = document.querySelector('input[name="company_id_context"]');
+                    if (companyIdContext) companyIdContext.value = this.value;
+                    const companyHidden = document.querySelector('#offcanvasAddMaterial input[name="company"]');
+                    if (companyHidden) companyHidden.value = this.value;
+                });
+            }
+
+            // On load: fetch for pre-selected company
+            const preCompany = companySelect.value;
+            const preLoc = locationSelect.value;
+            if (preCompany) {
+                setTimeout(() => {
+                    fetchLocations(preCompany, preLoc);
+                    fetchMaterials(preCompany, '');
+                    
+                    const companyIdContext = document.querySelector('input[name="company_id_context"]');
+                    if (companyIdContext) companyIdContext.value = preCompany;
+                    const companyHidden = document.querySelector('#offcanvasAddMaterial input[name="company"]');
+                    if (companyHidden) companyHidden.value = preCompany;
+                }, 50);
+            }
+        }
     });
 
     function assignToMe() {
@@ -363,6 +475,8 @@
             // Support for Select2 if enabled
             if (typeof $ !== 'undefined' && $(companySelect).data('select2')) {
                 $(companySelect).trigger('change');
+            } else {
+                companySelect.dispatchEvent(new Event('change'));
             }
         }
     }
@@ -475,6 +589,8 @@
     <div class="offcanvas-body p-4">
         <form id="addMaterialForm">
             {% csrf_token %}
+            {{ material_form.company }}
+            {{ material_form.company_id_context }}
             <div class="mb-4">
                 <label class="form-label fw-bold small text-uppercase mb-2">Usage <span class="text-danger">*</span></label>
                 <div class="d-flex gap-4">
@@ -670,8 +786,16 @@
                     form.reset();
                 } else {
                     let errorMsg = 'Error creating material:\n';
-                    for (const field in data.errors) {
-                        errorMsg += `${field}: ${data.errors[field][0]}\n`;
+                    if (data.errors) {
+                        for (const field in data.errors) {
+                            const errorItem = data.errors[field][0];
+                            const msg = (typeof errorItem === 'string') ? errorItem : (errorItem.message || 'Unknown error');
+                            errorMsg += `${field}: ${msg}\n`;
+                        }
+                    } else if (data.message) {
+                        errorMsg += data.message;
+                    } else {
+                        errorMsg += 'Unknown server error.';
                     }
                     alert(errorMsg);
                 }
@@ -689,12 +813,13 @@
 
     // Unit Synchronization Logic
     function setupUnitSync(group) {
-        const weightUnitSelect = group.querySelector('select[name="unit_of_measure"]');
+        const offeredUnitSelect = group.querySelector('select[name="offered_weight_unit"]');
         const priceUnitSelect = group.querySelector('select[name="price_unit"]');
         
-        if (!weightUnitSelect || !priceUnitSelect) return;
+        if (!offeredUnitSelect || !priceUnitSelect) return;
 
-        weightUnitSelect.addEventListener('change', function() {
+        // Auto-sync price unit with weight unit
+        offeredUnitSelect.addEventListener('change', function() {
             const val = this.value.toLowerCase();
             for (let option of priceUnitSelect.options) {
                 if (option.value.toLowerCase() === 'per ' + val) {
@@ -704,13 +829,14 @@
             }
         });
 
+        // Inverse sync - Price unit back to weight unit
         priceUnitSelect.addEventListener('change', function() {
             const val = this.value.toLowerCase();
             if (val.startsWith('per ')) {
                 const baseUnit = val.replace('per ', '');
-                for (let option of weightUnitSelect.options) {
+                for (let option of offeredUnitSelect.options) {
                     if (option.value.toLowerCase() === baseUnit) {
-                        weightUnitSelect.value = option.value;
+                        offeredUnitSelect.value = option.value;
                         break;
                     }
                 }
@@ -777,5 +903,54 @@
             });
         }
     });
+</script>
+
+<!-- jQuery and Select2 JS -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(document).ready(function() {
+        if ($.fn.select2) {
+            $('.select2-basic').select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                placeholder: 'Select or type to create tags...',
+                tags: true,
+                tokenSeparators: [','],
+                createTag: function (params) {
+                    var term = $.trim(params.term);
+                    if (term === '') return null;
+                    
+                    return {
+                        id: term,
+                        text: term,
+                        newTag: true
+                    };
+                },
+                templateResult: function (data) {
+                    if (data.newTag) {
+                        return "Hit Enter to create new '" + data.text + "'";
+                    }
+                    return data.text;
+                }
+            });
+
+            // Force empty on load to fix "filled tags" issue
+            $('#tags-select-inventory').val(null).trigger('change');
+            
+            // Log for debugging
+            console.log("Inventory Tags explicitly cleared on load.");
+        }
+    });
+
+    // Re-verify after a short delay to counter aggressive browser autocomplete
+    setTimeout(function() {
+        if (typeof $ !== 'undefined' && $('#tags-select-inventory').length) {
+            if ($('#tags-select-inventory').val() && $('#tags-select-inventory').val().length > 0) {
+                $('#tags-select-inventory').val(null).trigger('change');
+                console.log("Inventory Tags cleared again after delay.");
+            }
+        }
+    }, 500);
 </script>
 {% endblock %}

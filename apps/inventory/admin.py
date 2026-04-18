@@ -3,6 +3,7 @@ Inventory Admin Configuration
 """
 from django.contrib import admin
 from .models import Warehouse, InventoryItem
+from apps.accounts.admin import GlobalVisibilityMixin
 
 
 class InventoryItemInline(admin.TabularInline):
@@ -11,7 +12,7 @@ class InventoryItemInline(admin.TabularInline):
 
 
 @admin.register(Warehouse)
-class WarehouseAdmin(admin.ModelAdmin):
+class WarehouseAdmin(GlobalVisibilityMixin, admin.ModelAdmin):
     list_display = ['name', 'code', 'company', 'city', 'state', 'manager', 'is_active']
     list_filter = ['is_active', 'company', 'state', 'country']
     search_fields = ['name', 'code', 'company__name', 'city']
@@ -19,10 +20,10 @@ class WarehouseAdmin(admin.ModelAdmin):
 
 
 @admin.register(InventoryItem)
-class InventoryItemAdmin(admin.ModelAdmin):
+class InventoryItemAdmin(GlobalVisibilityMixin, admin.ModelAdmin):
     list_display = [
         'sku', 'product_name', 'warehouse', 'location', 
-        'quantity', 'unit_of_measure', 'unit_cost', 'stock_status'
+        'quantity', 'unit_of_measure', 'unit_cost', 'stock_status', 'image'
     ]
     list_filter = ['warehouse', 'unit_of_measure', 'created_at']
     search_fields = ['sku', 'product_name', 'lot_number', 'serial_number']

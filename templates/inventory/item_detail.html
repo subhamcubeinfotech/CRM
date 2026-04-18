@@ -1,4 +1,7 @@
 {% extends 'base.html' %}
+{% load inventory_tags %}
+{% load humanize %}
+
 
 {% block title %}{{ item.sku }} - {{ item.product_name }} - FreightPro{% endblock %}
 
@@ -31,6 +34,14 @@
                 </div>
                 <div class="card-body">
                     <div class="row g-4">
+                        {% if item.effective_image %}
+                        <div class="col-md-12 mb-3">
+                            <label class="small text-muted mb-2">Item Photo</label>
+                            <div class="text-center bg-light p-3 rounded-3">
+                                <img src="{{ item.effective_image.url }}" class="img-fluid rounded shadow-sm" style="max-height: 400px;" alt="{{ item.product_name }}">
+                            </div>
+                        </div>
+                        {% endif %}
                         <div class="col-md-12">
                             <label class="small text-muted mb-1">Description</label>
                             <p>{{ item.description|default:"No description provided." }}</p>
@@ -96,24 +107,91 @@
         <div class="col-lg-4">
             <!-- Current Stock -->
             <div class="card mb-4 bg-dark text-white shadow">
-                <div class="card-body text-center py-5">
-                    <div class="stat-label text-white-50 mb-2">Current Inventory</div>
-                    <div class="display-3 fw-bold">{{ item.quantity }}</div>
-                    <div class="text-white-50 mb-4">{{ item.unit_of_measure }} available</div>
-                    <button class="btn btn-outline-light px-4">Adjust Stock</button>
+                <div class="card-body text-center py-4">
+                    <div class="small text-white-50 mb-1 text-uppercase">Original Offer</div>
+                    <div class="h4 fw-bold mb-4">{{ item.offered_weight|intcomma }} {{ item.offered_weight_unit }}</div>
+                    
+                    <hr class="opacity-25 my-4">
+                    
+                    <div class="stat-label text-white-50 mb-1 text-uppercase">On-Hand Stock</div>
+                    <div class="display-3 fw-bold mb-0">{{ item.quantity|format_short }}</div>
+                    <div class="text-white-50 mb-4">{{ item.unit_of_measure }} (Physical)</div>
+                    
+                    <div class="row g-0 border-top border-white border-opacity-25 pt-4">
+                        <div class="col-6 border-end border-white border-opacity-10 py-2">
+                            <div class="small text-white-50 text-uppercase" style="font-size: 0.65rem;">Reserved</div>
+                            <div class="h5 fw-bold mb-0 text-warning">{{ item.reserved_quantity|intcomma }}</div>
+                        </div>
+                        <div class="col-6 py-2">
+                            <div class="small text-white-50 text-uppercase" style="font-size: 0.65rem;">Available</div>
+                            <div class="h5 fw-bold mb-0 text-success">{{ item.available_quantity|intcomma }}</div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Quick Actions -->
-            <div class="card">
-                <div class="card-header bg-white">
-                    <h5 class="card-title mb-0">Inventory Log</h5>
+
+
+
+            <!-- Inventory History Log -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white border-bottom-0 pt-3 pb-0">
+                    <h5 class="card-title mb-0 fw-bold"><i class="fas fa-history me-2 text-primary"></i>Inventory Log</h5>
                 </div>
-                <div class="card-body p-0 text-center py-5 text-muted">
-                    <i class="fas fa-history fa-2x mb-2"></i>
-                    <p>No recent transactions</p>
-                    <button class="btn btn-sm btn-link text-decoration-none">View full history</button>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" style="font-size: 0.85rem;">
+                            <thead class="bg-light text-muted text-uppercase" style="font-size: 0.7rem;">
+                                <tr>
+                                    <th class="ps-3">Date</th>
+                                    <th>Action</th>
+                                    <th class="text-end">Change</th>
+                                    <th class="text-end pe-3">Stock</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for tx in item.transactions.all|slice:":10" %}
+                                <tr>
+                                    <td class="ps-3 text-muted">
+                                        {{ tx.timestamp|date:"M d" }}<br>
+                                        <small>{{ tx.timestamp|date:"H:i" }}</small>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if tx.transaction_type == 'INITIAL' %}
+                                                <span class="badge bg-info-subtle text-info border border-info-subtle px-2">Initial</span>
+                                            {% elif tx.transaction_type == 'ADJUST' %}
+                                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2">Adjust</span>
+                                            {% elif tx.transaction_type == 'RECEIVE' %}
+                                                <span class="badge bg-success-subtle text-success border border-success-subtle px-2">Receive</span>
+                                            {% elif tx.transaction_type == 'SHIP' %}
+                                                <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2">Ship</span>
+                                            {% endif %}
+                                        </div>
+                                        <div class="small text-muted mt-1">{{ tx.user.get_full_name|default:tx.user.username }}</div>
+                                    </td>
+                                    <td class="text-end fw-bold {% if tx.quantity_change > 0 %}text-success{% elif tx.quantity_change < 0 %}text-danger{% endif %}">
+                                        {% if tx.quantity_change > 0 %}+{% endif %}{{ tx.quantity_change|floatformat:0 }}
+                                    </td>
+                                    <td class="text-end pe-3 fw-bold">{{ tx.new_quantity|floatformat:0 }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-5 text-muted">
+                                        <i class="fas fa-inbox fa-2x mb-2 opacity-25"></i>
+                                        <p class="mb-0 small">No history recorded yet</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
+                {% if item.transactions.count > 10 %}
+                <div class="card-footer bg-white text-center py-2">
+                    <button class="btn btn-link btn-sm text-decoration-none small">View all transactions</button>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>

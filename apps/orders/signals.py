@@ -9,8 +9,10 @@ def track_order_status_change(sender, instance, **kwargs):
         try:
             old_instance = Order.objects.get(pk=instance.pk)
             instance._old_status = old_instance.status
+            instance._old_payment_status = old_instance.payment_status
         except Order.DoesNotExist:
             instance._old_status = None
+            instance._old_payment_status = None
     else:
         instance._old_status = None
 
@@ -30,6 +32,15 @@ def log_order_events(sender, instance, created, **kwargs):
                 order=instance,
                 event_type='status_updated',
                 description=f"Order status is now {instance.simple_status_label}."
+            )
+            
+        # Check if payment_status has changed
+        old_payment_status = getattr(instance, '_old_payment_status', None)
+        if old_payment_status and old_payment_status != instance.payment_status:
+            OrderEvent.objects.create(
+                order=instance,
+                event_type='payment_status_updated',
+                description=f"Order payment status is now {instance.get_payment_status_display()}."
             )
 
 @receiver(post_save, sender=Shipment)

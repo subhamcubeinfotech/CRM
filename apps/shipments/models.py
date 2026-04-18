@@ -99,8 +99,8 @@ class Shipment(TenantAwareModel):
     actual_delivery_date = models.DateField(null=True, blank=True)
     
     # Cargo details
-    total_weight = models.DecimalField(max_digits=12, decimal_places=2, default=0, help_text='Weight in kg')
-    total_volume = models.DecimalField(max_digits=12, decimal_places=4, default=0, help_text='Volume in cubic meters')
+    total_weight = models.DecimalField(max_digits=20, decimal_places=2, default=0, help_text='Weight in kg')
+    total_volume = models.DecimalField(max_digits=20, decimal_places=4, default=0, help_text='Volume in cubic meters')
     number_of_pieces = models.IntegerField(default=1)
     commodity_description = models.TextField(blank=True)
     
@@ -110,9 +110,9 @@ class Shipment(TenantAwareModel):
     requires_insurance = models.BooleanField(default=False)
     
     # Financial
-    quoted_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    revenue = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    quoted_amount = models.DecimalField(max_digits=20, decimal_places=2, default=0)
+    cost = models.DecimalField(max_digits=20, decimal_places=2, default=0)
+    revenue = models.DecimalField(max_digits=20, decimal_places=2, default=0)
     
     # Notes
     special_instructions = models.TextField(blank=True)
@@ -278,7 +278,7 @@ class Container(models.Model):
     container_number = models.CharField(max_length=50)
     seal_number = models.CharField(max_length=50, blank=True)
     size = models.CharField(max_length=10, choices=SIZE_CHOICES, default='40ft')
-    weight = models.DecimalField(max_digits=12, decimal_places=2, default=0, help_text='Weight in kg')
+    weight = models.DecimalField(max_digits=20, decimal_places=2, default=0, help_text='Weight in kg')
     
     class Meta:
         ordering = ['container_number']
@@ -341,19 +341,19 @@ class ShipmentItem(models.Model):
     material_name = models.CharField(max_length=255)
     
     # Quantity/Weight
-    weight = models.DecimalField(max_digits=12, decimal_places=2)
+    weight = models.DecimalField(max_digits=20, decimal_places=2)
     weight_unit = models.CharField(max_length=10, default='lbs')
-    gross_weight = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    gross_weight = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True)
     gross_weight_unit = models.CharField(max_length=10, default='lbs', blank=True)
-    tare_weight = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    tare_weight = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True)
     tare_weight_unit = models.CharField(max_length=10, default='lbs', blank=True)
     packaging = models.CharField(max_length=100, blank=True)
     is_palletized = models.BooleanField(default=False)
     pieces = models.IntegerField(default=1, null=True, blank=True)
     
     # Financial
-    buy_price = models.DecimalField(max_digits=12, decimal_places=4, default=0)
-    sell_price = models.DecimalField(max_digits=12, decimal_places=4, default=0)
+    buy_price = models.DecimalField(max_digits=20, decimal_places=4, default=0)
+    sell_price = models.DecimalField(max_digits=20, decimal_places=4, default=0)
     price_unit = models.CharField(max_length=20, default='per lbs')
     
     class Meta:
@@ -361,6 +361,31 @@ class ShipmentItem(models.Model):
         
     def __str__(self):
         return f"{self.material_name} ({self.weight} {self.weight_unit})"
+
+
+class ShipmentCommission(models.Model):
+    COMMISSION_TYPE_CHOICES = [
+        ('fixed', 'Fixed'),
+        ('gross_profit_pct', '% Gross Profit'),
+        ('material_cost_pct', '% Material Cost'),
+        ('material_sale_pct', '% Material Sale'),
+    ]
+
+    shipment = models.ForeignKey(Shipment, on_delete=models.CASCADE, related_name='commissions')
+    representative = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    commission_type = models.CharField(max_length=30, choices=COMMISSION_TYPE_CHOICES, default='fixed')
+    percentage = models.DecimalField(max_digits=8, decimal_places=4, null=True, blank=True)
+    amount = models.DecimalField(max_digits=20, decimal_places=2, default=0)
+    paid_date = models.DateField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        rep = getattr(self.representative, 'username', None) or 'Unknown'
+        return f"{self.shipment.shipment_number} - {rep} - {self.amount}"
+
 
 class ShipmentHistory(models.Model):
     """Detailed audit log for shipment changes"""
@@ -378,3 +403,19 @@ class ShipmentHistory(models.Model):
 
     def __str__(self):
         return f"{self.shipment.shipment_number} - {self.action} at {self.created_at}"
+
+
+class ShipmentComment(models.Model):
+    """Real-time conversation comments for a shipment"""
+    shipment = models.ForeignKey(Shipment, on_delete=models.CASCADE, related_name='comments')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='shipment_comments')
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Shipment Comment'
+        verbose_name_plural = 'Shipment Comments'
+
+    def __str__(self):
+        return f"Comment by {self.user.username} on {self.shipment.shipment_number}"
