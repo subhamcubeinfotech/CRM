@@ -3,6 +3,7 @@ import logging
 from celery import shared_task
 from django.conf import settings
 from .email_ingestion import fetch_and_process_emails
+from .enhancements import refresh_demand_forecasts
 
 logger = logging.getLogger('apps.ai_assistant')
 
@@ -26,3 +27,18 @@ def fetch_vendor_emails():
             logger.error(f'Error processing emails for tenant {tenant.name}: {e}')
             
     return total_processed
+
+
+@shared_task(name='apps.ai_assistant.tasks.refresh_demand_forecasts')
+def refresh_demand_forecasts_task():
+    """Periodic task to keep predictive-demand snapshots fresh."""
+    from apps.accounts.models import Tenant
+
+    tenants = Tenant.objects.filter(is_active=True)
+    touched = 0
+    for tenant in tenants:
+        try:
+            touched += refresh_demand_forecasts(tenant)
+        except Exception as e:
+            logger.error('Forecast refresh failed for tenant %s: %s', tenant.name, e)
+    return touched

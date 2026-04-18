@@ -1457,8 +1457,44 @@ document.addEventListener('DOMContentLoaded', function() {
     // Auto-sync contact details when Add Shipment drawer is shown
     const addShipmentOffcanvas = document.getElementById('offcanvasAddShipment');
     if (addShipmentOffcanvas) {
-        addShipmentOffcanvas.addEventListener('show.bs.offcanvas', function() {
-            // Trigger sync for both selects
+        addShipmentOffcanvas.addEventListener('shown.bs.offcanvas', function() {
+            // Force location auto-fill if nothing is selected
+            const pickupSelect = document.getElementById('shipment-pickup-location-select');
+            const destSelect = document.getElementById('shipment-destination-location-select');
+            
+            if (pickupSelect && (pickupSelect.value === "" || pickupSelect.selectedIndex === 0)) {
+                // Try to find an option that has 'selected' attribute from template or just pick index 1
+                if (pickupSelect.options.length > 1) {
+                    // Look for the option with 'selected' attribute
+                    let found = false;
+                    for (let i = 0; i < pickupSelect.options.length; i++) {
+                        if (pickupSelect.options[i].hasAttribute('selected')) {
+                            pickupSelect.selectedIndex = i;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) pickupSelect.selectedIndex = 1;
+                    pickupSelect.dispatchEvent(new Event('change'));
+                }
+            }
+            
+            if (destSelect && (destSelect.value === "" || destSelect.selectedIndex === 0)) {
+                if (destSelect.options.length > 1) {
+                    let found = false;
+                    for (let i = 0; i < destSelect.options.length; i++) {
+                        if (destSelect.options[i].hasAttribute('selected')) {
+                            destSelect.selectedIndex = i;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) destSelect.selectedIndex = 1;
+                    destSelect.dispatchEvent(new Event('change'));
+                }
+            }
+
+            // Trigger sync for both contacts
             if (pickupContactSelect) handleContactChange({ target: pickupContactSelect });
             if (deliveryContactSelect) handleContactChange({ target: deliveryContactSelect });
         });
@@ -1508,10 +1544,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         </button>
                     </div>
                     <select name="pickup_location_ui" id="shipment-pickup-location-select" class="form-select rounded-3" required>
-                        <option value="">Select a Location</option>
+                        <option value="" {% if not order.source_location_id and order.supplier.full_address %}disabled{% endif %}>Select a Location</option>
                         {% if order.supplier and order.supplier.full_address %}
                         <option value="temp_addr_{{ order.supplier.full_address }}" 
-                            {% if not order.source_location %}selected{% endif %}
+                            {% if not order.source_location_id %}selected{% endif %}
                             data-company-id="{{ order.supplier.id }}"
                             data-address="{{ order.supplier.address_line1 }}"
                             data-city="{{ order.supplier.city }}"
@@ -1521,9 +1557,10 @@ document.addEventListener('DOMContentLoaded', function() {
                             {{ order.supplier.full_address }}
                         </option>
                         {% endif %}
-                        {% for warehouse in warehouses %}
+                        {% for warehouse in supplier_warehouses %}
                         <option value="{{ warehouse.id }}" 
                             {% if order.source_location_id == warehouse.id %}selected{% endif %}
+                            {% if not order.source_location_id and forloop.first and not order.supplier.full_address %}selected{% endif %}
                             data-address="{{ warehouse.address }}" data-city="{{ warehouse.city }}" data-state="{{ warehouse.state }}" data-postal-code="{{ warehouse.postal_code }}" data-country="{{ warehouse.country }}">
                             {{ warehouse.full_address }}
                         </option>
@@ -1586,10 +1623,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         </button>
                     </div>
                     <select name="destination_location_ui" id="shipment-destination-location-select" class="form-select rounded-3" required>
-                        <option value="">Select a Location</option>
+                        <option value="" {% if not order.destination_location_id and order.receiver.full_address %}disabled{% endif %}>Select a Location</option>
                         {% if order.receiver and order.receiver.full_address %}
                         <option value="temp_addr_{{ order.receiver.full_address }}" 
-                            selected
+                            {% if not order.destination_location_id %}selected{% endif %}
                             data-company-id="{{ order.receiver.id }}"
                             data-address="{{ order.receiver.address_line1 }}"
                             data-city="{{ order.receiver.city }}"
@@ -1599,8 +1636,10 @@ document.addEventListener('DOMContentLoaded', function() {
                             {{ order.receiver.full_address }}
                         </option>
                         {% endif %}
-                        {% for warehouse in warehouses %}
+                        {% for warehouse in receiver_warehouses %}
                         <option value="{{ warehouse.id }}"
+                            {% if order.destination_location_id == warehouse.id %}selected{% endif %}
+                            {% if not order.destination_location_id and forloop.first and not order.receiver.full_address %}selected{% endif %}
                             data-address="{{ warehouse.address }}" data-city="{{ warehouse.city }}" data-state="{{ warehouse.state }}" data-postal-code="{{ warehouse.postal_code }}" data-country="{{ warehouse.country }}">
                             {{ warehouse.full_address }}
                         </option>

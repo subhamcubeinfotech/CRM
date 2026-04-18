@@ -741,6 +741,9 @@
                     <a href="{% url 'ai_assistant:smart_matches' %}" class="btn btn-sm {% if '/ai/smart-matches' in request.path %}btn-primary{% else %}btn-outline-primary{% endif %} flex-fill" title="Smart Matches">
                         <i class="fas fa-brain me-1"></i>Matches
                     </a>
+                    <a href="{% url 'ai_assistant:enhancements_dashboard' %}" class="btn btn-sm {% if '/ai/enhancements' in request.path %}btn-primary{% else %}btn-outline-primary{% endif %} flex-fill" title="AI Enhancements">
+                        <i class="fas fa-sparkles me-1"></i>AI+
+                    </a>
                 </div>
                 {% endif %}
                 <ul class="nav flex-column">
@@ -778,6 +781,12 @@
                         <a class="nav-link {% if '/companies/' in request.path and '/profile/' not in request.path and '/settings/' not in request.path %}active{% endif %}"
                             href="{% url 'accounts:company_list' %}">
                             <i class="fas fa-building"></i>Companies
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if '/companies/map-dashboard/' in request.path %}active{% endif %}"
+                            href="{% url 'accounts:map_dashboard' %}">
+                            <i class="fas fa-map-location-dot"></i>Map Dashboard
                         </a>
                     </li>
                     <li class="nav-item">

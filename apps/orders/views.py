@@ -276,7 +276,25 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
                     output_field=IntegerField()
                 )
             ).order_by('-is_my_company', 'name')
-        context['warehouses'] = warehouses
+        def get_unique_warehouses(qs):
+            unique = {}
+            for w in qs:
+                # Normalize address for deduplication
+                import re
+                addr_norm = re.sub(r'[^\w\s]', '', w.full_address).lower().strip()
+                if addr_norm not in unique:
+                    unique[addr_norm] = w
+            return list(unique.values())
+
+        # Main warehouses for Edit Order (deduplicated)
+        context['warehouses'] = get_unique_warehouses(warehouses)
+
+        # Filtered lists for Add Shipment
+        s_warehouses = Warehouse.plain_objects.filter(tenant=user_tenant, company=self.object.supplier)
+        r_warehouses = Warehouse.plain_objects.filter(tenant=user_tenant, company=self.object.receiver)
+
+        context['supplier_warehouses'] = get_unique_warehouses(s_warehouses)
+        context['receiver_warehouses'] = get_unique_warehouses(r_warehouses)
         
         # Show ONLY the currently selected shipping term
         if self.object.shipping_terms_id:
@@ -452,50 +470,77 @@ def order_update_status(request, pk):
         # ──────────────────────────────────────────────────────────
     return redirect('orders:order_detail', pk=pk)
 
+def resolve_location(val, user, company_obj=None):
+    """
+    Resolves a location value from the UI. 
+    If 'val' is a temporary address string, it creates/finds a Warehouse for the given company_obj.
+    """
+    if not val: return None
+    # If it's a numeric ID (as a string or int), return it as is
+    if str(val).isdigit():
+        return val
+
+    if str(val).startswith('temp_addr_') or str(val).startswith('http') or len(str(val)) > 15:
+        # Use provided company (Supplier/Receiver) or fallback to user's company
+        company = company_obj or user.company
+        if not company: 
+            print("No company found to associate location with!")
+            return None
+        
+        from apps.inventory.models import Warehouse
+        raw_address = str(val).replace('temp_addr_', '')[:200]
+        
+        # Normalize and look for existing warehouse first to prevent duplicates
+        existing = Warehouse.objects.filter(
+            company=company,
+            tenant=company.tenant,
+            name=raw_address
+        ).first()
+        
+        if existing:
+            return existing.id
+
+        # Generate a unique code
+        import random
+        unique_code = f"LOC-{company.id}-{random.randint(1000, 9999)}"[:20]
+        
+        hq = Warehouse.objects.create(
+            company=company,
+            tenant=company.tenant,
+            name=raw_address,
+            code=unique_code,
+            address=company.address_line1[:255] if hasattr(company, 'address_line1') else '',
+            city=company.city[:100] if hasattr(company, 'city') else '',
+            state=company.state[:100] if hasattr(company, 'state') else '',
+            country=company.country[:100] if hasattr(company, 'country') else 'USA',
+            postal_code=company.postal_code[:20] if hasattr(company, 'postal_code') else '',
+            phone=company.phone[:20] if hasattr(company, 'phone') else '',
+            is_storage=False
+        )
+        return hq.id
+    return val
+
+
+
 @login_required
 def order_create(request):
     if request.method == 'POST':
-        # Handle dynamic location creation for "my company address"
+        # Handle dynamic location creation
         source_loc_val = request.POST.get('source_location')
         dest_loc_val = request.POST.get('destination_location')
         
-        print(f"\n--- ORDER CREATE DEBUG ---")
-        print(f"Original Source: {source_loc_val}")
-        print(f"Original Dest: {dest_loc_val}")
-        
-        def resolve_location(val, user):
-            if not val: return None
-            if str(val).startswith('temp_addr_') or str(val).startswith('http') or len(str(val)) > 10:
-                print(f"Resolving dynamic address: {val}")
-                company = user.company
-                if not company: 
-                    print("User has no company!")
-                    return None
-                
-                raw_address = str(val).replace('temp_addr_', '')[:200]
-                
-                # Generate a unique code to avoid IntegrityError if a location with MAIN-<id> already exists
-                import random
-                unique_code = f"LOC-{company.id}-{random.randint(1000, 9999)}"[:20]
-                
-                hq, created = Warehouse.objects.get_or_create(
-                    company=company,
-                    tenant=company.tenant,
-                    name=raw_address,
-                    defaults={
-                        'code': unique_code,
-                        'address': company.address_line1,
-                        'city': company.city[:100],
-                        'state': company.state[:100],
-                        'country': company.country[:100],
-                        'postal_code': company.postal_code[:20],
-                        'phone': company.phone[:20],
-                        'is_storage': False
-                    }
-                )
-                print(f"Resolved to Warehouse ID: {hq.id} (Created: {created})")
-                return hq.id
-            return val
+        supplier_id = request.POST.get('supplier')
+        receiver_id = request.POST.get('receiver')
+
+        if not supplier_id or not receiver_id:
+            from django.contrib import messages
+            messages.error(request, "Order creation failed: Supplier and Receiver are required.")
+            return redirect('orders:order_create')
+
+        # Get company objects for location resolution
+        supplier = Company.objects.filter(pk=supplier_id).first()
+        receiver = Company.objects.filter(pk=receiver_id).first()
+
 
         # Generate a unique order number on the backend
         import time, random
@@ -521,8 +566,8 @@ def order_create(request):
             so_number=request.POST.get('so_number', ''),
             supplier_id=supplier_id,
             receiver_id=receiver_id,
-            source_location_id=resolve_location(source_loc_val, request.user) or None,
-            destination_location_id=resolve_location(dest_loc_val, request.user) or None,
+            source_location_id=resolve_location(source_loc_val, request.user, supplier) or None,
+            destination_location_id=resolve_location(dest_loc_val, request.user, receiver) or None,
             total_weight_target=request.POST.get('total_weight_target') or 0,
             total_weight_unit=request.POST.get('total_weight_unit') or 'lbs',
             freight_cost=request.POST.get('freight_cost') or 0,
@@ -720,8 +765,12 @@ def order_edit(request, pk):
             order.supplier_id = request.POST.get('supplier')
             order.receiver_id = request.POST.get('receiver')
         
-        order.source_location_id = request.POST.get('source_location') or None
-        order.destination_location_id = request.POST.get('destination_location') or None
+        # Get possibly changed parties for location resolution
+        supplier = Company.objects.filter(pk=order.supplier_id).first()
+        receiver = Company.objects.filter(pk=order.receiver_id).first()
+
+        order.source_location_id = resolve_location(request.POST.get('source_location'), request.user, supplier) or None
+        order.destination_location_id = resolve_location(request.POST.get('destination_location'), request.user, receiver) or None
         order.po_number = request.POST.get('po_number')
         order.so_number = request.POST.get('so_number')
         order.shipping_terms_id = request.POST.get('shipping_terms') or None

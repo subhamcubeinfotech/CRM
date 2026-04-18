@@ -21,6 +21,7 @@ from .geocoding import geocode_company
 from .utils import filter_by_user_company, check_company_access
 from django.db.models import Q
 import logging
+from collections import defaultdict
 
 logger = logging.getLogger('apps.accounts')
 
@@ -204,6 +205,284 @@ def company_list(request):
         'pagination_query': pagination_query,
     }
     return render(request, 'accounts/company_list.html', context)
+
+
+def _visible_companies_for_user(user):
+    companies = Company.plain_objects.prefetch_related('material_tags').all().order_by('name')
+    if not getattr(user, 'is_admin', False):
+        user_company = user.company
+        if user_company:
+            companies = companies.filter(Q(created_by=user) | Q(pk=user_company.pk))
+        else:
+            companies = companies.filter(created_by=user)
+    return companies
+
+
+def _company_role_label(company_id, supplier_ids, receiver_ids):
+    is_supplier = company_id in supplier_ids
+    is_receiver = company_id in receiver_ids
+    if is_supplier and is_receiver:
+        return 'both'
+    if is_supplier:
+        return 'supplier'
+    if is_receiver:
+        return 'receiver'
+    return 'partner'
+
+
+def _company_tier(activity_score):
+    if activity_score >= 25:
+        return 'tier_1'
+    if activity_score >= 10:
+        return 'tier_2'
+    return 'tier_3'
+
+
+@login_required
+def map_dashboard(request):
+    """Full-page geo dashboard with advanced filters and product-type color coding."""
+    companies = _visible_companies_for_user(request.user)
+
+    # Keep coordinates warm for records with valid addresses.
+    for company in companies[:40]:
+        if company.full_address and (company.latitude is None or company.longitude is None):
+            geocode_company(company, save=True)
+
+    from apps.ai_assistant.models import BuyerRequirement
+    from apps.orders.models import Order
+    from apps.shipments.models import Shipment
+    from apps.inventory.models import InventoryItem
+    from apps.ai_assistant.enhancements import classify_product_type
+
+    company_ids = list(companies.values_list('id', flat=True))
+
+    inventory_items = InventoryItem.objects.filter(
+        tenant=request.user.tenant,
+        company_id__in=company_ids,
+        quantity__gt=0,
+    ).select_related('company')
+
+    requirements = BuyerRequirement.objects.filter(
+        tenant=request.user.tenant,
+        is_fulfilled=False,
+        buyer_id__in=company_ids,
+    ).select_related('buyer')
+
+    orders = Order.objects.filter(tenant=request.user.tenant).filter(
+        Q(supplier_id__in=company_ids) | Q(receiver_id__in=company_ids)
+    )
+    shipments = Shipment.objects.filter(tenant=request.user.tenant).filter(
+        Q(shipper_id__in=company_ids) | Q(consignee_id__in=company_ids) | Q(customer_id__in=company_ids)
+    )
+
+    supplier_ids = set(orders.values_list('supplier_id', flat=True)).union(
+        set(shipments.values_list('shipper_id', flat=True))
+    )
+    receiver_ids = set(orders.values_list('receiver_id', flat=True)).union(
+        set(shipments.values_list('consignee_id', flat=True)),
+        set(shipments.values_list('customer_id', flat=True)),
+        set(requirements.values_list('buyer_id', flat=True)),
+    )
+
+    product_types = set()
+    industries = set()
+    cities = set()
+    tiers = {'tier_1', 'tier_2', 'tier_3'}
+
+    inv_by_company = defaultdict(list)
+    for item in inventory_items:
+        inv_by_company[item.company_id].append(item)
+        product_types.add(classify_product_type(item.product_name, item.description))
+
+    req_by_company = defaultdict(list)
+    for req in requirements:
+        req_by_company[req.buyer_id].append(req)
+        product_types.add(classify_product_type(req.material_name, req.material_type))
+
+    activity_score = defaultdict(int)
+    for sid in supplier_ids:
+        if sid:
+            activity_score[sid] += 5
+    for rid in receiver_ids:
+        if rid:
+            activity_score[rid] += 5
+    for cid, items in inv_by_company.items():
+        activity_score[cid] += len(items)
+    for cid, reqs in req_by_company.items():
+        activity_score[cid] += len(reqs)
+
+    for company in companies:
+        industries.add(company.get_company_type_display())
+        cities.add(company.city or 'Unknown')
+
+    context = {
+        'industry_options': sorted([x for x in industries if x]),
+        'city_options': sorted([x for x in cities if x]),
+        'tier_options': [('tier_1', 'Tier 1'), ('tier_2', 'Tier 2'), ('tier_3', 'Tier 3')],
+        'product_type_options': sorted([x for x in product_types if x]),
+        'role_options': [('supplier', 'Supplier'), ('receiver', 'Receiver'), ('both', 'Both')],
+    }
+    return render(request, 'accounts/map_dashboard.html', context)
+
+
+@login_required
+def map_dashboard_data(request):
+    """JSON API powering the full map with server-side filtering."""
+    companies = _visible_companies_for_user(request.user)
+
+    from apps.ai_assistant.models import BuyerRequirement
+    from apps.orders.models import Order
+    from apps.shipments.models import Shipment
+    from apps.inventory.models import InventoryItem
+    from apps.ai_assistant.enhancements import classify_product_type
+
+    selected_cities = [x.strip().lower() for x in request.GET.getlist('city') if x.strip()]
+    selected_industries = [x.strip().lower() for x in request.GET.getlist('industry') if x.strip()]
+    selected_tiers = [x.strip().lower() for x in request.GET.getlist('tier') if x.strip()]
+    selected_product_types = [x.strip().lower() for x in request.GET.getlist('product_type') if x.strip()]
+    selected_roles = [x.strip().lower() for x in request.GET.getlist('role') if x.strip()]
+    search = (request.GET.get('search') or '').strip().lower()
+
+    company_ids = list(companies.values_list('id', flat=True))
+    inv_qs = InventoryItem.objects.filter(
+        tenant=request.user.tenant,
+        company_id__in=company_ids,
+        quantity__gt=0
+    ).select_related('company', 'warehouse')
+    req_qs = BuyerRequirement.objects.filter(
+        tenant=request.user.tenant,
+        is_fulfilled=False,
+        buyer_id__in=company_ids
+    ).select_related('buyer')
+
+    orders = Order.objects.filter(tenant=request.user.tenant).filter(
+        Q(supplier_id__in=company_ids) | Q(receiver_id__in=company_ids)
+    )
+    shipments = Shipment.objects.filter(tenant=request.user.tenant).filter(
+        Q(shipper_id__in=company_ids) | Q(consignee_id__in=company_ids) | Q(customer_id__in=company_ids)
+    )
+
+    supplier_ids = set(orders.values_list('supplier_id', flat=True)).union(
+        set(shipments.values_list('shipper_id', flat=True))
+    )
+    receiver_ids = set(orders.values_list('receiver_id', flat=True)).union(
+        set(shipments.values_list('consignee_id', flat=True)),
+        set(shipments.values_list('customer_id', flat=True)),
+        set(req_qs.values_list('buyer_id', flat=True)),
+    )
+
+    inv_by_company = defaultdict(list)
+    for item in inv_qs:
+        inv_by_company[item.company_id].append(item)
+
+    req_by_company = defaultdict(list)
+    for req in req_qs:
+        req_by_company[req.buyer_id].append(req)
+
+    activity_score = defaultdict(int)
+    for cid, items in inv_by_company.items():
+        activity_score[cid] += len(items)
+    for cid, reqs in req_by_company.items():
+        activity_score[cid] += len(reqs)
+    for sid in supplier_ids:
+        if sid:
+            activity_score[sid] += 5
+    for rid in receiver_ids:
+        if rid:
+            activity_score[rid] += 5
+
+    markers = []
+    for c in companies:
+        if c.latitude is None or c.longitude is None:
+            continue
+
+        role = _company_role_label(c.id, supplier_ids, receiver_ids)
+        industry = c.get_company_type_display()
+        tier = _company_tier(activity_score.get(c.id, 0))
+
+        inv_items = inv_by_company.get(c.id, [])
+        req_items = req_by_company.get(c.id, [])
+
+        product_type_set = set()
+        for item in inv_items:
+            product_type_set.add(classify_product_type(item.product_name, item.description))
+        for req in req_items:
+            product_type_set.add(classify_product_type(req.material_name, req.material_type))
+        if not product_type_set:
+            for mt in c.material_tags.all():
+                product_type_set.add(classify_product_type(mt.name, mt.material_type, mt.product_type))
+        if not product_type_set:
+            product_type_set.add('Other')
+
+        product_types = sorted(product_type_set)
+        primary_product_type = product_types[0]
+
+        total_inventory_qty = 0
+        top_inventory = []
+        for item in sorted(inv_items, key=lambda x: x.quantity, reverse=True)[:3]:
+            qty_float = float(item.quantity or 0)
+            total_inventory_qty += qty_float
+            top_inventory.append({
+                'name': item.product_name,
+                'quantity': qty_float,
+                'unit': item.unit_of_measure,
+            })
+        if len(inv_items) > 3:
+            total_inventory_qty += sum(float(i.quantity or 0) for i in inv_items[3:])
+
+        top_requirements = [{
+            'material': r.material_name,
+            'quantity': float(r.quantity_needed or 0),
+            'unit': r.unit,
+        } for r in req_items[:3]]
+
+        haystack = ' '.join([
+            c.name or '', c.city or '', c.state or '', industry,
+            ' '.join(product_types),
+            role,
+        ]).lower()
+
+        if search and search not in haystack:
+            continue
+        if selected_cities and (c.city or 'unknown').lower() not in selected_cities:
+            continue
+        if selected_industries and industry.lower() not in selected_industries:
+            continue
+        if selected_tiers and tier not in selected_tiers:
+            continue
+        if selected_roles and role not in selected_roles:
+            continue
+        if selected_product_types and not any(pt.lower() in selected_product_types for pt in product_types):
+            continue
+
+        markers.append({
+            'id': c.id,
+            'name': c.name,
+            'lat': float(c.latitude),
+            'lng': float(c.longitude),
+            'city': c.city or '',
+            'state': c.state or '',
+            'industry': industry,
+            'tier': tier,
+            'role': role,
+            'product_types': product_types,
+            'primary_product_type': primary_product_type,
+            'inventory': {
+                'item_count': len(inv_items),
+                'total_quantity': round(total_inventory_qty, 2),
+                'top_items': top_inventory,
+            },
+            'requirements': {
+                'open_count': len(req_items),
+                'top_items': top_requirements,
+            },
+            'detail_url': f"/companies/{c.id}/",
+        })
+
+    return JsonResponse({
+        'markers': markers,
+        'count': len(markers),
+    })
 
 
 @login_required

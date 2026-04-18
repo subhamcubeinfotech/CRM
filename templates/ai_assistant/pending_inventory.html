@@ -175,7 +175,14 @@
                 <div>
                     <p><i class="fas fa-user-circle"></i> <strong>From:</strong> {{ email.sender_name|default:"Supplier" }}
                         ({{ email.sender_email }})</p>
-                    <p><i class="fas fa-clock"></i> <strong>Received:</strong> {{ email.received_at|date:"M d, Y — h:i A" }}
+                    <p><i class="fas fa-clock"></i> <strong>Received:</strong> {{ email.received_at|date:"M d, Y — h:i A" }}</p>
+                    <p class="mb-0">
+                        <i class="fas fa-wave-square"></i>
+                        <strong>Priority:</strong>
+                        <span class="badge {% if email.priority_level == 'urgent' %}bg-danger{% elif email.priority_level == 'high' %}bg-warning text-dark{% elif email.priority_level == 'low' %}bg-success{% else %}bg-secondary{% endif %}">
+                            {{ email.priority_level|upper }}
+                        </span>
+                        <span class="text-muted small ms-2">{{ email.sentiment_label }} ({{ email.sentiment_score }})</span>
                     </p>
                 </div>
                 <div style="min-width: 280px; background: rgba(255,255,255,0.5); padding: 10px; border-radius: 12px; border: 1px solid #e2e8f0;">
