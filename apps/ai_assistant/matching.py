@@ -41,6 +41,28 @@ MATERIAL_SYNONYMS = {
     'pvc': 'pvc',
     'si': 'silicon',
     'abs': 'abs',
+    'pcb': 'electronics',
+    'computer': 'electronics',
+    'laptop': 'electronics',
+    'cardboard': 'paper',
+    'carton': 'paper',
+    'metal': 'raw_materials',
+    'alloy': 'raw_materials',
+}
+
+# High-priority keywords that should carry more weight in matching
+MATCH_WEIGHTS = {
+    'aluminum': 2.0,
+    'copper': 2.0,
+    'iron': 2.0,
+    'steel': 2.0,
+    'hdpe': 2.0,
+    'ldpe': 2.0,
+    'pp': 2.0,
+    'pvc': 2.0,
+    'electronics': 1.8,
+    'scrap': 1.2,
+    'regrind': 1.5,
 }
 
 
@@ -76,8 +98,11 @@ def compute_semantic_similarity(text1, text2):
     if not set1 or not set2: return 0
     intersection = set1.intersection(set2)
     
-    # 4. Calculate overlap ratio
-    score = int((len(intersection) / max(len(set1), len(set2))) * 100)
+    # 4. Calculate weighted overlap ratio
+    total_weight = sum(MATCH_WEIGHTS.get(w, 1.0) for w in (set1 | set2))
+    match_weight = sum(MATCH_WEIGHTS.get(w, 1.0) for w in intersection)
+    
+    score = int((match_weight / total_weight) * 100) if total_weight > 0 else 0
     
     # 5. Fallback to sequence similarity for fuzzy spelling
     fuzzy_score = int(SequenceMatcher(None, t1, t2).ratio() * 100)

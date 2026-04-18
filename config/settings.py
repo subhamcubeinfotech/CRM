@@ -81,6 +81,9 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
+        'OPTIONS': {
+            'timeout': 30,
+        }
     }
 }
 
@@ -291,6 +294,10 @@ CELERY_BEAT_SCHEDULE = {
     'fetch-vendor-emails-every-5-minutes': {
         'task': 'apps.ai_assistant.tasks.fetch_vendor_emails',
         'schedule': crontab(minute='*/5'),
+    },
+    'refresh-demand-forecasts-every-6-hours': {
+        'task': 'apps.ai_assistant.tasks.refresh_demand_forecasts',
+        'schedule': crontab(minute=0, hour='*/6'),
     },
 }
 # AI Configuration

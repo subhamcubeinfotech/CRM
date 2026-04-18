@@ -56,6 +56,7 @@ def _handle_inventory_on_delivery(shipment, user):
                 # Log SHIP Transaction in audit trail
                 InventoryTransaction.objects.create(
                     item=inv_item,
+                    tenant=shipment.tenant,
                     transaction_type='SHIP',
                     quantity_change=-item.weight,
                     new_quantity=inv_item.quantity,
@@ -897,11 +898,12 @@ def shipment_tracking_update(request, pk):
     milestone_notes = ''
 
     if status in dict(Shipment.STATUS_CHOICES) and shipment.status != status:
+        previous_status_val = shipment.status
         previous_status = shipment.get_status_display()
         shipment.status = status
         milestone_status = f"Status changed to {shipment.get_status_display()}"
         milestone_notes = f"Updated by {request.user.username} from {previous_status}"
-        if status == 'delivered':
+        if status == 'delivered' and previous_status_val != 'delivered':
             if not shipment.actual_delivery_date:
                 shipment.actual_delivery_date = timezone.now().date()
             _handle_inventory_on_delivery(shipment, request.user)
@@ -2608,12 +2610,14 @@ def update_status(request, pk):
         new_status = request.POST.get('status')
         valid_statuses = [s[0] for s in Shipment.STATUS_CHOICES]
         if new_status and new_status in valid_statuses:
+            old_status_val = shipment.status
             old_status = shipment.get_status_display()
             shipment.status = new_status
             
             # Auto-set actual_delivery_date if status is delivered
-            if shipment.status == 'delivered' and not shipment.actual_delivery_date:
-                shipment.actual_delivery_date = timezone.now().date()
+            if shipment.status == 'delivered' and old_status_val != 'delivered':
+                if not shipment.actual_delivery_date:
+                    shipment.actual_delivery_date = timezone.now().date()
                 _handle_inventory_on_delivery(shipment, request.user)
                 
             shipment.save()
