@@ -187,9 +187,22 @@ def approve_pending_item(request, item_id):
         warehouse=warehouse,
         quantity=item.quantity or 0,
         unit_of_measure=item.unit or 'lbs',
+        offered_weight=item.quantity or 0,
+        offered_weight_unit=item.unit or 'lbs',
         unit_cost=item.price or 0,
         price_unit=item.price_unit or 'per lbs',
         company=supplier,
+    )
+    
+    # Log Initial Transaction
+    from apps.inventory.models import InventoryTransaction
+    InventoryTransaction.objects.create(
+        item=inv_item,
+        transaction_type='INITIAL',
+        quantity_change=inv_item.quantity,
+        new_quantity=inv_item.quantity,
+        user=request.user,
+        notes=f"Approved from AI Inbox (Email: {item.email.subject})"
     )
     
     item.status = 'approved'
@@ -266,10 +279,24 @@ def approve_all_items(request, email_id):
             warehouse=warehouse,
             quantity=item.quantity or 0,
             unit_of_measure=item.unit or 'lbs',
+            offered_weight=item.quantity or 0,
+            offered_weight_unit=item.unit or 'lbs',
             unit_cost=item.price or 0,
             price_unit=item.price_unit or 'per lbs',
             company=supplier,
         )
+
+        # Log Initial Transaction
+        from apps.inventory.models import InventoryTransaction
+        InventoryTransaction.objects.create(
+            item=inv_item,
+            transaction_type='INITIAL',
+            quantity_change=inv_item.quantity,
+            new_quantity=inv_item.quantity,
+            user=request.user,
+            notes=f"Approved from AI Inbox (Bulk)"
+        )
+
         item.status = 'approved'
         item.created_inventory_item = inv_item
         item.save()
