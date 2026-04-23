@@ -1,5 +1,6 @@
 import threading
 from django.core.exceptions import ImproperlyConfigured
+from .utils import is_staff_user
 
 _thread_local = threading.local()
 
@@ -15,7 +16,9 @@ class TenantMiddleware:
 
     def __call__(self, request):
         try:
-            if request.user.is_authenticated and hasattr(request.user, 'tenant') and request.user.tenant:
+            # Superusers and staff users should see everything across all tenants
+            is_internal = request.user.is_superuser or is_staff_user(request.user)
+            if request.user.is_authenticated and not is_internal and hasattr(request.user, 'tenant') and request.user.tenant:
                 set_current_tenant(request.user.tenant)
             else:
                 set_current_tenant(None)
