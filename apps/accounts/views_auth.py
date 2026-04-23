@@ -6,6 +6,7 @@ from django.utils import timezone
 from datetime import timedelta
 from .forms import SignupStep1Form, SignupStep2Form
 from .models_tenant import Tenant
+from .models_subscription import Subscription
 from .models import SignupOTP
 from .utils import generate_otp, send_otp_email
 import logging
@@ -118,28 +119,38 @@ class SignupView(View):
             if form.is_valid():
                 step1_data = request.session.pop('signup_step1_data')
                 
-                # 1. Create a new Tenant for the user (since FreightPro works with Tenants)
+                # 1. Create a new Tenant (Inactive until payment)
                 company_name = form.cleaned_data.get('name')
-                tenant = Tenant.objects.create(name=f"{company_name} Tenant")
+                tenant = Tenant.objects.create(
+                    name=f"{company_name} Tenant",
+                    is_active=False
+                )
                 
                 # 2. Create the Company
                 company = form.save(commit=False)
                 company.tenant = tenant
                 company.save()
                 
-                # 3. Create the User
+                # 3. Create the User (Inactive until payment)
                 user_form = SignupStep1Form(step1_data)
                 user = user_form.save(commit=False)
                 user.set_password(step1_data['password'])
                 user.tenant = tenant
                 user.company = company
-                user.role = 'customer'  # Default role for new signups
+                user.role = 'tenant_admin'
+                user.is_active = False  # Deactivated until Stripe payment
                 user.save()
                 
-                # 4. Success message and Redirect to Login
-                logger.info(f"New signup completed: User {user.email} from Company {company.name}")
-                messages.success(request, f"Registration successful! Please log in as {user.username}.")
-                logout(request)
-                return redirect('login')
+                # 4. Create Initial Subscription Record
+                Subscription.objects.create(
+                    tenant=tenant,
+                    plan='basic',
+                    status='trialing',
+                    is_active=False
+                )
+                
+                # 5. Success message and Redirect to Stripe Checkout
+                logger.info(f"Signup Step 2 completed: User {user.email}. Redirecting to Stripe.")
+                return redirect('accounts:signup_checkout', tenant_id=tenant.id)
                 
             return render(request, self.template_step2, {'form': form})

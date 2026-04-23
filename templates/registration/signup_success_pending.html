@@ -1,0 +1,47 @@
+{% extends "marketing/base_marketing.html" %}
+
+{% block content %}
+<div class="container py-5 mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+            <div class="card shadow-lg border-0 rounded-lg p-5">
+                <div class="mb-4">
+                    <i class="fas fa-check-circle text-success fa-5x"></i>
+                </div>
+                <h1 class="display-4 font-weight-bold mb-3">Payment Successful!</h1>
+                <p class="lead text-muted mb-4">
+                    Thank you for subscribing. We are now activating your account. 
+                    This usually takes just a few seconds.
+                </p>
+                <div class="alert alert-info py-3">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    Your account is being activated in the background. You can now try logging in.
+                </div>
+                <div class="mt-4">
+                    <a href="{% url 'login' %}" class="btn btn-primary btn-lg px-5 shadow-sm">
+                        Go to Login <i class="fas fa-arrow-right ml-2"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+    }
+    .display-4 {
+        color: #2d3748;
+    }
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        transition: transform 0.2s;
+    }
+    .btn-primary:hover {
+        transform: translateY(-2px);
+    }
+</style>
+{% endblock %}

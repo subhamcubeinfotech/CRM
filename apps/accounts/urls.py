@@ -2,11 +2,16 @@
 Accounts URLs
 """
 from django.urls import path
-from . import views, views_team, views_profile, views_auth
+from . import views, views_team, views_profile, views_auth, views_stripe
 
 app_name = 'accounts'
 
 urlpatterns = [
+    # Stripe Signup Flow
+    path('signup/checkout/<int:tenant_id>/', views_stripe.CreateCheckoutSessionView.as_view(), name='signup_checkout'),
+    path('signup/success/', views_stripe.SignupSuccessView.as_view(), name='signup_success'),
+    path('signup/cancel/', views_stripe.SignupCancelView.as_view(), name='signup_cancel'),
+    path('webhook/stripe/', views_stripe.StripeWebhookView.as_view(), name='stripe_webhook'),
     path('', views.company_list, name='company_list'),
     path('', views.company_list, name='company_list'),
     path('map-dashboard/', views.map_dashboard, name='map_dashboard'),

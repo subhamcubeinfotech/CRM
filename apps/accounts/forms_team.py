@@ -7,15 +7,26 @@ class TeamInviteForm(forms.ModelForm):
     """Form to send a team invitation"""
     class Meta:
         model = TeamInvitation
-        fields = ['email', 'role']
+        fields = ['first_name', 'last_name', 'email', 'role']
         widgets = {
-            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Member Work Email'}),
+            'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'First Name'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Last Name'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Insert an email'}),
             'role': forms.Select(attrs={'class': 'form-select'}),
         }
     
     def __init__(self, *args, **kwargs):
         self.tenant = kwargs.pop('tenant', None)
+        user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
+        
+        # Filter roles: Only internal admins can invite other internal admins
+        if user and user.role != 'admin':
+            allowed_roles = [('tenant_admin', 'Tenant Administrator'), ('customer', 'Customer')]
+            self.fields['role'].choices = allowed_roles
+        elif not user:
+            # Fallback for safety
+            self.fields['role'].choices = [('customer', 'Customer')]
 
     def clean_email(self):
         email = self.cleaned_data.get('email')

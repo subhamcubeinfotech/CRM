@@ -14,6 +14,7 @@ def team_list(request):
     context = {
         'team_members': team_members,
         'pending_invites': pending_invites,
+        'invite_form': TeamInviteForm(tenant=request.user.tenant, user=request.user),
     }
     return render(request, 'accounts/team_list.html', context)
 
@@ -25,7 +26,7 @@ def invite_team_member(request):
         return redirect('accounts:team_list')
 
     if request.method == 'POST':
-        form = TeamInviteForm(request.POST, tenant=request.user.tenant)
+        form = TeamInviteForm(request.POST, tenant=request.user.tenant, user=request.user)
         if form.is_valid():
             invitation = form.save(commit=False)
             invitation.tenant = request.user.tenant
@@ -36,7 +37,7 @@ def invite_team_member(request):
             messages.success(request, f"Invitation sent successfully to {invitation.email}!")
             return redirect('accounts:team_list')
     else:
-        form = TeamInviteForm(tenant=request.user.tenant)
+        form = TeamInviteForm(tenant=request.user.tenant, user=request.user)
     
     return render(request, 'accounts/team_invite.html', {'form': form})
 
@@ -49,6 +50,8 @@ def accept_invitation(request, token):
         if form.is_valid():
             user = form.save(commit=False)
             user.email = invitation.email
+            user.first_name = invitation.first_name
+            user.last_name = invitation.last_name
             user.role = invitation.role
             user.tenant = invitation.tenant
             if invitation.invited_by.company:

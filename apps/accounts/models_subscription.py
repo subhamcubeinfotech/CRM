@@ -19,6 +19,9 @@ class Subscription(models.Model):
     plan = models.CharField(max_length=20, choices=PLAN_CHOICES, default='basic')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='trialing')
     
+    stripe_customer_id = models.CharField(max_length=255, blank=True, null=True)
+    stripe_subscription_id = models.CharField(max_length=255, blank=True, null=True)
+    
     start_date = models.DateTimeField(auto_now_add=True)
     expiry_date = models.DateTimeField(null=True, blank=True)
     

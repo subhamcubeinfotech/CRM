@@ -1,3 +1,4 @@
+import time
 import json
 import logging
 from urllib.parse import urlencode
@@ -36,6 +37,8 @@ def get_company_geocode_queries(company):
 
 
 def geocode_query(query):
+    # Respect Nominatim rate limit (1 req/sec)
+    time.sleep(1.1)
     params = urlencode({
         'format': 'json',
         'limit': 1,
