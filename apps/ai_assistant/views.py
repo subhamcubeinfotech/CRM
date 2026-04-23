@@ -169,6 +169,15 @@ def approve_pending_item(request, item_id):
         from apps.accounts.models import Company
         supplier = Company.objects.filter(id=company_id, tenant=request.user.tenant).first()
 
+    # Ensure Material record exists so it shows in the UI dropdowns
+    from apps.inventory.models import Material
+    material_obj, _ = Material.objects.get_or_create(
+        tenant=request.user.tenant,
+        company=supplier,
+        name=item.product_name,
+        defaults={'description': item.description or ''}
+    )
+
     # Create real inventory item
     inv_item = InventoryItem.objects.create(
         tenant=request.user.tenant,
@@ -221,7 +230,7 @@ def reject_pending_item(request, item_id):
 @require_POST
 def approve_all_items(request, email_id):
     """Bulk approve all pending items from an email"""
-    from apps.inventory.models import InventoryItem, Warehouse
+    from apps.inventory.models import InventoryItem, Warehouse, Material
     email = get_object_or_404(PendingInventoryEmail, id=email_id, tenant=request.user.tenant)
     
     warehouse = Warehouse.objects.filter(tenant=request.user.tenant, is_active=True).first()
@@ -240,6 +249,15 @@ def approve_all_items(request, email_id):
     for item in email.items.filter(status='pending'):
         timestamp = int(time.time()) % 100000
         sku = f"EML-{timestamp:05d}-{item.id}"
+        
+        # Ensure Material record exists
+        material_obj, _ = Material.objects.get_or_create(
+            tenant=request.user.tenant,
+            company=supplier,
+            name=item.product_name,
+            defaults={'description': item.description or ''}
+        )
+
         inv_item = InventoryItem.objects.create(
             tenant=request.user.tenant,
             sku=sku,
