@@ -8,10 +8,6 @@
     .ai-panel .panel-head { padding: 16px 18px; border-bottom: 1px solid #eef2f7; display: flex; justify-content: space-between; align-items: center; }
     .ai-panel .panel-body { padding: 16px 18px; }
     .mono-lite { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size: 12px; }
-    .priority-badge.urgent { background: #7f1d1d; color: #fff; }
-    .priority-badge.high { background: #dc2626; color: #fff; }
-    .priority-badge.medium { background: #f59e0b; color: #111827; }
-    .priority-badge.low { background: #10b981; color: #fff; }
 </style>
 {% endblock %}
 
@@ -29,6 +25,7 @@
     </div>
 
     <div class="row g-3">
+        <!-- 1. Predictive Demand -->
         <div class="col-12 col-xl-6">
             <div class="ai-panel h-100">
                 <div class="panel-head">
@@ -61,7 +58,7 @@
                                     </td>
                                 </tr>
                                 {% empty %}
-                                <tr><td colspan="5" class="text-center text-muted py-4">No forecast data yet.</td></tr>
+                                <tr><td colspan="5" class="text-center text-muted py-4">No forecast data yet. Press 'Refresh' to compute.</td></tr>
                                 {% endfor %}
                             </tbody>
                         </table>
@@ -70,6 +67,7 @@
             </div>
         </div>
 
+        <!-- 2. Automated Quotes -->
         <div class="col-12 col-xl-6">
             <div class="ai-panel h-100">
                 <div class="panel-head">
@@ -83,7 +81,7 @@
                                 <tr>
                                     <th class="ps-3">Buyer</th>
                                     <th>Material</th>
-                                    <th>Unit Price</th>
+                                    <th>Price</th>
                                     <th>Status</th>
                                     <th class="text-end pe-3">Action</th>
                                 </tr>
@@ -93,20 +91,18 @@
                                 <tr>
                                     <td class="ps-3">{{ q.buyer.name|truncatechars:20 }}</td>
                                     <td>{{ q.inventory_item.product_name|truncatechars:22 }}</td>
-                                    <td>${{ q.quoted_unit_price|floatformat:4 }}/{{ q.unit }}</td>
+                                    <td>${{ q.quoted_unit_price|floatformat:2 }}</td>
                                     <td>
-                                        <span class="badge {% if q.status == 'sent' %}bg-success{% elif q.status == 'draft' %}bg-secondary{% else %}bg-primary{% endif %}">{{ q.get_status_display }}</span>
+                                        <span class="badge {% if q.status == 'sent' %}bg-success{% else %}bg-secondary{% endif %}">{{ q.get_status_display }}</span>
                                     </td>
                                     <td class="text-end pe-3">
                                         {% if q.status == 'draft' %}
                                         <button class="btn btn-sm btn-outline-primary" onclick="sendQuoteDraft({{ q.id }}, this)">Send</button>
-                                        {% else %}
-                                        <span class="text-muted small">—</span>
                                         {% endif %}
                                     </td>
                                 </tr>
                                 {% empty %}
-                                <tr><td colspan="5" class="text-center text-muted py-4">No quote drafts yet. Use Smart Matches to draft one.</td></tr>
+                                <tr><td colspan="5" class="text-center text-muted py-4">No quote drafts yet.</td></tr>
                                 {% endfor %}
                             </tbody>
                         </table>
@@ -115,37 +111,67 @@
             </div>
         </div>
 
+        <!-- 3. Document Vision OCR -->
         <div class="col-12 col-xl-6">
             <div class="ai-panel h-100">
                 <div class="panel-head">
                     <h5 class="mb-0"><i class="fas fa-file-image text-info me-2"></i>Document Vision AI (OCR)</h5>
-                    <span class="badge bg-light text-dark">{{ vision_records|length }} records</span>
                 </div>
                 <div class="panel-body">
                     <form id="ocrUploadForm" onsubmit="uploadOcrDocument(event)" class="mb-3">
                         {% csrf_token %}
                         <div class="input-group">
-                            <input type="file" class="form-control" name="file" id="ocrFile" accept="image/*,.pdf,.txt" required>
-                            <button class="btn btn-primary" type="submit">Run OCR</button>
+                            <input type="file" class="form-control form-control-sm" name="file" required>
+                            <button class="btn btn-primary btn-sm" type="submit">Run OCR</button>
                         </div>
                     </form>
-                    <div id="ocrResult" class="border rounded p-2 bg-light mono-lite text-muted" style="min-height:90px;">Upload a document to extract text and structured fields.</div>
-                    <hr>
-                    <div class="table-responsive" style="max-height:260px; overflow:auto;">
+                    <div id="ocrResult" class="border rounded p-2 bg-light mono-lite text-muted overflow-auto" style="max-height:120px; min-height:60px; font-size:11px;">Result will appear here...</div>
+                    <hr class="my-3">
+                    <div class="table-responsive" style="max-height:160px;">
                         <table class="table table-sm mb-0">
-                            <thead>
-                                <tr><th>ID</th><th>Status</th><th>Confidence</th><th>Created</th></tr>
-                            </thead>
+                            <thead><tr><th>ID</th><th>Status</th><th>Date</th></tr></thead>
                             <tbody>
                                 {% for r in vision_records %}
                                 <tr>
                                     <td>#{{ r.id }}</td>
-                                    <td><span class="badge {% if r.status == 'completed' %}bg-success{% elif r.status == 'failed' %}bg-danger{% else %}bg-secondary{% endif %}">{{ r.status }}</span></td>
-                                    <td>{{ r.confidence_score|floatformat:2 }}</td>
-                                    <td>{{ r.created_at|date:'M d, H:i' }}</td>
+                                    <td><span class="badge {% if r.status == 'completed' %}bg-success{% else %}bg-danger{% endif %}">{{ r.status }}</span></td>
+                                    <td class="small">{{ r.created_at|date:'M d, H:i' }}</td>
                                 </tr>
                                 {% empty %}
-                                <tr><td colspan="4" class="text-center text-muted">No OCR records yet.</td></tr>
+                                <tr><td colspan="3" class="text-center text-muted py-3">No records yet.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Sentiment Alerts -->
+        <div class="col-12 col-xl-6">
+            <div class="ai-panel h-100">
+                <div class="panel-head">
+                    <h5 class="mb-0"><i class="fas fa-triangle-exclamation text-warning me-2"></i>Sentiment Alerts</h5>
+                    <span class="badge bg-light text-dark">{{ sentiment_emails|length }} flagged</span>
+                </div>
+                <div class="panel-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle mb-0">
+                            <thead class="bg-light">
+                                <tr><th class="ps-3">Sender</th><th>Sentiment</th><th>Priority</th></tr>
+                            </thead>
+                            <tbody>
+                                {% for em in sentiment_emails %}
+                                <tr>
+                                    <td class="ps-3">
+                                        <div class="fw-bold small">{{ em.sender_raw|truncatechars:30 }}</div>
+                                        <div class="text-muted" style="font-size:10px;">{{ em.subject|truncatechars:40 }}</div>
+                                    </td>
+                                    <td><span class="badge {% if em.sentiment_label == 'negative' %}bg-danger{% else %}bg-success{% endif %}">{{ em.sentiment_label|title }}</span></td>
+                                    <td><span class="badge {% if em.priority_level == 'urgent' %}bg-dark{% else %}bg-warning text-dark{% endif %}">{{ em.priority_level|upper }}</span></td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="3" class="text-center text-muted py-4">No critical alerts found.</td></tr>
                                 {% endfor %}
                             </tbody>
                         </table>
@@ -159,74 +185,22 @@
 
 {% block extra_js %}
 <script>
-function csrfToken(){
-    const el = document.querySelector('input[name="csrfmiddlewaretoken"]');
-    return el ? el.value : '';
-}
-
+function csrfToken(){ return document.querySelector('input[name="csrfmiddlewaretoken"]').value; }
 function refreshForecasts(){
-    fetch('{% url "ai_assistant:refresh_forecasts" %}', {
-        method:'POST',
-        headers:{'X-CSRFToken': csrfToken()}
-    })
-    .then(r=>r.json())
-    .then(data=>{
-        if(data.status==='success'){
-            location.reload();
-        } else {
-            alert('Unable to refresh forecasts');
-        }
-    });
+    fetch('{% url "ai_assistant:refresh_forecasts" %}', {method:'POST', headers:{'X-CSRFToken': csrfToken()}})
+    .then(r=>r.json()).then(data=>location.reload());
 }
-
-function sendQuoteDraft(draftId, btn){
-    const old = btn.innerText;
-    btn.disabled = true;
-    btn.innerText = 'Sending...';
-    fetch(`/ai/enhancements/quote-drafts/${draftId}/send/`, {
-        method:'POST',
-        headers:{'X-CSRFToken': csrfToken()}
-    })
-    .then(r=>r.json())
-    .then(data=>{
-        if(data.status==='success'){
-            btn.innerText = 'Sent';
-            btn.classList.remove('btn-outline-primary');
-            btn.classList.add('btn-success');
-        } else {
-            alert(data.message || 'Quote send failed');
-            btn.disabled = false;
-            btn.innerText = old;
-        }
-    })
-    .catch(()=>{
-        alert('Quote send failed');
-        btn.disabled = false;
-        btn.innerText = old;
-    });
+function sendQuoteDraft(id, btn){
+    btn.disabled = true; btn.innerText = '...';
+    fetch(`/ai/enhancements/quote-drafts/${id}/send/`, {method:'POST', headers:{'X-CSRFToken': csrfToken()}})
+    .then(r=>r.json()).then(data=>{ if(data.status==='success') { btn.innerText='Sent'; btn.className='btn btn-sm btn-success'; } else { btn.disabled=false; btn.innerText='Send'; }});
 }
-
-function uploadOcrDocument(event){
-    event.preventDefault();
-    const form = document.getElementById('ocrUploadForm');
-    const box = document.getElementById('ocrResult');
-    const data = new FormData(form);
-    box.innerText = 'Processing document...';
-
-    fetch('{% url "ai_assistant:document_vision_upload" %}', {
-        method:'POST',
-        headers:{'X-CSRFToken': csrfToken()},
-        body:data
-    })
-    .then(r=>r.json())
-    .then(resp=>{
-        box.innerText = JSON.stringify(resp.extracted_json || {message: resp.error_message || 'No structured output'}, null, 2);
-        if(resp.status === 'success' || resp.status === 'partial_success'){
-            setTimeout(()=>location.reload(), 1200);
-        }
-    })
-    .catch(()=>{
-        box.innerText = 'OCR failed. Please try another file.';
+function uploadOcrDocument(e){
+    e.preventDefault(); const box = document.getElementById('ocrResult'); box.innerText = 'Processing...';
+    fetch('{% url "ai_assistant:document_vision_upload" %}', {method:'POST', headers:{'X-CSRFToken': csrfToken()}, body:new FormData(e.target)})
+    .then(r=>r.json()).then(resp=>{
+        box.innerText = JSON.stringify(resp.extracted_json || {error: resp.error_message}, null, 2);
+        if(resp.status==='success') setTimeout(()=>location.reload(), 1500);
     });
 }
 </script>
