@@ -115,14 +115,14 @@ def get_ai_match_insight(requirement, item):
     Uses LLM to explain why two items match, especially for fuzzy matches.
     """
     from django.conf import settings
-    from openai import OpenAI
+    import anthropic
     
-    api_key = getattr(settings, 'OPENAI_API_KEY', '')
-    if not api_key or not api_key.startswith('sk-'):
+    api_key = getattr(settings, 'ANTHROPIC_API_KEY', '')
+    if not api_key:
         return "Matched based on material category and keyword similarity."
 
     try:
-        client = OpenAI(api_key=api_key)
+        client = anthropic.Anthropic(api_key=api_key)
         prompt = f"""
         Analyze if this Buyer Requirement matches this Inventory Item. 
         Buyer wants: {requirement.material_name} ({requirement.material_type})
@@ -130,14 +130,14 @@ def get_ai_match_insight(requirement, item):
         
         Explain in 1 short sentence why this is a good match for a scrap metal/recycling broker.
         """
-        response = client.chat.completions.create(
-            model="gpt-4o",
+        response = client.messages.create(
+            model="claude-3-5-sonnet-20240620",
+            max_tokens=100,
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=60
         )
-        return response.choices[0].message.content.strip()
+        return response.content[0].text.strip()
     except Exception as e:
-        logger.error(f"Error getting AI insight: {e}")
+        logger.error(f"Error getting Claude match insight: {e}")
         return "Semantic overlap detected in material grades."
 
 

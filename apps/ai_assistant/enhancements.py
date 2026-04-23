@@ -275,15 +275,14 @@ def _extract_json_block(text: str) -> dict:
 def extract_document_with_ai(file_bytes: bytes, filename: str, mime_type: str | None = None) -> dict:
     """OCR/vision extraction with OpenAI fallback + regex safety net."""
     mime_type = mime_type or mimetypes.guess_type(filename)[0] or 'image/jpeg'
-    api_key = getattr(settings, 'OPENAI_API_KEY', '')
+    api_key = getattr(settings, 'ANTHROPIC_API_KEY', '')
 
     if api_key:
         try:
-            from openai import OpenAI
+            import anthropic
 
-            client = OpenAI(api_key=api_key)
+            client = anthropic.Anthropic(api_key=api_key)
             b64 = base64.b64encode(file_bytes).decode('utf-8')
-            data_url = f"data:{mime_type};base64,{b64}"
 
             prompt = (
                 'You are a logistics OCR assistant. Read this document image and return JSON only with keys: '
@@ -291,24 +290,37 @@ def extract_document_with_ai(file_bytes: bytes, filename: str, mime_type: str | 
                 'For items use list of objects with description, quantity, unit, unit_price.'
             )
 
-            response = client.chat.completions.create(
-                model='gpt-4o-mini',
+            response = client.messages.create(
+                model='claude-3-5-sonnet-20240620',
+                max_tokens=4096,
+                temperature=0,
+                system="Return only valid JSON.",
                 messages=[
                     {
                         'role': 'user',
                         'content': [
-                            {'type': 'text', 'text': prompt},
-                            {'type': 'image_url', 'image_url': {'url': data_url}},
+                            {
+                                'type': 'image',
+                                'source': {
+                                    'type': 'base64',
+                                    'media_type': mime_type,
+                                    'data': b64,
+                                },
+                            },
+                            {
+                                'type': 'text',
+                                'text': prompt,
+                            },
                         ],
                     }
                 ],
-                response_format={'type': 'json_object'},
-                temperature=0,
             )
 
-            payload = json.loads(response.choices[0].message.content)
+            content = response.content[0].text
+            # Use JSON block extraction if needed
+            payload = _extract_json_block(content) or json.loads(content)
             raw_text = payload.get('raw_text', '') or ''
-            confidence = 0.85 if raw_text else 0.55
+            confidence = 0.92 if raw_text else 0.55
             return {
                 'status': 'completed',
                 'confidence_score': confidence,

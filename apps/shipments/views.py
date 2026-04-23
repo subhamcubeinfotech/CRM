@@ -25,7 +25,7 @@ from apps.invoicing.models import Invoice
 from apps.orders.models import Order, PackagingType
 from apps.inventory.models import Warehouse, InventoryItem
 from apps.orders.models import Tag, ShippingTerm
-from apps.accounts.utils import filter_by_user_company, check_company_access
+from apps.accounts.utils import filter_by_user_company, check_company_access, is_staff_user
 import logging
 
 logger = logging.getLogger('apps.shipments')
@@ -33,7 +33,7 @@ logger = logging.getLogger('apps.shipments')
 
 def _get_tracking_shipment_for_user(user, pk):
     shipment = get_object_or_404(Shipment, pk=pk)
-    if user.tenant and shipment.tenant_id != user.tenant_id:
+    if user.tenant and not (user.is_superuser or is_staff_user(user)) and shipment.tenant_id != user.tenant_id:
         raise PermissionDenied("You do not have access to this shipment.")
     return shipment
 
@@ -663,7 +663,7 @@ def shipment_detail(request, pk):
     """Shipment detail view with tracking map"""
     # Filter by tenant first to avoid 404s for shipments in other tenants
     shipment_queryset = Shipment.objects.select_related('customer', 'carrier', 'shipper', 'consignee', 'order', 'created_by')
-    if request.user.tenant:
+    if request.user.tenant and not (request.user.is_superuser or is_staff_user(request.user)):
         shipment_queryset = shipment_queryset.filter(tenant=request.user.tenant)
     
     shipment = get_object_or_404(shipment_queryset, pk=pk)
@@ -754,7 +754,7 @@ def shipment_detail(request, pk):
 @require_POST
 def shipment_commission_add(request, pk):
     shipment = get_object_or_404(Shipment, pk=pk)
-    if request.user.tenant and shipment.tenant_id != request.user.tenant_id:
+    if request.user.tenant and not (request.user.is_superuser or is_staff_user(request.user)) and shipment.tenant_id != request.user.tenant_id:
         return JsonResponse({'status': 'error', 'message': 'Permission denied'}, status=403)
 
     commission_type = (request.POST.get('commission_type') or 'fixed').strip()
