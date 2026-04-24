@@ -44,15 +44,17 @@ class Subscription(models.Model):
         return self.PLAN_LIMITS.get(self.plan, self.PLAN_LIMITS['starter'])
     
     def can_add_user(self):
-        """Check if the tenant can add more users."""
+        """Check if the tenant can add more users (active + pending invites)."""
         from django.contrib.auth import get_user_model
+        from .models import TeamInvitation
         User = get_user_model()
         limits = self.get_limits()
         max_users = limits['max_users']
         if max_users is None:
             return True  # Unlimited
-        current_count = User.objects.filter(tenant=self.tenant, is_active=True).count()
-        return current_count < max_users
+        active_count = User.objects.filter(tenant=self.tenant, is_active=True).count()
+        pending_count = TeamInvitation.objects.filter(tenant=self.tenant, is_accepted=False).count()
+        return (active_count + pending_count) < max_users
     
     def can_create_shipment(self):
         """Check if the tenant can create more shipments this month."""
