@@ -8,6 +8,7 @@ from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.contrib.auth import get_user_model
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.utils import timezone
 import datetime
@@ -132,6 +133,17 @@ class SignupCancelView(View):
     def get(self, request):
         return render(request, 'registration/signup_cancel.html')
 
+class SubscriptionExpiredView(LoginRequiredMixin, View):
+    def get(self, request):
+        # Always fetch the latest subscription status directly from the DB
+        # to ensure they aren't stuck here if they just renewed.
+        tenant = getattr(request.user, 'tenant', None)
+        if tenant:
+            subscription = getattr(tenant, 'subscription', None)
+            if subscription and subscription.is_active:
+                return redirect('dashboard')
+        return render(request, 'accounts/subscription_expired.html')
+
 class CreatePortalSessionView(View):
     def post(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
@@ -243,16 +255,59 @@ class StripeWebhookView(View):
                 subscription.is_active = False
                 subscription.save()
                 
-                # Deactivate Tenant and Users
-                tenant = subscription.tenant
-                tenant.is_active = False
-                tenant.save()
+                # Note: We NO LONGER deactivate the Tenant or Users here.
+                # Instead, the SubscriptionMiddleware will restrict their access
+                # to the SubscriptionExpired page so they can renew.
                 
-                User = get_user_model()
-                User.objects.filter(tenant=tenant).update(is_active=False)
-                
-                logger.info(f"Tenant {tenant.name} deactivated because subscription was canceled.")
+                logger.info(f"Subscription {stripe_subscription_id} canceled for Tenant {subscription.tenant.name}.")
             except Subscription.DoesNotExist:
                 logger.error(f"Webhook error: Subscription {stripe_subscription_id} not found in DB.")
+                
+        # Handle subscription updates (upgrades, downgrades, renewals)
+        elif event['type'] == 'customer.subscription.updated':
+            stripe_sub = event['data']['object']
+            stripe_subscription_id = stripe_sub.id
+            
+            try:
+                subscription = Subscription.objects.get(stripe_subscription_id=stripe_subscription_id)
+                
+                # Check status: 'active', 'trialing', 'past_due', 'canceled', 'unpaid'
+                status = stripe_sub.get('status', 'active')
+                
+                # Retrieve the plan from the subscription item
+                plan_name = 'starter'
+                try:
+                    items = stripe_sub.get('items', {}).get('data', [])
+                    if items:
+                        price_id = items[0].get('price', {}).get('id')
+                        if price_id == settings.STRIPE_PRICE_PROFESSIONAL:
+                            plan_name = 'professional'
+                except Exception as e:
+                    logger.error(f"Error reading plan from updated subscription: {e}")
+
+                subscription.status = status
+                subscription.plan = plan_name
+                
+                if status in ['active', 'trialing']:
+                    subscription.is_active = True
+                elif status in ['canceled', 'unpaid']:
+                    subscription.is_active = False
+                    
+                # Safely get expiry date
+                period_end = getattr(stripe_sub, 'current_period_end', None)
+                if not period_end:
+                    try:
+                        period_end = stripe_sub['current_period_end']
+                    except (KeyError, TypeError):
+                        period_end = None
+                
+                if period_end:
+                    subscription.expiry_date = timezone.make_aware(datetime.datetime.fromtimestamp(period_end))
+                    
+                subscription.save()
+                logger.info(f"Subscription {stripe_subscription_id} updated: status={status}, plan={plan_name}.")
+            except Subscription.DoesNotExist:
+                # If it doesn't exist, it might be a new subscription that we'll catch in checkout.session.completed
+                pass
 
         return HttpResponse(status=200)
