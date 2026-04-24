@@ -288,6 +288,12 @@ class CustomPasswordResetForm(PasswordResetForm):
 class SignupStep1Form(forms.ModelForm):
     password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Password'}))
     confirm_password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Confirm Password'}))
+    plan = forms.ChoiceField(
+        choices=[('starter', 'Starter ($100/mo)'), ('pro', 'Professional ($299/mo)')],
+        initial='starter',
+        widget=forms.Select(attrs={'class': 'form-select mb-3'}),
+        label="Choose Your Plan"
+    )
     
     class Meta:
         model = get_user_model()

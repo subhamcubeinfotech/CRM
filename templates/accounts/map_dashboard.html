@@ -96,11 +96,6 @@
 
                 <hr>
                 <div class="map-filter-block">
-                    <div class="map-filter-label">Legend</div>
-                    <div id="legendList"></div>
-                </div>
-
-                <div class="map-filter-block">
                     <div class="map-filter-label">Visible Entities</div>
                     <div id="resultList"></div>
                 </div>
@@ -135,6 +130,7 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
 
 let layerGroup = L.layerGroup().addTo(map);
 let currentMarkers = [];
+
 
 function selectedValues(key){
     return Array.from(document.querySelectorAll(`.flt[data-key="${key}"]:checked`)).map(x=>x.value);
@@ -186,6 +182,7 @@ function renderLegend(markers){
     container.innerHTML = keys.map(k=>`
         <div class="legend-item"><span class="marker-dot" style="background:${PRODUCT_COLORS[k] || PRODUCT_COLORS.Other}"></span> ${k} (${counts[k]})</div>
     `).join('');
+    updateDistributionChart(counts);
 }
 
 function renderResultList(markers){
@@ -247,8 +244,6 @@ async function loadMarkers(){
         });
         map.fitBounds(bounds, {padding:[30,30], maxZoom: 11});
     }
-
-    renderLegend(markers);
     renderResultList(markers);
     status.innerText = `${markers.length} entities visible`;
 }

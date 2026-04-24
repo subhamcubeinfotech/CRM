@@ -1001,6 +1001,17 @@ def shipment_create(request):
     """Create new shipment - must be linked to an order"""
     from apps.orders.models import Order
 
+    # Check plan-based shipment limit
+    subscription = getattr(request.user.tenant, 'subscription', None)
+    if subscription and not subscription.can_create_shipment():
+        limits = subscription.get_limits()
+        messages.error(
+            request,
+            f"You have reached the maximum of {limits['max_shipments_per_month']} shipments/month on the {subscription.get_plan_display()} plan. "
+            f"Please upgrade to Professional plan for unlimited shipments."
+        )
+        return redirect('shipments:shipment_list')
+
     def _first_item_payload(post_data):
         return {
             'weight': post_data.get('items_ui[0][weight]', 0) or 0,
