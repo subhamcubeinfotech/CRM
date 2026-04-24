@@ -154,9 +154,7 @@ class OrderListView(LoginRequiredMixin, ListView):
         # --- Context for Advanced Filters Drawer ---
         user_tenant = self.request.user.tenant
         user_company = self.request.user.company
-        all_companies = Company.plain_objects.filter(is_active=True).filter(
-            Q(tenant=user_tenant) | Q(tenant__isnull=True)
-        )
+        all_companies = Company.plain_objects.filter(is_active=True).filter(tenant=user_tenant)
         if not getattr(self.request.user, 'is_admin', False):
             if user_company:
                 all_companies = all_companies.filter(
@@ -256,7 +254,7 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
         assign_company = user_company or Company.objects.filter(tenant=user_tenant).first()
         
         # Show companies (filtered by creator OR user's own company unless admin)
-        all_companies = Company.plain_objects.filter(is_active=True).filter(Q(tenant=user_tenant) | Q(tenant__isnull=True))
+        all_companies = Company.plain_objects.filter(is_active=True).filter(tenant=user_tenant)
         if not getattr(self.request.user, 'is_admin', False):
             if user_company:
                 all_companies = all_companies.filter(Q(created_by=self.request.user) | Q(pk=user_company.pk))
@@ -708,7 +706,7 @@ def order_create(request):
     assign_company = user_company or Company.objects.filter(tenant=request.user.tenant).first()
     
     # Filter companies by creator OR user's own company unless admin
-    company_qs = Company.plain_objects.all()
+    company_qs = Company.plain_objects.filter(tenant=request.user.tenant)
     if not getattr(request.user, 'is_admin', False):
         if user_company:
             company_qs = company_qs.filter(Q(created_by=request.user) | Q(pk=user_company.pk))
