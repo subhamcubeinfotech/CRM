@@ -43,16 +43,16 @@ class TeamInviteForm(forms.ModelForm):
 
 class InvitationAcceptanceForm(forms.ModelForm):
     """Form for invited users to set up their account"""
-    password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Password'}))
-    confirm_password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Confirm Password'}))
+    password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Create a password', 'autocomplete': 'new-password'}))
+    confirm_password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Confirm Password', 'autocomplete': 'new-password'}))
 
     class Meta:
         model = CustomUser
         fields = ['first_name', 'last_name', 'username', 'password']
         widgets = {
-            'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'First Name'}),
-            'last_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Last Name'}),
-            'username': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Choose a Username'}),
+            'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'First Name', 'autocomplete': 'off'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Last Name', 'autocomplete': 'off'}),
+            'username': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Choose a Username', 'autocomplete': 'off'}),
         }
 
     def clean_username(self):
