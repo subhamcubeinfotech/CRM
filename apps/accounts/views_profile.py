@@ -31,7 +31,9 @@ def profile_view(request):
 @login_required
 def settings_view(request):
     """View and edit user settings"""
+    subscription = getattr(request.user.tenant, 'subscription', None)
     context = {
         'user': request.user,
+        'subscription': subscription,
     }
     return render(request, 'accounts/settings.html', context)

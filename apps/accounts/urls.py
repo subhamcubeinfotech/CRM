@@ -11,6 +11,7 @@ urlpatterns = [
     path('signup/checkout/<int:tenant_id>/', views_stripe.CreateCheckoutSessionView.as_view(), name='signup_checkout'),
     path('signup/success/', views_stripe.SignupSuccessView.as_view(), name='signup_success'),
     path('signup/cancel/', views_stripe.SignupCancelView.as_view(), name='signup_cancel'),
+    path('billing-portal/', views_stripe.CreatePortalSessionView.as_view(), name='billing_portal'),
     path('webhook/stripe/', views_stripe.StripeWebhookView.as_view(), name='stripe_webhook'),
     path('', views.company_list, name='company_list'),
     path('', views.company_list, name='company_list'),
