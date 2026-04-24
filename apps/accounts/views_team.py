@@ -25,6 +25,17 @@ def invite_team_member(request):
         messages.error(request, "Your account is not associated with any Company/Tenant. Only Company Admins can invite team members.")
         return redirect('accounts:team_list')
 
+    # Check plan-based user limit
+    subscription = getattr(request.user.tenant, 'subscription', None)
+    if subscription and not subscription.can_add_user():
+        limits = subscription.get_limits()
+        messages.error(
+            request, 
+            f"You have reached the maximum of {limits['max_users']} users on the {subscription.get_plan_display()} plan. "
+            f"Please upgrade to Professional plan for unlimited users."
+        )
+        return redirect('accounts:team_list')
+
     if request.method == 'POST':
         form = TeamInviteForm(request.POST, tenant=request.user.tenant, user=request.user)
         if form.is_valid():
