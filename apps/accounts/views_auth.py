@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect
+from django.urls import reverse
 from django.contrib import messages
 from django.contrib.auth import logout, get_user_model
 from django.views import View
@@ -79,6 +80,10 @@ class SignupView(View):
     template_step2 = 'registration/signup_step2.html'
 
     def get(self, request):
+        # Capture plan from URL if present and store in session
+        if 'plan' in request.GET:
+            request.session['selected_plan'] = request.GET.get('plan')
+
         if 'back' in request.GET:
             if 'signup_step1_data' in request.session:
                 del request.session['signup_step1_data']
@@ -88,7 +93,10 @@ class SignupView(View):
             form = SignupStep2Form()
             return render(request, self.template_step2, {'form': form})
         else:
-            form = SignupStep1Form()
+            initial_data = {}
+            if 'selected_plan' in request.session:
+                initial_data['plan'] = request.session['selected_plan']
+            form = SignupStep1Form(initial=initial_data)
             return render(request, self.template_step1, {'form': form})
 
     def post(self, request):
@@ -104,6 +112,9 @@ class SignupView(View):
                     form.add_error('email', "Please verify your email address with the OTP first.")
                     return render(request, self.template_step1, {'form': form})
 
+                # Store plan selection from form in session
+                request.session['selected_plan'] = form.cleaned_data.get('plan')
+                
                 request.session['signup_step1_data'] = form.cleaned_data
                 form2 = SignupStep2Form()
                 return render(request, self.template_step2, {'form': form2})
@@ -118,6 +129,7 @@ class SignupView(View):
             form = SignupStep2Form(request.POST)
             if form.is_valid():
                 step1_data = request.session.pop('signup_step1_data')
+                selected_plan = request.session.pop('selected_plan', 'starter')
                 
                 # 1. Create a new Tenant (Inactive until payment)
                 company_name = form.cleaned_data.get('name')
@@ -144,13 +156,14 @@ class SignupView(View):
                 # 4. Create Initial Subscription Record
                 Subscription.objects.create(
                     tenant=tenant,
-                    plan='basic',
+                    plan=selected_plan if selected_plan in ['starter', 'professional'] else 'starter',
                     status='trialing',
                     is_active=False
                 )
                 
-                # 5. Success message and Redirect to Stripe Checkout
-                logger.info(f"Signup Step 2 completed: User {user.email}. Redirecting to Stripe.")
-                return redirect('accounts:signup_checkout', tenant_id=tenant.id)
+                # 5. Success message and Redirect to Stripe Checkout with selected plan
+                logger.info(f"Signup Step 2 completed: User {user.email}. Redirecting to Stripe for plan: {selected_plan}")
+                checkout_url = reverse('accounts:signup_checkout', kwargs={'tenant_id': tenant.id})
+                return redirect(f"{checkout_url}?plan={selected_plan}")
                 
             return render(request, self.template_step2, {'form': form})

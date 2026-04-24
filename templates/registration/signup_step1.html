@@ -78,6 +78,14 @@
         </div>
     </div>
 
+    <div class="mb-3">
+        <label for="{{ form.plan.id_for_label }}" class="form-label small text-muted mb-1"><i class="fas fa-credit-card me-2"></i>Selected Plan</label>
+        {{ form.plan }}
+        {% if form.plan.errors %}
+        <div class="text-danger small mt-1">{{ form.plan.errors }}</div>
+        {% endif %}
+    </div>
+
     <div class="form-floating mb-3">
         {{ form.username }}
         <label for="{{ form.username.id_for_label }}"><i class="fas fa-user mb-2"></i>Username</label>

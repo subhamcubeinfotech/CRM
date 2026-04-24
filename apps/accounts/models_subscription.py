@@ -3,9 +3,8 @@ from .models_tenant import Tenant
 
 class Subscription(models.Model):
     PLAN_CHOICES = [
-        ('basic', 'Basic'),
+        ('starter', 'Starter'),
         ('professional', 'Professional'),
-        ('enterprise', 'Enterprise'),
     ]
     
     STATUS_CHOICES = [
