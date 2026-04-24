@@ -7,6 +7,7 @@ from django.conf import settings
 import uuid
 
 from .models_tenant import Tenant, TenantManager, TenantAwareModel
+from .models_subscription import Subscription
 
 
 class Company(TenantAwareModel):
@@ -85,7 +86,8 @@ class Company(TenantAwareModel):
 class CustomUser(AbstractUser):
     """Custom user model with role-based access"""
     ROLE_CHOICES = [
-        ('admin', 'Administrator'),
+        ('admin', 'Internal Administrator'),
+        ('tenant_admin', 'Tenant Administrator'),
         ('customer', 'Customer'),
     ]
     
@@ -111,7 +113,7 @@ class CustomUser(AbstractUser):
     
     @property
     def is_admin(self):
-        return self.role == 'admin'
+        return self.role in ('admin', 'tenant_admin')
     
     
     
@@ -230,7 +232,9 @@ def log_failed_login(sender, credentials, request, **kwargs):
 class TeamInvitation(models.Model):
     """Model to track team member invitations sent via email"""
     email = models.EmailField()
-    role = models.CharField(max_length=20, choices=CustomUser.ROLE_CHOICES, default='admin')
+    first_name = models.CharField(max_length=150, blank=True)
+    last_name = models.CharField(max_length=150, blank=True)
+    role = models.CharField(max_length=20, choices=CustomUser.ROLE_CHOICES, default='customer')
     tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name='invitations')
     invited_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='sent_invitations')
     token = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)

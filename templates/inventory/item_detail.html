@@ -168,7 +168,13 @@
                                                 <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2">Ship</span>
                                             {% endif %}
                                         </div>
-                                        <div class="small text-muted mt-1">{{ tx.user.get_full_name|default:tx.user.username }}</div>
+                                        <div class="small text-muted mt-1">
+                                            {% if tx.user %}
+                                                {{ tx.user.get_full_name|default:tx.user.username }}
+                                            {% else %}
+                                                <i class="fas fa-robot me-1 small"></i>AI Assistant
+                                            {% endif %}
+                                        </div>
                                     </td>
                                     <td class="text-end fw-bold {% if tx.quantity_change > 0 %}text-success{% elif tx.quantity_change < 0 %}text-danger{% endif %}">
                                         {% if tx.quantity_change > 0 %}+{% endif %}{{ tx.quantity_change|floatformat:0 }}

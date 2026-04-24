@@ -169,6 +169,15 @@ def approve_pending_item(request, item_id):
         from apps.accounts.models import Company
         supplier = Company.objects.filter(id=company_id, tenant=request.user.tenant).first()
 
+    # Ensure Material record exists so it shows in the UI dropdowns
+    from apps.inventory.models import Material
+    material_obj, _ = Material.objects.get_or_create(
+        tenant=request.user.tenant,
+        company=supplier,
+        name=item.product_name,
+        defaults={'description': item.description or ''}
+    )
+
     # Create real inventory item
     inv_item = InventoryItem.objects.create(
         tenant=request.user.tenant,
@@ -178,9 +187,22 @@ def approve_pending_item(request, item_id):
         warehouse=warehouse,
         quantity=item.quantity or 0,
         unit_of_measure=item.unit or 'lbs',
+        offered_weight=item.quantity or 0,
+        offered_weight_unit=item.unit or 'lbs',
         unit_cost=item.price or 0,
         price_unit=item.price_unit or 'per lbs',
         company=supplier,
+    )
+    
+    # Log Initial Transaction
+    from apps.inventory.models import InventoryTransaction
+    InventoryTransaction.objects.create(
+        item=inv_item,
+        transaction_type='INITIAL',
+        quantity_change=inv_item.quantity,
+        new_quantity=inv_item.quantity,
+        user=request.user,
+        notes=f"Approved from AI Inbox (Email: {item.email.subject})"
     )
     
     item.status = 'approved'
@@ -221,7 +243,7 @@ def reject_pending_item(request, item_id):
 @require_POST
 def approve_all_items(request, email_id):
     """Bulk approve all pending items from an email"""
-    from apps.inventory.models import InventoryItem, Warehouse
+    from apps.inventory.models import InventoryItem, Warehouse, Material
     email = get_object_or_404(PendingInventoryEmail, id=email_id, tenant=request.user.tenant)
     
     warehouse = Warehouse.objects.filter(tenant=request.user.tenant, is_active=True).first()
@@ -240,6 +262,15 @@ def approve_all_items(request, email_id):
     for item in email.items.filter(status='pending'):
         timestamp = int(time.time()) % 100000
         sku = f"EML-{timestamp:05d}-{item.id}"
+        
+        # Ensure Material record exists
+        material_obj, _ = Material.objects.get_or_create(
+            tenant=request.user.tenant,
+            company=supplier,
+            name=item.product_name,
+            defaults={'description': item.description or ''}
+        )
+
         inv_item = InventoryItem.objects.create(
             tenant=request.user.tenant,
             sku=sku,
@@ -248,10 +279,24 @@ def approve_all_items(request, email_id):
             warehouse=warehouse,
             quantity=item.quantity or 0,
             unit_of_measure=item.unit or 'lbs',
+            offered_weight=item.quantity or 0,
+            offered_weight_unit=item.unit or 'lbs',
             unit_cost=item.price or 0,
             price_unit=item.price_unit or 'per lbs',
             company=supplier,
         )
+
+        # Log Initial Transaction
+        from apps.inventory.models import InventoryTransaction
+        InventoryTransaction.objects.create(
+            item=inv_item,
+            transaction_type='INITIAL',
+            quantity_change=inv_item.quantity,
+            new_quantity=inv_item.quantity,
+            user=request.user,
+            notes=f"Approved from AI Inbox (Bulk)"
+        )
+
         item.status = 'approved'
         item.created_inventory_item = inv_item
         item.save()

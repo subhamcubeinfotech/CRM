@@ -7,15 +7,26 @@ class TeamInviteForm(forms.ModelForm):
     """Form to send a team invitation"""
     class Meta:
         model = TeamInvitation
-        fields = ['email', 'role']
+        fields = ['first_name', 'last_name', 'email', 'role']
         widgets = {
-            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Member Work Email'}),
+            'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'First Name'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Last Name'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Insert an email'}),
             'role': forms.Select(attrs={'class': 'form-select'}),
         }
     
     def __init__(self, *args, **kwargs):
         self.tenant = kwargs.pop('tenant', None)
+        user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
+        
+        # Filter roles: Only internal admins can invite other internal admins
+        if user and user.role != 'admin':
+            allowed_roles = [('tenant_admin', 'Tenant Administrator'), ('customer', 'Customer')]
+            self.fields['role'].choices = allowed_roles
+        elif not user:
+            # Fallback for safety
+            self.fields['role'].choices = [('customer', 'Customer')]
 
     def clean_email(self):
         email = self.cleaned_data.get('email')
@@ -32,16 +43,16 @@ class TeamInviteForm(forms.ModelForm):
 
 class InvitationAcceptanceForm(forms.ModelForm):
     """Form for invited users to set up their account"""
-    password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Password'}))
-    confirm_password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Confirm Password'}))
+    password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Create a password', 'autocomplete': 'new-password'}))
+    confirm_password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Confirm Password', 'autocomplete': 'new-password'}))
 
     class Meta:
         model = CustomUser
         fields = ['first_name', 'last_name', 'username', 'password']
         widgets = {
-            'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'First Name'}),
-            'last_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Last Name'}),
-            'username': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Choose a Username'}),
+            'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'First Name', 'autocomplete': 'off'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Last Name', 'autocomplete': 'off'}),
+            'username': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Choose a Username', 'autocomplete': 'off'}),
         }
 
     def clean_username(self):

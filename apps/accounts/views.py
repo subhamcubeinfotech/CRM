@@ -35,9 +35,15 @@ def custom_logout(request):
 @login_required
 def company_list(request):
     """List companies — filtered by creator unless admin (uses plain_objects)"""
-    companies = Company.plain_objects.prefetch_related('material_tags', 'company_tags').all().order_by('name')
+    # Use the tenant-aware manager by default
+    companies = Company.objects.prefetch_related('material_tags', 'company_tags').all().order_by('name')
 
-    if not getattr(request.user, 'is_admin', False):
+    # If the user is an internal admin, they can see everything via plain_objects
+    if request.user.role == 'admin':
+        companies = Company.plain_objects.prefetch_related('material_tags', 'company_tags').all().order_by('name')
+    
+    # For non-admin roles (like customer), further filter by their specific company if needed
+    elif request.user.role == 'customer':
         user_company = request.user.company
         if user_company:
             companies = companies.filter(Q(created_by=request.user) | Q(pk=user_company.pk))
@@ -208,8 +214,15 @@ def company_list(request):
 
 
 def _visible_companies_for_user(user):
-    companies = Company.plain_objects.prefetch_related('material_tags').all().order_by('name')
-    if not getattr(user, 'is_admin', False):
+    # Use tenant-aware manager by default
+    companies = Company.objects.prefetch_related('material_tags').all().order_by('name')
+
+    # Internal admins see everything
+    if user.role == 'admin':
+        companies = Company.plain_objects.prefetch_related('material_tags').all().order_by('name')
+    
+    # Customer role further restricted
+    elif user.role == 'customer':
         user_company = user.company
         if user_company:
             companies = companies.filter(Q(created_by=user) | Q(pk=user_company.pk))
@@ -243,8 +256,8 @@ def map_dashboard(request):
     """Full-page geo dashboard with advanced filters and product-type color coding."""
     companies = _visible_companies_for_user(request.user)
 
-    # Keep coordinates warm for records with valid addresses.
-    for company in companies[:40]:
+    # Keep coordinates warm for records with valid addresses (Limited to 5 at a time to avoid timeout)
+    for company in companies[:5]:
         if company.full_address and (company.latitude is None or company.longitude is None):
             geocode_company(company, save=True)
 
@@ -488,10 +501,15 @@ def map_dashboard_data(request):
 @login_required
 def customer_list(request):
     """List customers — filtered by creator unless admin (uses plain_objects)"""
-    customers = Company.plain_objects.filter(company_type='customer').order_by('name')
+    # Use the tenant-aware manager by default
+    customers = Company.objects.filter(company_type='customer').order_by('name')
+
+    # If the user is an internal admin, they can see everything via plain_objects
+    if request.user.role == 'admin':
+        customers = Company.plain_objects.filter(company_type='customer').order_by('name')
     
-    # Restriction: non-admins only see companies they created OR their own company
-    if not getattr(request.user, 'is_admin', False):
+    # For customer roles, filter by their specific creator or company
+    elif request.user.role == 'customer':
         user_company = request.user.company
         if user_company:
             customers = customers.filter(Q(created_by=request.user) | Q(pk=user_company.pk))
@@ -517,10 +535,15 @@ def customer_list(request):
 @login_required
 def carrier_list(request):
     """List carriers — filtered by creator unless admin (uses plain_objects)"""
-    carriers = Company.plain_objects.filter(company_type='carrier').order_by('name')
+    # Use the tenant-aware manager by default
+    carriers = Company.objects.filter(company_type='carrier').order_by('name')
+
+    # If the user is an internal admin, they can see everything via plain_objects
+    if request.user.role == 'admin':
+        carriers = Company.plain_objects.filter(company_type='carrier').order_by('name')
     
-    # Restriction: non-admins only see companies they created OR their own company
-    if not getattr(request.user, 'is_admin', False):
+    # For customer roles, filter by their specific creator or company
+    elif request.user.role == 'customer':
         user_company = request.user.company
         if user_company:
             carriers = carriers.filter(Q(created_by=request.user) | Q(pk=user_company.pk))

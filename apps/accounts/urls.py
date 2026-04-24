@@ -2,11 +2,17 @@
 Accounts URLs
 """
 from django.urls import path
-from . import views, views_team, views_profile, views_auth
+from . import views, views_team, views_profile, views_auth, views_stripe
 
 app_name = 'accounts'
 
 urlpatterns = [
+    # Stripe Signup Flow
+    path('signup/checkout/<int:tenant_id>/', views_stripe.CreateCheckoutSessionView.as_view(), name='signup_checkout'),
+    path('signup/success/', views_stripe.SignupSuccessView.as_view(), name='signup_success'),
+    path('signup/cancel/', views_stripe.SignupCancelView.as_view(), name='signup_cancel'),
+    path('billing-portal/', views_stripe.CreatePortalSessionView.as_view(), name='billing_portal'),
+    path('webhook/stripe/', views_stripe.StripeWebhookView.as_view(), name='stripe_webhook'),
     path('', views.company_list, name='company_list'),
     path('', views.company_list, name='company_list'),
     path('map-dashboard/', views.map_dashboard, name='map_dashboard'),
@@ -15,6 +21,7 @@ urlpatterns = [
     path('carriers/', views.carrier_list, name='carrier_list'),
     path('team/', views_team.team_list, name='team_list'),
     path('team/invite/', views_team.invite_team_member, name='team_invite'),
+    path('team/invite/<int:invite_id>/delete/', views_team.delete_invitation, name='delete_invitation'),
     path('team/accept/<uuid:token>/', views_team.accept_invitation, name='accept_invitation'),
     path('create/', views.company_create, name='company_create'),
     path('<int:pk>/', views.company_detail, name='company_detail'),
