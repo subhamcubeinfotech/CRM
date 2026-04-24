@@ -21,6 +21,7 @@ urlpatterns = [
     path('carriers/', views.carrier_list, name='carrier_list'),
     path('team/', views_team.team_list, name='team_list'),
     path('team/invite/', views_team.invite_team_member, name='team_invite'),
+    path('team/invite/<int:invite_id>/delete/', views_team.delete_invitation, name='delete_invitation'),
     path('team/accept/<uuid:token>/', views_team.accept_invitation, name='accept_invitation'),
     path('create/', views.company_create, name='company_create'),
     path('<int:pk>/', views.company_detail, name='company_detail'),

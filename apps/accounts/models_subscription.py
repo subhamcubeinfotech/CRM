@@ -52,7 +52,8 @@ class Subscription(models.Model):
         max_users = limits['max_users']
         if max_users is None:
             return True  # Unlimited
-        active_count = User.objects.filter(tenant=self.tenant, is_active=True).count()
+        # Exclude the Tenant Admin from the user limit count
+        active_count = User.objects.filter(tenant=self.tenant, is_active=True).exclude(role='tenant_admin').count()
         pending_count = TeamInvitation.objects.filter(tenant=self.tenant, is_accepted=False).count()
         return (active_count + pending_count) < max_users
     

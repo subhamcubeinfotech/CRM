@@ -85,9 +85,28 @@ def invite_team_member(request):
     
     return render(request, 'accounts/team_invite.html', {'form': form})
 
+@login_required
+def delete_invitation(request, invite_id):
+    """View to delete a pending team invitation"""
+    if not request.user.tenant:
+        messages.error(request, "Your account is not associated with any Company/Tenant.")
+        return redirect('accounts:team_list')
+
+    invitation = get_object_or_404(TeamInvitation, id=invite_id, tenant=request.user.tenant, is_accepted=False)
+    
+    if request.method == 'POST':
+        email = invitation.email
+        invitation.delete()
+        messages.success(request, f"Invitation to {email} has been revoked successfully.")
+    
+    return redirect('accounts:team_list')
+
 def accept_invitation(request, token):
     """Public view for invited users to set up their account"""
-    invitation = get_object_or_404(TeamInvitation, token=token, is_accepted=False)
+    try:
+        invitation = TeamInvitation.objects.get(token=token, is_accepted=False)
+    except TeamInvitation.DoesNotExist:
+        return render(request, 'accounts/invalid_invitation.html')
     
     # Log out any currently logged-in user so form doesn't get pre-filled
     if request.user.is_authenticated:
