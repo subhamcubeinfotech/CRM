@@ -86,13 +86,13 @@ def invite_team_member(request):
     return render(request, 'accounts/team_invite.html', {'form': form})
 
 @login_required
-def delete_invitation(request, invite_id):
+def delete_invitation(request, pk):
     """View to delete a pending team invitation"""
     if not request.user.tenant:
         messages.error(request, "Your account is not associated with any Company/Tenant.")
         return redirect('accounts:team_list')
 
-    invitation = get_object_or_404(TeamInvitation, id=invite_id, tenant=request.user.tenant, is_accepted=False)
+    invitation = get_object_or_404(TeamInvitation, id=pk, tenant=request.user.tenant, is_accepted=False)
     
     if request.method == 'POST':
         email = invitation.email
