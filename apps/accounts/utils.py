@@ -9,7 +9,9 @@ logger = logging.getLogger('apps.accounts')
 
 def is_staff_user(user):
     """Returns True if user is admin/sales/warehouse (sees all data)"""
-    return user.role in ('admin', 'sales', 'warehouse', 'driver')
+    if not user.is_authenticated:
+        return False
+    return getattr(user, 'role', None) in ('admin', 'sales', 'warehouse', 'driver')
 
 
 def filter_by_user_company(queryset, user, company_field='customer'):
@@ -28,7 +30,7 @@ def check_company_access(obj_company, user):
     Raise PermissionDenied if a customer user tries to access
     data that doesn't belong to their tenant.
     """
-    if user.role == 'customer':
+    if user.is_authenticated and getattr(user, 'role', None) == 'customer':
         # Allow access if same company OR same tenant
         if user.company and obj_company == user.company:
             return

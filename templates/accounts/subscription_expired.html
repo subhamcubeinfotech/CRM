@@ -1,0 +1,97 @@
+{% extends 'base_auth.html' %}
+{% load static %}
+
+{% block title %}Account Suspended | FreightPro{% endblock %}
+
+{% block content %}
+<style>
+    .expired-status {
+        background: rgba(255, 193, 7, 0.1);
+        color: #856404;
+        padding: 10px 20px;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        display: inline-block;
+        margin-bottom: 20px;
+        border: 1px solid rgba(255, 193, 7, 0.2);
+    }
+    .expired-icon-wrapper {
+        position: relative;
+        width: 100px;
+        height: 100px;
+        margin: 0 auto 25px;
+    }
+    .expired-icon-main {
+        font-size: 5rem;
+        color: #ffc107;
+        animation: pulse 2s infinite;
+    }
+    .expired-icon-overlay {
+        position: absolute;
+        bottom: 5px;
+        right: 5px;
+        background: #fff;
+        border-radius: 50%;
+        padding: 5px;
+        font-size: 1.5rem;
+        color: #dc3545;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    @keyframes pulse {
+        0% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.05); opacity: 0.8; }
+        100% { transform: scale(1); opacity: 1; }
+    }
+    .renew-btn {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important;
+        border: none !important;
+        transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+    }
+    .renew-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(245, 87, 108, 0.3) !important;
+    }
+    .expired-text {
+        color: #4a5568;
+        line-height: 1.6;
+        margin-bottom: 30px;
+    }
+</style>
+
+<div class="text-center py-2">
+    <div class="expired-status">
+        <i class="fas fa-lock me-2"></i> ACCESS RESTRICTED
+    </div>
+
+    <div class="expired-icon-wrapper">
+        <i class="fas fa-calendar-times expired-icon-main"></i>
+        <i class="fas fa-exclamation-circle expired-icon-overlay"></i>
+    </div>
+
+    <h3 class="fw-bold mb-3 text-dark">Subscription Expired</h3>
+    
+    <p class="expired-text px-3">
+        Your access has been temporarily suspended because your subscription has ended. Don't worry, your data is safe and will be restored instantly after renewal.
+    </p>
+    
+    <div class="px-3">
+        <a href="{% url 'marketing:pricing' %}" class="btn btn-primary btn-lg renew-btn w-100 py-3 shadow-sm rounded-pill fw-bold mb-3">
+            <i class="fas fa-tags me-2"></i> View Pricing & Renew
+        </a>
+        
+        <form action="{% url 'accounts:billing_portal' %}" method="POST" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-link text-muted small text-decoration-none">
+                <i class="fas fa-history me-1"></i> View Billing History
+            </button>
+        </form>
+    </div>
+    
+    <div class="mt-4 pt-3 border-top">
+        <a href="{% url 'logout' %}" class="text-decoration-none text-muted small">
+            <i class="fas fa-sign-out-alt me-1"></i> Sign out and switch account
+        </a>
+    </div>
+</div>
+{% endblock %}

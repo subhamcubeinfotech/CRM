@@ -11,6 +11,11 @@ import json
 @login_required
 def shipment_list_api(request):
     """API endpoint for shipment list"""
+    # Check plan for API access
+    subscription = getattr(request.user.tenant, 'subscription', None)
+    if not subscription or not subscription.has_api_access():
+        return JsonResponse({'error': 'API access is not included in your current plan. Please upgrade to Professional.'}, status=403)
+
     shipments = Shipment.objects.select_related('customer').all()[:50]
     
     data = []
@@ -34,6 +39,11 @@ def shipment_list_api(request):
 @login_required
 def shipment_detail_api(request, pk):
     """API endpoint for shipment detail"""
+    # Check plan for API access
+    subscription = getattr(request.user.tenant, 'subscription', None)
+    if not subscription or not subscription.has_api_access():
+        return JsonResponse({'error': 'API access is not included in your current plan. Please upgrade to Professional.'}, status=403)
+
     shipment = get_object_or_404(Shipment, pk=pk)
     
     data = {
@@ -156,6 +166,11 @@ def shipment_calendar_events(request):
 @login_required
 def shipment_tracking_api(request, pk):
     """API endpoint for shipment tracking data"""
+    # Check plan for API access
+    subscription = getattr(request.user.tenant, 'subscription', None)
+    if not subscription or not subscription.has_api_access():
+        return JsonResponse({'error': 'API access is not included in your current plan. Please upgrade to Professional.'}, status=403)
+
     shipment = get_object_or_404(Shipment, pk=pk)
     
     # Get combined milestones and history

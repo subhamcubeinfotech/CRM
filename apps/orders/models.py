@@ -58,7 +58,13 @@ class Order(TenantAwareModel):
         ('overdue', 'Overdue'),
     ]
 
-    
+    WEIGHT_UNIT_CHOICES = [
+        ('lbs', 'lbs'),
+        ('kgs', 'kgs'),
+        ('mt', 'MT'),
+        ('st', 'ST'),
+        ('pcs', 'pcs'),
+    ]
     order_number = models.CharField(max_length=50, unique=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
     payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='pending')
@@ -79,10 +85,11 @@ class Order(TenantAwareModel):
     representative = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='represented_orders')
     
     # Weight tracking
-    total_weight_target = models.DecimalField(max_digits=15, decimal_places=2, help_text="Target weight in lbs")
+    total_weight_target = models.DecimalField(max_digits=20, decimal_places=2, help_text="Target weight in the selected unit")
+    total_weight_unit = models.CharField(max_length=10, choices=WEIGHT_UNIT_CHOICES, default='lbs')
     
     # Financial details
-    freight_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0, help_text="Total estimated freight shipment cost")
+    freight_cost = models.DecimalField(max_digits=20, decimal_places=2, default=0, help_text="Total estimated freight shipment cost")
     
     # Schedule
     expected_pickup_date = models.DateField(null=True, blank=True)
@@ -100,14 +107,37 @@ class Order(TenantAwareModel):
     def __str__(self):
         return f"{self.order_number} - {self.po_number}"
 
+    def check_payment_status(self):
+        """
+        Check if the payment status should be updated to 'overdue' based on Net 30 terms.
+        This is called during detail view and other key actions to keep stats accurate.
+        """
+        if self.payment_status in ['pending', 'partial']:
+            days_since_creation = (timezone.now() - self.created_at).days
+            if days_since_creation >= 30:
+                self.payment_status = 'overdue'
+                self.save(update_fields=['payment_status'])
+                return True
+        return False
+
     @property
     def shipped_weight(self):
-        """Calculate total weight shipped across all associated shipments (converted to lbs)"""
-        # Shipment.total_weight is stored in kg (canonical system unit for shipments)
-        # Convert kg to lbs: kg * 2.20462
+        """Calculate total weight shipped across all associated shipments (canonical unit: lbs)"""
         from decimal import Decimal
-        total_kg = sum(s.total_weight for s in self.shipments.all())
-        return total_kg * Decimal('2.20462')
+        total_val = sum(s.total_weight for s in self.shipments.exclude(status='rejected'))
+        return total_val
+
+    @property
+    def shipped_weight_in_unit(self):
+        """Calculate total weight shipped across all associated shipments (converted to total_weight_unit)"""
+        from decimal import Decimal
+        lbs = self.shipped_weight
+        unit = self.total_weight_unit.lower()
+        if unit == 'lbs': return lbs
+        if unit in ['kg', 'kgs']: return lbs / Decimal('2.20462')
+        if unit == 'mt': return lbs / Decimal('2204.62')
+        if unit == 'st': return lbs / Decimal('2000.0')
+        return lbs
 
     @property
     def total_pieces(self):
@@ -120,17 +150,29 @@ class Order(TenantAwareModel):
         return sum(item.normalized_weight for item in self.manifest_items.exclude(weight_unit='pcs'))
 
     @property
+    def total_manifest_weight_in_unit(self):
+        """Calculate total weight from manifest items (converted to total_weight_unit)"""
+        from decimal import Decimal
+        lbs = self.total_manifest_weight
+        unit = self.total_weight_unit.lower()
+        if unit == 'lbs': return lbs
+        if unit in ['kg', 'kgs']: return lbs / Decimal('2.20462')
+        if unit == 'mt': return lbs / Decimal('2204.62')
+        if unit == 'st': return lbs / Decimal('2000.0')
+        return lbs
+
+    @property
     def manifest_progress_percentage(self):
         """Calculate manifested weight progress percentage against target"""
         if self.total_weight_target > 0:
-            return min(int((self.total_manifest_weight / self.total_weight_target) * 100), 100)
+            return min(int((self.total_manifest_weight_in_unit / self.total_weight_target) * 100), 100)
         return 0
 
     @property
     def weight_progress_percentage(self):
         """Calculate shipped weight progress percentage against target"""
         if self.total_weight_target > 0:
-            return min(int((self.shipped_weight / self.total_weight_target) * 100), 100)
+            return min(int((self.shipped_weight_in_unit / self.total_weight_target) * 100), 100)
         return 0
 
     @property
@@ -177,6 +219,7 @@ class Order(TenantAwareModel):
         # Find shipment with highest rank
         best_shipment = None
         max_rank = -1
+        best_shipment = None
         
         for s in shipments:
             rank = ranking.get(s.status, 0)
@@ -263,14 +306,15 @@ class OrderEvent(models.Model):
 
 class ManifestItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='manifest_items')
+    inventory_item = models.ForeignKey('inventory.InventoryItem', on_delete=models.SET_NULL, null=True, blank=True, related_name='manifest_items')
     material = models.CharField(max_length=200)
-    weight = models.DecimalField(max_digits=12, decimal_places=2)
+    weight = models.DecimalField(max_digits=20, decimal_places=2)
     weight_unit = models.CharField(max_length=10, default='lbs')
     
-    buy_price = models.DecimalField(max_digits=12, decimal_places=4)
+    buy_price = models.DecimalField(max_digits=20, decimal_places=4)
     buy_price_unit = models.CharField(max_length=20, default='per lbs')
     
-    sell_price = models.DecimalField(max_digits=12, decimal_places=4)
+    sell_price = models.DecimalField(max_digits=20, decimal_places=4)
     sell_price_unit = models.CharField(max_length=20, default='per lbs')
     
     packaging = models.CharField(max_length=100, blank=True)

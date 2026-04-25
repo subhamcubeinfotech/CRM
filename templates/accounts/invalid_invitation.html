@@ -1,0 +1,39 @@
+{% extends 'base_auth.html' %}
+
+{% block title %}Invalid Invitation - FreightPro{% endblock %}
+
+{% block content %}
+<div class="auth-card text-center" style="max-width: 450px; margin: 50px auto; padding: 40px;">
+    <!-- Brand Logo -->
+    <div class="text-center mb-4">
+        <div class="d-inline-flex align-items-center justify-content-center bg-danger bg-opacity-10 text-danger rounded-circle mb-3" style="width: 70px; height: 70px;">
+            <i class="fas fa-link-slash fa-2x"></i>
+        </div>
+        <h2 class="h4 fw-bold text-dark mb-2">Link Expired or Invalid</h2>
+        <p class="text-muted small px-3">
+            This invitation link is no longer active. It may have been revoked by the administrator or already used.
+        </p>
+    </div>
+
+    <div class="card bg-light border-0 mb-4">
+        <div class="card-body py-3 px-4 text-start">
+            <h6 class="fw-bold mb-2 small"><i class="fas fa-info-circle text-primary me-2"></i>What can I do?</h6>
+            <ul class="text-muted small mb-0 ps-3">
+                <li class="mb-1">Check if you used an older link from your email.</li>
+                <li class="mb-1">Contact your team administrator to request a new invitation link.</li>
+                <li>If you already set up an account, try logging in.</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="d-grid gap-2">
+        <a href="{% url 'login' %}" class="btn btn-primary py-2 fw-semibold">
+            <i class="fas fa-sign-in-alt me-2"></i>Go to Login
+        </a>
+        <a href="mailto:support@freightpro.com" class="btn btn-light text-muted py-2">
+            Contact Support
+        </a>
+    </div>
+</div>
+{% endblock %}

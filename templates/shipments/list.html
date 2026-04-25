@@ -147,6 +147,37 @@
     }
     .radius-slider::-webkit-slider-thumb { appearance: none; width: 18px; height: 18px; background: #2563eb; border-radius: 50%; cursor: pointer; border: 3px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
     .radius-input { width: 70px !important; text-align: center; padding: 0.4rem !important; font-size: 0.85rem !important; border-radius: 8px !important; }
+    body {
+        font-size: 0.875rem;
+    }
+    /* Autocomplete Styling */
+    .autocomplete-results {
+        position: absolute;
+        z-index: 2000;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        width: calc(100% - 2rem);
+        max-height: 300px;
+        overflow-y: auto;
+        margin-top: 5px;
+        display: none;
+    }
+
+    .autocomplete-item {
+        padding: 10px 16px;
+        cursor: pointer;
+        transition: background 0.2s ease;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .autocomplete-item:last-child { border-bottom: none; }
+    .autocomplete-item:hover { background-color: #f8fafc; }
+    .autocomplete-item strong { color: #1e293b; font-size: 0.85rem; }
+    .autocomplete-item span { color: #64748b; font-size: 0.75rem; }
 </style>
 <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
 {% endblock %}
@@ -338,9 +369,14 @@
             </div>
 
             <!-- Locations -->
-            <div class="filter-group">
+            <div class="filter-group position-relative">
                 <label class="filter-section-label">Pickup Location</label>
-                <input type="text" name="pickup_location_text" class="filter-control mb-2" placeholder="Type an address" value="{{ filters.pickup_location_text }}">
+                <div class="position-relative">
+                    <input type="text" name="pickup_location_text" id="pickup_location_input" 
+                           class="filter-control mb-2" placeholder="Type an address" 
+                           value="{{ filters.pickup_location_text }}" autocomplete="off">
+                    <div id="pickup-autocomplete-results" class="autocomplete-results"></div>
+                </div>
                 <div class="d-flex align-items-center radius-container">
                     <input type="range" class="radius-slider" min="0" max="1500" step="10" id="pickup_radius_slider" name="pickup_radius" value="{{ filters.pickup_radius|default:250 }}">
                     <input type="number" class="filter-control radius-input" id="pickup_radius_val" value="{{ filters.pickup_radius|default:250 }}">
@@ -348,9 +384,14 @@
                 </div>
             </div>
 
-            <div class="filter-group">
+            <div class="filter-group position-relative">
                 <label class="filter-section-label">Destination Location</label>
-                <input type="text" name="destination_location_text" class="filter-control mb-2" placeholder="Type an address" value="{{ filters.destination_location_text }}">
+                <div class="position-relative">
+                    <input type="text" name="destination_location_text" id="destination_location_input" 
+                           class="filter-control mb-2" placeholder="Type an address" 
+                           value="{{ filters.destination_location_text }}" autocomplete="off">
+                    <div id="destination-autocomplete-results" class="autocomplete-results"></div>
+                </div>
                 <div class="d-flex align-items-center radius-container">
                     <input type="range" class="radius-slider" min="0" max="1500" step="10" id="dest_radius_slider" name="destination_radius" value="{{ filters.destination_radius|default:250 }}">
                     <input type="number" class="filter-control radius-input" id="dest_radius_val" value="{{ filters.destination_radius|default:250 }}">
@@ -421,6 +462,8 @@
                                    {% if material in filters.material_list %}checked{% endif %}>
                             <label class="form-check-label" for="mat_{{ forloop.counter }}">{{ material }}</label>
                         </div>
+                        {% empty %}
+                        <div class="p-2 text-muted small text-center">No data found</div>
                         {% endfor %}
                     </div>
                 </div>
@@ -726,6 +769,78 @@
 
         toggleTable.addEventListener('click', () => switchView('table'));
         toggleCalendar.addEventListener('click', () => switchView('calendar'));
+
+        // --- Address Autocomplete (Photon API) ---
+        function setupAutocomplete(inputId, resultsId) {
+            const input = document.getElementById(inputId);
+            const results = document.getElementById(resultsId);
+
+            if (!input || !results) return;
+
+            const handleAutocomplete = debounce((query) => {
+                if (query.length < 3) {
+                    results.style.display = 'none';
+                    return;
+                }
+
+                fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=8`)
+                    .then(r => r.json())
+                    .then(data => {
+                        results.innerHTML = '';
+                        if (data.features && data.features.length > 0) {
+                            data.features.forEach(feature => {
+                                const props = feature.properties;
+                                const item = document.createElement('div');
+                                item.className = 'autocomplete-item';
+                                
+                                // Build address components
+                                const components = [];
+                                if (props.house_number) components.push(props.house_number);
+                                if (props.street) components.push(props.street);
+                                if (props.name && props.name !== props.street) components.push(props.name);
+                                if (props.city) components.push(props.city);
+                                if (props.state) components.push(props.state);
+                                if (props.postcode) components.push(props.postcode);
+                                if (props.country) components.push(props.country);
+
+                                const fullLabel = components.filter(v => v).join(', ');
+                                const mainLabel = props.name || props.street || '';
+                                const subLabel = components.filter(v => v && v !== mainLabel).join(', ');
+
+                                item.innerHTML = `
+                                    <strong>${mainLabel}</strong>
+                                    <span>${subLabel}</span>
+                                `;
+                                
+                                item.addEventListener('click', () => {
+                                    input.value = fullLabel;
+                                    results.style.display = 'none';
+                                    updateResults();
+                                });
+                                results.appendChild(item);
+                            });
+                            results.style.display = 'block';
+                        } else {
+                            results.style.display = 'none';
+                        }
+                    })
+                    .catch(err => console.error('Autocomplete error:', err));
+            }, 300);
+
+            input.addEventListener('input', (e) => {
+                handleAutocomplete(e.target.value);
+            });
+
+            // Close on click outside
+            document.addEventListener('click', (e) => {
+                if (!input.contains(e.target) && !results.contains(e.target)) {
+                    results.style.display = 'none';
+                }
+            });
+        }
+
+        setupAutocomplete('pickup_location_input', 'pickup-autocomplete-results');
+        setupAutocomplete('destination_location_input', 'destination-autocomplete-results');
 
         bindAjaxPagination();
     });

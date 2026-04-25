@@ -1,0 +1,265 @@
+{% extends 'base.html' %}
+{% block title %}Map Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .map-shell { height: calc(100vh - 120px); display: grid; grid-template-columns: 340px 1fr; gap: 14px; }
+    .map-panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; overflow: hidden; box-shadow: 0 10px 24px rgba(15,23,42,.06); }
+    .map-panel-head { padding: 14px 16px; border-bottom: 1px solid #eef2f7; }
+    .map-panel-body { padding: 12px 14px; overflow-y: auto; height: calc(100% - 64px); }
+    .map-filter-label { font-size: 12px; color: #6b7280; font-weight: 700; text-transform: uppercase; margin-bottom: 6px; }
+    .map-filter-block { margin-bottom: 14px; }
+    .map-check-list { max-height: 125px; overflow: auto; border: 1px solid #e5e7eb; border-radius: 10px; padding: 6px 8px; }
+    .map-check-list label { display: flex; align-items: center; gap: 8px; font-size: 13px; margin-bottom: 6px; }
+    #geo-map { width: 100%; height: 100%; border-radius: 14px; }
+    .map-board { position: relative; }
+    .map-status { position: absolute; top: 12px; right: 12px; z-index: 1000; background: #fff; border-radius: 999px; padding: 8px 12px; font-size: 12px; box-shadow: 0 8px 20px rgba(15,23,42,.12); }
+    .marker-dot { width: 14px; height: 14px; border-radius: 50%; display: inline-block; border: 2px solid #fff; }
+    .legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; font-size: 13px; }
+    .result-item { border: 1px solid #e5e7eb; border-radius: 10px; padding: 8px 10px; margin-bottom: 8px; cursor: pointer; }
+    .result-item:hover { border-color: #3b82f6; box-shadow: 0 6px 16px rgba(59,130,246,.12); }
+    .popup-list { margin: 0; padding-left: 16px; }
+    .popup-list li { margin-bottom: 4px; }
+    @media (max-width: 992px) {
+        .map-shell { grid-template-columns: 1fr; height: auto; }
+        .map-board { min-height: 66vh; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h3 class="mb-1"><i class="fas fa-map-location-dot text-primary me-2"></i>Interactive Geographic Map Dashboard</h3>
+            <p class="text-muted mb-0">Suppliers and receivers visualized with product-type color coding and advanced filters.</p>
+        </div>
+        <a href="{% url 'accounts:company_list' %}" class="btn btn-outline-primary"><i class="fas fa-building me-1"></i>Back to Directory</a>
+    </div>
+
+    <div class="map-shell">
+        <section class="map-panel">
+            <div class="map-panel-head d-flex justify-content-between align-items-center">
+                <strong>Filter Panel</strong>
+                <button class="btn btn-sm btn-outline-secondary" onclick="clearFilters()">Reset</button>
+            </div>
+            <div class="map-panel-body">
+                <div class="map-filter-block">
+                    <div class="map-filter-label">Search</div>
+                    <input type="text" id="f_search" class="form-control" placeholder="Company, city, role, product...">
+                </div>
+
+                <div class="map-filter-block">
+                    <div class="map-filter-label">Role</div>
+                    <div class="map-check-list">
+                        {% for v,label in role_options %}
+                        <label><input type="checkbox" class="flt" data-key="role" value="{{ v }}"> {{ label }}</label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="map-filter-block">
+                    <div class="map-filter-label">Industry</div>
+                    <div class="map-check-list">
+                        {% for val in industry_options %}
+                        <label><input type="checkbox" class="flt" data-key="industry" value="{{ val }}"> {{ val }}</label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="map-filter-block">
+                    <div class="map-filter-label">Tier</div>
+                    <div class="map-check-list">
+                        {% for v,label in tier_options %}
+                        <label><input type="checkbox" class="flt" data-key="tier" value="{{ v }}"> {{ label }}</label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="map-filter-block">
+                    <div class="map-filter-label">City</div>
+                    <div class="map-check-list">
+                        {% for val in city_options %}
+                        <label><input type="checkbox" class="flt" data-key="city" value="{{ val }}"> {{ val }}</label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="map-filter-block">
+                    <div class="map-filter-label">Product Type</div>
+                    <div class="map-check-list">
+                        {% for val in product_type_options %}
+                        <label><input type="checkbox" class="flt" data-key="product_type" value="{{ val }}"> {{ val }}</label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <hr>
+                <div class="map-filter-block">
+                    <div class="map-filter-label">Visible Entities</div>
+                    <div id="resultList"></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="map-board">
+            <div class="map-status" id="mapStatus">Loading map data...</div>
+            <div id="geo-map"></div>
+        </section>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const PRODUCT_COLORS = {
+    'Electronics': '#ef4444',
+    'Raw Materials': '#3b82f6',
+    'Plastics': '#10b981',
+    'Paper & Cardboard': '#f59e0b',
+    'Textiles': '#8b5cf6',
+    'Machinery': '#ec4899',
+    'Other': '#6b7280',
+};
+
+const map = L.map('geo-map').setView([20.5937, 78.9629], 4);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    maxZoom: 18,
+    attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+}).addTo(map);
+
+let layerGroup = L.layerGroup().addTo(map);
+let currentMarkers = [];
+
+
+function selectedValues(key){
+    return Array.from(document.querySelectorAll(`.flt[data-key="${key}"]:checked`)).map(x=>x.value);
+}
+
+function buildQuery(){
+    const p = new URLSearchParams();
+    const search = (document.getElementById('f_search').value || '').trim();
+    if(search) p.append('search', search);
+
+    ['city','industry','tier','product_type','role'].forEach(key=>{
+        selectedValues(key).forEach(v=>p.append(key, v));
+    });
+    return p.toString();
+}
+
+function popupHtml(m){
+    const inv = m.inventory || {item_count:0,total_quantity:0,top_items:[]};
+    const req = m.requirements || {open_count:0,top_items:[]};
+    const invList = (inv.top_items || []).map(i=>`<li>${i.name} - ${i.quantity} ${i.unit}</li>`).join('') || '<li>No active inventory details</li>';
+    const reqList = (req.top_items || []).map(i=>`<li>${i.material} - ${i.quantity} ${i.unit}</li>`).join('') || '<li>No open requirements</li>';
+
+    return `
+        <div style="min-width:260px;">
+            <div style="font-weight:700; font-size:14px; margin-bottom:4px;">${m.name}</div>
+            <div style="font-size:12px; color:#64748b; margin-bottom:8px;">${m.city || ''}${m.state ? ', ' + m.state : ''} • ${m.role.toUpperCase()}</div>
+            <div style="font-size:12px; margin-bottom:6px;"><strong>Product Type:</strong> ${m.product_types.join(', ')}</div>
+            <div style="font-size:12px; margin-bottom:4px;"><strong>Inventory:</strong> ${inv.item_count} items, total ${inv.total_quantity}</div>
+            <ul class="popup-list">${invList}</ul>
+            <div style="font-size:12px; margin:8px 0 4px;"><strong>Open Requirements:</strong> ${req.open_count}</div>
+            <ul class="popup-list">${reqList}</ul>
+            <a href="${m.detail_url}" class="btn btn-sm btn-outline-primary w-100 mt-2">Open Profile</a>
+        </div>
+    `;
+}
+
+function renderLegend(markers){
+    const counts = {};
+    markers.forEach(m=>{
+        const t = m.primary_product_type || 'Other';
+        counts[t] = (counts[t] || 0) + 1;
+    });
+    const container = document.getElementById('legendList');
+    const keys = Object.keys(counts);
+    if(!keys.length){
+        container.innerHTML = '<div class="text-muted small">No markers for selected filters.</div>';
+        return;
+    }
+    container.innerHTML = keys.map(k=>`
+        <div class="legend-item"><span class="marker-dot" style="background:${PRODUCT_COLORS[k] || PRODUCT_COLORS.Other}"></span> ${k} (${counts[k]})</div>
+    `).join('');
+    updateDistributionChart(counts);
+}
+
+function renderResultList(markers){
+    const list = document.getElementById('resultList');
+    if(!markers.length){
+        list.innerHTML = '<div class="text-muted small">No entities found.</div>';
+        return;
+    }
+    list.innerHTML = markers.slice(0, 40).map(m=>`
+        <div class="result-item" data-mid="${m.id}">
+            <div class="fw-bold">${m.name}</div>
+            <div class="small text-muted">${m.city || ''}${m.state ? ', ' + m.state : ''} • ${m.role}</div>
+            <div class="small">${m.primary_product_type}</div>
+        </div>
+    `).join('');
+
+    Array.from(list.querySelectorAll('.result-item')).forEach(el=>{
+        el.addEventListener('click', ()=>{
+            const id = parseInt(el.dataset.mid, 10);
+            const marker = currentMarkers.find(x=>x.meta.id === id);
+            if(marker){
+                map.setView(marker.getLatLng(), 10, {animate:true});
+                marker.openPopup();
+            }
+        });
+    });
+}
+
+function markerStyle(productType){
+    return {
+        radius: 9,
+        fillColor: PRODUCT_COLORS[productType] || PRODUCT_COLORS.Other,
+        color: '#fff',
+        weight: 2,
+        opacity: 1,
+        fillOpacity: 0.95,
+    };
+}
+
+async function loadMarkers(){
+    const status = document.getElementById('mapStatus');
+    status.innerText = 'Loading map data...';
+    const qs = buildQuery();
+    const res = await fetch(`/companies/map-dashboard/data/${qs ? '?' + qs : ''}`);
+    const data = await res.json();
+    const markers = data.markers || [];
+
+    layerGroup.clearLayers();
+    currentMarkers = [];
+
+    if(markers.length){
+        const bounds = [];
+        markers.forEach(m=>{
+            const marker = L.circleMarker([m.lat, m.lng], markerStyle(m.primary_product_type)).addTo(layerGroup);
+            marker.meta = m;
+            marker.bindPopup(popupHtml(m));
+            currentMarkers.push(marker);
+            bounds.push([m.lat, m.lng]);
+        });
+        map.fitBounds(bounds, {padding:[30,30], maxZoom: 11});
+    }
+    renderResultList(markers);
+    status.innerText = `${markers.length} entities visible`;
+}
+
+function clearFilters(){
+    document.getElementById('f_search').value = '';
+    document.querySelectorAll('.flt').forEach(cb=>cb.checked=false);
+    loadMarkers();
+}
+
+document.getElementById('f_search').addEventListener('input', ()=>{
+    clearTimeout(window._mapDebounce);
+    window._mapDebounce = setTimeout(loadMarkers, 250);
+});
+document.querySelectorAll('.flt').forEach(cb=>cb.addEventListener('change', loadMarkers));
+
+loadMarkers();
+</script>
+{% endblock %}
