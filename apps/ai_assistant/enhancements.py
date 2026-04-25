@@ -102,21 +102,24 @@ def _quantize(value: Decimal, places: str) -> Decimal:
     return value.quantize(Decimal(places), rounding=ROUND_HALF_UP)
 
 
-def refresh_demand_forecasts(tenant, lookback_days: int = 30) -> int:
+def refresh_demand_forecasts(tenant=None, lookback_days: int = 30) -> int:
     """Compute/update demand forecasts and return number of records touched."""
     from apps.inventory.models import InventoryItem, InventoryTransaction
 
-    if not tenant:
-        return 0
-
     cutoff = timezone.now() - timedelta(days=lookback_days)
-    items = InventoryItem.objects.filter(tenant=tenant).select_related('warehouse')
+    
+    if tenant:
+        items = InventoryItem.objects.filter(tenant=tenant).select_related('warehouse')
+    else:
+        # Global refresh for all items (superuser context)
+        items = InventoryItem.plain_objects.all().select_related('warehouse', 'tenant')
+    
     touched = 0
 
     with transaction.atomic():
         for item in items:
-            usage_qs = InventoryTransaction.objects.filter(
-                tenant=tenant,
+            usage_qs = InventoryTransaction.plain_objects.filter(
+                tenant=item.tenant,
                 item=item,
                 transaction_type__in=['SHIP', 'RESERVE'],
                 timestamp__gte=cutoff,
@@ -161,7 +164,7 @@ def refresh_demand_forecasts(tenant, lookback_days: int = 30) -> int:
                 notes = f'Stock health is stable for approximately {days_to_runout} days.'
 
             DemandForecastSnapshot.objects.update_or_create(
-                tenant=tenant,
+                tenant=item.tenant,
                 inventory_item=item,
                 defaults={
                     'current_quantity': _quantize(qty, '0.01'),
