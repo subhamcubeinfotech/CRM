@@ -88,16 +88,17 @@ class InventoryItemForm(forms.ModelForm):
         if user:
             from apps.accounts.models import Company
             user_company = user.company
-            if getattr(user, 'is_admin', False):
+            
+            # Filter companies: Superuser sees all, Tenant user sees only their own
+            if user.is_superuser:
+                # Global admin with access to everything
                 company_qs = Company.plain_objects.all().order_by('name')
+            elif user.tenant:
+                # Tenant specific users
+                company_qs = Company.objects.filter(tenant=user.tenant).order_by('name')
             else:
-                from django.db.models import Q
-                if user_company:
-                    company_qs = Company.plain_objects.filter(
-                        Q(created_by=user) | Q(pk=user_company.pk)
-                    ).order_by('name')
-                else:
-                    company_qs = Company.plain_objects.filter(created_by=user).order_by('name')
+                # Fallback
+                company_qs = Company.objects.none()
 
             self.fields['company'].queryset = company_qs
 
