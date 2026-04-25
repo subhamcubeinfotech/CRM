@@ -20,10 +20,14 @@ class Subscription(models.Model):
         'starter': {
             'max_users': 5,
             'max_shipments_per_month': 100,
+            'has_api_access': False,
+            'has_ocean_tracking': False,
         },
         'professional': {
             'max_users': None,  # Unlimited
             'max_shipments_per_month': None,  # Unlimited
+            'has_api_access': True,
+            'has_ocean_tracking': True,
         },
     }
     
@@ -85,7 +89,17 @@ class Subscription(models.Model):
             'user_count': user_count,
             'max_users': max_users if max_users else '∞',
             'max_shipments': limits['max_shipments_per_month'] if limits['max_shipments_per_month'] else '∞',
+            'has_api_access': self.has_api_access(),
+            'has_ocean_tracking': self.has_ocean_tracking(),
         }
+
+    def has_api_access(self):
+        """Check if the current plan allows API access."""
+        return self.get_limits().get('has_api_access', False)
+
+    def has_ocean_tracking(self):
+        """Check if the current plan allows advanced ocean tracking."""
+        return self.get_limits().get('has_ocean_tracking', False)
     
     def __str__(self):
         return f"{self.tenant.name} - {self.get_plan_display()} ({self.status})"
