@@ -479,27 +479,27 @@ def find_match_for_requirement(request, requirement_id):
 @login_required
 def enhancements_dashboard(request):
     """Unified dashboard for demand forecasting, quote automation, sentiment and OCR."""
+    from apps.accounts.utils import is_staff_user
+    is_internal = request.user.is_superuser or is_staff_user(request.user)
+    
+    if is_internal:
+        forecasts = DemandForecastSnapshot.plain_objects.all()
+        sentiment_emails = PendingInventoryEmail.plain_objects.all()
+        quote_drafts = QuoteDraft.plain_objects.all()
+        recent_matches = SmartMatch.plain_objects.all()
+        vision_records = DocumentVisionRecord.plain_objects.all()
+    else:
+        forecasts = DemandForecastSnapshot.objects.filter(tenant=request.user.tenant)
+        sentiment_emails = PendingInventoryEmail.objects.filter(tenant=request.user.tenant)
+        quote_drafts = QuoteDraft.objects.filter(tenant=request.user.tenant)
+        recent_matches = SmartMatch.objects.filter(tenant=request.user.tenant)
+        vision_records = DocumentVisionRecord.objects.filter(tenant=request.user.tenant)
 
-    forecasts = DemandForecastSnapshot.objects.filter(
-        tenant=request.user.tenant
-    ).select_related('inventory_item', 'inventory_item__warehouse').order_by('days_to_runout', '-computed_at')[:25]
-
-    sentiment_emails = PendingInventoryEmail.objects.filter(
-        tenant=request.user.tenant,
-    ).exclude(sentiment_label='neutral').order_by('-received_at')[:20]
-
-    quote_drafts = QuoteDraft.objects.filter(
-        tenant=request.user.tenant
-    ).select_related('buyer', 'supplier', 'inventory_item', 'requirement').order_by('-created_at')[:25]
-
-    recent_matches = SmartMatch.objects.filter(
-        tenant=request.user.tenant,
-        is_dismissed=False,
-    ).select_related('requirement', 'requirement__buyer', 'inventory_item', 'inventory_item__company').order_by('-created_at')[:20]
-
-    vision_records = DocumentVisionRecord.objects.filter(
-        tenant=request.user.tenant
-    ).order_by('-created_at')[:20]
+    forecasts = forecasts.select_related('inventory_item', 'inventory_item__warehouse').order_by('days_to_runout', '-computed_at')[:25]
+    sentiment_emails = sentiment_emails.exclude(sentiment_label='neutral').order_by('-received_at')[:20]
+    quote_drafts = quote_drafts.select_related('buyer', 'supplier', 'inventory_item', 'requirement').order_by('-created_at')[:25]
+    recent_matches = recent_matches.filter(is_dismissed=False).select_related('requirement', 'requirement__buyer', 'inventory_item', 'inventory_item__company').order_by('-created_at')[:20]
+    vision_records = vision_records.order_by('-created_at')[:20]
 
     context = {
         'forecasts': forecasts,
@@ -554,7 +554,12 @@ def send_quote_draft_view(request, draft_id):
 @login_required
 @require_POST
 def refresh_forecasts(request):
-    touched = refresh_demand_forecasts(request.user.tenant)
+    from apps.accounts.utils import is_staff_user
+    # If superuser/staff, refresh EVERYTHING. If tenant user, refresh only their tenant.
+    is_internal = request.user.is_superuser or is_staff_user(request.user)
+    tenant_to_refresh = None if is_internal else request.user.tenant
+    
+    touched = refresh_demand_forecasts(tenant_to_refresh)
     return JsonResponse({'status': 'success', 'updated_records': touched})
 
 
