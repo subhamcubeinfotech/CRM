@@ -11,6 +11,23 @@ class Tenant(models.Model):
     def __str__(self):
         return self.name
 
+    @property
+    def display_name(self):
+        """Returns the tenant name without the word 'Tenant'."""
+        return self.name.replace('Tenant', '').replace('tenant', '').strip()
+
+    @property
+    def platform_logo(self):
+        """Always returns the system's first tenant's logo (Platform branding)."""
+        try:
+            # Get the very first tenant (the admin/platform owner)
+            first_tenant = self.__class__.objects.order_by('id').first()
+            if first_tenant and first_tenant.logo:
+                return first_tenant.logo
+        except:
+            pass
+        return self.logo
+
 class TenantManager(models.Manager):
     def get_queryset(self):
         tenant = get_current_tenant()
