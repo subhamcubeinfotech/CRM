@@ -24,6 +24,10 @@ def search_shipments(tenant, **kwargs):
     qs = Shipment.objects.filter(tenant=tenant)
     
     if kwargs.get('shipment_number'):
+        # Try exact match first for better precision
+        exact_match = qs.filter(shipment_number__iexact=kwargs['shipment_number'])
+        if exact_match.exists():
+            return exact_match
         qs = qs.filter(shipment_number__icontains=kwargs['shipment_number'])
     if kwargs.get('status'):
         qs = qs.filter(status=kwargs['status'])
@@ -68,6 +72,10 @@ def search_orders(tenant, **kwargs):
     qs = Order.objects.filter(tenant=tenant)
     
     if kwargs.get('order_number'):
+        # Try exact match first for better precision
+        exact_match = qs.filter(order_number__iexact=kwargs['order_number'])
+        if exact_match.exists():
+            return exact_match
         qs = qs.filter(order_number__icontains=kwargs['order_number'])
     if kwargs.get('status'):
         qs = qs.filter(status=kwargs['status'])
@@ -131,14 +139,14 @@ def get_dashboard_stats(tenant):
 
 INTENT_PATTERNS = [
     # Shipment queries
-    (r'(?:status|track|where)\s+(?:of\s+)?(?:shipment|shp)[\s#-]*(\w+)', 'shipment_lookup'),
+    (r'(?:status|track|where)\s+(?:of\s+)?(?:shipment|shp)[\s#-]*([\w\-\#]+)', 'shipment_lookup'),
     (r'(?:how many|count|total)\s+(?:shipments?)', 'shipment_count'),
     (r'(?:pending|waiting)\s+shipments?', 'shipment_status_filter'),
     (r'(?:in.transit|on.the.way)\s+shipments?', 'shipment_transit'),
     (r'(?:delivered)\s+shipments?', 'shipment_delivered'),
     (r'(?:overdue|late)\s+shipments?', 'shipment_overdue'),
-    (r'(?:show|list|get|find)\s+(?:all\s+)?shipments?\s+(?:for|of|from)\s+(.+)', 'shipment_by_company'),
-    (r'(?:show|list|get|find)\s+(?:all\s+)?shipments?', 'shipment_list'),
+    (r'(?:show|list|get|find)\s+(?:all\s+)?(?:\d+\s+)?shipments?\s+(?:for|of|from)\s+(.+)', 'shipment_by_company'),
+    (r'(?:show|list|get|find)\s+(?:all\s+)?(?:\d+\s+)?shipments?', 'shipment_list'),
     (r'(?:recent|latest|last)\s+shipments?', 'shipment_recent'),
     
     # Inventory queries  
@@ -148,11 +156,11 @@ INTENT_PATTERNS = [
     (r'(?:show|list|get|find)\s+(?:all\s+)?inventory', 'inventory_list'),
     
     # Order queries
-    (r'(?:order|po)[\s#-]*(\w+)', 'order_lookup'),
+    (r'(?:order|po)[\s#-]*([\w\-\#]+)', 'order_lookup'),
     (r'(?:how many|count|total)\s+(?:orders?)', 'order_count'),
     (r'(?:open|active|pending)\s+orders?', 'order_open'),
-    (r'(?:show|list|get|find)\s+(?:all\s+)?orders?\s+(?:for|of|from)\s+(.+)', 'order_by_company'),
-    (r'(?:show|list|get|find)\s+(?:all\s+)?orders?', 'order_list'),
+    (r'(?:show|list|get|find)\s+(?:all\s+)?(?:\d+\s+)?orders?\s+(?:for|of|from)\s+(.+)', 'order_by_company'),
+    (r'(?:show|list|get|find)\s+(?:all\s+)?(?:\d+\s+)?orders?', 'order_list'),
     
     # Company queries
     (r'(?:who|which)\s+(?:are\s+)?(?:the\s+)?(?:suppliers?|vendors?)', 'company_vendors'),
@@ -484,14 +492,103 @@ def process_query(user, message):
     return _conversational_fallback(user, message)
 
 
+def search_invoices(tenant, **kwargs):
+    """Search invoices"""
+    from apps.invoicing.models import Invoice
+    qs = Invoice.objects.filter(tenant=tenant)
+    
+    if kwargs.get('invoice_number'):
+        qs = qs.filter(invoice_number__icontains=kwargs['invoice_number'])
+    if kwargs.get('status'):
+        qs = qs.filter(status=kwargs['status'])
+    if kwargs.get('customer_name'):
+        qs = qs.filter(customer__name__icontains=kwargs['customer_name'])
+        
+    return qs[:10]
+
+
+def search_contacts(tenant, **kwargs):
+    """Search users/contacts"""
+    from apps.accounts.models import CustomUser
+    qs = CustomUser.objects.filter(tenant=tenant, is_active=True)
+    
+    if kwargs.get('name'):
+        qs = qs.filter(Q(first_name__icontains=kwargs['name']) | Q(last_name__icontains=kwargs['name']) | Q(username__icontains=kwargs['name']))
+    if kwargs.get('role'):
+        qs = qs.filter(role=kwargs['role'])
+        
+    return qs[:10]
+
+
 def _conversational_fallback(user, message):
-    """Use Kimi (Moonshot AI) to provide a smart conversational response grounded in CRM data."""
+    """Use Kimi (Moonshot AI) to provide a smart conversational response grounded in LIVE CRM data."""
     api_key = getattr(settings, 'KIMI_API_KEY', '').strip()
     if not api_key:
         return _static_fallback(message)
 
     try:
+        # 1. Gather Context (Dashboard Stats)
         stats = get_dashboard_stats(user.tenant)
+        
+        # 2. Gather LIVE Data (Broad Search across all models)
+        live_context = ""
+        from apps.shipments.models import Shipment
+        from apps.orders.models import Order
+        from apps.inventory.models import InventoryItem
+        from apps.accounts.models import Company, CustomUser
+        from apps.invoicing.models import Invoice
+        
+        # Extract potential IDs or keywords (words with hyphens, numbers, or length > 3)
+        potential_ids = re.findall(r'[\w\-\#]+', message)
+        # Filter for things that look like IDs (have numbers or hyphens) or are significant words
+        search_terms = [t for t in potential_ids if (any(c.isdigit() for c in t) or '-' in t or len(t) > 3)]
+        
+        # If we have specific terms, search them. Otherwise use whole message for broad lookup.
+        query_filter = Q()
+        if search_terms:
+            for term in search_terms:
+                query_filter |= Q(shipment_number__icontains=term) | Q(tracking_number__icontains=term) | Q(order__order_number__icontains=term) | Q(order__po_number__icontains=term)
+        else:
+            query_filter = Q(shipment_number__icontains=message) | Q(customer__name__icontains=message)
+
+        # Search Shipments
+        ship_matches = Shipment.objects.filter(tenant=user.tenant).filter(query_filter).select_related('order', 'customer').distinct()[:5]
+        if ship_matches:
+            live_context += "\nRelevant Shipments:\n" + "\n".join(f"- {s.shipment_number}: {s.get_status_display()} (Linked Order: {s.order.order_number if s.order else 'N/A'}, Customer: {s.customer.name})" for s in ship_matches)
+        
+        # Search Orders
+        order_filter = Q()
+        if search_terms:
+            for term in search_terms:
+                order_filter |= Q(order_number__icontains=term) | Q(po_number__icontains=term) | Q(supplier__name__icontains=term)
+        else:
+            order_filter = Q(order_number__icontains=message)
+            
+        order_matches = Order.objects.filter(tenant=user.tenant).filter(order_filter).distinct()[:5]
+        if order_matches:
+            live_context += "\nRelevant Orders:\n" + "\n".join(f"- {o.order_number}: {o.get_status_display()} (Supplier: {o.supplier.name})" for o in order_matches)
+            
+        # Search Inventory
+        inv_matches = InventoryItem.objects.filter(tenant=user.tenant).filter(
+            Q(product_name__icontains=message) | Q(sku__icontains=message)
+        )[:5]
+        if inv_matches:
+            live_context += "\nRelevant Inventory:\n" + "\n".join(f"- {i.product_name} ({i.sku}): {i.quantity} {i.unit_of_measure} at {i.warehouse.name}" for i in inv_matches)
+
+        # Search Invoices
+        inv_bill_matches = Invoice.objects.filter(tenant=user.tenant).filter(
+            Q(invoice_number__icontains=message) | Q(customer__name__icontains=message)
+        )[:5]
+        if inv_bill_matches:
+            live_context += "\nRelevant Invoices:\n" + "\n".join(f"- {i.invoice_number}: {i.get_status_display()} (Total: ${i.total}, Due: {i.due_date})" for i in inv_bill_matches)
+            
+        # Search Contacts/Team
+        contact_matches = CustomUser.objects.filter(tenant=user.tenant, is_active=True).filter(
+            Q(first_name__icontains=message) | Q(last_name__icontains=message) | Q(email__icontains=message)
+        )[:5]
+        if contact_matches:
+            live_context += "\nRelevant Team/Contacts:\n" + "\n".join(f"- {u.get_full_name() or u.username}: {u.role} (Email: {u.email})" for u in contact_matches)
+
         client = OpenAI(
             api_key=api_key,
             base_url="https://api.moonshot.ai/v1",
@@ -499,24 +596,24 @@ def _conversational_fallback(user, message):
         
         system_prompt = f"""
         You are the FreightPro AI Logistics Assistant. You help users manage their CRM data.
+        You have direct access to the database results provided below.
         
         STRICT GROUNDING RULES:
-        1. Your primary knowledge comes from the CRM data provided below.
-        2. Answer questions ONLY based on the CRM data and logistics context.
-        3. If the user asks something completely unrelated to logistics or this CRM, politely steer them back.
-        4. Do NOT make up data that is not in the stats below.
+        1. Answer based on the 'LIVE CRM DATA' and 'System Stats' provided.
+        2. PRECISION IS KEY: If the user asks for a SPECIFIC record, provide details for ONLY THAT ONE record.
+        3. HANDLING LISTS: If the user asks to "show all" or for a list, and you have multiple matches in 'LIVE CRM DATA', explain that you are showing the MOST RELEVANT/RECENT ones (e.g., "Here are the top 5 matches out of {stats['total_orders']} total orders"). 
+        4. NEVER claim to be showing the full list if you only see a few records in 'LIVE CRM DATA'.
+        5. Use a helpful, professional tone. If the user asks for more than what you can see, suggest they visit the specific dashboard section.
+        6. If no specific records are found, use the 'System Stats' to give a general overview.
         
-        Current System Stats for context:
+        SYSTEM STATS:
         - Shipments: {stats['total_shipments']} ({stats['pending_shipments']} pending, {stats['in_transit_shipments']} in transit, {stats['delivered_shipments']} delivered)
         - Orders: {stats['total_orders']} ({stats['open_orders']} open)
         - Inventory: {stats['total_inventory_items']} items ({stats['low_stock_items']} low stock)
         - Companies: {stats['total_companies']} ({stats['vendors']} vendors, {stats['customers']} customers)
-        - Current Revenue: ${stats['total_revenue']:,.2f}
         
-        Guidelines:
-        - Be professional, helpful, and concise.
-        - If you can't find specific data mentioned (like a specific shipment number), ask the user for more details or suggest using the search/dashboard.
-        - You are powered by Kimi (Moonshot AI).
+        LIVE CRM DATA SEARCH RESULTS:
+        {live_context if live_context else "No specific matching records found for the keywords in the query."}
         """
         
         response = client.chat.completions.create(
@@ -525,8 +622,8 @@ def _conversational_fallback(user, message):
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": message}
             ],
-            temperature=0.3,
-            max_tokens=600,
+            temperature=0.2,
+            max_tokens=800,
         )
         return response.choices[0].message.content
     except Exception as e:
