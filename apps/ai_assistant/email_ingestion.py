@@ -135,14 +135,17 @@ def extract_inventory_items_llm(body_text):
     Uses Anthropic Claude LLM to extract inventory items from unstructured email text.
     Handles multiple items, different units, and cleans up common email garbage.
     """
-    import anthropic
+    from openai import OpenAI
     
-    api_key = getattr(settings, 'ANTHROPIC_API_KEY', '')
+    api_key = getattr(settings, 'KIMI_API_KEY', '').strip()
     if not api_key:
-        logger.warning("Anthropic API key missing. Skipping LLM extraction.")
+        logger.warning("Kimi API key missing. Skipping LLM extraction.")
         return []
 
-    client = anthropic.Anthropic(api_key=api_key)
+    client = OpenAI(
+        api_key=api_key,
+        base_url="https://api.moonshot.ai/v1",
+    )
     
     prompt = f"""
     You are a logistics and inventory data specialist. Extract all business materials mentioned in the following email.
@@ -181,17 +184,17 @@ def extract_inventory_items_llm(body_text):
     """
     
     try:
-        response = client.messages.create(
-            model="claude-3-5-sonnet-20240620",
-            max_tokens=2048,
-            temperature=0,
-            system="You extract structured inventory data from business emails. Output valid JSON only.",
+        response = client.chat.completions.create(
+            model="moonshot-v1-8k",
             messages=[
+                {"role": "system", "content": "You extract structured inventory data from business emails. Output valid JSON only."},
                 {"role": "user", "content": prompt}
-            ]
+            ],
+            temperature=0,
+            max_tokens=2048,
         )
-        content = response.content[0].text
-        # Extract JSON if Claude adds conversational filler
+        content = response.choices[0].message.content
+        # Extract JSON if Kimi adds conversational filler
         if "```json" in content:
             content = content.split("```json")[1].split("```")[0].strip()
         elif "```" in content:
@@ -200,7 +203,7 @@ def extract_inventory_items_llm(body_text):
         data = json.loads(content)
         return data.get('items', [])
     except Exception as e:
-        logger.error(f"Claude Extraction failed: {e}. Falling back to Regex extraction.")
+        logger.error(f"Kimi Extraction failed: {e}. Falling back to Regex extraction.")
         return extract_items_regex_fallback(body_text)
 
 def clean_product_name(name):
