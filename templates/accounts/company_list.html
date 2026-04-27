@@ -722,21 +722,13 @@
                             <span class="filter-count-badge" id="filter-count-badge">{{ active_filters|length }}</span>
                         </button>
                     </div>
-                    <div class="col-12 col-lg-6">
+                    <div class="col-12 col-lg-10">
                         <div class="input-group">
                             <span class="input-group-text"><i class="fas fa-search text-muted"></i></span>
                             <input type="text" id="live-search" name="search" class="form-control"
                                 placeholder="Search by company name, services, materials, tags, or location..."
                                 value="{{ search|default:'' }}">
                         </div>
-                    </div>
-                    <div class="col-12 col-lg-2">
-                        <select id="live-filter-type" name="type" class="form-select">
-                            <option value="">All Types</option>
-                            {% for type_value, type_label in company_type_choices %}
-                                <option value="{{ type_value }}" {% if company_type == type_value %}selected{% endif %}>{{ type_label }}</option>
-                            {% endfor %}
-                        </select>
                     </div>
                 </div>
 
