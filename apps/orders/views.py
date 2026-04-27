@@ -1020,37 +1020,32 @@ def order_purchase_order_pdf(request, pk):
 
     # --- Logo & Header ---
     tenant = order.tenant or request.user.tenant
-    logo = None
     
-    # Try tenant logo first
-    if tenant and tenant.logo:
-        try:
-            logo_path = tenant.logo.path
-            if os.path.exists(logo_path):
-                logo = Image(logo_path)
-        except Exception as e:
-            logger.error(f"Error loading tenant logo for PO: {e}")
-            
-    # Fallback to user's company logo
-    if not logo and request.user.company and request.user.company.logo:
-        try:
-            logo_path = request.user.company.logo.path
-            if os.path.exists(logo_path):
-                logo = Image(logo_path)
-        except Exception as e:
-            logger.error(f"Error loading company logo for PO: {e}")
+    # Fallback for admins/superusers generating PDFs on the server
+    if not tenant and request.user.is_superuser:
+        from apps.accounts.models_tenant import Tenant
+        tenant = Tenant.objects.first()
 
-    if logo:
+    logo = None
+    logo_file = tenant.platform_logo if tenant else None
+    
+    if not logo_file and request.user.company and request.user.company.logo:
+        logo_file = request.user.company.logo
+        
+    if logo_file:
         try:
-            aspect = logo.imageHeight / float(logo.imageWidth)
-            logo.drawWidth = 35 * mm
-            logo.drawHeight = 35 * mm * aspect
-        except:
-            logo = None
+            logo_path = logo_file.path
+            if os.path.exists(logo_path):
+                logo = Image(logo_path)
+                aspect = logo.imageHeight / float(logo.imageWidth)
+                logo.drawWidth = 35 * mm
+                logo.drawHeight = 35 * mm * aspect
+        except Exception as e:
+            logger.error(f"Error loading logo for PDF: {e}")
 
     # --- Header ---
     my_company = request.user.company
-    company_name = tenant.name if tenant else (my_company.name if my_company else "FreightPro Logistics")
+    company_name = tenant.display_name if tenant else (my_company.name if my_company else "FreightPro Logistics")
     company_address = my_company.full_address if my_company else "Address not set"
     
     if logo:

@@ -1727,40 +1727,36 @@ def generate_bol_pdf(request, pk):
 
     # --- Logo & Header ---
     tenant = shipment.tenant or request.user.tenant
-    logo = None
     
-    # Try tenant logo first
-    if tenant and tenant.logo:
-        try:
-            logo_path = tenant.logo.path
-            if os.path.exists(logo_path):
-                logo = Image(logo_path)
-        except Exception as e:
-            logger.error(f"Error loading tenant logo for BoL: {e}")
-            
-    # Fallback to user's company logo
-    if not logo and request.user.company and request.user.company.logo:
-        try:
-            logo_path = request.user.company.logo.path
-            if os.path.exists(logo_path):
-                logo = Image(logo_path)
-        except Exception as e:
-            logger.error(f"Error loading company logo for BoL: {e}")
+    # Fallback for admins/superusers generating PDFs on the server
+    if not tenant and request.user.is_superuser:
+        from apps.accounts.models_tenant import Tenant
+        tenant = Tenant.objects.first()
 
-    if logo:
+    logo = None
+    logo_file = tenant.platform_logo if tenant else None
+    
+    if not logo_file and request.user.company and request.user.company.logo:
+        logo_file = request.user.company.logo
+        
+    if logo_file:
         try:
-            aspect = logo.imageHeight / float(logo.imageWidth)
-            logo.drawWidth = 35 * mm
-            logo.drawHeight = 35 * mm * aspect
-        except:
-            logo = None
+            logo_path = logo_file.path
+            if os.path.exists(logo_path):
+                logo = Image(logo_path)
+                aspect = logo.imageHeight / float(logo.imageWidth)
+                logo.drawWidth = 35 * mm
+                logo.drawHeight = 35 * mm * aspect
+        except Exception as e:
+            logger.error(f"Error loading logo for PDF: {e}")
 
     # ─── HEADER ───
     shipment_info_title = [
         Paragraph("<b>BILL OF LADING</b>", title_style),
     ]
     
-    company_lines = [Paragraph(tenant.name if tenant else "FreightPro Inc.", company_name_style)]
+    company_name = tenant.display_name if tenant else "FreightPro Inc."
+    company_lines = [Paragraph(company_name, company_name_style)]
     s_comp = shipment.order.supplier if shipment.order else None
     if s_comp:
         addr = s_comp.address_line1 or ""
@@ -2058,33 +2054,28 @@ def generate_shipping_confirmation_pdf(request, pk):
 
     # --- Logo & Header ---
     tenant = shipment.tenant or request.user.tenant
-    logo = None
     
-    # Try tenant logo first
-    if tenant and tenant.logo:
-        try:
-            logo_path = tenant.logo.path
-            if os.path.exists(logo_path):
-                logo = Image(logo_path)
-        except Exception as e:
-            logger.error(f"Error loading tenant logo for Shipping Confirmation: {e}")
-            
-    # Fallback to user's company logo
-    if not logo and request.user.company and request.user.company.logo:
-        try:
-            logo_path = request.user.company.logo.path
-            if os.path.exists(logo_path):
-                logo = Image(logo_path)
-        except Exception as e:
-            logger.error(f"Error loading company logo for Shipping Confirmation: {e}")
+    # Fallback for admins/superusers generating PDFs on the server
+    if not tenant and request.user.is_superuser:
+        from apps.accounts.models_tenant import Tenant
+        tenant = Tenant.objects.first()
 
-    if logo:
+    logo = None
+    logo_file = tenant.platform_logo if tenant else None
+    
+    if not logo_file and request.user.company and request.user.company.logo:
+        logo_file = request.user.company.logo
+        
+    if logo_file:
         try:
-            aspect = logo.imageHeight / float(logo.imageWidth)
-            logo.drawWidth = 35 * mm
-            logo.drawHeight = 35 * mm * aspect
-        except:
-            logo = None
+            logo_path = logo_file.path
+            if os.path.exists(logo_path):
+                logo = Image(logo_path)
+                aspect = logo.imageHeight / float(logo.imageWidth)
+                logo.drawWidth = 35 * mm
+                logo.drawHeight = 35 * mm * aspect
+        except Exception as e:
+            logger.error(f"Error loading logo for PDF: {e}")
 
     # ─── HEADER ───
     shipment_info = [
@@ -2095,7 +2086,8 @@ def generate_shipping_confirmation_pdf(request, pk):
         Paragraph(f"<b>DATE:</b> {datetime.now().strftime('%m/%d/%Y')} (ET)", right_style),
     ]
 
-    company_lines = [Paragraph(tenant.name if tenant else "FreightPro Inc.", company_name_style)]
+    company_name = tenant.display_name if tenant else "FreightPro Inc."
+    company_lines = [Paragraph(company_name, company_name_style)]
     # Default company address from tenant/settings can go here, but using supplier as fallback
     s_comp = shipment.order.supplier if shipment.order else None
     if s_comp:
@@ -2409,33 +2401,28 @@ def generate_packing_list_pdf(request, pk):
 
     # --- Logo & Header ---
     tenant = shipment.tenant or request.user.tenant
-    logo = None
     
-    # Try tenant logo first
-    if tenant and tenant.logo:
-        try:
-            logo_path = tenant.logo.path
-            if os.path.exists(logo_path):
-                logo = Image(logo_path)
-        except Exception as e:
-            logger.error(f"Error loading tenant logo for Packing List: {e}")
-            
-    # Fallback to user's company logo
-    if not logo and request.user.company and request.user.company.logo:
-        try:
-            logo_path = request.user.company.logo.path
-            if os.path.exists(logo_path):
-                logo = Image(logo_path)
-        except Exception as e:
-            logger.error(f"Error loading company logo for Packing List: {e}")
+    # Fallback for admins/superusers generating PDFs on the server
+    if not tenant and request.user.is_superuser:
+        from apps.accounts.models_tenant import Tenant
+        tenant = Tenant.objects.first()
 
-    if logo:
+    logo = None
+    logo_file = tenant.platform_logo if tenant else None
+    
+    if not logo_file and request.user.company and request.user.company.logo:
+        logo_file = request.user.company.logo
+        
+    if logo_file:
         try:
-            aspect = logo.imageHeight / float(logo.imageWidth)
-            logo.drawWidth = 35 * mm
-            logo.drawHeight = 35 * mm * aspect
-        except:
-            logo = None
+            logo_path = logo_file.path
+            if os.path.exists(logo_path):
+                logo = Image(logo_path)
+                aspect = logo.imageHeight / float(logo.imageWidth)
+                logo.drawWidth = 35 * mm
+                logo.drawHeight = 35 * mm * aspect
+        except Exception as e:
+            logger.error(f"Error loading logo for PDF: {e}")
 
     # ─── HEADER ───
     shipment_info = [

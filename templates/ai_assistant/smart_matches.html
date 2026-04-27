@@ -200,9 +200,11 @@
                             </div>
 
                             <div class="action-row justify-content-center">
+                                <!-- 
                                 <button class="btn btn-quote text-center d-flex align-items-center justify-content-center" style="background: #2563eb;" onclick="draftQuote({{ match.id }})">
                                     <i class="fas fa-file-signature me-2"></i>Draft Quote
                                 </button>
+                                -->
                                 <button class="btn btn-quote text-center d-flex align-items-center justify-content-center" style="background: #2d3748;" onclick="notifyBothParties({{ match.id }})">
                                     <i class="fas fa-paper-plane me-2"></i>Notify Both Parties
                                 </button>
@@ -224,6 +226,7 @@
             </div>
         {% endif %}
 
+        <!-- 
         {% if recent_quote_drafts %}
             <div class="row mt-4">
                 <div class="col-12">
@@ -243,7 +246,7 @@
                                         <th>Status</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody id="drafts-table-body">
                                     {% for draft in recent_quote_drafts %}
                                     <tr>
                                         <td class="ps-4">{{ draft.buyer.name }}</td>
@@ -264,6 +267,7 @@
                 </div>
             </div>
         {% endif %}
+        -->
 
         {% if pending_supply_emails or requirements %}
             <div class="row mt-5">
