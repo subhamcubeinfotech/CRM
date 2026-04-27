@@ -4,6 +4,7 @@ from .middleware import get_current_tenant
 class Tenant(models.Model):
     name = models.CharField(max_length=255)
     domain = models.CharField(max_length=255, unique=True, null=True, blank=True)
+    logo = models.ImageField(upload_to='tenant_logos/', blank=True, null=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     

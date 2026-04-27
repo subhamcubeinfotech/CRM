@@ -703,7 +703,7 @@ def shipment_detail(request, pk):
     containers = shipment.containers.all()
     
     # Get related invoices
-    invoices = Invoice.objects.filter(shipment=shipment)
+    invoices = Invoice.plain_objects.filter(shipment=shipment)
     
     # Prepare map data
     map_data = {
@@ -1676,10 +1676,11 @@ def generate_bol_pdf(request, pk):
     from reportlab.lib.pagesizes import A4
     from reportlab.lib import colors
     from reportlab.lib.units import mm
-    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, HRFlowable
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, HRFlowable, Image
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.lib.enums import TA_RIGHT, TA_CENTER, TA_LEFT
     from io import BytesIO
+    import os
 
     shipment = get_object_or_404(Shipment.objects.select_related(
         'carrier', 'customer', 'shipper', 'consignee'
@@ -1724,12 +1725,42 @@ def generate_bol_pdf(request, pk):
     
     elements = []
 
+    # --- Logo & Header ---
+    tenant = shipment.tenant or request.user.tenant
+    logo = None
+    
+    # Try tenant logo first
+    if tenant and tenant.logo:
+        try:
+            logo_path = tenant.logo.path
+            if os.path.exists(logo_path):
+                logo = Image(logo_path)
+        except Exception as e:
+            logger.error(f"Error loading tenant logo for BoL: {e}")
+            
+    # Fallback to user's company logo
+    if not logo and request.user.company and request.user.company.logo:
+        try:
+            logo_path = request.user.company.logo.path
+            if os.path.exists(logo_path):
+                logo = Image(logo_path)
+        except Exception as e:
+            logger.error(f"Error loading company logo for BoL: {e}")
+
+    if logo:
+        try:
+            aspect = logo.imageHeight / float(logo.imageWidth)
+            logo.drawWidth = 35 * mm
+            logo.drawHeight = 35 * mm * aspect
+        except:
+            logo = None
+
     # ─── HEADER ───
     shipment_info_title = [
         Paragraph("<b>BILL OF LADING</b>", title_style),
     ]
     
-    company_lines = [Paragraph("FreightPro Inc.", company_name_style)]
+    company_lines = [Paragraph(tenant.name if tenant else "FreightPro Inc.", company_name_style)]
     s_comp = shipment.order.supplier if shipment.order else None
     if s_comp:
         addr = s_comp.address_line1 or ""
@@ -1737,7 +1768,10 @@ def generate_bol_pdf(request, pk):
         company_lines.append(Paragraph(addr, normal_style))
         company_lines.append(Paragraph(city_line, normal_style))
 
-    header_table = Table([[company_lines, shipment_info_title]], colWidths=[110*mm, 70*mm])
+    if logo:
+        header_table = Table([[logo, company_lines, shipment_info_title]], colWidths=[40*mm, 80*mm, 60*mm])
+    else:
+        header_table = Table([[company_lines, shipment_info_title]], colWidths=[110*mm, 70*mm])
     header_table.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
         ('LEFTPADDING', (0,0), (-1,-1), 0),
@@ -1965,10 +1999,11 @@ def generate_shipping_confirmation_pdf(request, pk):
     from reportlab.lib.pagesizes import A4
     from reportlab.lib import colors
     from reportlab.lib.units import mm
-    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, HRFlowable
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, HRFlowable, Image
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.lib.enums import TA_RIGHT, TA_CENTER, TA_LEFT
     from io import BytesIO
+    import os
 
     shipment = get_object_or_404(Shipment.objects.select_related(
         'order', 'order__supplier', 'order__receiver', 'carrier', 'customer', 'shipper', 'consignee'
@@ -2021,6 +2056,36 @@ def generate_shipping_confirmation_pdf(request, pk):
 
     elements = []
 
+    # --- Logo & Header ---
+    tenant = shipment.tenant or request.user.tenant
+    logo = None
+    
+    # Try tenant logo first
+    if tenant and tenant.logo:
+        try:
+            logo_path = tenant.logo.path
+            if os.path.exists(logo_path):
+                logo = Image(logo_path)
+        except Exception as e:
+            logger.error(f"Error loading tenant logo for Shipping Confirmation: {e}")
+            
+    # Fallback to user's company logo
+    if not logo and request.user.company and request.user.company.logo:
+        try:
+            logo_path = request.user.company.logo.path
+            if os.path.exists(logo_path):
+                logo = Image(logo_path)
+        except Exception as e:
+            logger.error(f"Error loading company logo for Shipping Confirmation: {e}")
+
+    if logo:
+        try:
+            aspect = logo.imageHeight / float(logo.imageWidth)
+            logo.drawWidth = 35 * mm
+            logo.drawHeight = 35 * mm * aspect
+        except:
+            logo = None
+
     # ─── HEADER ───
     shipment_info = [
         Paragraph("SHIPPING CONFIRMATION", title_style),
@@ -2030,7 +2095,7 @@ def generate_shipping_confirmation_pdf(request, pk):
         Paragraph(f"<b>DATE:</b> {datetime.now().strftime('%m/%d/%Y')} (ET)", right_style),
     ]
 
-    company_lines = [Paragraph("FreightPro Inc.", company_name_style)]
+    company_lines = [Paragraph(tenant.name if tenant else "FreightPro Inc.", company_name_style)]
     # Default company address from tenant/settings can go here, but using supplier as fallback
     s_comp = shipment.order.supplier if shipment.order else None
     if s_comp:
@@ -2039,7 +2104,10 @@ def generate_shipping_confirmation_pdf(request, pk):
         company_lines.append(Paragraph(addr, normal_style))
         company_lines.append(Paragraph(city_line, normal_style))
 
-    header_table = Table([[company_lines, shipment_info]], colWidths=[100*mm, 80*mm])
+    if logo:
+        header_table = Table([[logo, company_lines, shipment_info]], colWidths=[40*mm, 70*mm, 70*mm])
+    else:
+        header_table = Table([[company_lines, shipment_info]], colWidths=[100*mm, 80*mm])
     header_table.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
         ('LEFTPADDING', (0,0), (-1,-1), 0),
@@ -2265,10 +2333,11 @@ def generate_packing_list_pdf(request, pk):
     from reportlab.lib.pagesizes import A4
     from reportlab.lib import colors
     from reportlab.lib.units import mm
-    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, HRFlowable
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, HRFlowable, Image
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.lib.enums import TA_RIGHT, TA_CENTER, TA_LEFT
     from io import BytesIO
+    import os
 
     shipment = get_object_or_404(Shipment.objects.select_related(
         'customer', 'order', 'order__supplier', 'order__receiver'
@@ -2338,6 +2407,36 @@ def generate_packing_list_pdf(request, pk):
     
     elements = []
 
+    # --- Logo & Header ---
+    tenant = shipment.tenant or request.user.tenant
+    logo = None
+    
+    # Try tenant logo first
+    if tenant and tenant.logo:
+        try:
+            logo_path = tenant.logo.path
+            if os.path.exists(logo_path):
+                logo = Image(logo_path)
+        except Exception as e:
+            logger.error(f"Error loading tenant logo for Packing List: {e}")
+            
+    # Fallback to user's company logo
+    if not logo and request.user.company and request.user.company.logo:
+        try:
+            logo_path = request.user.company.logo.path
+            if os.path.exists(logo_path):
+                logo = Image(logo_path)
+        except Exception as e:
+            logger.error(f"Error loading company logo for Packing List: {e}")
+
+    if logo:
+        try:
+            aspect = logo.imageHeight / float(logo.imageWidth)
+            logo.drawWidth = 35 * mm
+            logo.drawHeight = 35 * mm * aspect
+        except:
+            logo = None
+
     # ─── HEADER ───
     shipment_info = [
         Paragraph("PACKING LIST", title_style),
@@ -2347,12 +2446,14 @@ def generate_packing_list_pdf(request, pk):
     ]
 
     company_lines = [
-        Paragraph("FreightPro", ParagraphStyle('CompName', parent=bold_style, fontSize=24, leading=28, textColor=colors.HexColor('#1e40af'))),
+        Paragraph(tenant.name if tenant else "FreightPro", ParagraphStyle('CompName', parent=bold_style, fontSize=24, leading=28, textColor=colors.HexColor('#1e40af'))),
         Paragraph("Logistics & Freight Services", normal_style),
-        Paragraph("123 Logistics Way, Chicago, IL 60601", normal_style),
     ]
 
-    header_table = Table([[company_lines, shipment_info]], colWidths=[110*mm, 70*mm])
+    if logo:
+        header_table = Table([[logo, company_lines, shipment_info]], colWidths=[40*mm, 70*mm, 70*mm])
+    else:
+        header_table = Table([[company_lines, shipment_info]], colWidths=[110*mm, 70*mm])
     header_table.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
         ('LEFTPADDING', (0,0), (-1,-1), 0),
@@ -2507,7 +2608,8 @@ def create_invoice(request, pk):
 
     shipment = get_object_or_404(Shipment.objects.select_related('order', 'customer'), pk=pk)
 
-    existing = Invoice.objects.filter(shipment=shipment).first()
+    # Check for existing invoice using plain_objects to bypass tenant filtering for unique constraint checks
+    existing = Invoice.plain_objects.filter(shipment=shipment).first()
 
     if request.method == 'POST':
         # Calculate subtotal from manifest items if linked to an order
@@ -2553,8 +2655,8 @@ def create_invoice(request, pk):
                     if not invoice_number:
                         invoice_number = Invoice.generate_invoice_number(shipment)
                     
-                    # Check for duplicates if manually entered
-                    if Invoice.objects.filter(invoice_number=invoice_number).exists():
+                    # Check for duplicates if manually entered using plain_objects
+                    if Invoice.plain_objects.filter(invoice_number=invoice_number).exists():
                          messages.error(request, f'Invoice number {invoice_number} already exists. Please use a unique number.')
                          return redirect('shipments:shipment_detail', pk=pk)
                     
@@ -2619,7 +2721,7 @@ def create_invoice(request, pk):
     
     context = {
         'shipment': shipment,
-        'existing_invoices': Invoice.objects.filter(shipment=shipment),
+        'existing_invoices': Invoice.plain_objects.filter(shipment=shipment),
         'next_invoice_number': next_invoice_number,
         'today': date.today(),
     }
