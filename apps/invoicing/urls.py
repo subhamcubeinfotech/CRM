@@ -10,6 +10,7 @@ urlpatterns = [
     path('', views.invoice_list, name='invoice_list'),
     path('pending/', views.pending_invoices, name='pending_invoices'),
     path('create/', views.invoice_create, name='invoice_create'),
+    path('ajax/customer-shipments/<int:customer_id>/', views.get_customer_shipments, name='get_customer_shipments'),
     path('reports/aging/', views.aging_report, name='aging_report'),
     path('recurring/', views.recurring_invoice_list, name='recurring_invoice_list'),
     path('recurring/create/', views.recurring_invoice_create, name='recurring_invoice_create'),

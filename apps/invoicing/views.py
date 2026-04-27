@@ -17,6 +17,7 @@ from apps.accounts.models import Company
 from apps.shipments.models import Shipment
 from apps.accounts.utils import filter_by_user_company, check_company_access
 import logging
+from django.http import JsonResponse
 
 logger = logging.getLogger('apps.invoicing')
 
@@ -189,7 +190,8 @@ def invoice_create(request):
         return redirect('invoicing:invoice_detail', pk=invoice.pk)
     
     customers = Company.objects.filter(company_type='customer', is_active=True)
-    shipments = Shipment.objects.filter(status='delivered')
+    # Don't pre-load all shipments - will be loaded via AJAX when customer is selected
+    shipments = Shipment.objects.none()
     
     context = {
         'customers': customers,
@@ -240,7 +242,8 @@ def invoice_edit(request, pk):
         return redirect('invoicing:invoice_detail', pk=invoice.pk)
     
     customers = Company.objects.filter(company_type='customer', is_active=True)
-    shipments = Shipment.objects.filter(status='delivered')
+    # Only load shipments for this customer
+    shipments = Shipment.objects.filter(customer=invoice.customer, status='delivered')
     
     context = {
         'invoice': invoice,
@@ -889,3 +892,22 @@ def public_invoice_detail(request, token):
         'public_view': True,
     }
     return render(request, 'invoices/public_detail.html', context)
+
+
+@login_required
+def get_customer_shipments(request, customer_id):
+    """AJAX view to get delivered shipments for a specific customer"""
+    shipments = Shipment.objects.filter(
+        customer_id=customer_id, 
+        status='delivered'
+    ).order_by('-created_at')
+    
+    data = [
+        {
+            'id': s.id,
+            'shipment_number': s.shipment_number,
+            'origin': s.origin_city,
+            'destination': s.destination_city
+        } for s in shipments
+    ]
+    return JsonResponse({'shipments': data})

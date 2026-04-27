@@ -1353,19 +1353,19 @@
                         <div class="card-body">
                             <h5 class="fw-bold mb-3">Cargo Details</h5>
                             <div class="row g-3">
-                                <div class="col-md-3 text-center">
+                                <div class="col-md-4 text-center">
                                     <div class="text-muted small">Weight</div>
                                     <div class="fw-bold">{{ shipment.total_weight|floatformat:0 }} kg</div>
                                 </div>
-                                <div class="col-md-3 text-center">
+                                <div class="col-md-3 text-center" style="display: none;">
                                     <div class="text-muted small">Volume</div>
                                     <div class="fw-bold">{{ shipment.total_volume|floatformat:2 }} m³</div>
                                 </div>
-                                <div class="col-md-3 text-center">
+                                <div class="col-md-4 text-center">
                                     <div class="text-muted small">Pieces</div>
                                     <div class="fw-bold">{{ shipment.number_of_pieces }}</div>
                                 </div>
-                                <div class="col-md-3 text-center">
+                                <div class="col-md-4 text-center">
                                     <div class="text-muted small">Type</div>
                                     <div class="fw-bold">{{ shipment.get_shipment_type_display }}</div>
                                 </div>
