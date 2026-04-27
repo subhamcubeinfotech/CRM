@@ -929,13 +929,16 @@ def inventory_item_edit(request, pk):
                         notes="Inventory logging started (Existing stock)"
                     )
                 
-                old_quantity = item.quantity
+                # Fetch fresh from DB to ensure we have the real old value for comparison
+                old_instance = InventoryItem.objects.get(pk=item.pk)
+                old_quantity = old_instance.quantity
+                
                 item = form.save()
                 new_quantity = item.quantity
                 
                 # Log adjustment if quantity changed
-                if old_quantity != new_quantity:
-                    change = new_quantity - old_quantity
+                if float(old_quantity or 0) != float(new_quantity or 0):
+                    change = float(new_quantity or 0) - float(old_quantity or 0)
                     InventoryTransaction.objects.create(
                         item=item,
                         transaction_type='ADJUST',
