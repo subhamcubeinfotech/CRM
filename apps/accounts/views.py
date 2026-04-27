@@ -863,6 +863,35 @@ def ajax_associate_material(request, pk):
 
 @login_required
 @require_POST
+def ajax_disassociate_material(request, pk):
+    """Remove a material association from a company via AJAX"""
+    from apps.inventory.models import Material
+    company = get_object_or_404(Company, pk=pk)
+    material_id = request.POST.get('material_id')
+    material = get_object_or_404(Material, pk=material_id)
+    
+    # Check access (Material should belong to company and tenant)
+    if material.tenant != request.user.tenant or (material.company and material.company.pk != pk):
+         return JsonResponse({'success': False, 'message': 'Permission denied'}, status=403)
+    
+    material.company = None
+    material.save()
+    
+    # Log History
+    from .models import CompanyHistory
+    CompanyHistory.objects.create(
+        company=company,
+        user=request.user,
+        action="Removed a Company Material",
+        description=f"Removed material {material.name} from the company list.",
+        icon="fas fa-minus-circle"
+    )
+    
+    return JsonResponse({'success': True})
+
+
+@login_required
+@require_POST
 def ajax_add_contact(request):
     """AJAX create and associate a contact (CustomUser) with a company"""
     company_id = request.POST.get('company_id')

@@ -307,8 +307,18 @@
                                     <div class="flex-grow-1">
                                         <div class="d-flex justify-content-between align-items-start mb-2">
                                             <h6 class="fw-bold mb-0">{{ material.name }}</h6>
-                                            <button class="btn btn-link text-muted p-0"><i
-                                                    class="fas fa-ellipsis-h"></i></button>
+                                            <div class="dropdown">
+                                                <button class="btn btn-link text-muted p-0 no-caret" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="fas fa-ellipsis-h"></i>
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end shadow border-0 py-2" style="font-size: 0.8rem; border-radius: 10px;">
+                                                    <li>
+                                                        <a class="dropdown-item disassociate-material-btn text-danger py-2" href="javascript:void(0)" data-id="{{ material.pk }}">
+                                                            <i class="fas fa-trash-alt me-2 opacity-50"></i>Delete
+                                                        </a>
+                                                    </li>
+                                                </ul>
+                                            </div>
                                         </div>
                                         <div class="row g-2">
                                             <div class="col-md-3">
@@ -1831,7 +1841,7 @@
             if (placeholder) placeholder.remove();
 
             const materialHtml = `
-                <div class="material-item p-4 border-top animate__animated animate__fadeIn">
+                <div class="material-item p-4 border-top animate__animated animate__fadeIn" id="material-item-${material.id}">
                     <div class="d-flex align-items-center gap-4">
                         <div class="material-icon bg-light rounded-circle d-flex align-items-center justify-content-center"
                             style="width: 60px; height: 60px; font-size: 1.5rem;">
@@ -1840,8 +1850,18 @@
                         <div class="flex-grow-1">
                             <div class="d-flex justify-content-between align-items-start mb-2">
                                 <h6 class="fw-bold mb-0">${material.name}</h6>
-                                <button class="btn btn-link text-muted p-0"><i
-                                        class="fas fa-ellipsis-h"></i></button>
+                                <div class="dropdown">
+                                    <button class="btn btn-link text-muted p-0 no-caret" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="fas fa-ellipsis-h"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 py-2" style="font-size: 0.8rem; border-radius: 10px;">
+                                        <li>
+                                            <a class="dropdown-item disassociate-material-btn text-danger py-2" href="javascript:void(0)" data-id="${material.id}">
+                                                <i class="fas fa-trash-alt me-2 opacity-50"></i>Delete
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
                             </div>
                             <div class="row g-2">
                                 <div class="col-md-3">
@@ -1875,6 +1895,55 @@
             `;
             list.insertAdjacentHTML('afterbegin', materialHtml);
         }
+
+        // 3. Disassociate Material
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.disassociate-material-btn')) {
+                const btn = e.target.closest('.disassociate-material-btn');
+                const materialId = btn.dataset.id;
+                
+                if (!confirm('Are you sure you want to remove this material from the company?')) return;
+                
+                const formData = new FormData();
+                formData.append('material_id', materialId);
+                
+                fetch('{% url "accounts:ajax_disassociate_material" company.pk %}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Remove from UI with animation
+                        const item = btn.closest('.material-item');
+                        item.classList.add('animate__fadeOut');
+                        setTimeout(() => {
+                            item.remove();
+                            // If list is empty, show placeholder
+                            const list = document.getElementById('company-material-list');
+                            if (list.querySelectorAll('.material-item').length === 0) {
+                                list.innerHTML = `
+                                    <div class="text-center py-5 text-muted bg-light bg-opacity-50 border-top">
+                                        <i class="fas fa-boxes fa-2x mb-3 opacity-25"></i>
+                                        <p>No materials found for this company.</p>
+                                    </div>
+                                `;
+                            }
+                        }, 500);
+                    } else {
+                        alert(data.message || 'Error removing material.');
+                    }
+                })
+                .catch(err => {
+                    console.error('Error:', err);
+                    alert('An error occurred.');
+                });
+            }
+        });
 
         // Image selection feedback
         const materialImgInput = document.getElementById('materialImageInput');
