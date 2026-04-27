@@ -314,35 +314,29 @@ def _generate_invoice_pdf_buffer(invoice, request):
     elements = []
 
     # --- Logo & Header Row ---
-    tenant = invoice.tenant or request.user.tenant
-    logo = None
+    tenant = getattr(invoice, 'tenant', None) or request.user.tenant
     
-    # Try tenant logo first (Organization branding)
-    if tenant and tenant.logo:
-        try:
-            logo_path = tenant.logo.path
-            if os.path.exists(logo_path):
-                logo = Image(logo_path)
-        except Exception as e:
-            logger.error(f"Error loading tenant logo for PDF: {e}")
-            
-    # Fallback to user's personal company logo
-    if not logo and request.user.company and request.user.company.logo:
-        try:
-            logo_path = request.user.company.logo.path
-            if os.path.exists(logo_path):
-                logo = Image(logo_path)
-        except Exception as e:
-            logger.error(f"Error loading company logo for PDF: {e}")
+    # Fallback for admins/superusers generating PDFs on the server
+    if not tenant and request.user.is_superuser:
+        from apps.accounts.models_tenant import Tenant
+        tenant = Tenant.objects.first()
 
-    if logo:
+    logo = None
+    logo_file = tenant.platform_logo if tenant else None
+    
+    if not logo_file and request.user.company and request.user.company.logo:
+        logo_file = request.user.company.logo
+        
+    if logo_file:
         try:
-            # Aspect ratio preservation
-            aspect = logo.imageHeight / float(logo.imageWidth)
-            logo.drawWidth = 35 * mm
-            logo.drawHeight = 35 * mm * aspect
-        except:
-            logo = None
+            logo_path = logo_file.path
+            if os.path.exists(logo_path):
+                logo = Image(logo_path)
+                aspect = logo.imageHeight / float(logo.imageWidth)
+                logo.drawWidth = 35 * mm
+                logo.drawHeight = 35 * mm * aspect
+        except Exception as e:
+            logger.error(f"Error loading logo for PDF: {e}")
 
     invoice_info = [
         Paragraph("INVOICE", title_style),
@@ -353,7 +347,7 @@ def _generate_invoice_pdf_buffer(invoice, request):
 
     # --- Dynamic Branding ---
     my_company = request.user.company
-    company_name = my_company.name if my_company else (tenant.name if tenant else "FreightPro Logistics")
+    company_name = my_company.name if my_company else (tenant.display_name if tenant else "FreightPro Logistics")
     company_address = my_company.full_address if my_company else ""
     
     company_info = [
