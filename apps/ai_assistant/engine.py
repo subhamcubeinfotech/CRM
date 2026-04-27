@@ -13,7 +13,7 @@ from decimal import Decimal
 from django.db.models import Q, Sum, Count, Avg
 from django.utils import timezone
 from django.conf import settings
-import anthropic
+from openai import OpenAI
 
 logger = logging.getLogger('apps.ai_assistant')
 
@@ -485,17 +485,27 @@ def process_query(user, message):
 
 
 def _conversational_fallback(user, message):
-    """Use Claude to provide a smart conversational response when regex parsing fails."""
-    api_key = getattr(settings, 'ANTHROPIC_API_KEY', '')
+    """Use Kimi (Moonshot AI) to provide a smart conversational response grounded in CRM data."""
+    api_key = getattr(settings, 'KIMI_API_KEY', '').strip()
     if not api_key:
         return _static_fallback(message)
 
     try:
         stats = get_dashboard_stats(user.tenant)
-        client = anthropic.Anthropic(api_key=api_key)
+        client = OpenAI(
+            api_key=api_key,
+            base_url="https://api.moonshot.ai/v1",
+        )
         
         system_prompt = f"""
         You are the FreightPro AI Logistics Assistant. You help users manage their CRM data.
+        
+        STRICT GROUNDING RULES:
+        1. Your primary knowledge comes from the CRM data provided below.
+        2. Answer questions ONLY based on the CRM data and logistics context.
+        3. If the user asks something completely unrelated to logistics or this CRM, politely steer them back.
+        4. Do NOT make up data that is not in the stats below.
+        
         Current System Stats for context:
         - Shipments: {stats['total_shipments']} ({stats['pending_shipments']} pending, {stats['in_transit_shipments']} in transit, {stats['delivered_shipments']} delivered)
         - Orders: {stats['total_orders']} ({stats['open_orders']} open)
@@ -505,22 +515,22 @@ def _conversational_fallback(user, message):
         
         Guidelines:
         - Be professional, helpful, and concise.
-        - If you can't find specific data mentioned (like a specific shipment number), ask the user for more details.
-        - Encourage them to use the dashboard or search if needed.
-        - Mention that you are powered by Claude 3.5 Sonnet.
+        - If you can't find specific data mentioned (like a specific shipment number), ask the user for more details or suggest using the search/dashboard.
+        - You are powered by Kimi (Moonshot AI).
         """
         
-        response = client.messages.create(
-            model="claude-3-5-sonnet-20240620",
-            max_tokens=600,
-            system=system_prompt,
+        response = client.chat.completions.create(
+            model="moonshot-v1-8k",
             messages=[
+                {"role": "system", "content": system_prompt},
                 {"role": "user", "content": message}
-            ]
+            ],
+            temperature=0.3,
+            max_tokens=600,
         )
-        return response.content[0].text
+        return response.choices[0].message.content
     except Exception as e:
-        logger.error(f"Claude fallback failed: {e}")
+        logger.error(f"Kimi fallback failed for user {user.username}: {e}")
         return _static_fallback(message)
 
 
