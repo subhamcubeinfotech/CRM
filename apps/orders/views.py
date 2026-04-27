@@ -294,20 +294,14 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
         context['supplier_warehouses'] = get_unique_warehouses(s_warehouses)
         context['receiver_warehouses'] = get_unique_warehouses(r_warehouses)
         
-        # Show ONLY the currently selected shipping term
-        if self.object.shipping_terms_id:
-            context['shipping_terms'] = ShippingTerm.plain_objects.filter(pk=self.object.shipping_terms_id)
-        else:
-            context['shipping_terms'] = ShippingTerm.plain_objects.none()
+        # Show ALL valid shipping terms for the tenant (global + tenant-specific)
+        context['shipping_terms'] = ShippingTerm.plain_objects.filter(Q(tenant=user_tenant) | Q(tenant__isnull=True)).order_by('name')
         
-        # Show ONLY the currently selected tags
+        # Show ONLY the currently selected tags (keep as is if specifically requested)
         context['tags'] = self.object.tags.all()
         
-        # Show ONLY the currently selected representative
-        if self.object.representative:
-            context['team_members'] = get_user_model().objects.filter(pk=self.object.representative.pk)
-        else:
-            context['team_members'] = get_user_model().objects.none()
+        # Show ALL active team members for the tenant
+        context['team_members'] = get_user_model().objects.filter(tenant=user_tenant, is_active=True).order_by('first_name', 'username')
             
         # Context for Add Shipment Offcanvas
         context['all_tags'] = Tag.plain_objects.filter(Q(tenant=user_tenant) | Q(tenant__isnull=True)).order_by('name')
