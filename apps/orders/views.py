@@ -975,11 +975,12 @@ def order_purchase_order_pdf(request, pk):
     from reportlab.lib.pagesizes import A4
     from reportlab.lib import colors
     from reportlab.lib.units import mm
-    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, HRFlowable
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, HRFlowable, Image
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.lib.enums import TA_RIGHT, TA_CENTER, TA_LEFT
     from io import BytesIO
     from django.http import FileResponse
+    import os
 
     order = get_object_or_404(Order, pk=pk)
     # Check access (similar to OrderDetailView)
@@ -1017,18 +1018,59 @@ def order_purchase_order_pdf(request, pk):
     
     elements = []
 
+    # --- Logo & Header ---
+    tenant = order.tenant or request.user.tenant
+    logo = None
+    
+    # Try tenant logo first
+    if tenant and tenant.logo:
+        try:
+            logo_path = tenant.logo.path
+            if os.path.exists(logo_path):
+                logo = Image(logo_path)
+        except Exception as e:
+            logger.error(f"Error loading tenant logo for PO: {e}")
+            
+    # Fallback to user's company logo
+    if not logo and request.user.company and request.user.company.logo:
+        try:
+            logo_path = request.user.company.logo.path
+            if os.path.exists(logo_path):
+                logo = Image(logo_path)
+        except Exception as e:
+            logger.error(f"Error loading company logo for PO: {e}")
+
+    if logo:
+        try:
+            aspect = logo.imageHeight / float(logo.imageWidth)
+            logo.drawWidth = 35 * mm
+            logo.drawHeight = 35 * mm * aspect
+        except:
+            logo = None
+
     # --- Header ---
     my_company = request.user.company
-    company_name = my_company.name if my_company else "FreightPro Logistics"
+    company_name = tenant.name if tenant else (my_company.name if my_company else "FreightPro Logistics")
     company_address = my_company.full_address if my_company else "Address not set"
     
-    header_data = [
-        [
-            Paragraph("PURCHASE ORDER", title_style), 
-            Paragraph(f"<b>{company_name}</b><br/>{company_address}", right_style)
+    if logo:
+        header_data = [
+            [
+                logo,
+                Paragraph("PURCHASE ORDER", title_style), 
+                Paragraph(f"<b>{company_name}</b><br/>{company_address}", right_style)
+            ]
         ]
-    ]
-    header_table = Table(header_data, colWidths=[110*mm, 70*mm])
+        header_table = Table(header_data, colWidths=[40*mm, 70*mm, 70*mm])
+    else:
+        header_data = [
+            [
+                Paragraph("PURCHASE ORDER", title_style), 
+                Paragraph(f"<b>{company_name}</b><br/>{company_address}", right_style)
+            ]
+        ]
+        header_table = Table(header_data, colWidths=[110*mm, 70*mm])
+
     header_table.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'BOTTOM'), ('LEFTPADDING', (0,0), (-1,-1), 0), ('RIGHTPADDING', (0,0), (-1,-1), 0)]))
     elements.append(header_table)
     elements.append(Spacer(1, 5*mm))

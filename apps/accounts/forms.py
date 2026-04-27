@@ -384,3 +384,14 @@ class SignupStep2Form(forms.ModelForm):
             if len(postal_code.strip()) < 3:
                 raise ValidationError("Postal code must be at least 3 characters long.")
         return postal_code
+
+
+from .models_tenant import Tenant
+
+class TenantLogoForm(forms.ModelForm):
+    class Meta:
+        model = Tenant
+        fields = ['logo']
+        widgets = {
+            'logo': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+        }

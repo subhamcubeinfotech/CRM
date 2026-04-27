@@ -150,23 +150,26 @@ INTENT_PATTERNS = [
     (r'(?:recent|latest|last)\s+shipments?', 'shipment_recent'),
     
     # Inventory queries  
+    (r'(?:show|list|get|find|what is the)\s+(?:inventory|stock)\s+(?:of|for|in)\s+(.+)', 'inventory_search'),
     (r'(?:inventory|stock)\s+(?:of|for|in)\s+(.+)', 'inventory_search'),
     (r'(?:low.stock|running.out|reorder)', 'inventory_low_stock'),
     (r'(?:how many|count|total)\s+(?:inventory|items?|products?)', 'inventory_count'),
     (r'(?:show|list|get|find)\s+(?:all\s+)?inventory', 'inventory_list'),
     
     # Order queries
+    (r'(?:show|find|lookup|get)\s+(?:order|po)[\s#-]*([\w\-\#]+)', 'order_lookup'),
     (r'(?:order|po)[\s#-]*([\w\-\#]+)', 'order_lookup'),
     (r'(?:how many|count|total)\s+(?:orders?)', 'order_count'),
+    (r'(?:show|list|get|find|all)\s+(?:open|active|pending)\s+orders?', 'order_open'),
     (r'(?:open|active|pending)\s+orders?', 'order_open'),
     (r'(?:show|list|get|find)\s+(?:all\s+)?(?:\d+\s+)?orders?\s+(?:for|of|from)\s+(.+)', 'order_by_company'),
     (r'(?:show|list|get|find)\s+(?:all\s+)?(?:\d+\s+)?orders?', 'order_list'),
     
     # Company queries
-    (r'(?:who|which)\s+(?:are\s+)?(?:the\s+)?(?:suppliers?|vendors?)', 'company_vendors'),
-    (r'(?:who|which)\s+(?:are\s+)?(?:the\s+)?(?:customers?|buyers?)', 'company_customers'),
-    (r'(?:who|which)\s+(?:are\s+)?(?:the\s+)?carriers?', 'company_carriers'),
-    (r'(?:show|list|find)\s+(?:all\s+)?companies', 'company_list'),
+    (r'(?:who|which|find|show)\s+(?:are\s+)?(?:the\s+)?(?:suppliers?|vendors?|all\s+vendors?)', 'company_vendors'),
+    (r'(?:who|which|find|show)\s+(?:are\s+)?(?:the\s+)?(?:customers?|buyers?|all\s+customers?)', 'company_customers'),
+    (r'(?:who|which|find|show)\s+(?:are\s+)?(?:the\s+)?carriers?', 'company_carriers'),
+    (r'(?:show|list|find|get)\s+(?:all\s+)?companies', 'company_list'),
     (r'(?:company|supplier|vendor|customer|carrier)\s+(.+)', 'company_search'),
     
     # Dashboard / stats
@@ -234,7 +237,7 @@ def format_company(c):
 def process_query(user, message):
     """
     Main entry point: process a user's natural language query.
-    Returns a response string.
+    Uses Rule-based first for speed, then Kimi LLM for intelligence.
     """
     tenant = user.tenant
     intent, entities = parse_intent(message)
@@ -243,13 +246,7 @@ def process_query(user, message):
     if intent == 'greeting':
         return (
             f"👋 Hello {user.first_name or user.username}! I'm your FreightPro AI Assistant.\n\n"
-            "I can help you with:\n"
-            "• **Shipments** — track, search, count\n"
-            "• **Orders** — lookup, status, filter\n"
-            "• **Inventory** — stock levels, low stock alerts\n"
-            "• **Companies** — find vendors, customers, carriers\n"
-            "• **Dashboard stats** — business overview\n\n"
-            "Just ask me anything! 🚀"
+            "I can help you with anything related to your shipments, orders, and inventory. Just ask me naturally! 🚀"
         )
     
     if intent == 'help':
@@ -536,58 +533,52 @@ def _conversational_fallback(user, message):
         from apps.orders.models import Order
         from apps.inventory.models import InventoryItem
         from apps.accounts.models import Company, CustomUser
-        from apps.invoicing.models import Invoice
         
-        # Extract potential IDs or keywords (words with hyphens, numbers, or length > 3)
+        # Extract potential IDs or keywords
         potential_ids = re.findall(r'[\w\-\#]+', message)
-        # Filter for things that look like IDs (have numbers or hyphens) or are significant words
-        search_terms = [t for t in potential_ids if (any(c.isdigit() for c in t) or '-' in t or len(t) > 3)]
+        search_terms = [t for t in potential_ids if (any(c.isdigit() for c in t) or '-' in t or len(t) > 2)]
         
-        # If we have specific terms, search them. Otherwise use whole message for broad lookup.
+        # Build search query
         query_filter = Q()
         if search_terms:
             for term in search_terms:
-                query_filter |= Q(shipment_number__icontains=term) | Q(tracking_number__icontains=term) | Q(order__order_number__icontains=term) | Q(order__po_number__icontains=term)
-        else:
-            query_filter = Q(shipment_number__icontains=message) | Q(customer__name__icontains=message)
-
+                query_filter |= Q(shipment_number__icontains=term) | Q(tracking_number__icontains=term)
+        
         # Search Shipments
-        ship_matches = Shipment.objects.filter(tenant=user.tenant).filter(query_filter).select_related('order', 'customer').distinct()[:5]
+        ship_filter = query_filter | Q(customer__name__icontains=message) | Q(origin_city__icontains=message)
+        if "shipment" in message.lower() or "shp" in message.lower():
+            # If they just said "shipments", show recent ones
+            ship_matches = Shipment.objects.filter(tenant=user.tenant).order_by('-created_at')[:10]
+        else:
+            ship_matches = Shipment.objects.filter(tenant=user.tenant).filter(ship_filter).select_related('order', 'customer').distinct()[:10]
+            
         if ship_matches:
-            live_context += "\nRelevant Shipments:\n" + "\n".join(f"- {s.shipment_number}: {s.get_status_display()} (Linked Order: {s.order.order_number if s.order else 'N/A'}, Customer: {s.customer.name})" for s in ship_matches)
+            live_context += "\nSHIPMENTS:\n" + "\n".join(f"- {s.shipment_number}: {s.get_status_display()} | Customer: {s.customer.name} | Route: {s.origin_full} -> {s.destination_full} | Date: {s.pickup_date}" for s in ship_matches)
         
         # Search Orders
-        order_filter = Q()
-        if search_terms:
-            for term in search_terms:
-                order_filter |= Q(order_number__icontains=term) | Q(po_number__icontains=term) | Q(supplier__name__icontains=term)
+        order_filter = Q(order_number__icontains=message) | Q(po_number__icontains=message) | Q(supplier__name__icontains=message)
+        if "order" in message.lower() or "po" in message.lower():
+            # If they just said "orders", show recent ones
+            order_matches = Order.objects.filter(tenant=user.tenant).order_by('-created_at')[:10]
         else:
-            order_filter = Q(order_number__icontains=message)
+            order_matches = Order.objects.filter(tenant=user.tenant).filter(order_filter).distinct()[:10]
             
-        order_matches = Order.objects.filter(tenant=user.tenant).filter(order_filter).distinct()[:5]
         if order_matches:
-            live_context += "\nRelevant Orders:\n" + "\n".join(f"- {o.order_number}: {o.get_status_display()} (Supplier: {o.supplier.name})" for o in order_matches)
+            live_context += "\nORDERS:\n" + "\n".join(f"- {o.order_number}: {o.get_status_display()} | Supplier: {o.supplier.name} | Receiver: {o.receiver.name} | Date: {o.order_date}" for o in order_matches)
             
         # Search Inventory
-        inv_matches = InventoryItem.objects.filter(tenant=user.tenant).filter(
-            Q(product_name__icontains=message) | Q(sku__icontains=message)
-        )[:5]
+        inv_filter = Q(product_name__icontains=message) | Q(sku__icontains=message) | Q(warehouse__city__icontains=message)
+        if "inventory" in message.lower() or "stock" in message.lower() or "item" in message.lower():
+            inv_matches = InventoryItem.objects.filter(tenant=user.tenant).order_by('-quantity')[:10]
+        else:
+            inv_matches = InventoryItem.objects.filter(tenant=user.tenant).filter(inv_filter)[:10]
         if inv_matches:
-            live_context += "\nRelevant Inventory:\n" + "\n".join(f"- {i.product_name} ({i.sku}): {i.quantity} {i.unit_of_measure} at {i.warehouse.name}" for i in inv_matches)
+            live_context += "\nINVENTORY:\n" + "\n".join(f"- {i.product_name} ({i.sku}): {i.quantity} {i.unit_of_measure} at {i.warehouse.city}" for i in inv_matches)
 
-        # Search Invoices
-        inv_bill_matches = Invoice.objects.filter(tenant=user.tenant).filter(
-            Q(invoice_number__icontains=message) | Q(customer__name__icontains=message)
-        )[:5]
-        if inv_bill_matches:
-            live_context += "\nRelevant Invoices:\n" + "\n".join(f"- {i.invoice_number}: {i.get_status_display()} (Total: ${i.total}, Due: {i.due_date})" for i in inv_bill_matches)
-            
-        # Search Contacts/Team
-        contact_matches = CustomUser.objects.filter(tenant=user.tenant, is_active=True).filter(
-            Q(first_name__icontains=message) | Q(last_name__icontains=message) | Q(email__icontains=message)
-        )[:5]
-        if contact_matches:
-            live_context += "\nRelevant Team/Contacts:\n" + "\n".join(f"- {u.get_full_name() or u.username}: {u.role} (Email: {u.email})" for u in contact_matches)
+        # Search Companies
+        company_matches = Company.objects.filter(tenant=user.tenant, is_active=True).filter(Q(name__icontains=message) | Q(city__icontains=message))[:10]
+        if company_matches:
+            live_context += "\nCOMPANIES/PARTNERS:\n" + "\n".join(f"- {c.name} ({c.get_company_type_display()}): Location: {c.city}, {c.state}" for c in company_matches)
 
         client = OpenAI(
             api_key=api_key,
@@ -595,25 +586,29 @@ def _conversational_fallback(user, message):
         )
         
         system_prompt = f"""
-        You are the FreightPro AI Logistics Assistant. You help users manage their CRM data.
-        You have direct access to the database results provided below.
+        You are the 'FreightPro Oracle', a high-intelligence AI Logistics Expert.
+        Your goal is to answer ANY question about the user's business data with 100% accuracy and a helpful, human-like personality.
         
-        STRICT GROUNDING RULES:
-        1. Answer based on the 'LIVE CRM DATA' and 'System Stats' provided.
-        2. PRECISION IS KEY: If the user asks for a SPECIFIC record, provide details for ONLY THAT ONE record.
-        3. HANDLING LISTS: If the user asks to "show all" or for a list, and you have multiple matches in 'LIVE CRM DATA', explain that you are showing the MOST RELEVANT/RECENT ones (e.g., "Here are the top 5 matches out of {stats['total_orders']} total orders"). 
-        4. NEVER claim to be showing the full list if you only see a few records in 'LIVE CRM DATA'.
-        5. Use a helpful, professional tone. If the user asks for more than what you can see, suggest they visit the specific dashboard section.
-        6. If no specific records are found, use the 'System Stats' to give a general overview.
+        DATA CONTEXT PROVIDED:
+        ---
+        SYSTEM OVERVIEW:
+        - Total Shipments: {stats['total_shipments']} ({stats['pending_shipments']} Pending, {stats['in_transit_shipments']} In Transit)
+        - Total Orders: {stats['total_orders']} ({stats['open_orders']} Open)
+        - Inventory: {stats['total_inventory_items']} items ({stats['low_stock_items']} Low Stock)
+        - Total Companies: {stats['total_companies']} ({stats['vendors']} Vendors, {stats['customers']} Customers)
+        - Total Revenue: ${stats['total_revenue']:,.2f}
         
-        SYSTEM STATS:
-        - Shipments: {stats['total_shipments']} ({stats['pending_shipments']} pending, {stats['in_transit_shipments']} in transit, {stats['delivered_shipments']} delivered)
-        - Orders: {stats['total_orders']} ({stats['open_orders']} open)
-        - Inventory: {stats['total_inventory_items']} items ({stats['low_stock_items']} low stock)
-        - Companies: {stats['total_companies']} ({stats['vendors']} vendors, {stats['customers']} customers)
+        SEARCH RESULTS FROM DATABASE:
+        {live_context if live_context else "No specific records found for your keywords, use the System Overview for general answers."}
+        ---
         
-        LIVE CRM DATA SEARCH RESULTS:
-        {live_context if live_context else "No specific matching records found for the keywords in the query."}
+        INSTRUCTIONS:
+        1. Be conversational and smart. Don't just list data; explain it.
+        2. If a user asks a specific question (e.g., "Find vendors in NY"), look at the 'COMPANIES/PARTNERS' list and answer.
+        3. If no specific records match but the 'System Overview' shows data exists, tell them generally what is there and suggest where to find it.
+        4. If they ask about revenue or performance, use the revenue and stats provided.
+        5. Use emojis to keep it professional yet friendly.
+        6. If the user greets you, greet them back warmly.
         """
         
         response = client.chat.completions.create(
@@ -622,8 +617,8 @@ def _conversational_fallback(user, message):
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": message}
             ],
-            temperature=0.2,
-            max_tokens=800,
+            temperature=0.3,
+            max_tokens=1000,
         )
         return response.choices[0].message.content
     except Exception as e:
