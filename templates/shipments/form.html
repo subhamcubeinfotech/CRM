@@ -510,7 +510,7 @@
                                             <div class="input-group">
                                                 <select name="items_ui[{{ forloop.counter0 }}][material]" class="form-select shipment-material-select" required>
                                                     <option value="">Select a material</option>
-                                                    <option value="{{ item.material }}" selected 
+                                                    <option value="{{ item.inventory_item_id|default:item.material }}" selected 
                                                         data-company-id="{{ order.supplier_id }}"
                                                         data-name="{{ item.material }}">
                                                         {{ item.material }}
