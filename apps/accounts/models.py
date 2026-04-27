@@ -71,7 +71,42 @@ class Company(TenantAwareModel):
     
     def __str__(self):
         return self.name
-    
+
+    def save(self, *args, **kwargs):
+        # 1. Check if address fields have changed or coordinates are missing
+        address_changed = False
+        if not self.latitude or not self.longitude:
+            address_changed = True
+        elif self.pk:
+            try:
+                old_obj = Company.objects.get(pk=self.pk)
+                if (self.address_line1 != old_obj.address_line1 or 
+                    self.city != old_obj.city or 
+                    self.state != old_obj.state or 
+                    self.country != old_obj.country or 
+                    self.postal_code != old_obj.postal_code):
+                    address_changed = True
+            except Company.DoesNotExist:
+                address_changed = True
+        else:
+            address_changed = True
+        
+        # 2. If address changed, try to get new coordinates
+        if address_changed and (self.address_line1 or self.city):
+            try:
+                from geopy.geocoders import Nominatim
+                geolocator = Nominatim(user_agent="freightpro_crm")
+                location = geolocator.geocode(self.full_address, timeout=10)
+                if location:
+                    self.latitude = location.latitude
+                    self.longitude = location.longitude
+            except Exception as e:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Geocoding failed for {self.name}: {e}")
+        
+        super().save(*args, **kwargs)
+
     @property
     def full_address(self):
         """Return full address as a single string"""
