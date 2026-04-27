@@ -733,7 +733,6 @@
         <div class="row">
             <!-- Sidebar -->
             <nav class="col-md-2 d-none d-md-block sidebar py-3">
-                {% if user.is_staff or user.role == 'tenant_admin' or user.role == 'admin' %}
                 <div class="d-flex gap-1 mb-3 px-2">
                     <a href="{% url 'ai_assistant:pending_inventory' %}" class="btn btn-sm {% if '/ai/pending-inventory' in request.path %}btn-primary{% else %}btn-outline-primary{% endif %} flex-fill" title="Pending Inventory">
                         <i class="fas fa-envelope-open-text me-1"></i>Inbox
@@ -745,7 +744,6 @@
                         <i class="fas fa-sparkles me-1"></i>AI+
                     </a>
                 </div>
-                {% endif %}
                 <ul class="nav flex-column">
                     <li class="nav-item">
                         <a class="nav-link {% if request.path == '/dashboard/' or request.path == '/' %}active{% endif %}"
