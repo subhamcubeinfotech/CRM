@@ -904,16 +904,18 @@ def inventory_item_edit(request, pk):
         
     assign_company = user_company or Company.objects.filter(tenant=request.user.tenant).first()
     
+    if request.method == 'GET':
+        item.offered_weight = item.quantity
+        item.offered_weight_unit = item.unit_of_measure
+
     if request.method == 'POST':
         warehouse_val = request.POST.get('warehouse')
         post_data = request.POST.copy()
         post_data['warehouse'] = resolve_location(request, warehouse_val)
 
-        # Default quantity/unit to offered weight if missing
-        if not post_data.get('quantity'):
-            post_data['quantity'] = post_data.get('offered_weight', 0)
-        if not post_data.get('unit_of_measure'):
-            post_data['unit_of_measure'] = post_data.get('offered_weight_unit', 'lbs')
+        # Force quantity/unit to match offered weight as the user treats it as the master stock field
+        post_data['quantity'] = post_data.get('offered_weight', 0)
+        post_data['unit_of_measure'] = post_data.get('offered_weight_unit', 'lbs')
 
         form = InventoryItemForm(post_data, request.FILES, instance=item, user=request.user)
         if form.is_valid():
@@ -947,6 +949,11 @@ def inventory_item_edit(request, pk):
                         user=request.user,
                         notes="Manual stock adjustment"
                     )
+
+                    # Trigger Email Alert if stock falls below reorder level
+                    if new_quantity <= item.reorder_level and (old_quantity is None or old_quantity > item.reorder_level):
+                        from .utils import send_low_stock_alert
+                        send_low_stock_alert(item)
 
             messages.success(request, f"Item '{item.product_name}' updated successfully.")
             return redirect('inventory:item_detail', pk=item.pk)

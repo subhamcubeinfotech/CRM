@@ -137,6 +137,11 @@ class InventoryItemForm(forms.ModelForm):
         tag_qs = Tag.objects.filter(tenant_q).exclude(name__regex=r'^\d+$')
         self.fields['tags'].queryset = tag_qs.order_by('name')
 
+        # Pre-fill offered weight with current quantity when editing
+        if self.instance and self.instance.pk:
+            self.initial['offered_weight'] = self.instance.quantity
+            self.initial['offered_weight_unit'] = self.instance.unit_of_measure
+
         # Make quantity/stock fields optional for creation (handled by view)
         self.fields['quantity'].required = False
         self.fields['unit_of_measure'].required = False
