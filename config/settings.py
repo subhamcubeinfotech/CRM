@@ -314,6 +314,7 @@ CELERY_BEAT_SCHEDULE = {
 # AI Configuration
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
 ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
+KIMI_API_KEY = os.environ.get('KIMI_API_KEY', '')
 
 # Stripe Configuration
 STRIPE_PUBLIC_KEY = os.environ.get('STRIPE_PUBLIC_KEY', 'pk_test_placeholder')

@@ -278,13 +278,16 @@ def _extract_json_block(text: str) -> dict:
 def extract_document_with_ai(file_bytes: bytes, filename: str, mime_type: str | None = None) -> dict:
     """OCR/vision extraction with OpenAI fallback + regex safety net."""
     mime_type = mime_type or mimetypes.guess_type(filename)[0] or 'image/jpeg'
-    api_key = getattr(settings, 'ANTHROPIC_API_KEY', '')
+    api_key = getattr(settings, 'KIMI_API_KEY', '').strip()
 
     if api_key:
         try:
-            import anthropic
+            from openai import OpenAI
 
-            client = anthropic.Anthropic(api_key=api_key)
+            client = OpenAI(
+                api_key=api_key,
+                base_url="https://api.moonshot.ai/v1",
+            )
             b64 = base64.b64encode(file_bytes).decode('utf-8')
 
             prompt = (
@@ -293,21 +296,16 @@ def extract_document_with_ai(file_bytes: bytes, filename: str, mime_type: str | 
                 'For items use list of objects with description, quantity, unit, unit_price.'
             )
 
-            response = client.messages.create(
-                model='claude-3-5-sonnet-20240620',
-                max_tokens=4096,
-                temperature=0,
-                system="Return only valid JSON.",
+            response = client.chat.completions.create(
+                model='moonshot-v1-8k-vision-preview',
                 messages=[
                     {
                         'role': 'user',
                         'content': [
                             {
-                                'type': 'image',
-                                'source': {
-                                    'type': 'base64',
-                                    'media_type': mime_type,
-                                    'data': b64,
+                                'type': 'image_url',
+                                'image_url': {
+                                    'url': f"data:{mime_type};base64,{b64}",
                                 },
                             },
                             {
@@ -317,9 +315,11 @@ def extract_document_with_ai(file_bytes: bytes, filename: str, mime_type: str | 
                         ],
                     }
                 ],
+                temperature=0,
+                max_tokens=4096,
             )
 
-            content = response.content[0].text
+            content = response.choices[0].message.content
             # Use JSON block extraction if needed
             payload = _extract_json_block(content) or json.loads(content)
             raw_text = payload.get('raw_text', '') or ''
@@ -331,7 +331,7 @@ def extract_document_with_ai(file_bytes: bytes, filename: str, mime_type: str | 
                 'extracted_json': payload,
             }
         except Exception as exc:
-            logger.error('Document vision extraction failed for %s: %s', filename, exc)
+            logger.error('Kimi vision extraction failed for %s: %s', filename, exc)
 
     # Regex/text fallback when AI key is unavailable.
     decoded = file_bytes.decode('utf-8', errors='ignore') if mime_type.startswith('text/') else ''
@@ -353,5 +353,5 @@ def extract_document_with_ai(file_bytes: bytes, filename: str, mime_type: str | 
         'confidence_score': 0.35 if decoded else 0.0,
         'extracted_text': decoded[:4000],
         'extracted_json': data,
-        'error_message': '' if decoded else 'No OCR provider configured. Add OPENAI_API_KEY for image OCR.',
+        'error_message': '' if decoded else 'No OCR provider configured. Add KIMI_API_KEY for image OCR.',
     }
