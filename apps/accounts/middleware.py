@@ -61,9 +61,10 @@ class SubscriptionMiddleware:
                 # Check if it's an admin path
                 is_admin_path = request.path.startswith('/admin/')
                 
-                # Check if subscription is inactive and path is not allowed
-                if (not subscription or not subscription.is_active) and current_url_name not in allowed_url_names and not is_admin_path:
-                    from django.shortcuts import redirect
-                    return redirect('accounts:subscription_expired')
+                # --- TEMPORARILY DISABLED STRIPE CHECK ---
+                # if (not subscription or not subscription.is_active) and current_url_name not in allowed_url_names and not is_admin_path:
+                #     from django.shortcuts import redirect
+                #     return redirect('accounts:subscription_expired')
+                pass
                     
         return self.get_response(request)
