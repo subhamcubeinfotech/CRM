@@ -28,12 +28,31 @@ def profile_view(request):
     return render(request, 'accounts/profile.html', context)
 
 
+from .forms import TenantLogoForm
+
 @login_required
 def settings_view(request):
-    """View and edit user settings"""
-    subscription = getattr(request.user.tenant, 'subscription', None)
+    """View and edit user and organization settings"""
+    tenant = request.user.tenant
+    subscription = getattr(tenant, 'subscription', None)
+    
+    if request.method == 'POST' and 'update_logo' in request.POST:
+        if not request.user.is_admin:
+            messages.error(request, "You don't have permission to change organization settings.")
+            return redirect('accounts:settings')
+            
+        form = TenantLogoForm(request.POST, request.FILES, instance=tenant)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Organization logo updated successfully.')
+            return redirect('accounts:settings')
+    else:
+        form = TenantLogoForm(instance=tenant)
+        
     context = {
         'user': request.user,
+        'tenant': tenant,
         'subscription': subscription,
+        'logo_form': form,
     }
     return render(request, 'accounts/settings.html', context)
