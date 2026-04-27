@@ -208,7 +208,60 @@ class Shipment(TenantAwareModel):
         """Return route as string"""
         return f"{self.origin_full} → {self.destination_full}"
     
+    def sync_from_order(self, force=False):
+        """Sync addresses and coordinates from linked Order and Companies"""
+        if not self.order:
+            return
+        
+        # 1. Pickup / Origin
+        supplier = self.order.supplier
+        pickup_loc = self.pickup_location or self.order.source_location
+        
+        # If origin_address is empty or contains "Bangalore" or force=True
+        is_stale_origin = not self.origin_address or "Bangalore" in self.origin_address
+        if is_stale_origin or force:
+            if pickup_loc:
+                self.origin_address = pickup_loc.address
+                self.origin_city = pickup_loc.city
+                self.origin_state = pickup_loc.state
+                self.origin_postal_code = pickup_loc.postal_code
+                self.origin_country = pickup_loc.country
+            elif supplier:
+                self.origin_address = supplier.address_line1
+                self.origin_city = supplier.city
+                self.origin_state = supplier.state
+                self.origin_postal_code = supplier.postal_code
+                self.origin_country = supplier.country
+                # Also sync coordinates if they are available
+                if supplier.latitude: self.origin_latitude = supplier.latitude
+                if supplier.longitude: self.origin_longitude = supplier.longitude
+
+        # 2. Destination
+        receiver = self.order.receiver
+        dest_loc = self.destination_location or self.order.destination_location
+        
+        is_stale_dest = not self.destination_address or "Bangalore" in self.destination_address
+        if is_stale_dest or force:
+            if dest_loc:
+                self.destination_address = dest_loc.address
+                self.destination_city = dest_loc.city
+                self.destination_state = dest_loc.state
+                self.destination_postal_code = dest_loc.postal_code
+                self.destination_country = dest_loc.country
+            elif receiver:
+                self.destination_address = receiver.address_line1
+                self.destination_city = receiver.city
+                self.destination_state = receiver.state
+                self.destination_postal_code = receiver.postal_code
+                self.destination_country = receiver.country
+                # Also sync coordinates if they are available
+                if receiver.latitude: self.destination_latitude = receiver.latitude
+                if receiver.longitude: self.destination_longitude = receiver.longitude
+
     def save(self, *args, **kwargs):
+        # Auto-sync addresses from order if they are stale/placeholders
+        self.sync_from_order()
+
         # Auto-generate shipment number if not set with proper transaction handling
         if not self.shipment_number:
             from django.db import transaction
