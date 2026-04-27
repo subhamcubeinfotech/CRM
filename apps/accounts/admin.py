@@ -27,7 +27,7 @@ class CompanyAdmin(GlobalVisibilityMixin, admin.ModelAdmin):
             'fields': ('name', 'company_type', 'tax_id', 'is_active')
         }),
         ('Address', {
-            'fields': ('address_line1', 'address_line2', 'city', 'state', 'postal_code', 'country')
+            'fields': ('address_line1', 'address_line2', 'city', 'state', 'postal_code', 'country', 'latitude', 'longitude')
         }),
         ('Contact', {
             'fields': ('phone', 'email', 'website')
