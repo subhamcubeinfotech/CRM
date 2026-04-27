@@ -495,7 +495,7 @@
                     </td>
 
                     <td class="text-muted">
-                        ${{ item.unit_cost|floatformat:2 }}
+                        ${{ item.unit_cost|floatformat:2 }} <small class="text-muted">{{ item.price_unit }}</small>
                     </td>
                     <td>
                         <div class="fw-bold text-dark">${{ item.total_value|floatformat:2|intcomma }}</div>
