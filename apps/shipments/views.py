@@ -47,6 +47,8 @@ def _handle_inventory_on_delivery(shipment, user):
         for item in shipment.items.all():
             if item.inventory_item:
                 inv_item = item.inventory_item
+                old_quantity = inv_item.quantity # Save old value for comparison
+                
                 # Decrease Physical Stock (it has finally left the building)
                 inv_item.quantity -= item.weight
                 # Release Reservation (it is no longer 'committed', it is 'sent')
@@ -63,6 +65,11 @@ def _handle_inventory_on_delivery(shipment, user):
                     user=user,
                     notes=f"Shipped/Reserved fulfilled via Shipment {shipment.shipment_number}"
                 )
+
+                # Trigger Email Alert if stock falls below reorder level
+                if inv_item.quantity <= inv_item.reorder_level and old_quantity > inv_item.reorder_level:
+                    from apps.inventory.utils import send_low_stock_alert
+                    send_low_stock_alert(inv_item)
 
 
 @login_required
@@ -1134,8 +1141,15 @@ def shipment_create(request):
                 
                 for item_data in items_data:
                     inv_item = None
-                    if item_data['material_id'] and str(item_data['material_id']).isdigit():
-                        inv_item = InventoryItem.objects.filter(pk=item_data['material_id']).first()
+                    if item_data['material_id']:
+                        if str(item_data['material_id']).isdigit():
+                            inv_item = InventoryItem.objects.filter(pk=item_data['material_id']).first()
+                        else:
+                            # Fallback: lookup by name for the current tenant
+                            inv_item = InventoryItem.objects.filter(
+                                tenant=request.user.tenant,
+                                product_name=item_data['material_id']
+                            ).first()
                         
                         # Reserve stock if item is from inventory AND NOT from an order (Order already reserved it)
                         if inv_item and not shipment.order_id:
@@ -1421,6 +1435,10 @@ def shipment_edit(request, pk):
                 # Auto-set actual_delivery_date if status is delivered
                 if shipment.status == 'delivered' and not shipment.actual_delivery_date:
                     shipment.actual_delivery_date = timezone.now().date()
+                    _handle_inventory_on_delivery(shipment, request.user)
+                elif shipment.status == 'delivered':
+                    # Even if date is set, ensure inventory is handled if not already done
+                    _handle_inventory_on_delivery(shipment, request.user)
                     
                 shipment.save()
 
@@ -1437,8 +1455,15 @@ def shipment_edit(request, pk):
 
                     for item_data in items_data:
                         inv_item = None
-                        if item_data['material_id'] and str(item_data['material_id']).isdigit():
-                            inv_item = InventoryItem.objects.filter(pk=item_data['material_id']).first()
+                        if item_data['material_id']:
+                            if str(item_data['material_id']).isdigit():
+                                inv_item = InventoryItem.objects.filter(pk=item_data['material_id']).first()
+                            else:
+                                # Fallback lookup by name
+                                inv_item = InventoryItem.objects.filter(
+                                    tenant=request.user.tenant,
+                                    product_name=item_data['material_id']
+                                ).first()
                         
                         try:
                             calculated_weight += float(item_data.get('weight') or 0)
