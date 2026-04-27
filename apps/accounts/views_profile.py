@@ -34,20 +34,30 @@ from .forms import TenantLogoForm
 def settings_view(request):
     """View and edit user and organization settings"""
     tenant = request.user.tenant
-    subscription = getattr(tenant, 'subscription', None)
+    
+    # Fallback for superusers who might not be linked to a tenant
+    if not tenant and request.user.is_superuser:
+        from .models_tenant import Tenant
+        tenant = Tenant.objects.first()
+        
+    subscription = getattr(tenant, 'subscription', None) if tenant else None
     
     if request.method == 'POST' and 'update_logo' in request.POST:
         if not request.user.is_admin:
             messages.error(request, "You don't have permission to change organization settings.")
             return redirect('accounts:settings')
             
+        if not tenant:
+            messages.error(request, "No organization found to update.")
+            return redirect('accounts:settings')
+
         form = TenantLogoForm(request.POST, request.FILES, instance=tenant)
         if form.is_valid():
             form.save()
             messages.success(request, 'Organization logo updated successfully.')
             return redirect('accounts:settings')
     else:
-        form = TenantLogoForm(instance=tenant)
+        form = TenantLogoForm(instance=tenant) if tenant else None
         
     context = {
         'user': request.user,
