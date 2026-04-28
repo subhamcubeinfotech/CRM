@@ -159,6 +159,13 @@ def extract_inventory_items_llm(body_text):
         base_url="https://api.moonshot.ai/v1",
     )
     
+    # Ensure body_text doesn't exceed token limits (moonshot-v1-8k limit is 8192 tokens)
+    # 8,000 characters ensures we stay well below the limit even with complex tokens
+    max_chars = 8000
+    if len(body_text) > max_chars:
+        logger.warning(f"Truncating email body from {len(body_text)} to {max_chars} chars to fit LLM limits")
+        body_text = body_text[:max_chars] + "\n...[TRUNCATED DUE TO LENGTH]..."
+        
     prompt = f"""
     You are a logistics and inventory data specialist. Extract all business materials mentioned in the following email.
     For each item, determine if the sender HAS the material (Selling/Supply) or NEEDS the material (Buying/Demand).
@@ -456,13 +463,14 @@ def fetch_and_process_emails(tenant, max_emails=10, request_user=None, mailbox_u
             message_id = msg.get('Message-ID', f"{subject}-{sender_email}") # Fallback to subject-sender if ID missing
             sender_email = sender_email.lower()
 
+
             # Extract Recipient to route to specific user
             recipient_raw = msg.get('To', '')
             recipient_name, recipient_email = email.utils.parseaddr(recipient_raw)
             recipient_email = recipient_email.lower()
 
             # SPAM FILTER: Skip common junk domains
-            junk_domains = ['jeevansathi.com', 'shaadi.com', 'linkedin.com', 'facebook.com', 'instagram.com', 'noreply', 'notifications']
+            junk_domains = ['jeevansathi.com', 'shaadi.com', 'linkedin.com', 'facebook.com', 'instagram.com', 'noreply', 'notifications', 'uber.com', 'shine.com', 'amazon.com', 'flipkart.com', 'swiggy.com', 'zomato.com', 'naukri.com']
             if any(junk in sender_email for junk in junk_domains):
                 continue
         
@@ -501,11 +509,11 @@ def fetch_and_process_emails(tenant, max_emails=10, request_user=None, mailbox_u
             recipient_email = recipient_email or mailbox_user.effective_inbox_email
 
         # 2. Intelligent Company Matching (Fallback)
-        matched_company = Company.objects.filter(email=sender_email).first()
+        matched_company = Company.objects.filter(tenant=resolved_tenant, email=sender_email).first() if resolved_tenant else None
         if not matched_company:
             domain = sender_email.split('@')[-1].lower() if '@' in sender_email else ''
             if domain and domain not in ['gmail.com', 'outlook.com', 'yahoo.com', 'hotmail.com', 'icloud.com']:
-                matched_company = Company.objects.filter(email__icontains=domain).first()
+                matched_company = Company.objects.filter(tenant=resolved_tenant, email__icontains=domain).first() if resolved_tenant else None
 
         # Update tenant if matched globally and not already set by Recipient
         if not resolved_tenant and matched_company and matched_company.tenant:

@@ -126,19 +126,27 @@ def pending_inventory_list(request):
     emails = PendingInventoryEmail.objects.filter(
         visibility_filter,
         status='pending'
-    ).prefetch_related('items')
+    ).prefetch_related('items', 'matched_company')
+
+    for e in emails:
+        if e.matched_company and e.matched_company.tenant != request.user.tenant:
+            e.matched_company = None
     
     # Also get recently processed
     recent = PendingInventoryEmail.objects.filter(
         visibility_filter
-    ).exclude(status='pending').order_by('-processed_at')[:10]
+    ).exclude(status='pending').order_by('-processed_at').prefetch_related('matched_company')[:10]
+
+    for e in recent:
+        if e.matched_company and e.matched_company.tenant != request.user.tenant:
+            e.matched_company = None
     
     from apps.accounts.models import Company
     # Admin Sees all companies. Normal users see only their tenant's.
     if request.user.is_superuser or getattr(request.user, 'is_admin', False):
-        all_companies = Company.objects.all()
+        all_companies = Company.objects.filter(tenant=request.user.tenant, created_by=request.user)
     else:
-        all_companies = Company.objects.filter(tenant=request.user.tenant)
+        all_companies = Company.objects.filter(tenant=request.user.tenant, created_by=request.user)
 
     context = {
         'pending_emails': emails,
