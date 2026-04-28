@@ -24,7 +24,7 @@ class ChatMessageAdmin(admin.ModelAdmin):
 
 @admin.register(PendingInventoryEmail)
 class PendingInventoryEmailAdmin(admin.ModelAdmin):
-    list_display = ['subject', 'sender_email', 'status', 'priority_level', 'sentiment_label', 'received_at', 'tenant']
+    list_display = ['subject', 'sender_email', 'recipient_email', 'mailbox_user', 'status', 'priority_level', 'sentiment_label', 'received_at', 'tenant']
     list_filter = ['status', 'priority_level', 'sentiment_label', 'tenant']
 
     def get_queryset(self, request):

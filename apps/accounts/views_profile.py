@@ -28,7 +28,7 @@ def profile_view(request):
     return render(request, 'accounts/profile.html', context)
 
 
-from .forms import TenantLogoForm
+from .forms import TenantLogoForm, InboxSettingsForm
 
 @login_required
 def settings_view(request):
@@ -41,7 +41,11 @@ def settings_view(request):
         tenant = Tenant.objects.first()
         
     subscription = getattr(tenant, 'subscription', None) if tenant else None
-    
+    active_tab = request.GET.get('tab', 'notifications')
+
+    form = TenantLogoForm(instance=tenant) if tenant else None
+    inbox_form = InboxSettingsForm(instance=request.user)
+
     if request.method == 'POST' and 'update_logo' in request.POST:
         if not request.user.is_admin:
             messages.error(request, "You don't have permission to change organization settings.")
@@ -55,14 +59,24 @@ def settings_view(request):
         if form.is_valid():
             form.save()
             messages.success(request, 'Organization logo updated successfully.')
-            return redirect('accounts:settings')
+            return redirect(f"{request.path}?tab=organization")
+    elif request.method == 'POST' and 'update_inbox' in request.POST:
+        active_tab = 'inbox'
+        inbox_form = InboxSettingsForm(request.POST, instance=request.user)
+        if inbox_form.is_valid():
+            inbox_form.save()
+            messages.success(request, 'Inbox connection settings updated successfully.')
+            return redirect(f"{request.path}?tab=inbox")
+        messages.error(request, 'Please fix the inbox connection details and try again.')
     else:
-        form = TenantLogoForm(instance=tenant) if tenant else None
+        inbox_form = InboxSettingsForm(instance=request.user)
         
     context = {
         'user': request.user,
         'tenant': tenant,
         'subscription': subscription,
         'logo_form': form,
+        'inbox_form': inbox_form,
+        'active_settings_tab': active_tab,
     }
     return render(request, 'accounts/settings.html', context)

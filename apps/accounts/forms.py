@@ -4,7 +4,7 @@ from django.contrib.auth.forms import PasswordResetForm
 from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
-from .models import Company
+from .models import Company, CustomUser
 
 class TagInputField(forms.MultipleChoiceField):
     """Custom field to allow any value typed in Select2 tags, bypassing choice validation."""
@@ -277,6 +277,89 @@ class CompanyForm(forms.ModelForm):
         else:
             instance.company_tags.clear()
 
+
+class InboxSettingsForm(forms.ModelForm):
+    """Self-serve inbox connection settings for the logged-in user."""
+    imap_password = forms.CharField(
+        required=False,
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'App password or mailbox password',
+            'autocomplete': 'new-password',
+        }, render_value=False),
+        help_text='Leave blank to keep the currently saved password.',
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.original_saved_password = getattr(self.instance, 'imap_password', '') or ''
+        self.has_saved_password = bool(self.original_saved_password)
+
+    class Meta:
+        model = CustomUser
+        fields = [
+            'inbox_is_active',
+            'inbox_email',
+            'imap_host',
+            'imap_port',
+            'imap_password',
+            'imap_use_ssl',
+        ]
+        widgets = {
+            'inbox_email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'name@company.com'}),
+            'imap_host': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'imap.gmail.com'}),
+            'imap_port': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '993'}),
+            'inbox_is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'imap_use_ssl': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+    def clean_inbox_email(self):
+        value = (self.cleaned_data.get('inbox_email') or '').strip().lower()
+        return value
+
+    def clean_imap_host(self):
+        value = (self.cleaned_data.get('imap_host') or '').strip()
+        return value or 'imap.gmail.com'
+
+    def clean(self):
+        cleaned_data = super().clean()
+        inbox_email = cleaned_data.get('inbox_email') or getattr(self.instance, 'effective_inbox_email', '')
+        cleaned_data['imap_username'] = inbox_email
+        if not cleaned_data.get('inbox_is_active'):
+            return cleaned_data
+
+        username = cleaned_data.get('imap_username')
+        password = cleaned_data.get('imap_password') or self.original_saved_password
+        host = cleaned_data.get('imap_host')
+
+        missing = []
+        if not inbox_email:
+            missing.append('Inbox email')
+        if not host:
+            missing.append('IMAP host')
+        if not username:
+            missing.append('IMAP username')
+        if not password:
+            missing.append('IMAP password')
+        if missing:
+            raise ValidationError(f"Please complete these fields before enabling inbox sync: {', '.join(missing)}.")
+        return cleaned_data
+
+    def save(self, commit=True):
+        existing_password = self.original_saved_password
+        user = super().save(commit=False)
+        raw_password = self.cleaned_data.get('imap_password')
+        user.imap_username = self.cleaned_data.get('imap_username') or user.inbox_email
+        if raw_password:
+            user.imap_password = raw_password
+        else:
+            user.imap_password = existing_password
+
+        if commit:
+            user.save()
+        self.has_saved_password = bool(user.imap_password)
+        return user
+
 class CustomPasswordResetForm(PasswordResetForm):
     def clean_email(self):
         email = self.cleaned_data.get('email')
@@ -289,7 +372,7 @@ class SignupStep1Form(forms.ModelForm):
     password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Password'}))
     confirm_password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Confirm Password'}))
     plan = forms.ChoiceField(
-        choices=[('starter', 'Starter ($100/mo)'), ('pro', 'Professional ($299/mo)')],
+        choices=[('starter', 'Starter ($100/mo)'), ('pro', 'Professional ($250/mo)')],
         initial='starter',
         widget=forms.Select(attrs={'class': 'form-select mb-3'}),
         label="Choose Your Plan"
