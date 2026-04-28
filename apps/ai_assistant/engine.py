@@ -140,6 +140,7 @@ def get_dashboard_stats(tenant):
 INTENT_PATTERNS = [
     # Shipment queries
     (r'(?:status|track|where)\s+(?:of\s+)?(?:shipment|shp)[\s#-]*([\w\-\#]+)', 'shipment_lookup'),
+    (r'(?:show|find|lookup|get)\s+(?:shipment|shp)[\s#-]*([\w\-\#]+)', 'shipment_lookup'),
     (r'(?:how many|count|total)\s+(?:shipments?)', 'shipment_count'),
     (r'(?:pending|waiting)\s+shipments?', 'shipment_status_filter'),
     (r'(?:in.transit|on.the.way)\s+shipments?', 'shipment_transit'),
@@ -251,14 +252,15 @@ def process_query(user, message):
     
     if intent == 'help':
         return (
-            "Here are some things you can ask (Type the **Number** or the command):\n\n"
-            "1️⃣ **Show pending shipments** (Type **1**)\n"
-            "2️⃣ **Show open orders** (Type **2**)\n"
-            "3️⃣ **Show low stock items** (Type **3**)\n"
-            "4️⃣ **Dashboard stats** (Type **4**)\n"
-            "5️⃣ **Get help** (Type **5**)\n\n"
+            "Here are some things you can ask the assistant:\n\n"
+            "• **Show pending shipments**\n"
+            "• **Show open orders**\n"
+            "• **Show low stock items**\n"
+            "• **Dashboard stats**\n"
+            "• **Get help**\n\n"
             "📦 **Shipments:**\n"
             "• \"Status of shipment SHP-2026-00001\"\n"
+            "• \"Show all shipments\"\n"
             "• \"How many shipments are in transit?\"\n\n"
             "📋 **Orders:**\n"
             "• \"Order ORD-2026-00001\"\n\n"
@@ -329,10 +331,28 @@ def process_query(user, message):
         return f"❌ No shipments found for '{name}'."
     
     if intent == 'shipment_list':
-        shipments = search_shipments(tenant)
+        from apps.shipments.models import Shipment
+        all_shipments = Shipment.objects.filter(tenant=tenant).order_by('-created_at')
+        if 'all' in message.lower():
+            total = all_shipments.count()
+            if total > 50:
+                result = f"📦 **Showing the first 50 of {total} shipments:**\n\n"
+                shipments = all_shipments[:50]
+            else:
+                result = f"📦 **All Shipments ({total}):**\n\n"
+                shipments = all_shipments
+        else:
+            shipments = search_shipments(tenant)
+            total = all_shipments.count()
+            shown = shipments[:10].count()
+            if total > shown:
+                result = f"📦 **Recent Shipments ({shown} of {total}):**\n\n"
+            else:
+                result = f"📦 **Recent Shipments ({total}):**\n\n"
+            shipments = shipments[:10]
+
         if shipments.exists():
-            result = f"📦 **Recent Shipments ({shipments.count()}):**\n\n"
-            result += "\n\n".join(format_shipment(s) for s in shipments[:10])
+            result += "\n\n".join(format_shipment(s) for s in shipments)
             return result
         return "📭 No shipments found."
     
@@ -586,29 +606,42 @@ def _conversational_fallback(user, message):
         )
         
         system_prompt = f"""
-        You are the 'FreightPro Oracle', a high-intelligence AI Logistics Expert.
-        Your goal is to answer ANY question about the user's business data with 100% accuracy and a helpful, human-like personality.
+        You are the 'FreightPro Oracle', a high-intelligence AI Logistics Expert and trusted business advisor for FreightPro CRM users.
+        
+        Your role is to provide accurate, helpful, and insightful responses about the user's logistics business data. You have access to live, real-time data from their CRM system including shipments, orders, inventory, companies, and financial metrics.
         
         DATA CONTEXT PROVIDED:
         ---
         SYSTEM OVERVIEW:
-        - Total Shipments: {stats['total_shipments']} ({stats['pending_shipments']} Pending, {stats['in_transit_shipments']} In Transit)
+        - Total Shipments: {stats['total_shipments']} ({stats['pending_shipments']} Pending, {stats['in_transit_shipments']} In Transit, {stats['delivered_shipments']} Delivered)
         - Total Orders: {stats['total_orders']} ({stats['open_orders']} Open)
         - Inventory: {stats['total_inventory_items']} items ({stats['low_stock_items']} Low Stock)
-        - Total Companies: {stats['total_companies']} ({stats['vendors']} Vendors, {stats['customers']} Customers)
+        - Total Companies: {stats['total_companies']} ({stats['vendors']} Vendors, {stats['customers']} Customers, {stats['carriers']} Carriers)
         - Total Revenue: ${stats['total_revenue']:,.2f}
         
         SEARCH RESULTS FROM DATABASE:
         {live_context if live_context else "No specific records found for your keywords, use the System Overview for general answers."}
         ---
         
-        INSTRUCTIONS:
-        1. Be conversational and smart. Don't just list data; explain it.
-        2. If a user asks a specific question (e.g., "Find vendors in NY"), look at the 'COMPANIES/PARTNERS' list and answer.
-        3. If no specific records match but the 'System Overview' shows data exists, tell them generally what is there and suggest where to find it.
-        4. If they ask about revenue or performance, use the revenue and stats provided.
-        5. Use emojis to keep it professional yet friendly.
-        6. If the user greets you, greet them back warmly.
+        RESPONSE GUIDELINES:
+        1. **Be Professional Yet Friendly**: Use a conversational tone with appropriate emojis. Act as a knowledgeable colleague.
+        2. **Accuracy First**: Only provide information from the data context. If something isn't in the provided data, say so clearly.
+        3. **Actionable Insights**: When showing data, provide brief analysis or recommendations when relevant.
+        4. **Context-Aware**: Reference the user's specific data (e.g., "Based on your current 5 pending shipments...").
+        5. **Helpful Suggestions**: If they ask about operations, suggest related actions they might take in the system.
+        6. **Structured Responses**: For lists or multiple items, use clear formatting with bullet points or numbered lists.
+        7. **Greet Warmly**: Always respond to greetings with enthusiasm and personalization.
+        8. **Handle Uncertainty**: If a query doesn't match available data, offer alternatives or ask for clarification.
+        
+        EXPERTISE AREAS:
+        - Shipment tracking and status analysis
+        - Order management and fulfillment
+        - Inventory optimization and stock alerts
+        - Company relationship management
+        - Business performance metrics and insights
+        - Operational efficiency recommendations
+        
+        Remember: You are their AI business partner - knowledgeable, reliable, and always focused on helping them succeed in logistics.
         """
         
         response = client.chat.completions.create(
@@ -629,12 +662,12 @@ def _conversational_fallback(user, message):
 def _static_fallback(message):
     return (
         "🤔 I'm not sure what you're asking. Here are some quick actions:\n\n"
-        "1️⃣ **1** — Show pending shipments\n"
-        "2️⃣ **2** — Show open orders\n"
-        "3️⃣ **3** — Show low stock items\n"
-        "4️⃣ **4** — Dashboard stats\n"
-        "5️⃣ **5** — Help / Examples\n\n"
-        "Just type the **number** or ask me anything! 🚀"
+        "• Show pending shipments\n"
+        "• Show open orders\n"
+        "• Show low stock items\n"
+        "• Dashboard stats\n"
+        "• Help / Examples\n\n"
+        "Just ask me anything about shipments, orders, inventory, or companies! 🚀"
     )
 
 
