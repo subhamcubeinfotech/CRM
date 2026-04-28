@@ -130,6 +130,13 @@ class CustomUser(AbstractUser):
     tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, null=True, blank=True, related_name='users')
     phone = models.CharField(max_length=20, blank=True)
     company = models.ForeignKey(Company, on_delete=models.SET_NULL, null=True, blank=True, related_name='users')
+    inbox_email = models.EmailField(blank=True, help_text='Mailbox address watched for this user.')
+    inbox_is_active = models.BooleanField(default=False, help_text='Enable personal inbox ingestion for this user.')
+    imap_host = models.CharField(max_length=255, blank=True, default='imap.gmail.com')
+    imap_port = models.PositiveIntegerField(default=993)
+    imap_username = models.CharField(max_length=255, blank=True)
+    imap_password = models.CharField(max_length=255, blank=True)
+    imap_use_ssl = models.BooleanField(default=True)
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
     is_verified = models.BooleanField(default=False)
     is_contact_archived = models.BooleanField(default=False)
@@ -149,6 +156,19 @@ class CustomUser(AbstractUser):
     @property
     def is_admin(self):
         return self.role in ('admin', 'tenant_admin')
+
+    @property
+    def effective_inbox_email(self):
+        return (self.inbox_email or self.email or '').strip().lower()
+
+    @property
+    def has_personal_mailbox_config(self):
+        return bool(
+            self.inbox_is_active and
+            self.imap_host and
+            self.imap_username and
+            self.imap_password
+        )
     
     
     

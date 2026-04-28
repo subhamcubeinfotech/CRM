@@ -56,6 +56,7 @@ class PendingInventoryEmail(TenantAwareModel):
     ]
     sender_email = models.EmailField()
     sender_name = models.CharField(max_length=200, blank=True)
+    recipient_email = models.EmailField(blank=True)
     subject = models.CharField(max_length=500)
     body_text = models.TextField()
     received_at = models.DateTimeField()
@@ -70,6 +71,7 @@ class PendingInventoryEmail(TenantAwareModel):
     processed_at = models.DateTimeField(null=True, blank=True)
     processed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='processed_emails')
     fetched_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='fetched_emails')
+    mailbox_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='owned_inbox_emails')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

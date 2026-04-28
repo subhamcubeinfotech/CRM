@@ -53,6 +53,7 @@ class CustomUserAdmin(GlobalVisibilityMixin, UserAdmin):
         (None, {'fields': ('username', 'password')}),
         ('Personal Info', {'fields': ('first_name', 'last_name', 'email', 'phone', 'avatar')}),
         ('Role & Company', {'fields': ('role', 'company', 'is_verified')}),
+        ('Inbox Routing', {'fields': ('inbox_is_active', 'inbox_email', 'imap_host', 'imap_port', 'imap_username', 'imap_password', 'imap_use_ssl')}),
         ('Permissions', {
             'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions'),
         }),

@@ -9,16 +9,35 @@ logger = logging.getLogger('apps.ai_assistant')
 
 @shared_task(name='apps.ai_assistant.tasks.fetch_vendor_emails')
 def fetch_vendor_emails():
-    """Celery task that processes new vendor emails for all active tenants."""
-    from apps.accounts.models import Tenant
-    
-    tenants = Tenant.objects.filter(is_active=True)
-    if not tenants.exists():
-        logger.warning('No active tenants found for email ingestion; skipping.')
-        return 0
-        
+    """Celery task that processes inboxes for configured users, then shared tenants."""
+    from apps.accounts.models import Tenant, CustomUser
+
+    personal_mailboxes = CustomUser.objects.filter(
+        inbox_is_active=True,
+        is_active=True,
+    ).exclude(imap_username='').exclude(imap_password='').select_related('tenant')
+
     total_processed = 0
+    routed_tenant_ids = set()
+
+    for user in personal_mailboxes:
+        try:
+            processed = fetch_and_process_emails(user.tenant, mailbox_user=user)
+            total_processed += processed
+            if user.tenant_id:
+                routed_tenant_ids.add(user.tenant_id)
+            logger.info('Mailbox user %s processed %s emails.', user.email or user.username, processed)
+        except Exception as e:
+            logger.error('Error processing mailbox for user %s: %s', user.email or user.username, e)
+
+    tenants = Tenant.objects.filter(is_active=True)
+    if not tenants.exists() and not personal_mailboxes.exists():
+        logger.warning('No active tenants or personal mailboxes found for email ingestion; skipping.')
+        return 0
+
     for tenant in tenants:
+        if tenant.id in routed_tenant_ids:
+            continue
         try:
             processed = fetch_and_process_emails(tenant)
             total_processed += processed

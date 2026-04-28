@@ -9,25 +9,37 @@ from datetime import datetime
 
 from django.utils import timezone
 from django.conf import settings
+from django.db.models import Q
 
 from .enhancements import analyze_email_sentiment
 
 logger = logging.getLogger('apps.ai_assistant')
 
 
-def connect_imap():
-    """Connect to Gmail IMAP server using credentials from .env"""
-    host = getattr(settings, 'IMAP_HOST', 'imap.gmail.com')
-    port = int(getattr(settings, 'IMAP_PORT', 993))
-    username = getattr(settings, 'EMAIL_HOST_USER', '')
-    password = getattr(settings, 'EMAIL_HOST_PASSWORD', '')
+def connect_imap(mailbox_user=None):
+    """Connect to IMAP using a user's mailbox config, or fall back to shared .env settings."""
+    if mailbox_user and getattr(mailbox_user, 'has_personal_mailbox_config', False):
+        host = mailbox_user.imap_host or 'imap.gmail.com'
+        port = int(mailbox_user.imap_port or 993)
+        username = mailbox_user.imap_username or mailbox_user.effective_inbox_email
+        password = mailbox_user.imap_password or ''
+        use_ssl = bool(mailbox_user.imap_use_ssl)
+    else:
+        host = getattr(settings, 'IMAP_HOST', 'imap.gmail.com')
+        port = int(getattr(settings, 'IMAP_PORT', 993))
+        username = getattr(settings, 'EMAIL_HOST_USER', '')
+        password = getattr(settings, 'EMAIL_HOST_PASSWORD', '')
+        use_ssl = bool(getattr(settings, 'IMAP_USE_SSL', True))
 
     if not username or not password:
         raise ValueError(
-            "Email credentials not configured. Add EMAIL_HOST_USER and EMAIL_HOST_PASSWORD to .env"
+            "Email credentials not configured. Add personal IMAP details or shared EMAIL_HOST_USER/EMAIL_HOST_PASSWORD."
         )
 
-    mail = imaplib.IMAP4_SSL(host, port)
+    if use_ssl:
+        mail = imaplib.IMAP4_SSL(host, port)
+    else:
+        mail = imaplib.IMAP4(host, port)
     mail.login(username, password)
     return mail
 
@@ -147,6 +159,13 @@ def extract_inventory_items_llm(body_text):
         base_url="https://api.moonshot.ai/v1",
     )
     
+    # Ensure body_text doesn't exceed token limits (moonshot-v1-8k limit is 8192 tokens)
+    # 8,000 characters ensures we stay well below the limit even with complex tokens
+    max_chars = 8000
+    if len(body_text) > max_chars:
+        logger.warning(f"Truncating email body from {len(body_text)} to {max_chars} chars to fit LLM limits")
+        body_text = body_text[:max_chars] + "\n...[TRUNCATED DUE TO LENGTH]..."
+        
     prompt = f"""
     You are a logistics and inventory data specialist. Extract all business materials mentioned in the following email.
     For each item, determine if the sender HAS the material (Selling/Supply) or NEEDS the material (Buying/Demand).
@@ -400,7 +419,7 @@ def extract_inventory_items_fallback(body_text):
     return unique_items
 
 
-def fetch_and_process_emails(tenant, max_emails=10, request_user=None):
+def fetch_and_process_emails(tenant, max_emails=10, request_user=None, mailbox_user=None):
     """
     Main entry point: connect to IMAP, fetch new emails, extract inventory items.
     """
@@ -408,7 +427,7 @@ def fetch_and_process_emails(tenant, max_emails=10, request_user=None):
     from apps.accounts.models import Company
 
     try:
-        mail = connect_imap()
+        mail = connect_imap(mailbox_user=mailbox_user)
     except Exception as e:
         logger.error(f"IMAP Connection failed: {e}")
         return 0
@@ -444,44 +463,24 @@ def fetch_and_process_emails(tenant, max_emails=10, request_user=None):
             message_id = msg.get('Message-ID', f"{subject}-{sender_email}") # Fallback to subject-sender if ID missing
             sender_email = sender_email.lower()
 
+
+            # Extract Recipient to route to specific user
+            recipient_raw = msg.get('To', '')
+            recipient_name, recipient_email = email.utils.parseaddr(recipient_raw)
+            recipient_email = recipient_email.lower()
+
             # SPAM FILTER: Skip common junk domains
-            junk_domains = ['jeevansathi.com', 'shaadi.com', 'linkedin.com', 'facebook.com', 'instagram.com', 'noreply', 'notifications']
+            junk_domains = ['jeevansathi.com', 'shaadi.com', 'linkedin.com', 'facebook.com', 'instagram.com', 'noreply', 'notifications', 'uber.com', 'shine.com', 'amazon.com', 'flipkart.com', 'swiggy.com', 'zomato.com', 'naukri.com']
             if any(junk in sender_email for junk in junk_domains):
                 continue
         
         except Exception as e:
             logger.error(f"Error fetching email {eid}: {e}")
             continue
-        # GLOBAL Deduplication Check: Use Message-ID for precision
+            
         model_fields = [f.name for f in PendingInventoryEmail._meta.get_fields()]
-        existing_email = None
-        
-        if 'message_id' in model_fields:
-            existing_email = PendingInventoryEmail.plain_objects.filter(message_id=message_id).first()
-        
-        if not existing_email:
-            # Also fallback to subject check if needed, but allow new dates
-            existing_email = PendingInventoryEmail.plain_objects.filter(subject=subject, sender_email=sender_email).last()
-        
-        if existing_email:
-            # Only skip if it has data AND was approved
-            has_requirements = BuyerRequirement.plain_objects.filter(source_email=existing_email).exists()
-            has_pending_items = PendingInventoryItem.objects.filter(email=existing_email).exists()
-            
-            if (has_requirements or has_pending_items) and existing_email.status != 'pending' and existing_email.message_id == message_id:
-                continue
-        
-        pending_email = existing_email
-        if not pending_email:
-            # Create new email record
-            body = get_email_body(msg)
-            attachments_info = handle_attachments(msg)
-            full_text = body + "\n" + attachments_info
-            
-            # (routing logic continues...)
-        else:
-            body = pending_email.body_text
-            attachments_info = "" # Assuming we don't re-process attachments if already in DB
+        body = get_email_body(msg)
+        attachments_info = handle_attachments(msg)
 
         full_text = body + "\n" + attachments_info
 
@@ -489,43 +488,123 @@ def fetch_and_process_emails(tenant, max_emails=10, request_user=None):
         if not extracted_items:
             continue
 
-        # Intelligent Company Matching - GLOBAL Fallback
-        matched_company = Company.objects.filter(email=sender_email).first()
+        # ─── ROUTING LOGIC ───
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        
+        resolved_tenant = tenant or getattr(mailbox_user, 'tenant', None)
+        fetched_by = mailbox_user or request_user
+        mailbox_owner = mailbox_user
+        
+        # 1. Route by Recipient (To: address) - Primary Priority
+        target_user = User.objects.filter(
+            Q(email__iexact=recipient_email) | Q(inbox_email__iexact=recipient_email)
+        ).select_related('tenant').first() if recipient_email else None
+        if target_user:
+            fetched_by = target_user
+            mailbox_owner = target_user
+            resolved_tenant = getattr(target_user, 'tenant', None)
+            logger.info(f"Routed email to user: {target_user.email} based on To header")
+        elif mailbox_user:
+            recipient_email = recipient_email or mailbox_user.effective_inbox_email
+
+        # 2. Intelligent Company Matching (Fallback)
+        matched_company = Company.objects.filter(tenant=resolved_tenant, email=sender_email).first() if resolved_tenant else None
         if not matched_company:
             domain = sender_email.split('@')[-1].lower() if '@' in sender_email else ''
             if domain and domain not in ['gmail.com', 'outlook.com', 'yahoo.com', 'hotmail.com', 'icloud.com']:
-                matched_company = Company.objects.filter(email__icontains=domain).first()
+                matched_company = Company.objects.filter(tenant=resolved_tenant, email__icontains=domain).first() if resolved_tenant else None
 
-        # Update tenant if matched globally
-        if matched_company and matched_company.tenant:
-            tenant = matched_company.tenant
-        
-        # Assign Owner: Priority 1 = Company Creator, Priority 2 = Requesting User
-        fetched_by = matched_company.created_by if matched_company and matched_company.created_by else request_user
+        # Update tenant if matched globally and not already set by Recipient
+        if not resolved_tenant and matched_company and matched_company.tenant:
+            resolved_tenant = matched_company.tenant
+            fetched_by = matched_company.created_by if matched_company.created_by else request_user
 
-        if not tenant:
+        if not resolved_tenant:
             # Fallback to default tenant if still not found
             from apps.accounts.models import Tenant
-            tenant = Tenant.objects.filter(name__icontains='Default').first() or Tenant.objects.first()
+            resolved_tenant = Tenant.objects.filter(name__icontains='Default').first() or Tenant.objects.first()
+
+        if mailbox_owner and not recipient_email:
+            recipient_email = mailbox_owner.effective_inbox_email
+
+        if mailbox_owner and not resolved_tenant:
+            resolved_tenant = getattr(mailbox_owner, 'tenant', None)
+
+        duplicate_qs = PendingInventoryEmail.plain_objects.all()
+        if mailbox_owner:
+            duplicate_qs = duplicate_qs.filter(mailbox_user=mailbox_owner)
+        elif recipient_email:
+            duplicate_qs = duplicate_qs.filter(recipient_email__iexact=recipient_email)
+        elif resolved_tenant:
+            duplicate_qs = duplicate_qs.filter(tenant=resolved_tenant)
+
+        existing_email = None
+        if 'message_id' in model_fields and message_id:
+            existing_email = duplicate_qs.filter(message_id=message_id).first()
+
+        if not existing_email:
+            existing_email = duplicate_qs.filter(
+                subject=subject,
+                sender_email=sender_email,
+                recipient_email__iexact=recipient_email or '',
+                body_text=body,
+            ).last()
+
+        pending_email = None
+        if existing_email:
+            has_requirements = BuyerRequirement.plain_objects.filter(source_email=existing_email).exists()
+            has_pending_items = PendingInventoryItem.objects.filter(email=existing_email).exists()
+
+            if existing_email.status == 'rejected' and (has_requirements or has_pending_items):
+                sentiment_data = analyze_email_sentiment(subject, body)
+                existing_email.tenant = resolved_tenant
+                existing_email.sender_email = sender_email
+                existing_email.sender_name = sender_name
+                existing_email.recipient_email = recipient_email
+                existing_email.subject = subject
+                existing_email.body_text = body
+                existing_email.message_id = message_id
+                existing_email.received_at = timezone.now()
+                existing_email.status = 'pending'
+                existing_email.matched_company = matched_company
+                existing_email.raw_extraction = extracted_items
+                existing_email.sentiment_label = sentiment_data.get('sentiment_label', 'neutral')
+                existing_email.sentiment_score = sentiment_data.get('sentiment_score', 0.0)
+                existing_email.priority_level = sentiment_data.get('priority_level', 'medium')
+                existing_email.sentiment_reason = sentiment_data.get('sentiment_reason', '')
+                existing_email.processed_at = None
+                existing_email.processed_by = None
+                existing_email.fetched_by = fetched_by
+                existing_email.mailbox_user = mailbox_owner
+                existing_email.save()
+                existing_email.items.all().delete()
+                BuyerRequirement.plain_objects.filter(source_email=existing_email).delete()
+                pending_email = existing_email
+            elif has_requirements or has_pending_items:
+                continue
 
         sentiment_data = analyze_email_sentiment(subject, body)
 
-        pending_email = PendingInventoryEmail.objects.create(
-            tenant=tenant,
-            sender_email=sender_email,
-            sender_name=sender_name,
-            subject=subject,
-            body_text=body,
-            message_id=message_id,
-            received_at=timezone.now(),
-            matched_company=matched_company,
-            raw_extraction=extracted_items,
-            sentiment_label=sentiment_data.get('sentiment_label', 'neutral'),
-            sentiment_score=sentiment_data.get('sentiment_score', 0.0),
-            priority_level=sentiment_data.get('priority_level', 'medium'),
-            sentiment_reason=sentiment_data.get('sentiment_reason', ''),
-            fetched_by=fetched_by,
-        )
+        if not pending_email:
+            pending_email = PendingInventoryEmail.objects.create(
+                tenant=resolved_tenant,
+                sender_email=sender_email,
+                sender_name=sender_name,
+                recipient_email=recipient_email,
+                subject=subject,
+                body_text=body,
+                message_id=message_id,
+                received_at=timezone.now(),
+                matched_company=matched_company,
+                raw_extraction=extracted_items,
+                sentiment_label=sentiment_data.get('sentiment_label', 'neutral'),
+                sentiment_score=sentiment_data.get('sentiment_score', 0.0),
+                priority_level=sentiment_data.get('priority_level', 'medium'),
+                sentiment_reason=sentiment_data.get('sentiment_reason', ''),
+                fetched_by=fetched_by,
+                mailbox_user=mailbox_owner,
+            )
 
         for item_data in extracted_items:
             intent = item_data.get('intent', 'supply')
@@ -534,20 +613,20 @@ def fetch_and_process_emails(tenant, max_emails=10, request_user=None):
                 # AUTOMATED: Create Buyer Requirement directly from email
                 
                 # Deduplication Check: Don't create if already exists for this email
-                if BuyerRequirement.objects.filter(tenant=tenant, source_email=pending_email, material_name=item_data.get('product_name')).exists():
+                if BuyerRequirement.objects.filter(tenant=resolved_tenant, source_email=pending_email, material_name=item_data.get('product_name')).exists():
                     logger.info(f"Skipping duplicate Requirement for {item_data.get('product_name')}")
                     continue
 
                 buyer = matched_company
                 if not buyer:
                     buyer, _ = Company.objects.get_or_create(
-                        tenant=tenant,
+                        tenant=resolved_tenant,
                         name=f"Email Lead: {sender_email}",
                         defaults={'is_active': False, 'description': 'Auto-created from requirement email'}
                     )
 
                 BuyerRequirement.objects.create(
-                    tenant=tenant,
+                    tenant=resolved_tenant,
                     buyer=buyer,
                     source='email',
                     source_email=pending_email,

@@ -107,7 +107,13 @@ def pending_inventory_list(request):
     # Trigger fetch on page load so it feels automatic
     from .email_ingestion import fetch_and_process_emails
     try:
-        fetch_and_process_emails(request.user.tenant, max_emails=5, request_user=request.user)
+        mailbox_user = request.user if getattr(request.user, 'has_personal_mailbox_config', False) else None
+        fetch_and_process_emails(
+            request.user.tenant,
+            max_emails=5,
+            request_user=request.user,
+            mailbox_user=mailbox_user,
+        )
     except Exception as e:
         logger.error(f"Automatic fetch failed: {e}")
 
@@ -115,24 +121,32 @@ def pending_inventory_list(request):
     from django.db.models import Q
     visibility_filter = Q(tenant=request.user.tenant)
     if not getattr(request.user, 'is_admin', False):
-        visibility_filter &= Q(fetched_by=request.user)
+        visibility_filter &= (Q(mailbox_user=request.user) | Q(fetched_by=request.user))
 
     emails = PendingInventoryEmail.objects.filter(
         visibility_filter,
         status='pending'
-    ).prefetch_related('items')
+    ).prefetch_related('items', 'matched_company')
+
+    for e in emails:
+        if e.matched_company and e.matched_company.tenant != request.user.tenant:
+            e.matched_company = None
     
     # Also get recently processed
     recent = PendingInventoryEmail.objects.filter(
         visibility_filter
-    ).exclude(status='pending').order_by('-processed_at')[:10]
+    ).exclude(status='pending').order_by('-processed_at').prefetch_related('matched_company')[:10]
+
+    for e in recent:
+        if e.matched_company and e.matched_company.tenant != request.user.tenant:
+            e.matched_company = None
     
     from apps.accounts.models import Company
     # Admin Sees all companies. Normal users see only their tenant's.
     if request.user.is_superuser or getattr(request.user, 'is_admin', False):
-        all_companies = Company.objects.all()
+        all_companies = Company.objects.filter(tenant=request.user.tenant, created_by=request.user)
     else:
-        all_companies = Company.objects.filter(tenant=request.user.tenant)
+        all_companies = Company.objects.filter(tenant=request.user.tenant, created_by=request.user)
 
     context = {
         'pending_emails': emails,
@@ -334,8 +348,13 @@ def smart_matches_dashboard(request):
     # 1. Trigger Email Fetch to get new requirements
     from .email_ingestion import fetch_and_process_emails
     try:
-        # We pass None to allow global routing (matches sender to company/tenant)
-        fetch_and_process_emails(tenant=None, max_emails=5) 
+        mailbox_user = request.user if getattr(request.user, 'has_personal_mailbox_config', False) else None
+        fetch_and_process_emails(
+            tenant=request.user.tenant if mailbox_user else None,
+            max_emails=5,
+            request_user=request.user,
+            mailbox_user=mailbox_user,
+        )
     except Exception as e:
         logger.error(f"Auto-fetch failed: {e}")
 

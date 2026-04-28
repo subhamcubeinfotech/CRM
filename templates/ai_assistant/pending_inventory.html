@@ -191,12 +191,14 @@
                     </label>
                     <select class="form-select form-select-sm rounded-pill" id="company-select-{{ email.id }}" 
                         {% if email.matched_company %}disabled style="background-color: #f7fafc; border-color: #cbd5e0; color: #4a5568; font-weight: 600;"{% endif %}>
-                        {% if email.matched_company %}
+                        {% if email.matched_company and email.matched_company.tenant == request.user.tenant %}
                             <option value="{{ email.matched_company.id }}" selected>{{ email.matched_company.name }}</option>
                         {% else %}
                             <option value="">-- Select Supplier --</option>
                             {% for company in companies %}
-                                <option value="{{ company.id }}">{{ company.name }}</option>
+                                {% if company.tenant == request.user.tenant %}
+                                    <option value="{{ company.id }}">{{ company.name }}</option>
+                                {% endif %}
                             {% endfor %}
                         {% endif %}
                     </select>
