@@ -27,8 +27,25 @@ from apps.inventory.models import Warehouse, InventoryItem
 from apps.orders.models import Tag, ShippingTerm
 from apps.accounts.utils import filter_by_user_company, check_company_access, is_staff_user
 import logging
+import os
+from reportlab.platypus import Image
 
 logger = logging.getLogger('apps.shipments')
+
+
+class CircleImage(Image):
+    """Custom Image flowable to draw a circular clipped image"""
+    def draw(self):
+        self.canv.saveState()
+        # Calculate radius and center
+        radius = min(self.drawWidth, self.drawHeight) / 2.0
+        # Clip as circle
+        path = self.canv.beginPath()
+        path.circle(self.drawWidth/2.0, self.drawHeight/2.0, radius)
+        self.canv.clipPath(path, stroke=0)
+        # Draw standard image
+        super().draw()
+        self.canv.restoreState()
 
 
 def _get_tracking_shipment_for_user(user, pk):
@@ -1704,8 +1721,8 @@ def generate_bol_pdf(request, pk):
     doc = SimpleDocTemplate(
         buffer,
         pagesize=A4,
-        rightMargin=15*mm, leftMargin=15*mm,
-        topMargin=15*mm, bottomMargin=15*mm,
+        rightMargin=15*mm, leftMargin=10*mm,
+        topMargin=10*mm, bottomMargin=15*mm,
     )
 
     styles = getSampleStyleSheet()
@@ -1743,10 +1760,8 @@ def generate_bol_pdf(request, pk):
         try:
             logo_path = logo_file.path
             if os.path.exists(logo_path):
-                logo = Image(logo_path)
-                aspect = logo.imageHeight / float(logo.imageWidth)
-                logo.drawWidth = 35 * mm
-                logo.drawHeight = 35 * mm * aspect
+                logo = CircleImage(logo_path, width=22*mm, height=22*mm)
+                logo.hAlign = 'LEFT'
         except Exception as e:
             logger.error(f"Error loading logo for PDF: {e}")
 
@@ -2029,8 +2044,8 @@ def generate_shipping_confirmation_pdf(request, pk):
     doc = SimpleDocTemplate(
         buffer,
         pagesize=A4,
-        rightMargin=15*mm, leftMargin=15*mm,
-        topMargin=15*mm, bottomMargin=15*mm,
+        rightMargin=15*mm, leftMargin=10*mm,
+        topMargin=10*mm, bottomMargin=15*mm,
     )
 
     styles = getSampleStyleSheet()
@@ -2070,10 +2085,8 @@ def generate_shipping_confirmation_pdf(request, pk):
         try:
             logo_path = logo_file.path
             if os.path.exists(logo_path):
-                logo = Image(logo_path)
-                aspect = logo.imageHeight / float(logo.imageWidth)
-                logo.drawWidth = 35 * mm
-                logo.drawHeight = 35 * mm * aspect
+                logo = CircleImage(logo_path, width=22*mm, height=22*mm)
+                logo.hAlign = 'LEFT'
         except Exception as e:
             logger.error(f"Error loading logo for PDF: {e}")
 
@@ -2378,8 +2391,8 @@ def generate_packing_list_pdf(request, pk):
     doc = SimpleDocTemplate(
         buffer,
         pagesize=A4,
-        rightMargin=15*mm, leftMargin=15*mm,
-        topMargin=15*mm, bottomMargin=15*mm,
+        rightMargin=15*mm, leftMargin=10*mm,
+        topMargin=10*mm, bottomMargin=15*mm,
     )
 
     styles = getSampleStyleSheet()
@@ -2417,10 +2430,8 @@ def generate_packing_list_pdf(request, pk):
         try:
             logo_path = logo_file.path
             if os.path.exists(logo_path):
-                logo = Image(logo_path)
-                aspect = logo.imageHeight / float(logo.imageWidth)
-                logo.drawWidth = 35 * mm
-                logo.drawHeight = 35 * mm * aspect
+                logo = CircleImage(logo_path, width=22*mm, height=22*mm)
+                logo.hAlign = 'LEFT'
         except Exception as e:
             logger.error(f"Error loading logo for PDF: {e}")
 

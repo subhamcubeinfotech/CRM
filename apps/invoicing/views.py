@@ -18,8 +18,25 @@ from apps.shipments.models import Shipment
 from apps.accounts.utils import filter_by_user_company, check_company_access
 import logging
 from django.http import JsonResponse
+from reportlab.platypus import Image
+import os
 
 logger = logging.getLogger('apps.invoicing')
+
+
+class CircleImage(Image):
+    """Custom Image flowable to draw a circular clipped image"""
+    def draw(self):
+        self.canv.saveState()
+        # Calculate radius and center
+        radius = min(self.drawWidth, self.drawHeight) / 2.0
+        # Clip as circle
+        path = self.canv.beginPath()
+        path.circle(self.drawWidth/2.0, self.drawHeight/2.0, radius)
+        self.canv.clipPath(path, stroke=0)
+        # Draw standard image
+        super().draw()
+        self.canv.restoreState()
 
 
 def _get_invoice(pk):
@@ -291,8 +308,8 @@ def _generate_invoice_pdf_buffer(invoice, request):
     doc = SimpleDocTemplate(
         buffer,
         pagesize=A4,
-        rightMargin=20*mm, leftMargin=20*mm,
-        topMargin=20*mm, bottomMargin=20*mm,
+        rightMargin=15*mm, leftMargin=10*mm,
+        topMargin=10*mm, bottomMargin=15*mm,
     )
 
     # ... (styles omitted for brevity in instruction, but kept in replacement)
@@ -327,14 +344,15 @@ def _generate_invoice_pdf_buffer(invoice, request):
     if not logo_file and request.user.company and request.user.company.logo:
         logo_file = request.user.company.logo
         
+
+
     if logo_file:
         try:
             logo_path = logo_file.path
             if os.path.exists(logo_path):
-                logo = Image(logo_path)
-                aspect = logo.imageHeight / float(logo.imageWidth)
-                logo.drawWidth = 35 * mm
-                logo.drawHeight = 35 * mm * aspect
+                # Using CircleImage to force circular crop in top corner
+                logo = CircleImage(logo_path, width=22*mm, height=22*mm)
+                logo.hAlign = 'LEFT'
         except Exception as e:
             logger.error(f"Error loading logo for PDF: {e}")
 
@@ -367,7 +385,8 @@ def _generate_invoice_pdf_buffer(invoice, request):
         
     header_table.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
-        ('LEFTPADDING', (0,0), (-1,-1), 0),
+        ('LEFTPADDING', (0,0), (0,0), 0), # Logo cell
+        ('TOPPADDING', (0,0), (-1,-1), 0), # Move everything to absolute top
         ('RIGHTPADDING', (0,0), (-1,-1), 0),
     ]))
     elements.append(header_table)
