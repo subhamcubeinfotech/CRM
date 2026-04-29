@@ -742,7 +742,7 @@ def order_create(request):
         # Show both tenant-specific and global terms/tags
         'shipping_terms': ShippingTerm.plain_objects.filter(Q(tenant=request.user.tenant) | Q(tenant__isnull=True)),
         'tags': Tag.plain_objects.filter(Q(tenant=request.user.tenant) | Q(tenant__isnull=True)),
-        'team_members': get_user_model().objects.filter(tenant=request.user.tenant),
+        'team_members': get_user_model().objects.filter(pk=request.user.pk),
         'packaging_types': PackagingType.objects.all(),
         'material_form': MaterialForm(),
     }
