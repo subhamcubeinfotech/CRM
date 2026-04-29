@@ -469,21 +469,21 @@ def find_match_for_requirement(request, requirement_id):
     created_count = 0
     
     for item, score, reason in matches:
-        # Don't create duplicate matches
-        if not SmartMatch.objects.filter(
+        # Ensure dismissed matches are re-activated if user manually re-searches
+        match_obj, created = SmartMatch.objects.get_or_create(
             tenant=request.user.tenant,
             requirement=requirement,
             inventory_item=item,
-        ).exists():
-            insight = get_ai_match_insight(requirement, item) if score >= 70 else reason
-            
-            SmartMatch.objects.create(
-                tenant=request.user.tenant,
-                requirement=requirement,
-                inventory_item=item,
-                confidence_score=score,
-                match_reason=insight,
-            )
+            defaults={
+                'confidence_score': score,
+                'match_reason': get_ai_match_insight(requirement, item) if score >= 70 else reason
+            }
+        )
+        if not created:
+            # Re-activate if it was previously dismissed
+            match_obj.is_dismissed = False
+            match_obj.save(update_fields=['is_dismissed'])
+        else:
             created_count += 1
             
     return JsonResponse({
@@ -622,3 +622,24 @@ def document_vision_upload(request):
         'extracted_json': record.extracted_json,
         'error_message': record.error_message,
     })
+
+
+@login_required
+@require_POST
+def reject_requirement_ajax(request, requirement_id):
+    """Delete a buyer requirement lead"""
+    from .models import BuyerRequirement
+    req = get_object_or_404(BuyerRequirement, id=requirement_id, tenant=request.user.tenant)
+    req.delete()
+    return JsonResponse({'status': 'success'})
+
+
+@login_required
+@require_POST
+def reject_email_lead_ajax(request, email_id):
+    """Archive/Reject a supplier email lead"""
+    from .models import PendingInventoryEmail
+    email = get_object_or_404(PendingInventoryEmail, id=email_id, tenant=request.user.tenant)
+    email.status = 'rejected'
+    email.save()
+    return JsonResponse({'status': 'success'})
