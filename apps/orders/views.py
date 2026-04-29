@@ -135,7 +135,10 @@ class OrderListView(LoginRequiredMixin, ListView):
         
         # Dashboard Analytics
         context['total_orders'] = orders.count()
-        context['in_transit_count'] = orders.filter(status='in_transit').count()
+        # Count orders that are either marked as in_transit OR have active shipments in transit
+        context['in_transit_count'] = orders.filter(
+            Q(status='in_transit') | Q(shipments__status='in_transit')
+        ).distinct().count()
         context['pending_payment_count'] = orders.filter(payment_status='pending').count()
         
         # Sum of weight target vs shipped weight
