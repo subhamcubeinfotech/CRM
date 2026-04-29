@@ -28,7 +28,7 @@
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <select name="status" class="form-select">
+                    <select name="status" class="form-select" onchange="this.form.submit()">
                         <option value="">All Statuses</option>
                         {% for code, label in status_choices %}
                         <option value="{{ code }}" {% if status_filter == code %}selected{% endif %}>{{ label }}</option>
@@ -36,7 +36,7 @@
                     </select>
                 </div>
                 <div class="col-md-3">
-                    <select name="sort" class="form-select">
+                    <select name="sort" class="form-select" onchange="this.form.submit()">
                         <option value="-invoice_date" {% if sort_by == '-invoice_date' %}selected{% endif %}>Newest First</option>
                         <option value="invoice_date" {% if sort_by == 'invoice_date' %}selected{% endif %}>Oldest First</option>
                         <option value="-total" {% if sort_by == '-total' %}selected{% endif %}>Highest Amount</option>
@@ -44,7 +44,7 @@
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary w-100">
+                    <button type="submit" class="btn btn-primary w-100 d-none">
                         <i class="fas fa-filter"></i> Filter
                     </button>
                 </div>
