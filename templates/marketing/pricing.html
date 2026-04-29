@@ -42,7 +42,7 @@
                 {% if user.is_authenticated and user.tenant %}
                     <a href="{% url 'accounts:signup_checkout' user.tenant.id %}?plan=starter" class="btn btn-outline-primary w-100 py-3">Renew Starter</a>
                 {% else %}
-                    <a href="{% url 'marketing:checkout' %}?plan=starter" class="btn btn-outline-primary w-100 py-3">Get Started</a>
+                    <a href="/signup/?plan=starter" class="btn btn-outline-primary w-100 py-3">Get Started</a>
                 {% endif %}
             </div>
         </div>
@@ -58,9 +58,9 @@
                     <li class="mb-2"><i class="fas fa-check text-success me-2"></i> API Access</li>
                 </ul>
                 {% if user.is_authenticated and user.tenant %}
-                    <a href="{% url 'accounts:signup_checkout' user.tenant.id %}?plan=pro" class="btn btn-primary w-100 py-3">Upgrade to Pro</a>
+                    <a href="{% url 'accounts:signup_checkout' user.tenant.id %}?plan=professional" class="btn btn-primary w-100 py-3">Renew Professional</a>
                 {% else %}
-                    <a href="{% url 'marketing:checkout' %}?plan=pro" class="btn btn-primary w-100 py-3">Start Free Trial</a>
+                    <a href="/signup/?plan=professional" class="btn btn-primary w-100 py-3">Start Free Trial</a>
                 {% endif %}
             </div>
         </div>

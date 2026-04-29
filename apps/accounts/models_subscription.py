@@ -18,13 +18,13 @@ class Subscription(models.Model):
     # Plan limits: None means unlimited
     PLAN_LIMITS = {
         'starter': {
-            'max_users': 5,
+            'max_users': 1,
             'max_shipments_per_month': 100,
             'has_api_access': False,
             'has_ocean_tracking': False,
         },
         'professional': {
-            'max_users': None,  # Unlimited
+            'max_users': 3,
             'max_shipments_per_month': None,  # Unlimited
             'has_api_access': True,
             'has_ocean_tracking': True,
