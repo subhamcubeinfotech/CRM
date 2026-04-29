@@ -181,6 +181,10 @@ def invoice_create(request):
             # Default to 30 days if missing
             invoice.due_date = invoice.invoice_date + timedelta(days=30)
         
+        # Pre-generate and check uniqueness to prevent IntegrityError
+        if not invoice.invoice_number:
+            invoice.invoice_number = Invoice.generate_invoice_number(invoice.shipment)
+        
         # Save invoice first
         invoice.save()
         
@@ -952,15 +956,20 @@ def public_invoice_detail(request, token):
 @login_required
 def get_customer_shipments(request, customer_id):
     """AJAX view to get delivered shipments for a specific customer"""
+    # Only show shipments that don't have an invoice yet
+    # We exclude shipments that are already linked to an Invoice
     shipments = Shipment.objects.filter(
         customer_id=customer_id, 
         status='delivered'
-    ).order_by('-created_at')
+    ).exclude(
+        id__in=Invoice.objects.filter(shipment__isnull=False).values_list('shipment_id', flat=True)
+    ).select_related('order').order_by('-created_at')
     
     data = [
         {
             'id': s.id,
             'shipment_number': s.shipment_number,
+            'order_number': s.order.order_number if s.order else 'No Order',
             'origin': s.origin_city,
             'destination': s.destination_city
         } for s in shipments

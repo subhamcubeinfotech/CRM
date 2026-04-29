@@ -143,13 +143,19 @@ class Invoice(TenantAwareModel):
         
         if shipment and shipment.shipment_number:
             # Sync with shipment number e.g. INV-2026-01707
-            # Replace SHP with INV prefix if present
             base_number = shipment.shipment_number
             if base_number.startswith('SHP-'):
                 base_number = base_number.replace('SHP-', 'INV-', 1)
             else:
                 base_number = f"INV-{base_number}"
-            return base_number
+            
+            # CRITICAL FIX: Ensure uniqueness by adding a suffix if it already exists
+            final_number = base_number
+            counter = 1
+            while cls.objects.filter(invoice_number=final_number).exists():
+                final_number = f"{base_number}_{counter}"
+                counter += 1
+            return final_number
             
         with transaction.atomic():
             # Lock table to prevent race conditions
