@@ -285,7 +285,7 @@
                     .then(data => {
                         let html = '<option value="">None</option>';
                         data.shipments.forEach(s => {
-                            html += `<option value="${s.id}">${s.shipment_number} - ${s.origin} to ${s.destination}</option>`;
+                            html += `<option value="${s.id}">${s.shipment_number} | Order: ${s.order_number} - ${s.origin} to ${s.destination}</option>`;
                         });
                         shipmentSelect.innerHTML = html;
                         
