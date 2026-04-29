@@ -715,7 +715,7 @@ def aging_report(request):
     
     # Get all unpaid invoices
     unpaid_invoices = Invoice.objects.filter(
-        status__in=['reviewed', 'sent', 'overdue', 'partial']
+        status__in=['draft', 'reviewed', 'sent', 'overdue', 'partial']
     ).exclude(status__in=['paid', 'cancelled']).select_related('customer')
     
     # Alternatively, any invoice where balance_due > 0
