@@ -327,7 +327,10 @@
                                             <td>{{ req.quantity_needed }} {{ req.unit }}</td>
                                             <td><span class="badge bg-primary text-white px-3">DEMAND</span></td>
                                             <td class="pe-4">
-                                                <button class="btn btn-sm btn-outline-primary rounded-pill px-3" onclick="findMatch({{ req.id }})">Find Match</button>
+                                                <div class="btn-group">
+                                                    <button class="btn btn-sm btn-outline-primary rounded-pill px-3 me-2" onclick="findMatch({{ req.id }})">Find Match</button>
+                                                    <button class="btn btn-sm btn-outline-danger border-0 rounded-circle" onclick="rejectRequirement({{ req.id }})"><i class="fas fa-times"></i></button>
+                                                </div>
                                             </td>
                                         </tr>
                                     {% endfor %}
@@ -471,14 +474,30 @@ function approveEmail(emailId) {
 function rejectEmail(emailId) {
     if(!confirm('Are you sure you want to reject this lead?')) return;
     
-    fetch(`/ai/pending-inventory/email/${emailId}/reject-all/`, {
+    fetch(`/ai/smart-matches/email/${emailId}/reject/`, {
         method: 'POST',
         headers: {'X-CSRFToken': '{{ csrf_token }}'}
     })
     .then(r => r.json())
     .then(data => {
-        if(data.status === 'rejected') {
+        if(data.status === 'success') {
             location.reload();
+        }
+    });
+}
+
+function rejectRequirement(reqId) {
+    if(!confirm('Are you sure you want to reject this requirement?')) return;
+    
+    fetch(`/ai/smart-matches/requirement/${reqId}/reject/`, {
+        method: 'POST',
+        headers: {'X-CSRFToken': '{{ csrf_token }}'}
+    })
+    .then(r => r.json())
+    .then(data => {
+        if(data.status === 'success') {
+            const row = document.getElementById('req-' + reqId);
+            if(row) row.remove();
         }
     });
 }
