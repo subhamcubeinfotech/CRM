@@ -638,6 +638,38 @@ def company_detail(request, pk):
 
     documents = company.documents.all()
 
+    # Ensure the company's primary email/phone is represented as a contact if not already there
+    primary_contact = company.users.filter(email=company.email).first()
+    if company.email and not primary_contact:
+        from apps.accounts.models import CustomUser
+        import uuid
+        username = f"contact_{uuid.uuid4().hex[:8]}"
+        
+        # Use creator's name, or first linked user's name, otherwise fallback to company name
+        contact_name = company.name
+        creator = company.created_by or company.users.first()
+        
+        if creator:
+            contact_name = creator.get_full_name() or creator.username
+            
+        CustomUser.objects.create(
+            username=username,
+            first_name=contact_name,
+            email=company.email,
+            phone=company.phone,
+            company=company,
+            tenant=company.tenant,
+            role='customer',
+            is_active=True
+        )
+    elif primary_contact and (not primary_contact.first_name or primary_contact.first_name == company.name):
+        # Fix existing record's name if it's empty or still set to the company name
+        creator = company.created_by or company.users.exclude(pk=primary_contact.pk).first()
+        if creator:
+            contact_name = creator.get_full_name() or creator.username
+            primary_contact.first_name = contact_name
+            primary_contact.save(update_fields=['first_name'])
+
     context = {
         'company': company,
         'shipments': shipments,
