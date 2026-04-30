@@ -633,8 +633,9 @@ def company_detail(request, pk):
         'locations': locations,
         'materials': materials,
         'available_materials': Material.plain_objects.filter(
-            Q(tenant=request.user.tenant) | Q(tenant__isnull=True)
-        ).filter(company__isnull=True),
+            tenant=company.tenant, 
+            company__isnull=True
+        ).order_by('name'),
         'documents': documents,
         'history': company.history.all()[:50],  # Get last 50 history records
         'location_form': WarehouseForm(initial={'company': company}),
