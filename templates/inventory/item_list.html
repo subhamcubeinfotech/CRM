@@ -329,6 +329,31 @@
         max-height: 320px !important;
         overflow-y: auto !important;
     }
+
+    /* Clickable Image Placeholder */
+    .clickable-img-placeholder {
+        cursor: pointer;
+        transition: all 0.2s ease;
+        position: relative;
+    }
+    .clickable-img-placeholder:hover {
+        background-color: #e2e8f0 !important;
+        color: #2563eb !important;
+    }
+    .clickable-img-placeholder:hover::after {
+        content: '\f030';
+        font-family: 'Font Awesome 5 Free';
+        font-weight: 900;
+        position: absolute;
+        font-size: 1rem;
+        opacity: 0.8;
+    }
+    .clickable-img-placeholder i {
+        transition: opacity 0.2s;
+    }
+    .clickable-img-placeholder:hover i {
+        opacity: 0;
+    }
 </style>
 {% endblock %}
 
@@ -456,7 +481,10 @@
                         {% if item.effective_image %}
                             <img src="{{ item.effective_image.url }}" class="rounded shadow-sm" style="width: 48px; height: 48px; object-fit: cover;" alt="{{ item.product_name }}">
                         {% else %}
-                            <div class="bg-light rounded d-flex align-items-center justify-content-center text-muted" style="width: 48px; height: 48px;">
+                            <div class="bg-light rounded d-flex align-items-center justify-content-center text-muted clickable-img-placeholder" 
+                                 style="width: 48px; height: 48px;" 
+                                 onclick="triggerQuickUpload('{{ item.pk }}', 'inventory')"
+                                 id="img-placeholder-inventory-{{ item.pk }}">
                                 <i class="fas fa-image"></i>
                             </div>
                         {% endif %}
@@ -1802,8 +1830,66 @@
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<!-- Hidden Global Upload Input -->
+<input type="file" id="globalQuickUploadInput" style="display: none;" accept="image/*">
 
 <script>
+    let currentUploadId = null;
+    let currentUploadType = null;
+
+    function triggerQuickUpload(id, type) {
+        currentUploadId = id;
+        currentUploadType = type;
+        document.getElementById('globalQuickUploadInput').click();
+    }
+
+    document.getElementById('globalQuickUploadInput').addEventListener('change', function() {
+        if (!this.files || !this.files[0] || !currentUploadId) return;
+        
+        const file = this.files[0];
+        const formData = new FormData();
+        formData.append('image', file);
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        const baseUrl = currentUploadType === 'inventory' 
+            ? `/inventory/items/${currentUploadId}/upload-image/`
+            : `/inventory/materials/${currentUploadId}/upload-image/`;
+
+        // Update UI to show loading
+        const placeholder = document.getElementById(`img-placeholder-${currentUploadType}-${currentUploadId}`);
+        const originalContent = placeholder.innerHTML;
+        placeholder.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+        placeholder.classList.remove('clickable-img-placeholder');
+
+        fetch(baseUrl, {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log("Upload result:", data);
+            if (data.success) {
+                // Replace placeholder with the new image
+                const placeholder = document.getElementById(`img-placeholder-${currentUploadType}-${currentUploadId}`);
+                placeholder.outerHTML = `<img src="${data.image_url}" class="rounded shadow-sm animate__animated animate__fadeIn" style="width: 48px; height: 48px; object-fit: cover;">`;
+            } else {
+                alert('Upload failed: ' + (data.message || 'Unknown error'));
+                placeholder.innerHTML = originalContent;
+                placeholder.classList.add('clickable-img-placeholder');
+            }
+        })
+        .catch(err => {
+            console.error('Upload error:', err);
+            alert('An error occurred during upload.');
+            placeholder.innerHTML = originalContent;
+            placeholder.classList.add('clickable-img-placeholder');
+        })
+        .finally(() => {
+            this.value = ''; // Reset input
+        });
+    });
+
     function updateRadiusLabel(val) {
         const radiusVal = document.getElementById('radiusVal');
         if (radiusVal) radiusVal.innerText = val + ' mi';

@@ -6,6 +6,7 @@ import re
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Sum, F, Q, ExpressionWrapper, DecimalField, Case, When, IntegerField
@@ -1178,3 +1179,48 @@ def material_detail(request, pk=None):
     return render(request, 'inventory/material_detail.html', context)
 
 
+@login_required
+@require_POST
+def ajax_inventory_image_upload(request, pk):
+    """Quick AJAX upload for inventory item image"""
+    print(f"DEBUG: Image upload request for Item {pk}")
+    print(f"DEBUG: User tenant: {request.user.tenant_id if request.user.tenant else 'NONE'}")
+    
+    try:
+        item = InventoryItem.objects.get(pk=pk)
+        print(f"DEBUG: Item found. Item tenant: {item.tenant_id}")
+        if item.tenant != request.user.tenant:
+            print("DEBUG: Tenant mismatch!")
+            return JsonResponse({'success': False, 'message': f'Inventory item {pk} not found for this tenant.'}, status=404)
+    except InventoryItem.DoesNotExist:
+        print("DEBUG: Item not found at all!")
+        return JsonResponse({'success': False, 'message': f'Inventory item {pk} not found.'}, status=404)
+    image = request.FILES.get('image')
+    if image:
+        item.image = image
+        item.save()
+        
+        # Link to material if missing (matching by name)
+        material = Material.objects.filter(tenant=item.tenant, name=item.product_name).first()
+        if material and not material.image:
+            material.image = image
+            material.save()
+            
+        return JsonResponse({'success': True, 'image_url': item.image.url})
+    return JsonResponse({'success': False, 'message': 'No image provided'})
+
+
+@login_required
+@require_POST
+def ajax_material_image_upload(request, pk):
+    """Quick AJAX upload for material image"""
+    try:
+        material = Material.objects.get(pk=pk, tenant=request.user.tenant)
+    except Material.DoesNotExist:
+        return JsonResponse({'success': False, 'message': f'Material {pk} not found for this tenant.'}, status=404)
+    image = request.FILES.get('image')
+    if image:
+        material.image = image
+        material.save()
+        return JsonResponse({'success': True, 'image_url': material.image.url})
+    return JsonResponse({'success': False, 'message': 'No image provided'})
