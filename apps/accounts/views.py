@@ -599,14 +599,28 @@ def company_detail(request, pk):
             'email': company.email
         })
 
-    from apps.inventory.models import Material
-    from apps.inventory.models import Material
-    # Show only materials specifically linked to this company
-    # IMPORTANT: Filter by company's tenant to maintain isolation
-    materials = company.material_tags.filter(tenant=company.tenant).order_by('name')
+    from apps.inventory.models import Material, InventoryItem
     
-    # If the company has its own defined materials (ForeignKey), include those too
-    owned_materials = Material.objects.filter(company=company, tenant=company.tenant).order_by('name')
+    # Get all unique product names currently in this company's inventory
+    inventory_names = InventoryItem.objects.filter(
+        company=company, 
+        tenant=company.tenant
+    ).values_list('product_name', flat=True).distinct()
+
+    # Show only materials specifically linked to this company that exist in inventory
+    # IMPORTANT: Filter by company's tenant and inventory presence to maintain isolation
+    materials = company.material_tags.filter(
+        tenant=company.tenant,
+        name__in=inventory_names
+    ).order_by('name')
+    
+    # If the company has its own defined materials (ForeignKey), include those too (if in stock)
+    owned_materials = Material.objects.filter(
+        company=company, 
+        tenant=company.tenant,
+        name__in=inventory_names
+    ).order_by('name')
+    
     if owned_materials.exists():
         materials = (materials | owned_materials).distinct()
 
