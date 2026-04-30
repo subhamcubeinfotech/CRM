@@ -600,11 +600,13 @@ def company_detail(request, pk):
         })
 
     from apps.inventory.models import Material
+    from apps.inventory.models import Material
     # Show only materials specifically linked to this company
-    materials = company.material_tags.all().order_by('name')
+    # IMPORTANT: Filter by company's tenant to maintain isolation
+    materials = company.material_tags.filter(tenant=company.tenant).order_by('name')
     
     # If the company has its own defined materials (ForeignKey), include those too
-    owned_materials = Material.objects.filter(company=company).order_by('name')
+    owned_materials = Material.objects.filter(company=company, tenant=company.tenant).order_by('name')
     if owned_materials.exists():
         materials = (materials | owned_materials).distinct()
 
