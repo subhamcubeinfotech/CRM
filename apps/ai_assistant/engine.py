@@ -43,7 +43,7 @@ def search_shipments(tenant, **kwargs):
         cutoff = timezone.now() - timedelta(days=int(kwargs['days']))
         qs = qs.filter(created_at__gte=cutoff)
     
-    return qs[:20]
+    return qs[:100]
 
 
 def search_inventory(tenant, **kwargs):
@@ -140,11 +140,13 @@ def get_dashboard_stats(tenant):
 INTENT_PATTERNS = [
     # Shipment queries
     (r'(?:status|track|where)\s+(?:of\s+)?(?:shipment|shp)[\s#-]*([\w\-\#]+)', 'shipment_lookup'),
-    (r'(?:show|find|lookup|get)\s+(?:shipment|shp)[\s#-]*([\w\-\#]+)', 'shipment_lookup'),
+    (r'(?:show|find|lookup|get)\s+(?:only\s+|just\s+|me\s+)?(?:shipment|shp)[\s#-]*([\w\-\#]+)', 'shipment_lookup'),
+    (r'(?:show|find|lookup|get)\s+(?:only\s+|just\s+|me\s+)?(SHP-[\w\-]+)', 'shipment_lookup'),  # Direct SHP-XXXX
+    (r'\b(SHP-\d{4}-\d+)\b', 'shipment_lookup'),  # Any SHP number anywhere in message
     (r'(?:how many|count|total)\s+(?:shipments?)', 'shipment_count'),
-    (r'(?:pending|waiting)\s+shipments?', 'shipment_status_filter'),
+    (r'(?:show\s+)?(?:all\s+)?(?:pending|waiting)\s+shipments?', 'shipment_status_filter'),
     (r'(?:in.transit|on.the.way)\s+shipments?', 'shipment_transit'),
-    (r'(?:delivered)\s+shipments?', 'shipment_delivered'),
+    (r'(?:show\s+)?(?:all\s+)?(?:delivered)\s+shipments?', 'shipment_delivered'),
     (r'(?:overdue|late)\s+shipments?', 'shipment_overdue'),
     (r'(?:show|list|get|find)\s+(?:all\s+)?(?:\d+\s+)?shipments?\s+(?:for|of|from)\s+(.+)', 'shipment_by_company'),
     (r'(?:show|list|get|find)\s+(?:all\s+)?(?:\d+\s+)?shipments?', 'shipment_list'),
@@ -284,26 +286,41 @@ def process_query(user, message):
         return f"📦 You have **{count}** total shipments in the system."
     
     if intent == 'shipment_status_filter':
-        shipments = search_shipments(tenant, status='pending')
-        if shipments.exists():
-            result = f"⏳ **{shipments.count()} Pending Shipments:**\n\n"
-            result += "\n\n".join(format_shipment(s) for s in shipments[:10])
+        from apps.shipments.models import Shipment
+        all_pending = Shipment.objects.filter(tenant=tenant, status='pending')
+        total = all_pending.count()
+        if total > 0:
+            show = all_pending[:50]
+            result = f"⏳ **{total} Pending Shipments (Showing {show.count()}):**\n\n"
+            result += "\n\n".join(format_shipment(s) for s in show)
+            if total > 50:
+                result += f"\n\n📌 *...and {total - 50} more. Ask for a specific customer or date to filter.*"
             return result
         return "✅ No pending shipments right now!"
     
     if intent == 'shipment_transit':
-        shipments = search_shipments(tenant, status='in_transit')
-        if shipments.exists():
-            result = f"🚚 **{shipments.count()} Shipments In Transit:**\n\n"
-            result += "\n\n".join(format_shipment(s) for s in shipments[:10])
+        from apps.shipments.models import Shipment
+        all_transit = Shipment.objects.filter(tenant=tenant, status='in_transit')
+        total = all_transit.count()
+        if total > 0:
+            show = all_transit[:50]
+            result = f"🚚 **{total} Shipments In Transit (Showing {show.count()}):**\n\n"
+            result += "\n\n".join(format_shipment(s) for s in show)
+            if total > 50:
+                result += f"\n\n📌 *...and {total - 50} more.*"
             return result
         return "📭 No shipments currently in transit."
     
     if intent == 'shipment_delivered':
-        shipments = search_shipments(tenant, status='delivered')
-        if shipments.exists():
-            result = f"✅ **{shipments.count()} Delivered Shipments:**\n\n"
-            result += "\n\n".join(format_shipment(s) for s in shipments[:10])
+        from apps.shipments.models import Shipment
+        all_delivered = Shipment.objects.filter(tenant=tenant, status='delivered')
+        total = all_delivered.count()
+        if total > 0:
+            show = all_delivered[:50]
+            result = f"✅ **{total} Delivered Shipments (Showing {show.count()}):**\n\n"
+            result += "\n\n".join(format_shipment(s) for s in show)
+            if total > 50:
+                result += f"\n\n📌 *...and {total - 50} more.*"
             return result
         return "📭 No delivered shipments found."
     
@@ -332,29 +349,38 @@ def process_query(user, message):
     
     if intent == 'shipment_list':
         from apps.shipments.models import Shipment
-        all_shipments = Shipment.objects.filter(tenant=tenant).order_by('-created_at')
-        if 'all' in message.lower():
-            total = all_shipments.count()
-            if total > 50:
-                result = f"📦 **Showing the first 50 of {total} shipments:**\n\n"
-                shipments = all_shipments[:50]
-            else:
-                result = f"📦 **All Shipments ({total}):**\n\n"
-                shipments = all_shipments
-        else:
-            shipments = search_shipments(tenant)
-            total = all_shipments.count()
-            shown = shipments[:10].count()
-            if total > shown:
-                result = f"📦 **Recent Shipments ({shown} of {total}):**\n\n"
-            else:
-                result = f"📦 **Recent Shipments ({total}):**\n\n"
-            shipments = shipments[:10]
-
-        if shipments.exists():
-            result += "\n\n".join(format_shipment(s) for s in shipments)
-            return result
-        return "📭 No shipments found."
+        from django.db.models import Count
+        all_shipments = Shipment.objects.filter(tenant=tenant)
+        total = all_shipments.count()
+        
+        if total == 0:
+            return "📭 No shipments found in the system."
+        
+        # Count by each status
+        pending_count     = all_shipments.filter(status='pending').count()
+        dispatched_count  = all_shipments.filter(status='dispatched').count()
+        transit_count     = all_shipments.filter(status='in_transit').count()
+        delivered_count   = all_shipments.filter(status='delivered').count()
+        approved_count    = all_shipments.filter(status='approved').count()
+        invoiced_count    = all_shipments.filter(status='invoiced').count()
+        paid_count        = all_shipments.filter(status='paid').count()
+        rejected_count    = all_shipments.filter(status='rejected').count()
+        
+        result = f"📦 **Hamare paas total {total} shipments hain:**\n\n"
+        if pending_count:    result += f"  ⏳ Pending: **{pending_count}**\n"
+        if dispatched_count: result += f"  🚀 Dispatched: **{dispatched_count}**\n"
+        if transit_count:    result += f"  🚚 In Transit: **{transit_count}**\n"
+        if delivered_count:  result += f"  ✅ Delivered: **{delivered_count}**\n"
+        if approved_count:   result += f"  👍 Approved: **{approved_count}**\n"
+        if invoiced_count:   result += f"  🧾 Invoiced: **{invoiced_count}**\n"
+        if paid_count:       result += f"  💰 Paid: **{paid_count}**\n"
+        if rejected_count:   result += f"  ❌ Rejected: **{rejected_count}**\n"
+        
+        result += "\n💬 **Konsi dikhani hai?** Batao jaise:\n"
+        result += "  • *'show pending shipments'*\n"
+        result += "  • *'show delivered shipments'*\n"
+        result += "  • *'show shipment SHP-XXXX'* (ek specific)"
+        return result
     
     if intent == 'shipment_recent':
         shipments = search_shipments(tenant, days=7)
