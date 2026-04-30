@@ -449,7 +449,7 @@
                 {% endif %}
             </div>
 
-            <button type="button" class="btn btn-outline-primary btn-sm mt-2" id="btn-add-manifest-item-unique">
+            <button type="button" class="btn btn-outline-primary btn-sm mt-2" onclick="addManifestItemManual(event)">
                 <i class="fas fa-plus me-1"></i>Add Item
             </button>
         </div>
@@ -977,42 +977,41 @@
         recalcProfit();
 
         let isAddingItem = false;
-        const addItemBtn = document.getElementById('btn-add-manifest-item-unique');
-        if (addItemBtn) {
-            addItemBtn.addEventListener('click', function (e) {
+        window.addManifestItemManual = function(e) {
+            if (e) {
                 e.preventDefault();
                 e.stopPropagation();
-                
-                if (isAddingItem) return;
-                isAddingItem = true;
-                
-                console.log("Add Item logic triggered");
-                const container = document.getElementById('manifest-items-container');
-                const firstItem = container.querySelector('.manifest-item');
-                if (!firstItem) { isAddingItem = false; return; }
-                
-                const newItem = firstItem.cloneNode(true);
-                newItem.querySelectorAll('input').forEach(input => { 
-                    if (input.type === 'checkbox') input.checked = false; 
-                    else input.value = ''; 
-                    input.classList.remove('is-invalid'); 
-                });
-                newItem.querySelectorAll('select').forEach(select => { select.value = ''; });
-                const hiddenPallet = newItem.querySelector('.palletized-hidden'); 
-                if (hiddenPallet) hiddenPallet.value = 'false';
-                newItem.querySelector('.weight-warning').style.display = 'none';
-                const removeBtn = newItem.querySelector('.remove-item-btn'); 
-                if (removeBtn) removeBtn.style.display = 'block';
-                
-                container.appendChild(newItem); 
-                setupInventoryValidation(newItem); 
-                setupManifestUnitSync(newItem); 
-                syncManifestUnits(newItem, 'lbs'); 
-                filterMaterialOptions();
-                
-                setTimeout(() => { isAddingItem = false; }, 500);
+            }
+            
+            if (isAddingItem) return;
+            isAddingItem = true;
+            
+            console.log("Add Item logic triggered via named function");
+            const container = document.getElementById('manifest-items-container');
+            const firstItem = container.querySelector('.manifest-item');
+            if (!firstItem) { isAddingItem = false; return; }
+            
+            const newItem = firstItem.cloneNode(true);
+            newItem.querySelectorAll('input').forEach(input => { 
+                if (input.type === 'checkbox') input.checked = false; 
+                else input.value = ''; 
+                input.classList.remove('is-invalid'); 
             });
-        }
+            newItem.querySelectorAll('select').forEach(select => { select.value = ''; });
+            const hiddenPallet = newItem.querySelector('.palletized-hidden'); 
+            if (hiddenPallet) hiddenPallet.value = 'false';
+            newItem.querySelector('.weight-warning').style.display = 'none';
+            const removeBtn = newItem.querySelector('.remove-item-btn'); 
+            if (removeBtn) removeBtn.style.display = 'block';
+            
+            container.appendChild(newItem); 
+            if (typeof setupInventoryValidation === 'function') setupInventoryValidation(newItem); 
+            if (typeof setupManifestUnitSync === 'function') setupManifestUnitSync(newItem); 
+            if (typeof syncManifestUnits === 'function') syncManifestUnits(newItem, 'lbs'); 
+            if (typeof filterMaterialOptions === 'function') filterMaterialOptions();
+            
+            setTimeout(() => { isAddingItem = false; }, 500);
+        };
 
         document.getElementById('manifest-items-container')?.addEventListener('click', function (e) { 
             if (e.target.classList.contains('remove-item-btn')) e.target.closest('.manifest-item').remove(); 
