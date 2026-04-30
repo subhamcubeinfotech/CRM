@@ -3046,7 +3046,26 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Auto-calculate Gross Weight: Net + Tare (for Edit Item Modal)
+        const weightInput = document.getElementById('editWeight');
+        const tareInput = document.getElementById('editTareWeight');
+        const grossInput = document.getElementById('editGrossWeight');
+
+        function updateGrossWeight() {
+            const net = parseFloat(weightInput.value) || 0;
+            const tare = parseFloat(tareInput.value) || 0;
+            if (net > 0 || tare > 0) {
+                grossInput.value = (net + tare).toFixed(2);
+            }
+        }
+
+        if (weightInput && tareInput && grossInput) {
+            weightInput.addEventListener('input', updateGrossWeight);
+            tareInput.addEventListener('input', updateGrossWeight);
+        }
+
         if (window.jQuery && $.fn.select2) {
+
             $('#edit-tags-select').select2({
                 theme: 'bootstrap-5',
                 width: '100%',
