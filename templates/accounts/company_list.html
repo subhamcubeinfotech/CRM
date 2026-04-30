@@ -293,7 +293,7 @@
 
     .card-meta-row {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(2, 1fr);
         gap: 20px;
         padding-top: 6px;
         border-top: 1px solid #f1f5f9;
@@ -1030,21 +1030,6 @@
             </div>
 
             <div class="card-meta-row">
-                <div class="meta-col">
-                    <div class="meta-label">Services</div>
-                    <div class="meta-value {% if not company.services_provided %}empty{% endif %}">
-                        {{ company.services_provided|join:", "|default:"-" }}
-                    </div>
-                </div>
-
-                <div class="meta-col">
-                    <div class="meta-label">Materials</div>
-                    <div class="meta-value {% if not company.material_tags.all %}empty{% endif %}">
-                        {% if company.material_tags.all %}
-                            {% for tag in company.material_tags.all %}{{ tag.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
-                        {% else %}-{% endif %}
-                    </div>
-                </div>
 
                 <div class="meta-col">
                     <div class="meta-label">Last Touch</div>
