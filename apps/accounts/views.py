@@ -624,6 +624,18 @@ def company_detail(request, pk):
     if owned_materials.exists():
         materials = (materials | owned_materials).distinct()
 
+    # Enrich materials with inventory images if they don't have their own
+    for m in materials:
+        if not m.image:
+            # Look for an inventory item with this name that has an image
+            item_with_image = InventoryItem.objects.filter(
+                company=company,
+                tenant=company.tenant,
+                product_name=m.name
+            ).exclude(image__isnull=True).exclude(image='').first()
+            if item_with_image:
+                m.inventory_image = item_with_image.image
+
     documents = company.documents.all()
 
     context = {
