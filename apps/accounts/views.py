@@ -569,7 +569,8 @@ def carrier_list(request):
 @login_required
 def company_detail(request, pk):
     """View company details"""
-    company = get_object_or_404(Company.plain_objects, pk=pk)
+    # Use 'objects' to ensure tenant isolation (filtering by current user's tenant)
+    company = get_object_or_404(Company, pk=pk)
     
     from django.db.models import Q
     from apps.orders.models import Order
