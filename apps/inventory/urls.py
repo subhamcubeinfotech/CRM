@@ -24,4 +24,6 @@ urlpatterns = [
     path('items/<int:pk>/', views.inventory_item_detail, name='item_detail'),
     path('items/<int:pk>/edit/', views.inventory_item_edit, name='inventory_item_edit'),
     path('items/<int:pk>/delete/', views.inventory_item_delete, name='inventory_item_delete'),
+    path('items/<int:pk>/upload-image/', views.ajax_inventory_image_upload, name='ajax_inventory_image_upload'),
+    path('materials/<int:pk>/upload-image/', views.ajax_material_image_upload, name='ajax_material_image_upload'),
 ]
