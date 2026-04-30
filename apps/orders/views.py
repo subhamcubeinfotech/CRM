@@ -304,12 +304,12 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
         context['tags'] = self.object.tags.all()
         
         # Show ALL active team members for the tenant
-        context['team_members'] = get_user_model().objects.filter(tenant=user_tenant, is_active=True).order_by('first_name', 'username')
+        context['team_members'] = get_user_model().objects.filter(pk=self.request.user.pk).distinct()
             
         # Context for Add Shipment Offcanvas
         context['all_tags'] = Tag.plain_objects.filter(Q(tenant=user_tenant) | Q(tenant__isnull=True)).order_by('name')
         context['all_shipping_terms'] = ShippingTerm.plain_objects.filter(Q(tenant=user_tenant) | Q(tenant__isnull=True)).order_by('name')
-        context['all_representatives'] = get_user_model().objects.filter(tenant=user_tenant, is_active=True).order_by('first_name', 'username')
+        context['all_representatives'] = get_user_model().objects.filter(pk=self.request.user.pk).distinct()
         context['shipment_types'] = Shipment.SHIPMENT_TYPE_CHOICES
             
         inventory_items_qs = InventoryItem.plain_objects.filter(

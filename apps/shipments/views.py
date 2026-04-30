@@ -744,6 +744,9 @@ def shipment_detail(request, pk):
     commission_total = sum((c.amount or 0) for c in commissions) if commissions else 0
     net_profit = shipment.gross_profit - commission_total
 
+    # Only show the currently logged in user to match order page behavior
+    users = CustomUser.objects.filter(pk=request.user.pk)
+
     context = {
         'shipment': shipment,
         'milestones': milestones,
@@ -751,7 +754,7 @@ def shipment_detail(request, pk):
         'documents': documents,
         'containers': containers,
         'invoices': invoices,
-        'users': CustomUser.objects.filter(tenant=request.user.tenant, is_active=True).order_by('first_name'),
+        'users': users,
         'companies': Company.objects.all().order_by('name'),
         'map_data': json.dumps(map_data),
         'next_invoice_number': Invoice.generate_invoice_number(shipment) if hasattr(Invoice, 'generate_invoice_number') else "Generating...",
@@ -772,6 +775,7 @@ def shipment_detail(request, pk):
         'net_profit': net_profit,
     }
     return render(request, 'shipments/detail.html', context)
+
 
 
 @login_required
@@ -1291,7 +1295,7 @@ def shipment_create(request):
     inventory_items = InventoryItem.plain_objects.all()
     tags = Tag.plain_objects.filter(Q(tenant=user_tenant) | Q(tenant__isnull=True)).order_by('name')
     shipping_terms = ShippingTerm.plain_objects.filter(Q(tenant=user_tenant) | Q(tenant__isnull=True)).order_by('name')
-    representatives = CustomUser.objects.filter(tenant=user_tenant, is_active=True).order_by('first_name', 'username')
+    representatives = CustomUser.objects.filter(pk=request.user.pk)
     packaging_types = PackagingType.objects.all().order_by('name')
     
     is_first_shipment = not order.shipments.exists()
@@ -1560,7 +1564,7 @@ def shipment_edit(request, pk):
     inventory_items = InventoryItem.plain_objects.all()
     tags = Tag.plain_objects.filter(Q(tenant=user_tenant) | Q(tenant__isnull=True)).order_by('name')
     shipping_terms = ShippingTerm.plain_objects.filter(Q(tenant=user_tenant) | Q(tenant__isnull=True)).order_by('name')
-    representatives = CustomUser.objects.filter(tenant=user_tenant, is_active=True).order_by('first_name', 'username')
+    representatives = CustomUser.objects.filter(pk=request.user.pk)
     packaging_types = PackagingType.objects.all().order_by('name')
     
     context = {
