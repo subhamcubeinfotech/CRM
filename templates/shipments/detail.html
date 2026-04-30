@@ -3018,10 +3018,7 @@
                             <label class="form-label small fw-bold text-dark text-uppercase mb-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">Phone Number</label>
                             <input type="text" class="form-control fs-6 p-2" id="locationModalPhone" placeholder="Phone #" style="border-radius: 8px;">
                         </div>
-                        <div class="col-6">
-                            <label class="form-label small fw-bold text-dark text-uppercase mb-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">Requirements</label>
-                            <input type="text" class="form-control fs-6 p-2" id="locationModalRequirements" placeholder="e.g. Scales" style="border-radius: 8px;">
-                        </div>
+
                     </div>
                     
                     <div class="row g-3 mb-4">
@@ -3569,7 +3566,7 @@
                 document.getElementById('locModalAddress').innerText = data.address;
                 document.getElementById('locModalName').innerText = data.name;
                 document.getElementById('locModalPhone').innerText = data.phone;
-                document.getElementById('locModalShippingReq').innerText = data.shippingReq;
+
                 document.getElementById('locModalPickupAppt').innerText = data.pickupAppt;
                 document.getElementById('locModalDeliveryAppt').innerText = data.deliveryAppt;
                 
@@ -3620,10 +3617,7 @@
                     <div class="detail-label">Phone Number</div>
                     <div class="detail-value" id="locModalPhone">-</div>
                 </div>
-                <div class="detail-item">
-                    <div class="detail-label">Shipping Requirements</div>
-                    <div class="detail-value" id="locModalShippingReq">-</div>
-                </div>
+
                 <div class="detail-item">
                     <div class="detail-label">Pickup Appointment</div>
                     <div class="detail-value text-uppercase" id="locModalPickupAppt">-</div>

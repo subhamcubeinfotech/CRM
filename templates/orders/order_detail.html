@@ -1942,10 +1942,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <label class="form-label small fw-bold text-uppercase">Phone Number</label>
                         <input type="text" id="locationModalPhone" class="form-control rounded-3" placeholder="(000) 000-0000" inputmode="numeric" maxlength="10">
                     </div>
-                    <div class="mb-4">
-                        <label class="form-label small fw-bold text-uppercase">Shipping Requirements</label>
-                        <textarea id="locationModalShippingReqs" class="form-control rounded-3" rows="2" placeholder="Insert Scales, Packing list, etc."></textarea>
-                    </div>
+
 
                     <div class="row g-3 mb-4">
                         <div class="col-12">
@@ -2491,7 +2488,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('locModalAddress').innerText = data.address;
                 document.getElementById('locModalName').innerText = data.name;
                 document.getElementById('locModalPhone').innerText = data.phone;
-                document.getElementById('locModalShippingReq').innerText = data.shippingReq;
+
                 document.getElementById('locModalPickupAppt').innerText = data.pickupAppt;
                 document.getElementById('locModalDeliveryAppt').innerText = data.deliveryAppt;
                 
@@ -2542,10 +2539,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="detail-label">Phone Number</div>
                     <div class="detail-value" id="locModalPhone">-</div>
                 </div>
-                <div class="detail-item">
-                    <div class="detail-label">Shipping Requirements</div>
-                    <div class="detail-value" id="locModalShippingReq">-</div>
-                </div>
+
                 <div class="detail-item">
                     <div class="detail-label">Pickup Appointment</div>
                     <div class="detail-value text-uppercase" id="locModalPickupAppt">-</div>
