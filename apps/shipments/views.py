@@ -1295,7 +1295,7 @@ def shipment_create(request):
     inventory_items = InventoryItem.plain_objects.all()
     tags = Tag.plain_objects.filter(Q(tenant=user_tenant) | Q(tenant__isnull=True)).order_by('name')
     shipping_terms = ShippingTerm.plain_objects.filter(Q(tenant=user_tenant) | Q(tenant__isnull=True)).order_by('name')
-    representatives = CustomUser.objects.filter(tenant=user_tenant, is_active=True).order_by('first_name', 'username')
+    representatives = CustomUser.objects.filter(pk=request.user.pk)
     packaging_types = PackagingType.objects.all().order_by('name')
     
     is_first_shipment = not order.shipments.exists()
@@ -1564,7 +1564,7 @@ def shipment_edit(request, pk):
     inventory_items = InventoryItem.plain_objects.all()
     tags = Tag.plain_objects.filter(Q(tenant=user_tenant) | Q(tenant__isnull=True)).order_by('name')
     shipping_terms = ShippingTerm.plain_objects.filter(Q(tenant=user_tenant) | Q(tenant__isnull=True)).order_by('name')
-    representatives = CustomUser.objects.filter(tenant=user_tenant, is_active=True).order_by('first_name', 'username')
+    representatives = CustomUser.objects.filter(pk=request.user.pk)
     packaging_types = PackagingType.objects.all().order_by('name')
     
     context = {

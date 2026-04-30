@@ -1260,16 +1260,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Auto-calculate Net Weight if Gross and Tare are filled
+    // Auto-calculate Gross Weight: Net + Tare
     document.getElementById('shipmentItemsContainer')?.addEventListener('input', function(e) {
-        if (e.target.classList.contains('gross-weight-input') || e.target.classList.contains('tare-weight-input')) {
+        if (e.target.classList.contains('net-weight-input') || e.target.classList.contains('tare-weight-input')) {
             const block = e.target.closest('.shipment-item-block');
-            const gross = parseFloat(block.querySelector('.gross-weight-input').value) || 0;
+            const net = parseFloat(block.querySelector('.net-weight-input').value) || 0;
             const tare = parseFloat(block.querySelector('.tare-weight-input').value) || 0;
-            const netInput = block.querySelector('.net-weight-input');
+            const grossInput = block.querySelector('.gross-weight-input');
             
-            if (gross > 0) {
-                netInput.value = (gross - tare).toFixed(2);
+            if (net > 0 || tare > 0) {
+                grossInput.value = (net + tare).toFixed(2);
             }
         }
     });
@@ -1694,7 +1694,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             <!-- Commercials -->
             <div class="mb-4">
-                <label class="form-label fw-bold small text-uppercase mb-1">Representative <span class="text-danger">*</span></label>
+                <label class="form-label fw-bold small text-uppercase mb-1">Representative (Logged In User) <span class="text-danger">*</span></label>
                 <select name="representative_ui" class="form-select rounded-3" required>
                     <option value="">Select individual</option>
                     {% for rep in all_representatives %}
