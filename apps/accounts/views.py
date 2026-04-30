@@ -599,11 +599,13 @@ def company_detail(request, pk):
         })
 
     from apps.inventory.models import Material
-    materials = Material.plain_objects.filter(
-        Q(tenant=request.user.tenant) | Q(tenant__isnull=True)
-    ).filter(
-        Q(company=company) | Q(company__isnull=True)
-    ).order_by('name')
+    # Show only materials specifically linked to this company
+    materials = company.material_tags.all().order_by('name')
+    
+    # If the company has its own defined materials (ForeignKey), include those too
+    owned_materials = Material.objects.filter(company=company).order_by('name')
+    if owned_materials.exists():
+        materials = (materials | owned_materials).distinct()
 
     documents = company.documents.all()
 
