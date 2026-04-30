@@ -118,26 +118,6 @@
                             </div>
                         </div>
 
-                        <div class="mb-4">
-                            <h6 class="fw-bold mb-3 small text-uppercase tracking-wider">Services Provided</h6>
-                            <div class="d-flex flex-wrap gap-2 mb-4">
-                                {% for service in company.services_provided %}
-                                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2 py-1" style="font-size: 0.7rem;">{{ service }}</span>
-                                {% empty %}
-                                    <span class="text-muted small italic" style="font-size: 0.7rem; font-style: italic;">No services listed.</span>
-                                {% endfor %}
-                            </div>
-
-                            <h6 class="fw-bold mb-3 small text-uppercase tracking-wider">Materials</h6>
-                            <div class="d-flex flex-wrap gap-2">
-                                {% for material in company.material_tags.all %}
-                                    <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-2 py-1" style="font-size: 0.7rem;">{{ material.name }}</span>
-                                {% empty %}
-                                    <span class="text-muted small italic" style="font-size: 0.7rem; font-style: italic;">No materials listed.</span>
-                                {% endfor %}
-                            </div>
-                        </div>
-
                         <div class="mb-4 about-section" id="aboutSection">
                             <div class="d-flex justify-content-between align-items-center mb-2 about-view">
                                 <h6 class="fw-bold mb-0 small text-uppercase tracking-wider">About</h6>
@@ -298,9 +278,15 @@
                             {% for material in materials %}
                             <div class="material-item p-4 border-top">
                                 <div class="d-flex align-items-center gap-4">
-                                    <div class="material-icon bg-light rounded-circle d-flex align-items-center justify-content-center"
+                                    <div class="material-icon bg-light rounded-4 d-flex align-items-center justify-content-center overflow-hidden"
                                         style="width: 60px; height: 60px; font-size: 1.5rem;">
-                                        <i class="fas fa-recycle text-muted opacity-50"></i>
+                                        {% if material.image %}
+                                            <img src="{{ material.image.url }}" class="w-100 h-100 object-fit-cover" alt="{{ material.name }}">
+                                        {% elif material.inventory_image %}
+                                            <img src="{{ material.inventory_image.url }}" class="w-100 h-100 object-fit-cover" alt="{{ material.name }}">
+                                        {% else %}
+                                            <i class="fas fa-recycle text-muted opacity-50"></i>
+                                        {% endif %}
                                     </div>
                                     <div class="flex-grow-1">
                                         <div class="d-flex justify-content-between align-items-start mb-2">
