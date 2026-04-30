@@ -152,6 +152,19 @@ class Shipment(TenantAwareModel):
         if self.estimated_delivery_date and self.status != 'delivered':
             return self.estimated_delivery_date < timezone.now().date()
         return False
+
+    def update_financials(self):
+        """Calculate and sync total revenue and cost from shipment items"""
+        total_revenue = 0
+        total_cost = 0
+        for item in self.items.all():
+            weight = float(item.weight or 0)
+            total_revenue += float(item.sell_price or 0) * weight
+            total_cost += float(item.buy_price or 0) * weight
+        
+        self.revenue = total_revenue
+        self.cost = total_cost
+        self.save(update_fields=['revenue', 'cost', 'updated_at'])
     
     @property
     def ordered_statuses(self):

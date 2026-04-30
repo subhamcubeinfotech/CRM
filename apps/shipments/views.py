@@ -135,6 +135,7 @@ def shipment_item_update_ajax(request, pk):
         item.price_unit = (request.POST.get('price_unit') or item.price_unit or 'per lbs')[:20]
 
         item.save()
+        item.shipment.update_financials()
     except ValueError as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
@@ -166,7 +167,9 @@ def shipment_item_delete_ajax(request, pk):
         pk=pk,
         shipment__tenant=request.user.tenant,
     )
+    shipment = item.shipment
     item.delete()
+    shipment.update_financials()
     return JsonResponse({'status': 'success'})
 
 
@@ -691,6 +694,10 @@ def shipment_detail(request, pk):
         shipment_queryset = shipment_queryset.filter(tenant=request.user.tenant)
     
     shipment = get_object_or_404(shipment_queryset, pk=pk)
+    
+    # Auto-sync financials if they are zero but items exist
+    if shipment.revenue == 0 and shipment.cost == 0 and shipment.items.exists():
+        shipment.update_financials()
     
     # Get all comments for this shipment
     comments = shipment.comments.select_related('user').all().order_by('-created_at')
@@ -1222,6 +1229,9 @@ def shipment_create(request):
                         price_unit=item_data['price_unit'],
                     )
                 
+                # Sync financial totals from items
+                shipment.update_financials()
+                
                 # Update shipment totals if they were missing from the form
                 update_shipment = False
                 try:
@@ -1513,6 +1523,9 @@ def shipment_edit(request, pk):
                             sell_price=item_data['sell_price'],
                             price_unit=item_data['price_unit'],
                         )
+
+                    # Sync financial totals from items
+                    shipment.update_financials()
 
                     # Update shipment totals if they were missing from the form
                     update_shipment = False
