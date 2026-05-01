@@ -6,18 +6,18 @@
 <div class="row">
     <div class="col-md-3 mb-4">
         <div class="list-group rounded shadow-sm">
-            <a href="#notifications" class="list-group-item list-group-item-action {% if active_settings_tab == 'notifications' %}active{% endif %}" data-bs-toggle="list">
+            <!-- <a href="#notifications" class="list-group-item list-group-item-action {% if active_settings_tab == 'notifications' %}active{% endif %}" data-bs-toggle="list">
                 <i class="fas fa-bell me-2"></i>Notifications
-            </a>
+            </a> -->
             <!-- <a href="#security" class="list-group-item list-group-item-action {% if active_settings_tab == 'security' %}active{% endif %}" data-bs-toggle="list">
                 <i class="fas fa-shield-alt me-2"></i>Security
             </a> -->
             <a href="#inbox" class="list-group-item list-group-item-action {% if active_settings_tab == 'inbox' %}active{% endif %}" data-bs-toggle="list">
                 <i class="fas fa-inbox me-2"></i>Inbox Connection
             </a>
-            <a href="#preferences" class="list-group-item list-group-item-action {% if active_settings_tab == 'preferences' %}active{% endif %}" data-bs-toggle="list">
+            <!-- <a href="#preferences" class="list-group-item list-group-item-action {% if active_settings_tab == 'preferences' %}active{% endif %}" data-bs-toggle="list">
                 <i class="fas fa-sliders-h me-2"></i>Preferences
-            </a>
+            </a> -->
             <a href="#billing" class="list-group-item list-group-item-action {% if active_settings_tab == 'billing' %}active{% endif %}" data-bs-toggle="list">
                 <i class="fas fa-credit-card me-2"></i>Billing & Plan
             </a>
@@ -32,6 +32,8 @@
     <div class="col-md-9 mb-4">
         <div class="tab-content">
             <!-- Notifications Tab -->
+            <!-- Notifications Tab Hidden -->
+            {% comment %}
             <div class="tab-pane fade {% if active_settings_tab == 'notifications' %}show active{% endif %}" id="notifications">
                 <div class="card shadow-sm border-0">
                     <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
@@ -69,6 +71,7 @@
                     </div>
                 </div>
             </div>
+            {% endcomment %}
             
             <!-- Security Tab -->
             <!-- Security Tab Hidden -->
@@ -226,6 +229,8 @@
             </div>
             
             <!-- Preferences Tab -->
+            <!-- Preferences Tab Hidden -->
+            {% comment %}
             <div class="tab-pane fade {% if active_settings_tab == 'preferences' %}show active{% endif %}" id="preferences">
                 <div class="card shadow-sm border-0">
                     <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
@@ -272,6 +277,7 @@
                     </div>
                 </div>
             </div>
+            {% endcomment %}
             
             <!-- Billing Tab -->
             <div class="tab-pane fade {% if active_settings_tab == 'billing' %}show active{% endif %}" id="billing">
