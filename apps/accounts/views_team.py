@@ -10,8 +10,19 @@ from .forms_team import TeamInviteForm, InvitationAcceptanceForm
 
 @login_required
 def team_list(request):
-    """List all team members and pending invitations"""
-    team_members = CustomUser.objects.filter(tenant=request.user.tenant)
+    # Logic: Only show the logged-in user, tenant admins (owners), or users who explicitly accepted an invite
+    from django.db.models import Q
+    invited_emails = TeamInvitation.objects.filter(
+        tenant=request.user.tenant, 
+        is_accepted=True
+    ).values_list('email', flat=True)
+    
+    team_members = CustomUser.objects.filter(
+        tenant=request.user.tenant
+    ).filter(
+        Q(id=request.user.id) | Q(role='tenant_admin') | Q(email__in=invited_emails)
+    ).distinct()
+    
     pending_invites = TeamInvitation.objects.filter(tenant=request.user.tenant, is_accepted=False)
     
     context = {
