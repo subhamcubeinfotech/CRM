@@ -24,7 +24,7 @@ class CreateCheckoutSessionView(View):
         plan_type = request.GET.get('plan', 'starter')  # Default to starter
         
         # Select price and trial days
-        if plan_type == 'pro':
+        if plan_type in ['pro', 'professional']:
             price_id = settings.STRIPE_PRICE_PROFESSIONAL
             trial_days = 3  # 3 days trial for Professional plan
             plan_name = 'professional'
