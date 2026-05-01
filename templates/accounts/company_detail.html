@@ -314,7 +314,7 @@
                                                 <div class="small fw-medium">{{ material.material_type|default:"—" }}
                                                 </div>
                                             </div>
-                                            <div class="col-md-3">
+                                            <div class="col-md-3 d-none">
                                                 <div class="small text-muted mb-1">Grade</div>
                                                 <div class="small fw-medium">{{ material.grade|default:"—" }}</div>
                                             </div>
@@ -323,7 +323,7 @@
                                                 <div class="small fw-medium">{{ material.product_type|default:"—" }}
                                                 </div>
                                             </div>
-                                            <div class="col-md-3 text-end pt-2">
+                                            <div class="col-md-3 text-end pt-2 d-none">
                                                 <button class="btn btn-outline-secondary btn-xs rounded-pill"
                                                     type="button" data-bs-toggle="collapse"
                                                     data-bs-target="#material-{{ material.pk }}">
@@ -331,7 +331,7 @@
                                                 </button>
                                             </div>
                                         </div>
-                                        <div class="collapse mt-3" id="material-{{ material.pk }}">
+                                        <div class="collapse mt-3 d-none" id="material-{{ material.pk }}">
                                             <div class="bg-light p-3 rounded-3 small">
                                                 <p class="mb-0 text-muted">{{ material.description|default:"No additional details available." }}</p>
                                             </div>
