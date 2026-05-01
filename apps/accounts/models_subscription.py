@@ -56,8 +56,16 @@ class Subscription(models.Model):
         max_users = limits['max_users']
         if max_users is None:
             return True  # Unlimited
-        # Exclude the Tenant Admin from the user limit count
-        active_count = User.objects.filter(tenant=self.tenant, is_active=True).exclude(role='tenant_admin').count()
+        # Count real team members: exclude Tenant Admin, auto-generated contacts, and system users
+        active_count = User.objects.filter(
+            tenant=self.tenant, 
+            is_active=True
+        ).exclude(
+            role='tenant_admin'
+        ).exclude(
+            username__startswith='contact_'
+        ).count()
+        
         pending_count = TeamInvitation.objects.filter(tenant=self.tenant, is_accepted=False).count()
         return (active_count + pending_count) < max_users
     
@@ -82,7 +90,16 @@ class Subscription(models.Model):
         User = get_user_model()
         limits = self.get_limits()
         
-        user_count = User.objects.filter(tenant=self.tenant, is_active=True).count()
+        # Consistent counting with can_add_user
+        user_count = User.objects.filter(
+            tenant=self.tenant, 
+            is_active=True
+        ).exclude(
+            role='tenant_admin'
+        ).exclude(
+            username__startswith='contact_'
+        ).count()
+        
         max_users = limits['max_users']
         
         return {
