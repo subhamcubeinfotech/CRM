@@ -13,7 +13,7 @@
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h2"><i class="fas fa-users-cog me-2 text-primary"></i>Team Management</h1>
-        {% if user.is_admin %}
+        {% if request.user.role == 'tenant_admin' or request.user.role == 'admin' %}
         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#inviteUserModal">
             <i class="fas fa-user-plus me-1"></i>Add User
         </button>
@@ -69,7 +69,7 @@
     </div>
 
     <!-- Pending Invitations -->
-    {% if pending_invites %}
+    {% if pending_invites and request.user.role in 'tenant_admin,admin' %}
     <div class="card shadow-sm border-0">
         <div class="card-header bg-warning bg-opacity-10 border-warning border-opacity-25 py-3">
             <h5 class="card-title mb-0 text-warning-emphasis"><i class="fas fa-envelope-open-text me-2"></i>Pending Invitations</h5>
