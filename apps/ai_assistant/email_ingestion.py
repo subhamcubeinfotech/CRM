@@ -619,17 +619,12 @@ def fetch_and_process_emails(tenant, max_emails=10, request_user=None, mailbox_u
 
                 buyer = matched_company
                 if not buyer:
-                    buyer, _ = Company.objects.get_or_create(
-                        tenant=resolved_tenant,
-                        name=f"Email Lead: {sender_email}",
-                        defaults={'is_active': False, 'description': 'Auto-created from requirement email'}
-                    )
+                    logger.info(f"Skipping auto-requirement creation for {sender_email} because no company matched.")
+                    continue
 
                 BuyerRequirement.objects.create(
                     tenant=resolved_tenant,
                     buyer=buyer,
-                    source='email',
-                    source_email=pending_email,
                     material_name=item_data.get('product_name', 'Unknown'),
                     material_type=item_data.get('material_type', ''),
                     quantity_needed=item_data.get('quantity', 0.0),
