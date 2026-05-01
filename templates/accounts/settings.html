@@ -9,9 +9,9 @@
             <a href="#notifications" class="list-group-item list-group-item-action {% if active_settings_tab == 'notifications' %}active{% endif %}" data-bs-toggle="list">
                 <i class="fas fa-bell me-2"></i>Notifications
             </a>
-            <a href="#security" class="list-group-item list-group-item-action {% if active_settings_tab == 'security' %}active{% endif %}" data-bs-toggle="list">
+            <!-- <a href="#security" class="list-group-item list-group-item-action {% if active_settings_tab == 'security' %}active{% endif %}" data-bs-toggle="list">
                 <i class="fas fa-shield-alt me-2"></i>Security
-            </a>
+            </a> -->
             <a href="#inbox" class="list-group-item list-group-item-action {% if active_settings_tab == 'inbox' %}active{% endif %}" data-bs-toggle="list">
                 <i class="fas fa-inbox me-2"></i>Inbox Connection
             </a>
@@ -21,9 +21,11 @@
             <a href="#billing" class="list-group-item list-group-item-action {% if active_settings_tab == 'billing' %}active{% endif %}" data-bs-toggle="list">
                 <i class="fas fa-credit-card me-2"></i>Billing & Plan
             </a>
+            {% if user.is_superuser %}
             <a href="#organization" class="list-group-item list-group-item-action {% if active_settings_tab == 'organization' %}active{% endif %}" data-bs-toggle="list">
                 <i class="fas fa-building me-2"></i>Organization
             </a>
+            {% endif %}
         </div>
     </div>
     
@@ -69,6 +71,8 @@
             </div>
             
             <!-- Security Tab -->
+            <!-- Security Tab Hidden -->
+            {% comment %}
             <div class="tab-pane fade {% if active_settings_tab == 'security' %}show active{% endif %}" id="security">
                 <div class="card shadow-sm border-0">
                     <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
@@ -111,6 +115,7 @@
                     </div>
                 </div>
             </div>
+            {% endcomment %}
 
             <!-- Inbox Connection Tab -->
             <div class="tab-pane fade {% if active_settings_tab == 'inbox' %}show active{% endif %}" id="inbox">
@@ -336,6 +341,7 @@
                     </div>
                 </div>
             </div>
+            {% if user.is_superuser %}
             <!-- Organization Tab -->
             <div class="tab-pane fade {% if active_settings_tab == 'organization' %}show active{% endif %}" id="organization">
                 <div class="card shadow-sm border-0">
@@ -395,6 +401,7 @@
                     </div>
                 </div>
             </div>
+            {% endif %}
             
         </div>
     </div>
