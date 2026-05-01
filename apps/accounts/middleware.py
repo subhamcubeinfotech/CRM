@@ -48,6 +48,8 @@ class SubscriptionMiddleware:
                     'subscription_expired',
                     'billing_portal',
                     'signup_checkout',
+                    'signup_success',
+                    'signup_cancel',
                     'pricing',
                     'stripe_webhook',
                     'login',
@@ -61,10 +63,9 @@ class SubscriptionMiddleware:
                 # Check if it's an admin path
                 is_admin_path = request.path.startswith('/admin/')
                 
-                # --- TEMPORARILY DISABLED STRIPE CHECK ---
-                # if (not subscription or not subscription.is_active) and current_url_name not in allowed_url_names and not is_admin_path:
-                #     from django.shortcuts import redirect
-                #     return redirect('accounts:subscription_expired')
-                pass
+                # Stripe Subscription Check
+                if (not subscription or not subscription.is_active) and current_url_name not in allowed_url_names and not is_admin_path:
+                    from django.shortcuts import redirect
+                    return redirect('accounts:subscription_expired')
                     
         return self.get_response(request)
