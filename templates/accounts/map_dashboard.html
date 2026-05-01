@@ -237,8 +237,28 @@ async function loadMarkers(){
         const bounds = [];
         markers.forEach(m=>{
             const marker = L.circleMarker([m.lat, m.lng], markerStyle(m.primary_product_type)).addTo(layerGroup);
+            
+            // Create a larger, invisible hit area for easier clicking
+            const clickArea = L.circleMarker([m.lat, m.lng], {
+                radius: 25,
+                color: 'transparent',
+                fillColor: 'transparent',
+                interactive: true
+            }).addTo(layerGroup);
+
+            // Add hover effects to show it's clickable
+            clickArea.on('mouseover', () => {
+                marker.setStyle({ weight: 4, radius: 11 });
+            });
+            clickArea.on('mouseout', () => {
+                marker.setStyle({ weight: 2, radius: 9 });
+            });
+
+            const popupContent = popupHtml(m);
             marker.meta = m;
-            marker.bindPopup(popupHtml(m));
+            marker.bindPopup(popupContent);
+            clickArea.bindPopup(popupContent);
+
             currentMarkers.push(marker);
             bounds.push([m.lat, m.lng]);
         });
