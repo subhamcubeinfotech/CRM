@@ -6,22 +6,35 @@
 <div class="row">
     <div class="col-md-3 mb-4">
         <div class="list-group rounded shadow-sm">
-            <a href="#notifications" class="list-group-item list-group-item-action active" data-bs-toggle="list">
+            <!-- <a href="#notifications" class="list-group-item list-group-item-action {% if active_settings_tab == 'notifications' %}active{% endif %}" data-bs-toggle="list">
                 <i class="fas fa-bell me-2"></i>Notifications
-            </a>
-            <a href="#security" class="list-group-item list-group-item-action" data-bs-toggle="list">
+            </a> -->
+            <!-- <a href="#security" class="list-group-item list-group-item-action {% if active_settings_tab == 'security' %}active{% endif %}" data-bs-toggle="list">
                 <i class="fas fa-shield-alt me-2"></i>Security
+            </a> -->
+            <a href="#inbox" class="list-group-item list-group-item-action {% if active_settings_tab == 'inbox' %}active{% endif %}" data-bs-toggle="list">
+                <i class="fas fa-inbox me-2"></i>Inbox Connection
             </a>
-            <a href="#preferences" class="list-group-item list-group-item-action" data-bs-toggle="list">
+            <!-- <a href="#preferences" class="list-group-item list-group-item-action {% if active_settings_tab == 'preferences' %}active{% endif %}" data-bs-toggle="list">
                 <i class="fas fa-sliders-h me-2"></i>Preferences
+            </a> -->
+            <a href="#billing" class="list-group-item list-group-item-action {% if active_settings_tab == 'billing' %}active{% endif %}" data-bs-toggle="list">
+                <i class="fas fa-credit-card me-2"></i>Billing & Plan
             </a>
+            {% if user.is_superuser %}
+            <a href="#organization" class="list-group-item list-group-item-action {% if active_settings_tab == 'organization' %}active{% endif %}" data-bs-toggle="list">
+                <i class="fas fa-building me-2"></i>Organization
+            </a>
+            {% endif %}
         </div>
     </div>
     
     <div class="col-md-9 mb-4">
         <div class="tab-content">
             <!-- Notifications Tab -->
-            <div class="tab-pane fade show active" id="notifications">
+            <!-- Notifications Tab Hidden -->
+            {% comment %}
+            <div class="tab-pane fade {% if active_settings_tab == 'notifications' %}show active{% endif %}" id="notifications">
                 <div class="card shadow-sm border-0">
                     <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
                         <h5 class="card-title mb-0">Notification Preferences</h5>
@@ -58,9 +71,12 @@
                     </div>
                 </div>
             </div>
+            {% endcomment %}
             
             <!-- Security Tab -->
-            <div class="tab-pane fade" id="security">
+            <!-- Security Tab Hidden -->
+            {% comment %}
+            <div class="tab-pane fade {% if active_settings_tab == 'security' %}show active{% endif %}" id="security">
                 <div class="card shadow-sm border-0">
                     <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
                         <h5 class="card-title mb-0">Account Security</h5>
@@ -102,9 +118,120 @@
                     </div>
                 </div>
             </div>
+            {% endcomment %}
+
+            <!-- Inbox Connection Tab -->
+            <div class="tab-pane fade {% if active_settings_tab == 'inbox' %}show active{% endif %}" id="inbox">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+                        <h5 class="card-title mb-0">Inbox Connection</h5>
+                        <p class="text-muted small">Connect the mailbox where supplier or buyer emails land so AI can pull them into your inbox screen.</p>
+                    </div>
+                    <div class="card-body">
+                        <form action="{% url 'accounts:settings' %}" method="post">
+                            {% csrf_token %}
+                            <div class="p-3 rounded border bg-light mb-4">
+                                <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+                                    <div>
+                                        <h6 class="mb-1"><i class="fas fa-link text-primary me-2"></i>Mailbox Status</h6>
+                                        {% if user.has_personal_mailbox_config %}
+                                            <div class="text-success small fw-semibold">Connected and ready for sync</div>
+                                        {% elif user.inbox_is_active %}
+                                            <div class="text-warning small fw-semibold">Enabled, but setup is incomplete</div>
+                                        {% else %}
+                                            <div class="text-muted small fw-semibold">Not connected yet</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="form-check form-switch">
+                                        {{ inbox_form.inbox_is_active }}
+                                        <label class="form-check-label fw-semibold" for="{{ inbox_form.inbox_is_active.id_for_label }}">Enable inbox sync</label>
+                                    </div>
+                                </div>
+                                {% if inbox_form.non_field_errors %}
+                                    <div class="alert alert-danger mt-3 mb-0 py-2">
+                                        {{ inbox_form.non_field_errors|join:", " }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <label class="form-label fw-semibold">Inbox Email</label>
+                                    {{ inbox_form.inbox_email }}
+                                    <div class="form-text">This is the mailbox address where platform-related emails arrive.</div>
+                                    {% for error in inbox_form.inbox_email.errors %}
+                                        <div class="text-danger small mt-1">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold">IMAP Host</label>
+                                    {{ inbox_form.imap_host }}
+                                    <div class="form-text">Example: `imap.gmail.com` or `outlook.office365.com`.</div>
+                                    {% for error in inbox_form.imap_host.errors %}
+                                        <div class="text-danger small mt-1">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label class="form-label fw-semibold">Port</label>
+                                    {{ inbox_form.imap_port }}
+                                    {% for error in inbox_form.imap_port.errors %}
+                                        <div class="text-danger small mt-1">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                                <div class="col-md-3 mb-3 d-flex align-items-end">
+                                    <div class="form-check form-switch pb-2">
+                                        {{ inbox_form.imap_use_ssl }}
+                                        <label class="form-check-label" for="{{ inbox_form.imap_use_ssl.id_for_label }}">Use SSL</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold">IMAP Password</label>
+                                {{ inbox_form.imap_password }}
+                                <div class="form-text">
+                                    For Gmail, use an App Password. Leave blank to keep your current saved password.
+                                    {% if inbox_form.has_saved_password %}
+                                        <span class="text-success fw-semibold ms-2"><i class="fas fa-check-circle me-1"></i>Password already saved</span>
+                                    {% endif %}
+                                </div>
+                                {% for error in inbox_form.imap_password.errors %}
+                                    <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="p-3 rounded border mb-4">
+                                <div class="fw-semibold mb-2">Quick setup help</div>
+                                <div class="small text-muted mb-1">Gmail: host `imap.gmail.com`, port `993`, SSL on. Inbox Email is also used as the login username.</div>
+                                <div class="small text-muted">Outlook / Microsoft 365: host `outlook.office365.com`, port `993`, SSL on.</div>
+                            </div>
+
+                            <div class="p-3 rounded border bg-light mb-4">
+                                <div class="fw-semibold mb-2">How to get IMAP Password for Gmail</div>
+                                <div class="small text-muted mb-1">1. Open <a href="https://myaccount.google.com/" target="_blank" rel="noopener noreferrer">Google Account</a> and go to `Security`.</div>
+                                <div class="small text-muted mb-1">2. Turn on <a href="https://myaccount.google.com/signinoptions/two-step-verification" target="_blank" rel="noopener noreferrer">2-Step Verification</a> if it is not already enabled.</div>
+                                <div class="small text-muted mb-1">3. Open <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener noreferrer">App Passwords</a>.</div>
+                                <div class="small text-muted mb-1">4. Create a new app password for `FreightPro`.</div>
+                                <div class="small text-muted">5. Paste that 16-character app password here in `IMAP Password`.</div>
+                            </div>
+
+                            <div class="text-end border-top pt-4">
+                                <button type="submit" name="update_inbox" value="1" class="btn btn-primary px-4">
+                                    <i class="fas fa-save me-2"></i>Save Inbox Settings
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
             
             <!-- Preferences Tab -->
-            <div class="tab-pane fade" id="preferences">
+            <!-- Preferences Tab Hidden -->
+            {% comment %}
+            <div class="tab-pane fade {% if active_settings_tab == 'preferences' %}show active{% endif %}" id="preferences">
                 <div class="card shadow-sm border-0">
                     <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
                         <h5 class="card-title mb-0">System Preferences</h5>
@@ -150,6 +277,137 @@
                     </div>
                 </div>
             </div>
+            {% endcomment %}
+            
+            <!-- Billing Tab -->
+            <div class="tab-pane fade {% if active_settings_tab == 'billing' %}show active{% endif %}" id="billing">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+                        <h5 class="card-title mb-0">Billing & Subscription</h5>
+                        <p class="text-muted small">Manage your current plan and payment methods</p>
+                    </div>
+                    <div class="card-body">
+                        {% if subscription %}
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <div class="p-3 bg-light rounded border">
+                                        <div class="text-muted small mb-1 text-uppercase fw-bold">Current Plan</div>
+                                        <div class="h4 mb-0 text-primary">{{ subscription.get_plan_display }} Plan</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="p-3 bg-light rounded border">
+                                        <div class="text-muted small mb-1 text-uppercase fw-bold">Status</div>
+                                        <div class="h4 mb-0">
+                                            {% if subscription.status == 'active' %}
+                                                <span class="text-success"><i class="fas fa-check-circle me-1"></i>Active</span>
+                                            {% else %}
+                                                <span class="text-warning"><i class="fas fa-exclamation-triangle me-1"></i>{{ subscription.get_status_display }}</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-4 p-3 border rounded d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="text-muted small mb-1">Next Billing Date</div>
+                                    <div class="fw-bold h5 mb-0">
+                                        {% if subscription.expiry_date %}
+                                            {{ subscription.expiry_date|date:"F d, Y" }}
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <form action="{% url 'accounts:billing_portal' %}" method="POST">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-external-link-alt me-2"></i>Manage Billing on Stripe
+                                    </button>
+                                </form>
+                            </div>
+                            
+                            <p class="text-muted small">
+                                <i class="fas fa-info-circle me-1"></i> 
+                                Clicking the button above will take you to Stripe where you can update your card, download invoices, or cancel your subscription safely.
+                            </p>
+                        {% else %}
+                            <div class="text-center py-5">
+                                <i class="fas fa-credit-card fa-3x text-light mb-3"></i>
+                                <h5>No Active Subscription</h5>
+                                <p class="text-muted">You are currently using the free version or your subscription has expired.</p>
+                                {% if user.tenant %}
+                                <a href="{% url 'accounts:signup_checkout' user.tenant.id %}" class="btn btn-primary px-4">
+                                    Upgrade to Professional
+                                </a>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% if user.is_superuser %}
+            <!-- Organization Tab -->
+            <div class="tab-pane fade {% if active_settings_tab == 'organization' %}show active{% endif %}" id="organization">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+                        <h5 class="card-title mb-0">Organization Settings</h5>
+                        <p class="text-muted small">Manage your company-wide preferences</p>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-4">
+                            <h6 class="mb-3 text-primary"><i class="fas fa-image me-2"></i>Platform Logo</h6>
+                            <p class="text-muted small mb-4">This logo will appear on all generated documents like Invoices, Bill of Lading, and Packing Lists.</p>
+                            
+                            <div class="row align-items-center">
+                                <div class="col-md-3 text-center mb-3 mb-md-0">
+                                    <div class="p-3 border rounded bg-light d-flex align-items-center justify-content-center" style="height: 120px; width: 100%;">
+                                        {% if tenant.logo %}
+                                            <img src="{{ tenant.logo.url }}" alt="Logo" class="img-fluid" style="max-height: 100px;">
+                                        {% else %}
+                                            <div class="text-muted text-center">
+                                                <i class="fas fa-building fa-2x mb-2 d-block"></i>
+                                                <span class="small">No Logo Uploaded</span>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-9">
+                                    <form action="{% url 'accounts:settings' %}" method="post" enctype="multipart/form-data">
+                                        {% csrf_token %}
+                                        <div class="mb-3">
+                                            <label class="form-label small fw-bold">Upload New Logo</label>
+                                            {{ logo_form.logo }}
+                                            <div class="form-text small">Recommended size: 300x100px. PNG or JPG format.</div>
+                                        </div>
+                                        <button type="submit" name="update_logo" value="1" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-upload me-2"></i>Upload & Apply
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <div class="mb-4">
+                            <h6 class="mb-3 text-primary"><i class="fas fa-info-circle me-2"></i>Organization Details</h6>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label small fw-bold">Organization Name</label>
+                                    <input type="text" class="form-control" value="{{ tenant.name }}" readonly>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label small fw-bold">Account ID</label>
+                                    <input type="text" class="form-control" value="TEN-{{ tenant.id|stringformat:'05d' }}" readonly>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
             
         </div>
     </div>

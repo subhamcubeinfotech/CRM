@@ -4,8 +4,10 @@ Accounts Models - CustomUser and Company
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.conf import settings
+import uuid
 
 from .models_tenant import Tenant, TenantManager, TenantAwareModel
+from .models_subscription import Subscription
 
 
 class Company(TenantAwareModel):
@@ -17,6 +19,7 @@ class Company(TenantAwareModel):
     ]
     
     name = models.CharField(max_length=200)
+    legal_name = models.CharField(max_length=255, blank=True)
     company_type = models.CharField(max_length=20, choices=COMPANY_TYPE_CHOICES, default='customer')
     tax_id = models.CharField(max_length=50, blank=True)
     
@@ -37,12 +40,27 @@ class Company(TenantAwareModel):
     description = models.TextField(blank=True)
     logo = models.ImageField(upload_to='company_logos/', blank=True, null=True)
     
+    # Relationships & Extended Info
+    services_provided = models.JSONField(default=list, blank=True, help_text="List of services provided")
+    material_tags = models.ManyToManyField('inventory.Material', blank=True, related_name='associated_companies')
+    company_tags = models.ManyToManyField('orders.Tag', blank=True, related_name='companies')
+    
     # Financial fields
     payment_terms = models.IntegerField(default=30, help_text='Payment terms in days')
     credit_limit = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     
     # Status
+    CRM_STATUS_CHOICES = [
+        ('active', 'Active'),
+        ('cold', 'Cold'),
+        ('dormant', 'Dormant'),
+        ('lead', 'Lead'),
+    ]
+    crm_status = models.CharField(max_length=20, choices=CRM_STATUS_CHOICES, default='active')
+    last_touch = models.DateField(null=True, blank=True)
+    next_touch = models.DateField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_companies')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -53,7 +71,42 @@ class Company(TenantAwareModel):
     
     def __str__(self):
         return self.name
-    
+
+    def save(self, *args, **kwargs):
+        # 1. Check if address fields have changed or coordinates are missing
+        address_changed = False
+        if not self.latitude or not self.longitude:
+            address_changed = True
+        elif self.pk:
+            try:
+                old_obj = Company.objects.get(pk=self.pk)
+                if (self.address_line1 != old_obj.address_line1 or 
+                    self.city != old_obj.city or 
+                    self.state != old_obj.state or 
+                    self.country != old_obj.country or 
+                    self.postal_code != old_obj.postal_code):
+                    address_changed = True
+            except Company.DoesNotExist:
+                address_changed = True
+        else:
+            address_changed = True
+        
+        # 2. If address changed, try to get new coordinates
+        if address_changed and (self.address_line1 or self.city):
+            try:
+                from geopy.geocoders import Nominatim
+                geolocator = Nominatim(user_agent="freightpro_crm")
+                location = geolocator.geocode(self.full_address, timeout=10)
+                if location:
+                    self.latitude = location.latitude
+                    self.longitude = location.longitude
+            except Exception as e:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Geocoding failed for {self.name}: {e}")
+        
+        super().save(*args, **kwargs)
+
     @property
     def full_address(self):
         """Return full address as a single string"""
@@ -68,19 +121,25 @@ class Company(TenantAwareModel):
 class CustomUser(AbstractUser):
     """Custom user model with role-based access"""
     ROLE_CHOICES = [
-        ('admin', 'Administrator'),
+        ('admin', 'Internal Administrator'),
+        ('tenant_admin', 'Tenant Administrator'),
         ('customer', 'Customer'),
-        ('driver', 'Driver'),
-        ('warehouse', 'Warehouse Staff'),
-        ('sales', 'Sales'),
     ]
     
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='customer')
     tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, null=True, blank=True, related_name='users')
     phone = models.CharField(max_length=20, blank=True)
     company = models.ForeignKey(Company, on_delete=models.SET_NULL, null=True, blank=True, related_name='users')
+    inbox_email = models.EmailField(blank=True, help_text='Mailbox address watched for this user.')
+    inbox_is_active = models.BooleanField(default=False, help_text='Enable personal inbox ingestion for this user.')
+    imap_host = models.CharField(max_length=255, blank=True, default='imap.gmail.com')
+    imap_port = models.PositiveIntegerField(default=993)
+    imap_username = models.CharField(max_length=255, blank=True)
+    imap_password = models.CharField(max_length=255, blank=True)
+    imap_use_ssl = models.BooleanField(default=True)
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
     is_verified = models.BooleanField(default=False)
+    is_contact_archived = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -96,15 +155,22 @@ class CustomUser(AbstractUser):
     
     @property
     def is_admin(self):
-        return self.role == 'admin'
-    
+        return self.role in ('admin', 'tenant_admin')
+
     @property
-    def is_driver(self):
-        return self.role == 'driver'
-    
+    def effective_inbox_email(self):
+        return (self.inbox_email or self.email or '').strip().lower()
+
     @property
-    def is_warehouse_staff(self):
-        return self.role == 'warehouse'
+    def has_personal_mailbox_config(self):
+        return bool(
+            self.inbox_is_active and
+            self.imap_host and
+            self.imap_username and
+            self.imap_password
+        )
+    
+    
     
 
 class SignupOTP(models.Model):
@@ -142,5 +208,98 @@ class CompanyDocument(TenantAwareModel):
     class Meta:
         ordering = ['-uploaded_at']
     
+class CompanyHistory(models.Model):
+    """Activity log for company changes"""
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='history')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    action = models.CharField(max_length=255) # e.g., "Added a new Contact"
+    description = models.TextField(blank=True)
+    icon = models.CharField(max_length=50, default='fas fa-info-circle')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Company History'
+        verbose_name_plural = 'Company History'
+
     def __str__(self):
-        return f"{self.title} ({self.get_document_type_display()})"
+        return f"{self.company.name} - {self.action} at {self.created_at}"
+
+
+class LoginAuditLog(models.Model):
+    """Register for tracking every login attempt (pass or fail)"""
+    STATUS_CHOICES = (
+        ('success', 'Success'),
+        ('failed', 'Failed'),
+    )
+    username = models.CharField(max_length=255)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.CharField(max_length=255, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-timestamp']
+        verbose_name = 'Login Audit Log'
+        verbose_name_plural = 'Login Audit Logs'
+        
+    def __str__(self):
+        return f"{self.username} - {self.status} from {self.ip_address} at {self.timestamp}"
+
+
+# --- Security Logic: Watch for Logins ---
+from django.contrib.auth.signals import user_logged_in, user_login_failed
+from django.dispatch import receiver
+
+def get_client_ip(request):
+    """Helper to get user's real IP address from request"""
+    if not request: return None
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        return x_forwarded_for.split(',')[0].strip()
+    return request.META.get('REMOTE_ADDR')
+
+@receiver(user_logged_in)
+def log_successful_login(sender, request, user, **kwargs):
+    """Fires when someone logs in successfully"""
+    ip = get_client_ip(request)
+    ua = request.META.get('HTTP_USER_AGENT', '')[:250] if request else ''
+    LoginAuditLog.objects.create(
+        username=user.username,
+        ip_address=ip,
+        user_agent=ua,
+        status='success'
+    )
+
+@receiver(user_login_failed)
+def log_failed_login(sender, credentials, request, **kwargs):
+    """Fires when a login attempt fails (wrong password etc)"""
+    ip = get_client_ip(request)
+    ua = request.META.get('HTTP_USER_AGENT', '')[:250] if request else ''
+    LoginAuditLog.objects.create(
+        username=credentials.get('username', getattr(credentials, 'email', 'Unknown')),
+        ip_address=ip,
+        user_agent=ua,
+        status='failed'
+    )
+
+
+class TeamInvitation(models.Model):
+    """Model to track team member invitations sent via email"""
+    email = models.EmailField()
+    first_name = models.CharField(max_length=150, blank=True)
+    last_name = models.CharField(max_length=150, blank=True)
+    role = models.CharField(max_length=20, choices=CustomUser.ROLE_CHOICES, default='customer')
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name='invitations')
+    invited_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='sent_invitations')
+    token = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    is_accepted = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        unique_together = ('email', 'tenant', 'is_accepted')
+        
+    def __str__(self):
+        return f"Invite for {self.email} - {self.role} ({'Accepted' if self.is_accepted else 'Pending'})"

@@ -48,19 +48,19 @@
                     <div class="col-md-8">
                         
                         <div class="row g-4 mb-5">
-                            <div class="col-md-3">
+                            <div class="col-md-6">
                                 <label class="text-muted small text-uppercase fw-bold mb-1 d-block" style="letter-spacing: 0.05em;">Material Type</label>
                                 <span class="fw-semibold text-dark">{{ material.material_type|default:"—" }}</span>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-3 d-none">
                                 <label class="text-muted small text-uppercase fw-bold mb-1 d-block" style="letter-spacing: 0.05em;">Grade</label>
                                 <span class="fw-semibold text-dark">{{ material.grade|default:"—" }}</span>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-3 d-none">
                                 <label class="text-muted small text-uppercase fw-bold mb-1 d-block" style="letter-spacing: 0.05em;">Color</label>
                                 <span class="fw-semibold text-dark">{{ material.color|default:"—" }}</span>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-6">
                                 <label class="text-muted small text-uppercase fw-bold mb-1 d-block" style="letter-spacing: 0.05em;">Product Type</label>
                                 <span class="fw-semibold text-dark">{{ material.product_type|default:"—" }}</span>
                             </div>
@@ -69,27 +69,41 @@
                         <div class="h5 fw-bold mb-4 border-bottom pb-2">Pricing</div>
                         
                         <div class="pricing-card bg-white border rounded-4 p-4 mb-4">
-                            <div class="d-flex justify-content-end align-items-center mb-4">
-                                <div class="h5 mb-0 fw-bold text-dark">
-                                    <span class="text-muted small fw-normal">Avg Buy:</span> ${{ avg_buy|floatformat:"2" }} 
-                                    <span class="mx-2 text-muted">|</span>
-                                    <span class="text-muted small fw-normal">Avg Sell:</span> ${{ avg_sell|floatformat:"2" }}
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="dropdown">
+                                        <button class="btn btn-light btn-sm dropdown-toggle border-0" type="button" id="rangeDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="border-radius: 8px; background: #f8fafc; color: #475569; font-weight: 500;">
+                                            {% if current_range == '30' %}Last 30 days
+                                            {% elif current_range == '90' %}Last 3 months
+                                            {% elif current_range == '365' %}Last 12 months
+                                            {% else %}Last 6 months{% endif %}
+                                        </button>
+                                        <ul class="dropdown-menu shadow-sm border-0" aria-labelledby="rangeDropdown" style="font-size: 0.85rem;">
+                                            <li><a class="dropdown-item {% if current_range == '30' %}active{% endif %}" href="?name={{ material.name }}&tab=details&range=30">Last 30 days</a></li>
+                                            <li><a class="dropdown-item {% if current_range == '90' %}active{% endif %}" href="?name={{ material.name }}&tab=details&range=90">Last 3 months</a></li>
+                                            <li><a class="dropdown-item {% if current_range == '180' or not current_range %}active{% endif %}" href="?name={{ material.name }}&tab=details&range=180">Last 6 months</a></li>
+                                            <li><a class="dropdown-item {% if current_range == '365' %}active{% endif %}" href="?name={{ material.name }}&tab=details&range=365">Last 12 months</a></li>
+                                        </ul>
+                                    </div>
+                                    <div class="text-muted small fw-bold" style="letter-spacing: 0.02em;">
+                                        {{ start_date|date:"m/d/Y" }} - {{ end_date|date:"m/d/Y" }}
+                                    </div>
                                 </div>
                             </div>
                             
                             <!-- Legend -->
                             <div class="d-flex gap-4 mb-4">
                                 <div class="d-flex align-items-center gap-2">
-                                    <span style="width: 12px; height: 12px; border-radius: 50%; background: #3b82f6; display: inline-block;"></span>
-                                    <span class="small text-muted">Avg Buy Price</span>
+                                    <span style="width: 10px; height: 10px; border-radius: 50%; background: #ef4444; display: inline-block;"></span>
+                                    <span class="small text-muted fw-medium">Buy</span>
                                 </div>
                                 <div class="d-flex align-items-center gap-2">
-                                    <span style="width: 12px; height: 12px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
-                                    <span class="small text-muted">Avg Sell Price</span>
+                                    <span style="width: 10px; height: 10px; border-radius: 50%; background: #14b8a6; display: inline-block;"></span>
+                                    <span class="small text-muted fw-medium">Sell</span>
                                 </div>
                                 <div class="d-flex align-items-center gap-2">
-                                    <span style="width: 12px; height: 12px; border-radius: 50%; background: #e2e8f0; display: inline-block;"></span>
-                                    <span class="small text-muted">Volume (Weight)</span>
+                                    <span style="width: 10px; height: 10px; border-radius: 50%; background: #f1f5f9; border: 1px solid #e2e8f0; display: inline-block;"></span>
+                                    <span class="small text-muted fw-medium">Volume</span>
                                 </div>
                             </div>
 
@@ -101,34 +115,43 @@
                 </div>
                 {% elif active_tab == 'haves' %}
                 <div class="table-responsive">
-                    <table class="table align-middle">
+                    <table class="table align-middle table-hover">
                         <thead>
                             <tr class="text-muted small text-uppercase">
-                                <th>Warehouse</th>
-                                <th>Quantity</th>
-                                <th>Unit Cost</th>
-                                <th>Value</th>
-                                <th>Status</th>
+                                <th class="ps-3">Company</th>
+                                <th>Role</th>
+                                <th>Latest Activity</th>
+                                <th>Current Stock</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for item in inventory_items %}
+                            {% for partner in partner_companies %}
                             <tr>
-                                <td>{{ item.warehouse.name }}</td>
-                                <td class="fw-bold">{{ item.quantity }} {{ item.unit|default:"lbs" }}</td>
-                                <td>${{ item.unit_cost }}</td>
-                                <td>${{ item.total_value }}</td>
+                                <td class="ps-3">
+                                    <a href="{% url 'accounts:company_detail' partner.id %}" class="fw-bold text-primary text-decoration-none" style="font-size: 1.05rem;">{{ partner.name }}</a>
+                                </td>
                                 <td>
-                                    {% if item.is_low_stock %}
-                                    <span class="badge bg-danger-subtle text-danger rounded-pill">Low Stock</span>
-                                    {% else %}
-                                    <span class="badge bg-success-subtle text-success rounded-pill">In Stock</span>
-                                    {% endif %}
+                                    <div class="d-flex flex-wrap gap-1">
+                                        {% for role in partner.roles %}
+                                        <span class="badge {% if role == 'Stockist' %}bg-info-subtle text-info{% elif role == 'Supplier' %}bg-primary-subtle text-primary{% else %}bg-secondary-subtle text-secondary{% endif %} rounded-pill px-2" style="font-size: 0.7rem;">{{ role }}</span>
+                                        {% endfor %}
+                                    </div>
+                                </td>
+                                <td class="text-muted small">
+                                    {% if partner.latest_date %}
+                                    {{ partner.latest_date|date:"M d, Y" }}
+                                    {% else %}Prior History{% endif %}
+                                </td>
+                                <td>
+                                    {% if partner.is_stockist %}
+                                    <span class="fw-bold text-dark">{{ partner.stock_qty|floatformat:2 }} {{ partner.unit }}</span>
+                                    {% else %}—{% endif %}
+                                </td>
                                 </td>
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="5" class="text-center py-4 text-muted">No inventory found for this material.</td>
+                                <td colspan="4" class="text-center py-4 text-muted">No companies found associated with this material.</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -179,7 +202,7 @@
                                     {% else %}—{% endif %}
                                 </td>
                                 <td class="fw-bold">
-                                    {{ order.total_weight_target|floatformat:"0" }} {{ order.manifest_items.first.weight_unit|default:"lbs" }}
+                                    {{ order.total_weight_target|floatformat:"0" }} {{ order.total_weight_unit }}
                                 </td>
                                 <td class="text-muted small">{{ order.po_number|default:"—" }}</td>
                                 <td class="text-muted small">{{ order.so_number|default:"—" }}</td>
@@ -244,19 +267,37 @@
                 datasets: [
                     {
                         type: 'line',
-                        label: 'Avg Buy Price',
+                        label: 'Buy',
                         data: chartData.buy,
-                        borderColor: '#3b82f6',
+                        borderColor: '#ef4444',
                         backgroundColor: 'transparent',
+                        borderWidth: 2.5,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#ef4444',
+                        pointBorderWidth: 2,
+                        pointHoverRadius: 6,
+                        pointHoverBackgroundColor: '#ef4444',
+                        pointHoverBorderColor: '#fff',
+                        pointHoverBorderWidth: 2,
                         tension: 0.4,
                         yAxisID: 'y'
                     },
                     {
                         type: 'line',
-                        label: 'Avg Sell Price',
+                        label: 'Sell',
                         data: chartData.sell,
-                        borderColor: '#10b981',
+                        borderColor: '#14b8a6',
                         backgroundColor: 'transparent',
+                        borderWidth: 2.5,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#14b8a6',
+                        pointBorderWidth: 2,
+                        pointHoverRadius: 6,
+                        pointHoverBackgroundColor: '#14b8a6',
+                        pointHoverBorderColor: '#fff',
+                        pointHoverBorderWidth: 2,
                         tension: 0.4,
                         yAxisID: 'y'
                     },
@@ -266,6 +307,7 @@
                         data: chartData.weight,
                         backgroundColor: '#f1f5f9',
                         borderRadius: 4,
+                        maxBarThickness: 40,
                         yAxisID: 'y1'
                     }
                 ]
@@ -274,20 +316,51 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { display: false }
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#1e293b',
+                        padding: 12,
+                        titleFont: { size: 14, weight: 'bold' },
+                        bodyFont: { size: 13 },
+                        cornerRadius: 8,
+                        displayColors: true,
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) label += ': ';
+                                if (context.datasetIndex < 2) {
+                                    label += '$' + context.parsed.y.toFixed(2) + ' / lb';
+                                } else {
+                                    label += context.parsed.y.toLocaleString() + ' lbs';
+                                }
+                                return label;
+                            }
+                        }
+                    }
                 },
                 scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#94a3b8', font: { size: 11, weight: '500' } }
+                    },
                     y: {
                         beginAtZero: true,
                         position: 'left',
-                        grid: { color: '#f1f5f9' },
-                        title: { display: true, text: 'Price ($/lb)', color: '#64748b' }
+                        grid: { color: '#f1f5f9', drawBorder: false },
+                        border: { display: false },
+                        ticks: {
+                            color: '#94a3b8',
+                            font: { size: 11 },
+                            callback: function(value) {
+                                return '$' + value.toFixed(2) + ' / lb';
+                            }
+                        }
                     },
                     y1: {
+                        display: false,
                         beginAtZero: true,
                         position: 'right',
-                        grid: { display: false },
-                        title: { display: true, text: 'Volume (lbs)', color: '#64748b' }
+                        grid: { display: false }
                     }
                 }
             }

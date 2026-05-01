@@ -38,7 +38,7 @@
     .directory-map .leaflet-tile-pane {
         filter: saturate(1.4) contrast(1.15) brightness(1.02);
     }
-    
+
     .directory-map-card.is-fullscreen .directory-map {
         height: calc(100vh - 110px);
         flex: 1;
@@ -103,7 +103,7 @@
         top: 50%;
         margin: -16px 0 0 -16px;
         border: 3px solid #fff;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -119,21 +119,32 @@
         content: '';
         width: 10px;
         height: 10px;
-        background: rgba(255,255,255,0.9);
+        background: rgba(255, 255, 255, 0.9);
         position: absolute;
         border-radius: 50%;
         transform: rotate(45deg);
     }
 
-    .custom-marker.carrier { background: #f59e0b; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35); }
-    .custom-marker.customer { background: #3b82f6; box-shadow: 0 4px 14px rgba(59, 130, 246, 0.35); }
-    .custom-marker.vendor { background: #8b5cf6; box-shadow: 0 4px 14px rgba(139, 92, 246, 0.35); }
+    .custom-marker.carrier {
+        background: #f59e0b;
+        box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
+    }
+
+    .custom-marker.customer {
+        background: #3b82f6;
+        box-shadow: 0 4px 14px rgba(59, 130, 246, 0.35);
+    }
+
+    .custom-marker.vendor {
+        background: #8b5cf6;
+        box-shadow: 0 4px 14px rgba(139, 92, 246, 0.35);
+    }
 
     /* Custom Cluster Styles to match user reference */
     .marker-cluster-vibrant {
         background: none;
     }
-    
+
     .custom-cluster {
         width: 40px;
         height: 40px;
@@ -171,49 +182,766 @@
         border-radius: 50%;
         display: inline-block;
     }
+
+    body {
+        font-size: 0.875rem;
+    }
+
+    /* Ultra-Compact Horizontal Design */
+    .company-directory-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .company-card {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 10px 20px;
+        transition: all 0.2s ease;
+        position: relative;
+        cursor: pointer;
+    }
+
+    .company-card:hover {
+        border-color: var(--primary-color);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        background-color: #fcfdfe;
+    }
+
+    .card-top-row {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 8px;
+    }
+
+    .card-logo {
+        width: 44px;
+        height: 44px;
+        background: #f8fafc;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #f1f5f9;
+        flex-shrink: 0;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .card-logo img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        padding: 4px;
+    }
+
+    /* Premium Initial Avatar */
+    .avatar-initial {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1.2rem;
+        color: #fff;
+        text-transform: uppercase;
+    }
+
+    /* Colorful backgrounds for avatars */
+    .bg-avatar-1 { background: linear-gradient(135deg, #6366f1, #818cf8); }
+    .bg-avatar-2 { background: linear-gradient(135deg, #ec4899, #f472b6); }
+    .bg-avatar-3 { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
+    .bg-avatar-4 { background: linear-gradient(135deg, #10b981, #34d399); }
+    .bg-avatar-5 { background: linear-gradient(135deg, #3b82f6, #60a5fa); }
+    .bg-avatar-6 { background: linear-gradient(135deg, #8b5cf6, #a78bfa); }
+
+    .card-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+        flex-grow: 1;
+        letter-spacing: -0.01em;
+    }
+
+    .card-status-container {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        margin-right: 5px;
+    }
+
+    .status-pill-small {
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 2px 10px;
+        border-radius: 6px;
+        border: 1px solid currentColor;
+        text-transform: capitalize;
+    }
+
+    /* Colors derived from reference */
+    .status-active  { background: #f0fdf4; color: #16a34a; }
+    .status-cold    { background: #fefce8; color: #ca8a04; }
+    .status-dormant { background: #fef2f2; color: #dc2626; }
+    .status-prospect { background: #f0f9ff; color: #0284c7; }
+    .status-lead    { background: #f0f9ff; color: #0284c7; }
+
+    .card-meta-row {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+        padding-top: 6px;
+        border-top: 1px solid #f1f5f9;
+    }
+
+    .meta-col {
+        min-width: 0;
+    }
+
+    .meta-label {
+        font-size: 0.65rem;
+        color: #94a3b8;
+        margin-bottom: 2px;
+        font-weight: 500;
+    }
+
+    .meta-value {
+        font-size: 0.78rem;
+        color: #475569;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .meta-value.empty {
+        color: #cbd5e1;
+    }
+
+    .action-btn {
+        color: #94a3b8;
+        padding: 0;
+        background: none;
+        border: none;
+        transition: color 0.2s;
+    }
+
+    .action-btn:hover {
+        color: #475569;
+    }
+
+    .directory-shell {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+    }
+
+    .directory-toolbar {
+        border: 1px solid #dbe4f0;
+        border-radius: 20px;
+        background:
+            radial-gradient(circle at top right, rgba(59, 130, 246, 0.08), transparent 32%),
+            linear-gradient(180deg, #ffffff, #f8fbff);
+        box-shadow: 0 16px 40px rgba(15, 23, 42, 0.05);
+    }
+
+    .toolbar-kicker {
+        font-size: 0.76rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #2563eb;
+        margin-bottom: 6px;
+    }
+
+    .toolbar-title {
+        font-size: 1.65rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin: 0;
+    }
+
+    .toolbar-subtitle {
+        font-size: 0.92rem;
+        color: #64748b;
+        margin-top: 4px;
+        margin-bottom: 0;
+    }
+
+    .filter-trigger-btn {
+        min-height: 48px;
+        border-radius: 14px;
+        font-weight: 700;
+    }
+
+    .filter-count-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 24px;
+        height: 24px;
+        padding: 0 8px;
+        border-radius: 999px;
+        background: #dbeafe;
+        color: #1d4ed8;
+        font-size: 0.78rem;
+        font-weight: 800;
+    }
+
+    .toolbar-search .input-group-text,
+    .toolbar-search .form-control,
+    .toolbar-search .form-select {
+        min-height: 48px;
+        border-radius: 14px;
+    }
+
+    .toolbar-search .input-group-text {
+        border-right: 0;
+        background: #fff;
+    }
+
+    .toolbar-search .form-control {
+        border-left: 0;
+    }
+
+    .filter-reflection {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    .filter-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border-radius: 999px;
+        padding: 8px 12px;
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        color: #1e3a8a;
+        font-size: 0.82rem;
+        font-weight: 600;
+    }
+
+    .filter-chip-label {
+        color: #64748b;
+        font-weight: 700;
+    }
+
+    .filter-summary {
+        font-size: 0.88rem;
+        color: #475569;
+        font-weight: 600;
+    }
+
+    .filter-empty {
+        font-size: 0.88rem;
+        color: #94a3b8;
+        font-weight: 500;
+    }
+
+    .directory-offcanvas {
+        width: min(420px, 100vw);
+    }
+
+    .directory-offcanvas .offcanvas-header {
+        padding: 24px 24px 12px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .directory-offcanvas .offcanvas-body {
+        padding: 20px 24px 24px;
+        background: linear-gradient(180deg, #ffffff, #f8fafc);
+    }
+
+    .filter-section-label {
+        font-size: 0.74rem;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #64748b;
+        margin-bottom: 10px;
+    }
+
+    .filter-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .filter-stack > div {
+        transition: opacity 0.2s ease;
+    }
+
+    .filter-search-input {
+        min-height: 46px;
+        border-radius: 14px;
+    }
+
+    .range-row {
+        display: grid;
+        grid-template-columns: 1fr 120px auto;
+        gap: 12px;
+        align-items: center;
+    }
+
+    .range-row input[type="range"] {
+        width: 100%;
+    }
+
+    .range-value {
+        min-height: 44px;
+        border-radius: 12px;
+        border: 1px solid #dbe2ea;
+        padding: 0 14px;
+        display: flex;
+        align-items: center;
+        background: #fff;
+        color: #475569;
+        font-weight: 600;
+    }
+
+    .location-suggestion-box {
+        display: none;
+        margin-top: 8px;
+        border: 1px solid #dbe2ea;
+        border-radius: 14px;
+        background: #fff;
+        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+        overflow: hidden;
+        max-height: 210px;
+        overflow-y: auto;
+    }
+
+    .location-suggestion-box.is-visible {
+        display: block;
+    }
+
+    .location-suggestion-item {
+        width: 100%;
+        text-align: left;
+        border: 0;
+        background: transparent;
+        padding: 11px 14px;
+        color: #0f172a;
+        font-weight: 600;
+        line-height: 1.45;
+        white-space: normal;
+    }
+
+    .location-suggestion-item:hover {
+        background: #f8fafc;
+    }
+
+    .checkbox-filter {
+        position: relative;
+    }
+
+    .checkbox-filter-toggle {
+        width: 100%;
+        min-height: 46px;
+        border: 1px solid #dbe2ea;
+        border-radius: 12px;
+        background: #fff;
+        padding: 10px 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        color: #64748b;
+        font-weight: 500;
+    }
+
+    .checkbox-filter-toggle.has-selection {
+        color: #0f172a;
+        border-color: #bfd7ff;
+        background: #f8fbff;
+    }
+
+    .checkbox-filter-label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .checkbox-filter-menu {
+        display: none;
+        position: absolute;
+        top: calc(100% + 8px);
+        left: 0;
+        right: 0;
+        z-index: 50;
+        background: #fff;
+        border: 1px solid #dbe2ea;
+        border-radius: 14px;
+        box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12);
+        overflow: hidden;
+    }
+
+    .checkbox-filter.is-open .checkbox-filter-menu {
+        display: block;
+    }
+
+    .checkbox-filter-search {
+        padding: 12px;
+        border-bottom: 1px solid #eef2f7;
+    }
+
+    .checkbox-filter-search-input {
+        min-height: 40px;
+        border-radius: 10px;
+    }
+
+    .checkbox-filter-options {
+        max-height: 220px;
+        overflow-y: auto;
+        padding: 8px;
+    }
+
+    .checkbox-filter-option {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 8px;
+        border-radius: 10px;
+        color: #334155;
+        cursor: pointer;
+    }
+
+    .checkbox-filter-option:hover {
+        background: #f8fafc;
+    }
+
+    .checkbox-filter-option.is-hidden {
+        display: none;
+    }
+
+    .filter-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 24px;
+    }
+
+    .filter-actions .btn {
+        min-height: 46px;
+        border-radius: 14px;
+        font-weight: 700;
+    }
+
+    .directory-result-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 2px;
+        margin-bottom: 2px;
+    }
+
+    .directory-result-count {
+        font-size: 0.92rem;
+        color: #334155;
+        font-weight: 700;
+    }
+
+    .company-card.is-hidden {
+        display: none !important;
+    }
+
+    .directory-no-results {
+        display: none;
+        border: 1px dashed #cbd5e1;
+        border-radius: 18px;
+        padding: 40px 24px;
+        text-align: center;
+        background: #fff;
+        color: #64748b;
+    }
+
+    .directory-no-results.is-visible {
+        display: block;
+    }
+
+    @media (max-width: 767.98px) {
+        .toolbar-title {
+            font-size: 1.35rem;
+        }
+
+        .card-meta-row {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .directory-result-meta {
+            align-items: flex-start;
+        }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h2"><i class="fas fa-address-book me-2 text-primary"></i>Company Directory</h1>
-        <div class="d-flex align-items-center gap-2">
-            {% if request.user.role == 'admin' %}
-            <button type="button" class="btn btn-outline-primary company-map-toggle" id="company-map-toggle" title="Show company locations">
-                <i class="fas fa-location-dot"></i>
-            </button>
-            {% endif %}
-            <a href="{% url 'accounts:company_create' %}" class="btn btn-primary"><i class="fas fa-plus me-1"></i>Add Company</a>
-        </div>
-    </div>
-
-    <!-- Filters -->
-    <div class="card mb-4 shadow-sm border-0">
-        <div class="card-body">
-            <form method="get" class="row g-3">
-                <div class="col-md-5">
-                    <div class="input-group">
-                        <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
-                        <input type="text" name="search" class="form-control border-start-0" placeholder="Search by company name..." value="{{ search|default:'' }}">
+    <div class="directory-shell">
+        <div class="directory-toolbar p-4 p-lg-4">
+            <form method="get" id="company-filter-form">
+                <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-4">
+                    <div>
+                        <div class="toolbar-kicker">Directory Workspace</div>
+                        <h1 class="toolbar-title">
+                            Company Directory
+                            <span class="badge bg-light text-primary ms-2 border" style="font-size: 0.9rem; vertical-align: middle; padding: 4px 12px; border-radius: 10px;">{{ companies.paginator.count }}</span>
+                        </h1>
+                        <p class="toolbar-subtitle">Select filters and they will stay reflected here on the page.</p>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <button type="button" class="btn btn-outline-primary company-map-toggle" id="company-map-toggle"
+                            title="Show company locations">
+                            <i class="fas fa-location-dot"></i>
+                        </button>
+                        <a href="{% url 'accounts:company_create' %}" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i>Add Company
+                        </a>
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <select name="type" class="form-select">
-                        <option value="">All Company Types</option>
-                        <option value="customer" {% if company_type == 'customer' %}selected{% endif %}>Customers</option>
-                        <option value="carrier" {% if company_type == 'carrier' %}selected{% endif %}>Carriers</option>
-                        <option value="vendor" {% if company_type == 'vendor' %}selected{% endif %}>Vendors</option>
-                    </select>
+
+                <div class="row g-3 toolbar-search align-items-stretch">
+                    <div class="col-12 col-lg-2">
+                        <button class="btn btn-outline-dark w-100 filter-trigger-btn d-flex align-items-center justify-content-center gap-2"
+                            type="button" data-bs-toggle="offcanvas" data-bs-target="#directoryFilters"
+                            aria-controls="directoryFilters">
+                            <i class="fas fa-filter"></i>
+                            <span>Filters</span>
+                            <span class="filter-count-badge" id="filter-count-badge">{{ active_filters|length }}</span>
+                        </button>
+                    </div>
+                    <div class="col-12 col-lg-10">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-search text-muted"></i></span>
+                            <input type="text" id="live-search" name="search" class="form-control"
+                                placeholder="Search by company name, services, materials, tags, or location..."
+                                value="{{ search|default:'' }}">
+                        </div>
+                    </div>
                 </div>
-                <div class="col-md-3">
-                    <button type="submit" class="btn btn-outline-primary w-100">Apply Filters</button>
+
+                <div class="filter-reflection" id="filter-reflection">
+                    <div class="d-flex flex-wrap gap-2" id="active-filter-chips">
+                        {% for item in active_filters %}
+                            <span class="filter-chip">
+                                <span class="filter-chip-label">{{ item.label }}</span>
+                                <span>{{ item.value }}</span>
+                            </span>
+                        {% endfor %}
+                    </div>
+                    <span class="filter-empty {% if active_filters %}d-none{% endif %}" id="filter-empty-state">No filters selected yet.</span>
+                    <a href="{% url 'accounts:company_list' %}" id="clear-filters-link"
+                        class="btn btn-link btn-sm text-decoration-none px-0 {% if not active_filters %}d-none{% endif %}">Clear all</a>
+                </div>
+
+                <div class="offcanvas offcanvas-start directory-offcanvas" tabindex="-1" id="directoryFilters"
+                    aria-labelledby="directoryFiltersLabel">
+                    <div class="offcanvas-header">
+                        <div>
+                            <h5 class="offcanvas-title mb-1" id="directoryFiltersLabel">Filters</h5>
+                            <div class="small text-muted">Selected values will reflect on the page after apply.</div>
+                        </div>
+                        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                    </div>
+                    <div class="offcanvas-body">
+                        <div class="filter-stack">
+                            <div data-filter-item>
+                                <div class="filter-section-label">Search for a filter</div>
+                                <input type="text" id="filter-panel-search" class="form-control filter-search-input"
+                                    placeholder="Search for a filter">
+                            </div>
+
+                            <div data-filter-item>
+                                <div class="filter-section-label">Location</div>
+                                <input type="text" id="live-filter-location" name="location" class="form-control"
+                                    placeholder="Type an address" value="{{ location|default:'' }}" autocomplete="off">
+                                <div class="location-suggestion-box" id="location-suggestion-box"></div>
+                            </div>
+
+                            <div data-filter-item>
+                                <div class="range-row">
+                                    <input type="range" min="25" max="1500" step="25" value="250" id="location-radius-range">
+                                    <div class="range-value"><span id="location-radius-value">250</span></div>
+                                    <div class="small text-muted fw-semibold">Miles</div>
+                                </div>
+                            </div>
+
+                            <div data-filter-item>
+                                <div class="filter-section-label">Material</div>
+                                <div class="checkbox-filter" data-checkbox-filter="material">
+                                    <button type="button" class="checkbox-filter-toggle">
+                                        <span class="checkbox-filter-label">Select material(s)</span>
+                                        <i class="fas fa-chevron-down small"></i>
+                                    </button>
+                                    <div class="checkbox-filter-menu">
+                                        <div class="checkbox-filter-search">
+                                            <input type="text" class="form-control checkbox-filter-search-input" placeholder="Search material">
+                                        </div>
+                                        <div class="checkbox-filter-options">
+                                            <div class="p-2 text-muted small text-center">No data found</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div data-filter-item>
+                                <div class="filter-section-label">Material Type</div>
+                                <div class="checkbox-filter" data-checkbox-filter="material-type">
+                                    <button type="button" class="checkbox-filter-toggle">
+                                        <span class="checkbox-filter-label">Select material type(s)</span>
+                                        <i class="fas fa-chevron-down small"></i>
+                                    </button>
+                                    <div class="checkbox-filter-menu">
+                                        <div class="checkbox-filter-search">
+                                            <input type="text" class="form-control checkbox-filter-search-input" placeholder="Search material type">
+                                        </div>
+                                        <div class="checkbox-filter-options">
+                                            {% for material_type_option in available_material_types %}
+                                                <label class="checkbox-filter-option" data-option-label="{{ material_type_option|lower }}">
+                                                    <input type="checkbox" class="form-check-input mt-0" value="{{ material_type_option|lower }}" data-label="{{ material_type_option }}"
+                                                        {% if material_type == material_type_option %}checked{% endif %}>
+                                                    <span>{{ material_type_option }}</span>
+                                                </label>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div data-filter-item>
+                                <div class="filter-section-label">Services</div>
+                                <div class="checkbox-filter" data-checkbox-filter="service">
+                                    <button type="button" class="checkbox-filter-toggle">
+                                        <span class="checkbox-filter-label">Select a value</span>
+                                        <i class="fas fa-chevron-down small"></i>
+                                    </button>
+                                    <div class="checkbox-filter-menu">
+                                        <div class="checkbox-filter-search">
+                                            <input type="text" class="form-control checkbox-filter-search-input" placeholder="Search service">
+                                        </div>
+                                        <div class="checkbox-filter-options">
+                                            {% for service_option in available_services %}
+                                                <label class="checkbox-filter-option" data-option-label="{{ service_option|lower }}">
+                                                    <input type="checkbox" class="form-check-input mt-0" value="{{ service_option|lower }}" data-label="{{ service_option }}"
+                                                        {% if service == service_option %}checked{% endif %}>
+                                                    <span>{{ service_option }}</span>
+                                                </label>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div data-filter-item>
+                                <div class="filter-section-label">Status</div>
+                                <div class="checkbox-filter" data-checkbox-filter="status">
+                                    <button type="button" class="checkbox-filter-toggle">
+                                        <span class="checkbox-filter-label">Select a value</span>
+                                        <i class="fas fa-chevron-down small"></i>
+                                    </button>
+                                    <div class="checkbox-filter-menu">
+                                        <div class="checkbox-filter-search">
+                                            <input type="text" class="form-control checkbox-filter-search-input" placeholder="Search status">
+                                        </div>
+                                        <div class="checkbox-filter-options">
+                                            {% for status_value, status_label in crm_status_choices %}
+                                                <label class="checkbox-filter-option" data-option-label="{{ status_label|lower }}">
+                                                    <input type="checkbox" class="form-check-input mt-0" value="{{ status_value|lower }}" data-label="{{ status_label }}"
+                                                        {% if crm_status == status_value %}checked{% endif %}>
+                                                    <span>{{ status_label }}</span>
+                                                </label>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div data-filter-item>
+                                <div class="filter-section-label">Representatives</div>
+                                <div class="checkbox-filter" data-checkbox-filter="representative">
+                                    <button type="button" class="checkbox-filter-toggle">
+                                        <span class="checkbox-filter-label">Select a value</span>
+                                        <i class="fas fa-chevron-down small"></i>
+                                    </button>
+                                    <div class="checkbox-filter-menu">
+                                        <div class="checkbox-filter-search">
+                                            <input type="text" class="form-control checkbox-filter-search-input" placeholder="Search representative">
+                                        </div>
+                                        <div class="checkbox-filter-options">
+                                            {% for rep in representatives %}
+                                                <label class="checkbox-filter-option" data-option-label="{{ rep.get_full_name|default:rep.username|lower }}">
+                                                    <input type="checkbox" class="form-check-input mt-0" value="{{ rep.get_full_name|default:rep.username|lower }}" data-label="{{ rep.get_full_name|default:rep.username }}"
+                                                        {% if representative_id == rep.pk|stringformat:'s' %}checked{% endif %}>
+                                                    <span>{{ rep.get_full_name|default:rep.username }}</span>
+                                                </label>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div data-filter-item>
+                                <div class="filter-section-label">Tag</div>
+                                <div class="checkbox-filter" data-checkbox-filter="tag">
+                                    <button type="button" class="checkbox-filter-toggle">
+                                        <span class="checkbox-filter-label">Select a value</span>
+                                        <i class="fas fa-chevron-down small"></i>
+                                    </button>
+                                    <div class="checkbox-filter-menu">
+                                        <div class="checkbox-filter-search">
+                                            <input type="text" class="form-control checkbox-filter-search-input" placeholder="Search tag">
+                                        </div>
+                                        <div class="checkbox-filter-options">
+                                            {% for tag in available_tags %}
+                                                <label class="checkbox-filter-option" data-option-label="{{ tag.name|lower }}">
+                                                    <input type="checkbox" class="form-check-input mt-0" value="{{ tag.name|lower }}" data-label="{{ tag.name }}"
+                                                        {% if tag_id == tag.pk|stringformat:'s' %}checked{% endif %}>
+                                                    <span>{{ tag.name }}</span>
+                                                </label>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div data-filter-item>
+                                <div class="filter-section-label">Archived</div>
+                                <div class="d-flex flex-column gap-2 pt-1">
+                                    <label class="d-flex align-items-center gap-2 text-secondary fw-medium">
+                                        <input type="radio" name="archived" value="no" class="form-check-input mt-0" {% if archived == 'no' %}checked{% endif %}>
+                                        <span>No</span>
+                                    </label>
+                                    <label class="d-flex align-items-center gap-2 text-secondary fw-medium">
+                                        <input type="radio" name="archived" value="yes" class="form-check-input mt-0" {% if archived == 'yes' %}checked{% endif %}>
+                                        <span>Yes</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="filter-actions">
+                            <a href="{% url 'accounts:company_list' %}" class="btn btn-outline-secondary flex-fill">Reset</a>
+                        </div>
+                    </div>
                 </div>
             </form>
         </div>
-    </div>
+        <div class="directory-result-meta">
+            <div class="directory-result-count">Showing your directory list with reflected filter state.</div>
+        </div>
 
-    {% if request.user.role == 'admin' %}
     <div class="card mb-4 shadow-sm border-0 directory-map-card" id="company-map-card">
         <div class="card-body">
             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -222,7 +950,8 @@
                     <div class="company-map-status" id="company-map-status">Click markers to view company address.</div>
                 </div>
                 <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-sm btn-outline-info" id="company-map-reset" title="Reset view to show all markers">
+                    <button type="button" class="btn btn-sm btn-outline-info" id="company-map-reset"
+                        title="Reset view to show all markers">
                         <i class="fas fa-arrows-rotate me-1"></i>Reset View
                     </button>
                     <button type="button" class="btn btn-sm btn-outline-primary" id="company-map-fullscreen">
@@ -234,18 +963,21 @@
                 </div>
             </div>
             <div id="company-directory-map" class="directory-map shadow-sm border overflow-hidden"></div>
-            
+
             <div class="mt-3 d-flex flex-wrap gap-4 px-2">
                 <div class="d-flex align-items-center gap-2">
-                    <span class="legend-color" style="background: #2563eb; box-shadow: 0 0 0 2px #fff, 0 0 0 3px #2563eb;"></span>
+                    <span class="legend-color"
+                        style="background: #2563eb; box-shadow: 0 0 0 2px #fff, 0 0 0 3px #2563eb;"></span>
                     <span class="small fw-semibold text-secondary">Customers</span>
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                    <span class="legend-color" style="background: #f59e0b; box-shadow: 0 0 0 2px #fff, 0 0 0 3px #f59e0b;"></span>
+                    <span class="legend-color"
+                        style="background: #f59e0b; box-shadow: 0 0 0 2px #fff, 0 0 0 3px #f59e0b;"></span>
                     <span class="small fw-semibold text-secondary">Carriers</span>
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                    <span class="legend-color" style="background: #6366f1; box-shadow: 0 0 0 2px #fff, 0 0 0 3px #6366f1;"></span>
+                    <span class="legend-color"
+                        style="background: #6366f1; box-shadow: 0 0 0 2px #fff, 0 0 0 3px #6366f1;"></span>
                     <span class="small fw-semibold text-secondary">Vendors</span>
                 </div>
                 <div class="ms-auto small text-muted fst-italic">
@@ -254,102 +986,95 @@
             </div>
         </div>
     </div>
-    {% endif %}
 
-    <!-- Company List -->
-    <div class="card shadow-sm border-0">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="bg-light">
-                        <tr>
-                            <th class="ps-4">Company Name</th>
-                            <th>Type</th>
-                            <th>Contact Info</th>
-                            <th>Location</th>
-                            <th>Status</th>
-                            <th class="text-end pe-4">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for company in companies %}
-                        <tr>
-                            <td class="ps-4">
-                                <div class="d-flex align-items-center">
-                                    <div class="avatar-sm me-3 bg-primary bg-opacity-10 text-primary rounded d-flex align-items-center justify-content-center overflow-hidden" style="width: 40px; height: 40px;">
-                                        {% if company.logo %}
-                                            <img src="{{ company.logo.url }}" alt="{{ company.name }} logo" style="width: 100%; height: 100%; object-fit: cover;">
-                                        {% else %}
-                                            <i class="fas fa-building"></i>
-                                        {% endif %}
-                                    </div>
-                                    <div>
-                                        <a href="{% url 'accounts:company_detail' company.pk %}" class="fw-bold text-decoration-none text-dark">
-                                            {{ company.name }}
-                                        </a>
-                                        <div class="small text-muted">ID: #{{ company.pk }}</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <span class="badge {% if company.company_type == 'customer' %}bg-info{% elif company.company_type == 'carrier' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
-                                    {{ company.get_company_type_display }}
-                                </span>
-                            </td>
-                            <td>
-                                <div class="small"><i class="fas fa-envelope me-2 text-muted"></i>{{ company.email|default:"-" }}</div>
-                                <div class="small"><i class="fas fa-phone me-2 text-muted"></i>{{ company.phone|default:"-" }}</div>
-                            </td>
-                            <td>
-                                <div class="small">{{ company.city }}, {{ company.state }}</div>
-                                <div class="small text-muted">{{ company.country }}</div>
-                            </td>
-                            <td>
-                                {% if company.is_active %}
-                                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2">Active</span>
-                                {% else %}
-                                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-2">Inactive</span>
-                                {% endif %}
-                            </td>
-                            <td class="text-end pe-4">
-                                <div class="btn-group">
-                                    <a href="{% url 'accounts:company_detail' company.pk %}" class="btn btn-sm btn-outline-primary" title="View Details">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    <a href="{% url 'accounts:company_edit' company.pk %}" class="btn btn-sm btn-outline-secondary" title="Edit">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    <a href="{% url 'accounts:company_delete' company.pk %}" class="btn btn-sm btn-outline-danger" title="Delete" onclick="return confirm('Delete this company?')">
-                                        <i class="fas fa-trash"></i>
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="6" class="text-center py-5 text-muted">
-                                <i class="fas fa-search fa-3x mb-3 opacity-25"></i>
-                                <h5>No companies found</h5>
-                                <p>Try adjusting your search or filters.</p>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+    <div class="company-directory-grid" id="company-cards-container">
+        {% for company in companies %}
+        <div class="company-card" 
+             data-name="{{ company.name|lower }}"
+             data-type="{{ company.company_type|lower }}"
+             data-status="{{ company.crm_status|lower }}"
+             data-location="{{ company.city|lower }} {{ company.state|lower }} {{ company.country|lower }}"
+             data-representative="{% if company.created_by %}{{ company.created_by.get_full_name|default:company.created_by.username|lower }}{% endif %}"
+             data-services="{{ company.services_provided|join:', '|lower }}"
+             data-material-types="{% for tag in company.material_tags.all %}{{ tag.material_type|lower }}{% if not forloop.last %}, {% endif %}{% endfor %}"
+             data-materials="{% for tag in company.material_tags.all %}{{ tag.name|lower }}{% if not forloop.last %}, {% endif %}{% endfor %}"
+             data-tags="{% for tag in company.company_tags.all %}{{ tag.name|lower }}{% if not forloop.last %}, {% endif %}{% endfor %}"
+             data-archived="{% if company.is_active %}no{% else %}yes{% endif %}"
+             onclick="window.location='{% url 'accounts:company_detail' company.pk %}';">
+            <div class="card-top-row">
+                <div class="card-logo">
+                    {% if company.logo %}
+                        <img src="{{ company.logo.url }}" alt="{{ company.name }}">
+                    {% else %}
+                        <div class="avatar-initial bg-avatar-{% cycle '1' '2' '3' '4' '5' '6' %}">{{ company.name|slice:":1" }}</div>
+                    {% endif %}
+                </div>
+                
+                <h3 class="card-title">{{ company.name }}</h3>
+
+                <div class="card-status-container" onclick="event.stopPropagation();">
+                    <span class="status-pill-small status-{{ company.crm_status }}">
+                        {{ company.get_crm_status_display }}
+                    </span>
+                    
+                    <div class="dropdown">
+                        <button class="action-btn" type="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 py-2">
+                            <li><a class="dropdown-item py-1" href="{% url 'accounts:company_detail' company.pk %}"><i class="fas fa-id-card me-2 small"></i>Details</a></li>
+                            <li><a class="dropdown-item py-1" href="{% url 'accounts:company_edit' company.pk %}"><i class="fas fa-edit me-2 small"></i>Edit</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-meta-row">
+
+                <div class="meta-col">
+                    <div class="meta-label">Last Touch</div>
+                    <div class="meta-value {% if not company.last_touch %}empty{% endif %}">
+                        {{ company.last_touch|date:"M d, Y"|default:"-" }}
+                    </div>
+                </div>
+
+                <div class="meta-col">
+                    <div class="meta-label">Next Touch</div>
+                    <div class="meta-value {% if not company.next_touch %}empty{% endif %}" style="color: var(--primary-color);">
+                        {{ company.next_touch|date:"M d, Y"|default:"-" }}
+                    </div>
+                </div>
             </div>
         </div>
+        {% empty %}
+        <div class="card shadow-sm border-0 p-5 text-center text-muted rounded-4">
+            <i class="fas fa-search fa-3x mb-3 opacity-25"></i>
+            <h5>No companies found</h5>
+            <p>Try adjusting your search or filters.</p>
+        </div>
+        {% endfor %}
+    </div>
+    <div class="directory-no-results" id="directory-no-results">
+        <i class="fas fa-filter fa-2x mb-3 opacity-50"></i>
+        <h5 class="mb-2">No companies match these filters</h5>
+        <p class="mb-0">Try changing one of the selected filters or reset the panel.</p>
+    </div>
         {% if companies.has_other_pages %}
         <div class="card-footer bg-white border-0 py-3">
             <nav>
                 <ul class="pagination justify-content-center mb-0">
                     {% if companies.has_previous %}
-                    <li class="page-item"><a class="page-link" href="?page={{ companies.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if company_type %}&type={{ company_type }}{% endif %}">Previous</a></li>
+                    <li class="page-item"><a class="page-link"
+                            href="?page={{ companies.previous_page_number }}{% if pagination_query %}&{{ pagination_query }}{% endif %}">Previous</a>
+                    </li>
                     {% endif %}
-                    
+
                     <li class="page-item active"><span class="page-link">{{ companies.number }}</span></li>
-                    
+
                     {% if companies.has_next %}
-                    <li class="page-item"><a class="page-link" href="?page={{ companies.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if company_type %}&type={{ company_type }}{% endif %}">Next</a></li>
+                    <li class="page-item"><a class="page-link"
+                            href="?page={{ companies.next_page_number }}{% if pagination_query %}&{{ pagination_query }}{% endif %}">Next</a>
+                    </li>
                     {% endif %}
                 </ul>
             </nav>
@@ -367,125 +1092,125 @@
         const companies = [
             {% for company in companies %}
             {
-                name: "{{ company.name|escapejs }}",
-                address: "{{ company.full_address|default:''|escapejs }}",
-                latitude: {{ company.latitude|default:'null' }},
-                longitude: {{ company.longitude|default:'null' }},
-                city: "{{ company.city|default:''|escapejs }}",
-                state: "{{ company.state|default:''|escapejs }}",
-                country: "{{ company.country|default:''|escapejs }}",
-                location: "{{ company.city|default:''|escapejs }}{% if company.state %}, {{ company.state|escapejs }}{% endif %}{% if company.country %}, {{ company.country|escapejs }}{% endif %}",
-                companyType: "{{ company.get_company_type_display|escapejs }}",
-                detailUrl: "{% url 'accounts:company_detail' company.pk %}"
-            }{% if not forloop.last %},{% endif %}
-            {% endfor %}
+            name: "{{ company.name|escapejs }}",
+            address: "{{ company.full_address|default:''|escapejs }}",
+            latitude: {{ company.latitude|default:'null' }},
+            longitude: {{ company.longitude|default:'null' }},
+        city: "{{ company.city|default:''|escapejs }}",
+        state: "{{ company.state|default:''|escapejs }}",
+        country: "{{ company.country|default:''|escapejs }}",
+        location: "{{ company.city|default:''|escapejs }}{% if company.state %}, {{ company.state|escapejs }}{% endif %}{% if company.country %}, {{ company.country|escapejs }}{% endif %}",
+        companyType: "{{ company.get_company_type_display|escapejs }}",
+        detailUrl: "{% url 'accounts:company_detail' company.pk %}"
+            }{% if not forloop.last %}, {% endif %}
+    {% endfor %}
         ].filter(company => company.address.trim() || company.location.trim());
 
-        const mapCard = document.getElementById('company-map-card');
-        const toggleButton = document.getElementById('company-map-toggle');
-        const closeButton = document.getElementById('company-map-close');
-        const fullscreenButton = document.getElementById('company-map-fullscreen');
-        const resetButton = document.getElementById('company-map-reset');
-        const statusText = document.getElementById('company-map-status');
+    const mapCard = document.getElementById('company-map-card');
+    const toggleButton = document.getElementById('company-map-toggle');
+    const closeButton = document.getElementById('company-map-close');
+    const fullscreenButton = document.getElementById('company-map-fullscreen');
+    const resetButton = document.getElementById('company-map-reset');
+    const statusText = document.getElementById('company-map-status');
 
-        if (!mapCard || !toggleButton) {
+    if (!mapCard || !toggleButton) {
+        return;
+    }
+
+    let companyMap = null;
+    let markersLayer = null;
+    let mapLoaded = false;
+
+    function refreshMapLayout() {
+        if (!companyMap) return;
+        setTimeout(() => {
+            companyMap.invalidateSize();
+            if (markersLayer && markersLayer.getLayers().length) {
+                companyMap.fitBounds(markersLayer.getBounds().pad(0.2));
+            }
+        }, 150);
+    }
+
+    function setStatus(message) {
+        if (statusText) {
+            statusText.textContent = message;
+        }
+    }
+
+    async function loadCompanyMap() {
+        if (mapLoaded) {
+            refreshMapLayout();
             return;
         }
 
-        let companyMap = null;
-        let markersLayer = null;
-        let mapLoaded = false;
+        setStatus('Loading company locations on map...');
 
-        function refreshMapLayout() {
-            if (!companyMap) return;
-            setTimeout(() => {
-                companyMap.invalidateSize();
-                if (markersLayer && markersLayer.getLayers().length) {
-                    companyMap.fitBounds(markersLayer.getBounds().pad(0.2));
-                }
-            }, 150);
+        companyMap = L.map('company-directory-map', {
+            zoomControl: true,
+        });
+
+        // High-DPI (Retina) support for crisp labels and 'shining' vibrant colors
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+            detectRetina: true
+        }).addTo(companyMap);
+
+        // Using MarkerClusterGroup to handle overlapping markers (Spiderfying)
+        // Styled to look like the vibrant blue circular clusters in the reference image
+        markersLayer = L.markerClusterGroup({
+            showCoverageOnHover: false,
+            spiderfyOnMaxZoom: true,
+            zoomToBoundsOnClick: true,
+            maxClusterRadius: 50,
+            iconCreateFunction: function (cluster) {
+                const childCount = cluster.getChildCount();
+                return L.divIcon({
+                    html: `<div class="custom-cluster"><span>${childCount}</span></div>`,
+                    className: 'marker-cluster-vibrant',
+                    iconSize: L.point(40, 40)
+                });
+            }
+        }).addTo(companyMap);
+
+        const mappedCompanies = companies.filter(company =>
+            typeof company.latitude === 'number' &&
+            !Number.isNaN(company.latitude) &&
+            typeof company.longitude === 'number' &&
+            !Number.isNaN(company.longitude)
+        );
+
+        if (!mappedCompanies.length) {
+            setStatus('No company locations could be mapped.');
+            companyMap.setView([20.5937, 78.9629], 4);
+            mapLoaded = true;
+            return;
         }
 
-        function setStatus(message) {
-            if (statusText) {
-                statusText.textContent = message;
+        mappedCompanies.forEach(company => {
+            let markerClass = 'customer';
+            let typeColor = '#3b82f6';
+
+            const typeLower = (company.companyType || '').toLowerCase();
+            if (typeLower.includes('carrier')) {
+                markerClass = 'carrier';
+                typeColor = '#f59e0b';
+            } else if (typeLower.includes('vendor')) {
+                markerClass = 'vendor';
+                typeColor = '#8b5cf6';
             }
-        }
 
-        async function loadCompanyMap() {
-            if (mapLoaded) {
-                refreshMapLayout();
-                return;
-            }
-
-            setStatus('Loading company locations on map...');
-
-            companyMap = L.map('company-directory-map', {
-                zoomControl: true,
+            const customIcon = L.divIcon({
+                className: 'custom-div-icon',
+                html: `<div class="custom-marker ${markerClass}"></div>`,
+                iconSize: [30, 30],
+                iconAnchor: [15, 30],
+                popupAnchor: [0, -32]
             });
 
-            // High-DPI (Retina) support for crisp labels and 'shining' vibrant colors
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-                maxZoom: 19,
-                attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
-                detectRetina: true
-            }).addTo(companyMap);
+            const marker = L.marker([company.latitude, company.longitude], { icon: customIcon }).addTo(markersLayer);
 
-            // Using MarkerClusterGroup to handle overlapping markers (Spiderfying)
-            // Styled to look like the vibrant blue circular clusters in the reference image
-            markersLayer = L.markerClusterGroup({
-                showCoverageOnHover: false,
-                spiderfyOnMaxZoom: true,
-                zoomToBoundsOnClick: true,
-                maxClusterRadius: 50,
-                iconCreateFunction: function(cluster) {
-                    const childCount = cluster.getChildCount();
-                    return L.divIcon({ 
-                        html: `<div class="custom-cluster"><span>${childCount}</span></div>`, 
-                        className: 'marker-cluster-vibrant', 
-                        iconSize: L.point(40, 40) 
-                    });
-                }
-            }).addTo(companyMap);
-
-            const mappedCompanies = companies.filter(company =>
-                typeof company.latitude === 'number' &&
-                !Number.isNaN(company.latitude) &&
-                typeof company.longitude === 'number' &&
-                !Number.isNaN(company.longitude)
-            );
-
-            if (!mappedCompanies.length) {
-                setStatus('No company locations could be mapped.');
-                companyMap.setView([20.5937, 78.9629], 4);
-                mapLoaded = true;
-                return;
-            }
-
-            mappedCompanies.forEach(company => {
-                let markerClass = 'customer';
-                let typeColor = '#3b82f6';
-                
-                const typeLower = (company.companyType || '').toLowerCase();
-                if (typeLower.includes('carrier')) {
-                    markerClass = 'carrier';
-                    typeColor = '#f59e0b';
-                } else if (typeLower.includes('vendor')) {
-                    markerClass = 'vendor';
-                    typeColor = '#8b5cf6';
-                }
-
-                const customIcon = L.divIcon({
-                    className: 'custom-div-icon',
-                    html: `<div class="custom-marker ${markerClass}"></div>`,
-                    iconSize: [30, 30],
-                    iconAnchor: [15, 30],
-                    popupAnchor: [0, -32]
-                });
-
-                const marker = L.marker([company.latitude, company.longitude], { icon: customIcon }).addTo(markersLayer);
-                
-                const popupHtml = `
+            const popupHtml = `
                     <div class="company-map-popup px-1">
                         <div class="company-map-popup-type mb-1" style="color: ${typeColor}">${company.companyType}</div>
                         <div class="company-map-popup-name">${company.name}</div>
@@ -496,50 +1221,347 @@
                     </div>
                 `;
 
-                marker.bindPopup(popupHtml, { closeButton: false });
-                marker.on('mouseover', function () {
-                    this.openPopup();
-                });
+            marker.bindPopup(popupHtml, { closeButton: false });
+            marker.on('mouseover', function () {
+                this.openPopup();
             });
+        });
 
-            companyMap.fitBounds(markersLayer.getBounds().pad(0.2));
-            setStatus(`${mappedCompanies.length} company locations loaded.`);
-            mapLoaded = true;
-            refreshMapLayout();
+        companyMap.fitBounds(markersLayer.getBounds().pad(0.2));
+        setStatus(`${mappedCompanies.length} company locations loaded.`);
+        mapLoaded = true;
+        refreshMapLayout();
+    }
+
+    toggleButton?.addEventListener('click', async function () {
+        mapCard.classList.add('is-visible');
+        toggleButton.classList.remove('btn-outline-primary');
+        toggleButton.classList.add('btn-primary');
+        await loadCompanyMap();
+        mapCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        refreshMapLayout();
+    });
+
+    closeButton?.addEventListener('click', function () {
+        mapCard.classList.remove('is-visible');
+        mapCard.classList.remove('is-fullscreen');
+        toggleButton.classList.add('btn-outline-primary');
+        toggleButton.classList.remove('btn-primary');
+        if (fullscreenButton) {
+            fullscreenButton.innerHTML = '<i class="fas fa-expand me-1"></i>Full Screen';
+        }
+    });
+
+    fullscreenButton?.addEventListener('click', function () {
+        const isFullscreen = mapCard.classList.toggle('is-fullscreen');
+        fullscreenButton.innerHTML = isFullscreen
+            ? '<i class="fas fa-compress me-1"></i>Exit Full Screen'
+            : '<i class="fas fa-expand me-1"></i>Full Screen';
+        refreshMapLayout();
+    });
+
+    window.addEventListener('resize', refreshMapLayout);
+
+    resetButton?.addEventListener('click', function () {
+        refreshMapLayout();
+    });
+
+    // --- LIVE FILTERING LOGIC ---
+    const searchInput = document.getElementById('live-search');
+    const typeFilter = document.getElementById('live-filter-type');
+    const locationFilter = document.getElementById('live-filter-location');
+    const archivedFilters = document.querySelectorAll('input[name="archived"]');
+    const filterPanelSearch = document.getElementById('filter-panel-search');
+    const filterItems = document.querySelectorAll('[data-filter-item]');
+    const radiusRange = document.getElementById('location-radius-range');
+    const radiusValue = document.getElementById('location-radius-value');
+    const locationSuggestionBox = document.getElementById('location-suggestion-box');
+    const companyCards = document.querySelectorAll('.company-card');
+    const resultCount = document.getElementById('company-results-count');
+    const noResults = document.getElementById('directory-no-results');
+    const chipsContainer = document.getElementById('active-filter-chips');
+    const emptyState = document.getElementById('filter-empty-state');
+    const clearFiltersLink = document.getElementById('clear-filters-link');
+    const filterCountBadge = document.getElementById('filter-count-badge');
+    const checkboxFilters = document.querySelectorAll('.checkbox-filter');
+
+    function buildChip(label, value) {
+        return `
+            <span class="filter-chip">
+                <span class="filter-chip-label">${label}</span>
+                <span>${value}</span>
+            </span>
+        `;
+    }
+
+    function updateReflection(selectedFilters) {
+        if (!chipsContainer || !emptyState || !clearFiltersLink || !filterCountBadge) {
+            return;
         }
 
-        toggleButton?.addEventListener('click', async function () {
-            mapCard.classList.add('is-visible');
-            toggleButton.classList.remove('btn-outline-primary');
-            toggleButton.classList.add('btn-primary');
-            await loadCompanyMap();
-            mapCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            refreshMapLayout();
+        filterCountBadge.textContent = selectedFilters.length;
+        chipsContainer.innerHTML = selectedFilters.map(filter => buildChip(filter.label, filter.value)).join('');
+        emptyState.classList.toggle('d-none', selectedFilters.length > 0);
+        clearFiltersLink.classList.toggle('d-none', selectedFilters.length === 0);
+    }
+
+    function getCheckedValues(filterName) {
+        return Array.from(document.querySelectorAll(`[data-checkbox-filter="${filterName}"] input[type="checkbox"]:checked`))
+            .map(input => input.value.toLowerCase());
+    }
+
+    function getCheckedLabels(filterName) {
+        return Array.from(document.querySelectorAll(`[data-checkbox-filter="${filterName}"] input[type="checkbox"]:checked`))
+            .map(input => input.dataset.label || input.value);
+    }
+
+    function updateCheckboxFilterSummary(filterElement) {
+        const label = filterElement.querySelector('.checkbox-filter-label');
+        const toggle = filterElement.querySelector('.checkbox-filter-toggle');
+        const checked = Array.from(filterElement.querySelectorAll('input[type="checkbox"]:checked'));
+        const defaultLabel = {
+            material: 'Select material(s)',
+            'material-type': 'Select material type(s)',
+            service: 'Select a value',
+            status: 'Select a value',
+            representative: 'Select a value',
+            tag: 'Select a value',
+        }[filterElement.dataset.checkboxFilter] || 'Select a value';
+
+        if (!label || !toggle) return;
+
+        if (!checked.length) {
+            label.textContent = defaultLabel;
+            toggle.classList.remove('has-selection');
+            return;
+        }
+
+        label.textContent = checked.length === 1
+            ? (checked[0].dataset.label || checked[0].value)
+            : `${checked.length} selected`;
+        toggle.classList.add('has-selection');
+    }
+
+    checkboxFilters.forEach(filterElement => {
+        const toggle = filterElement.querySelector('.checkbox-filter-toggle');
+        const search = filterElement.querySelector('.checkbox-filter-search-input');
+        const options = filterElement.querySelectorAll('.checkbox-filter-option');
+        const checkboxes = filterElement.querySelectorAll('input[type="checkbox"]');
+
+        updateCheckboxFilterSummary(filterElement);
+
+        toggle?.addEventListener('click', function (event) {
+            event.stopPropagation();
+            checkboxFilters.forEach(otherFilter => {
+                if (otherFilter !== filterElement) {
+                    otherFilter.classList.remove('is-open');
+                }
+            });
+            filterElement.classList.toggle('is-open');
         });
 
-        closeButton?.addEventListener('click', function () {
-            mapCard.classList.remove('is-visible');
-            mapCard.classList.remove('is-fullscreen');
-            toggleButton.classList.add('btn-outline-primary');
-            toggleButton.classList.remove('btn-primary');
-            if (fullscreenButton) {
-                fullscreenButton.innerHTML = '<i class="fas fa-expand me-1"></i>Full Screen';
+        search?.addEventListener('input', function () {
+            const term = this.value.toLowerCase().trim();
+            options.forEach(option => {
+                const text = option.dataset.optionLabel || option.textContent.toLowerCase();
+                option.classList.toggle('is-hidden', !!term && !text.includes(term));
+            });
+        });
+
+        checkboxes.forEach(input => {
+            input.addEventListener('change', function () {
+                updateCheckboxFilterSummary(filterElement);
+                performFilter();
+            });
+        });
+    });
+
+    let locationSuggestionController = null;
+    let locationSuggestionTimer = null;
+
+    function renderLocationSuggestions(matches) {
+        if (!locationSuggestionBox) {
+            return;
+        }
+
+        if (!matches.length) {
+            locationSuggestionBox.innerHTML = '';
+            locationSuggestionBox.classList.remove('is-visible');
+            return;
+        }
+
+        locationSuggestionBox.innerHTML = matches.map(locationValue => `
+            <button type="button" class="location-suggestion-item" data-location-value="${locationValue.replace(/"/g, '&quot;')}">
+                ${locationValue}
+            </button>
+        `).join('');
+        locationSuggestionBox.classList.add('is-visible');
+    }
+
+    async function refreshLocationSuggestions() {
+        if (!locationFilter || !locationSuggestionBox) {
+            return;
+        }
+
+        const term = locationFilter.value.trim();
+        if (!term) {
+            locationSuggestionBox.innerHTML = '';
+            locationSuggestionBox.classList.remove('is-visible');
+            return;
+        }
+
+        if (locationSuggestionController) {
+            locationSuggestionController.abort();
+        }
+
+        locationSuggestionController = new AbortController();
+        locationSuggestionBox.innerHTML = '<div class="px-3 py-2 text-muted small">Searching locations...</div>';
+        locationSuggestionBox.classList.add('is-visible');
+
+        try {
+            const response = await fetch(
+                `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=8&addressdetails=1&q=${encodeURIComponent(term)}`,
+                {
+                    signal: locationSuggestionController.signal,
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('Location lookup failed');
+            }
+
+            const results = await response.json();
+            const matches = [...new Set((results || [])
+                .map(item => item.display_name)
+                .filter(Boolean))];
+
+            renderLocationSuggestions(matches);
+        } catch (error) {
+            if (error.name === 'AbortError') {
+                return;
+            }
+
+            locationSuggestionBox.innerHTML = '<div class="px-3 py-2 text-muted small">No location suggestions found.</div>';
+            return;
+        }
+    }
+
+    function performFilter() {
+        const searchTerm = searchInput?.value.toLowerCase().trim() || "";
+        const selectedType = typeFilter?.value.toLowerCase() || "";
+        const selectedLocation = locationFilter?.value.toLowerCase().trim() || "";
+        const selectedStatuses = getCheckedValues('status');
+        const selectedServices = getCheckedValues('service');
+        const selectedMaterials = getCheckedValues('material');
+        const selectedMaterialTypes = getCheckedValues('material-type');
+        const selectedTags = getCheckedValues('tag');
+        const selectedRepresentatives = getCheckedValues('representative');
+        const selectedArchived = document.querySelector('input[name="archived"]:checked')?.value || "";
+
+        const selectedFilters = [];
+        if (searchInput?.value.trim()) selectedFilters.push({ label: 'Search', value: searchInput.value.trim() });
+        if (locationFilter?.value.trim()) selectedFilters.push({ label: 'Location', value: locationFilter.value.trim() });
+        if (typeFilter?.value) selectedFilters.push({ label: 'Type', value: typeFilter.selectedOptions[0].text });
+        getCheckedLabels('status').forEach(label => selectedFilters.push({ label: 'Status', value: label }));
+        getCheckedLabels('service').forEach(label => selectedFilters.push({ label: 'Service', value: label }));
+        getCheckedLabels('material').forEach(label => selectedFilters.push({ label: 'Material', value: label }));
+        getCheckedLabels('material-type').forEach(label => selectedFilters.push({ label: 'Material Type', value: label }));
+        getCheckedLabels('tag').forEach(label => selectedFilters.push({ label: 'Tag', value: label }));
+        getCheckedLabels('representative').forEach(label => selectedFilters.push({ label: 'Representative', value: label }));
+        if (selectedArchived) selectedFilters.push({ label: 'Archived', value: selectedArchived === 'yes' ? 'Yes' : 'No' });
+        updateReflection(selectedFilters);
+
+        let visibleCount = 0;
+
+        companyCards.forEach(card => {
+            const name = card.dataset.name || "";
+            const type = card.dataset.type || "";
+            const status = card.dataset.status || "";
+            const location = card.dataset.location || "";
+            const representative = card.dataset.representative || "";
+            const services = card.dataset.services || "";
+            const materialTypes = card.dataset.materialTypes || "";
+            const materials = card.dataset.materials || "";
+            const tags = card.dataset.tags || "";
+            const archived = card.dataset.archived || "";
+
+            const matchesSearch = !searchTerm ||
+                name.includes(searchTerm) ||
+                location.includes(searchTerm) ||
+                representative.includes(searchTerm) ||
+                services.includes(searchTerm) ||
+                materialTypes.includes(searchTerm) ||
+                materials.includes(searchTerm) ||
+                tags.includes(searchTerm);
+            const matchesLocation = !selectedLocation || location.includes(selectedLocation);
+            const matchesType = !selectedType || type === selectedType;
+            const matchesStatus = !selectedStatuses.length || selectedStatuses.includes(status);
+            const matchesService = !selectedServices.length || selectedServices.some(value => services.includes(value));
+            const matchesMaterial = !selectedMaterials.length || selectedMaterials.some(value => materials.includes(value));
+            const matchesMaterialType = !selectedMaterialTypes.length || selectedMaterialTypes.some(value => materialTypes.includes(value));
+            const matchesTag = !selectedTags.length || selectedTags.some(value => tags.includes(value));
+            const matchesRepresentative = !selectedRepresentatives.length || selectedRepresentatives.some(value => representative.includes(value));
+            const matchesArchived = !selectedArchived || archived === selectedArchived;
+
+            const isVisible = matchesSearch && matchesLocation && matchesType && matchesStatus && matchesService && matchesMaterial && matchesMaterialType && matchesTag && matchesRepresentative && matchesArchived;
+            card.classList.toggle('is-hidden', !isVisible);
+            if (isVisible) visibleCount += 1;
+        });
+
+        if (resultCount) {
+            resultCount.textContent = visibleCount;
+        }
+
+        if (noResults) {
+            noResults.classList.toggle('is-visible', visibleCount === 0 && companyCards.length > 0);
+        }
+
+        const pagination = document.querySelector('.pagination')?.closest('.card-footer');
+        if (pagination) {
+            pagination.style.display = selectedFilters.length > 0 ? 'none' : 'block';
+        }
+    }
+
+    searchInput?.addEventListener('input', performFilter);
+    typeFilter?.addEventListener('change', performFilter);
+    locationFilter?.addEventListener('input', function () {
+        clearTimeout(locationSuggestionTimer);
+        locationSuggestionTimer = setTimeout(refreshLocationSuggestions, 250);
+    });
+    locationFilter?.addEventListener('focus', refreshLocationSuggestions);
+    locationSuggestionBox?.addEventListener('click', function (event) {
+        const button = event.target.closest('[data-location-value]');
+        if (!button || !locationFilter) return;
+        locationFilter.value = button.getAttribute('data-location-value') || '';
+        locationSuggestionBox.classList.remove('is-visible');
+    });
+    document.addEventListener('click', function (event) {
+        checkboxFilters.forEach(filterElement => {
+            if (!filterElement.contains(event.target)) {
+                filterElement.classList.remove('is-open');
             }
         });
-
-        fullscreenButton?.addEventListener('click', function () {
-            const isFullscreen = mapCard.classList.toggle('is-fullscreen');
-            fullscreenButton.innerHTML = isFullscreen
-                ? '<i class="fas fa-compress me-1"></i>Exit Full Screen'
-                : '<i class="fas fa-expand me-1"></i>Full Screen';
-            refreshMapLayout();
+        if (!locationSuggestionBox || !locationFilter) return;
+        if (!locationSuggestionBox.contains(event.target) && event.target !== locationFilter) {
+            locationSuggestionBox.classList.remove('is-visible');
+        }
+    });
+    archivedFilters.forEach(radio => radio.addEventListener('change', performFilter));
+    filterPanelSearch?.addEventListener('input', function () {
+        const term = this.value.toLowerCase().trim();
+        filterItems.forEach(item => {
+            const text = item.textContent.toLowerCase();
+            item.style.display = !term || text.includes(term) ? '' : 'none';
         });
-
-        window.addEventListener('resize', refreshMapLayout);
-
-        resetButton?.addEventListener('click', function () {
-            refreshMapLayout();
-        });
+    });
+    radiusRange?.addEventListener('input', function () {
+        if (radiusValue) radiusValue.textContent = this.value;
+    });
+    refreshLocationSuggestions();
+    performFilter();
     });
 </script>
 {% endblock %}

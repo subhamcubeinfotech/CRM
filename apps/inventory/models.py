@@ -132,8 +132,10 @@ class Material(TenantAwareModel):
     product_type = models.CharField(max_length=100, blank=True, help_text="e.g. Film, Flake, Regrind")
     
     description = models.TextField(blank=True)
+    company = models.ForeignKey('accounts.Company', on_delete=models.CASCADE, related_name='materials', null=True, blank=True, help_text="Company this material belongs to (optional, null means global to tenant)")
     image = models.ImageField(upload_to='materials/images/', null=True, blank=True)
     document = models.FileField(upload_to='materials/docs/', null=True, blank=True)
+    is_archived = models.BooleanField(default=False)
     
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
@@ -141,7 +143,7 @@ class Material(TenantAwareModel):
     
     class Meta:
         ordering = ['name']
-        unique_together = ('tenant', 'name')
+        unique_together = ('tenant', 'company', 'name')
     
     def __str__(self):
         return self.name
@@ -157,9 +159,15 @@ class InventoryItem(TenantAwareModel):
     warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, related_name='inventory_items')
     location = models.CharField(max_length=100, blank=True, help_text='Bin or shelf location')
     
+    # Offered vs Current
+    offered_weight = models.DecimalField(max_digits=20, decimal_places=2, default=0)
+    offered_weight_unit = models.CharField(max_length=50, default='lbs')
+
     # Quantity
     quantity = models.DecimalField(max_digits=20, decimal_places=2, default=0)
+    reserved_quantity = models.DecimalField(max_digits=20, decimal_places=2, default=0)
     unit_of_measure = models.CharField(max_length=50, default='lbs')
+
     
     # Tracking
     lot_number = models.CharField(max_length=100, blank=True)
@@ -174,15 +182,30 @@ class InventoryItem(TenantAwareModel):
     
     # Packaging
     packaging = models.CharField(max_length=100, blank=True)
-    pieces = models.IntegerField(default=1, null=True, blank=True)
+    pieces = models.IntegerField(null=True, blank=True)
     is_palletized = models.BooleanField(default=False)
     
     # Financial
     unit_cost = models.DecimalField(max_digits=20, decimal_places=2, default=0)
     price_unit = models.CharField(max_length=20, default='per lbs')
+    image = models.ImageField(upload_to='inventory/items/', null=True, blank=True)
     
     # Reorder
     reorder_level = models.DecimalField(max_digits=20, decimal_places=2, default=10, help_text='Minimum quantity before reorder')
+    billing_preference = models.CharField(max_length=50, default='standard')
+    
+    @property
+    def effective_image(self):
+        """Returns the item-specific image if available, else falls back to the Material's image"""
+        if self.image:
+            return self.image
+        
+        # Try to find a Material with a matching name in the same tenant
+        from .models import Material
+        material = Material.objects.filter(tenant=self.tenant, name=self.product_name).first()
+        if material and material.image:
+            return material.image
+        return None
     
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
@@ -199,6 +222,16 @@ class InventoryItem(TenantAwareModel):
         """Calculate total value"""
         return self.quantity * self.unit_cost
     
+    @property
+    def available_quantity(self):
+        """Quantum available for new sales (Physical - Reserved)"""
+        return self.quantity - self.reserved_quantity
+    
+    @property
+    def display_detailed_stock(self):
+        """Formatted string for tooltips/details"""
+        return f"On Hand: {self.quantity} | Reserved: {self.reserved_quantity} | Available: {self.available_quantity}"
+
     @property
     def is_low_stock(self):
         """Check if stock is below reorder level"""
@@ -217,3 +250,34 @@ class InventoryItem(TenantAwareModel):
     def display_stock(self):
         """Pre-formatted stock string for templates"""
         return f"{self.quantity} {self.unit_of_measure} available"
+
+
+class InventoryTransaction(TenantAwareModel):
+    """Log of every stock movement (Bank Statement for inventory)"""
+    TRANSACTION_TYPES = [
+        ('RECEIVE', 'Inbound Receipt'),
+        ('SHIP', 'Outbound Shipment'),
+        ('ADJUST', 'Manual Adjustment'),
+        ('INITIAL', 'Initial Stock'),
+        ('RESERVE', 'Inventory Reservation'),
+        ('UNRESERVE', 'Reservation Released'),
+    ]
+
+    item = models.ForeignKey(InventoryItem, on_delete=models.CASCADE, related_name='transactions')
+    transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPES)
+    quantity_change = models.DecimalField(max_digits=20, decimal_places=2, help_text="Amount changed (positive or negative)")
+    new_quantity = models.DecimalField(max_digits=20, decimal_places=2, help_text="Quantity after the transaction")
+    
+    # Context
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    notes = models.TextField(blank=True)
+    
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-timestamp']
+        verbose_name = 'Inventory Transaction'
+        verbose_name_plural = 'Inventory Transactions'
+
+    def __str__(self):
+        return f"{self.item.sku} - {self.transaction_type} ({self.quantity_change})"

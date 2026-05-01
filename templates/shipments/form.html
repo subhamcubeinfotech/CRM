@@ -2,6 +2,24 @@
 
 {% block title %}{% if is_create %}Create{% else %}Edit{% endif %} Shipment - Freight Forwarding Platform{% endblock %}
 
+{% block extra_css %}
+<!-- Select2 CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+<style>
+    /* Select2 Bootstrap 5 Theme Adjustments */
+    .select2-container--bootstrap-5 .select2-selection {
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        min-height: 38px;
+    }
+    .select2-container--bootstrap-5.select2-container--focus .select2-selection {
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid">
     <style>
@@ -192,13 +210,13 @@
                                         data-source-state="{{ current_order.supplier.state }}"
                                         data-source-postal-code="{{ current_order.supplier.postal_code }}"
                                         data-source-country="{{ current_order.supplier.country|default:'USA' }}"
-                                        data-destination-location-id="{{ current_order.destination_location_id|default:'' }}"
-                                        data-destination-location-label="{% if current_order.destination_location %}{{ current_order.destination_location.display_name }}{% else %}{{ current_order.receiver.full_address }}{% endif %}"
-                                        data-destination-address="{% if current_order.destination_location %}{{ current_order.destination_location.address }}{% else %}{{ current_order.receiver.address_line1 }}{% endif %}"
-                                        data-destination-city="{% if current_order.destination_location %}{{ current_order.destination_location.city }}{% else %}{{ current_order.receiver.city }}{% endif %}"
-                                        data-destination-state="{% if current_order.destination_location %}{{ current_order.destination_location.state }}{% else %}{{ current_order.receiver.state }}{% endif %}"
-                                        data-destination-postal-code="{% if current_order.destination_location %}{{ current_order.destination_location.postal_code }}{% else %}{{ current_order.receiver.postal_code }}{% endif %}"
-                                        data-destination-country="{% if current_order.destination_location %}{{ current_order.destination_location.country }}{% else %}{{ current_order.receiver.country|default:'USA' }}{% endif %}"
+                                        data-destination-location-id=""
+                                        data-destination-location-label="{{ current_order.receiver.full_address }}"
+                                        data-destination-address="{{ current_order.receiver.address_line1 }}"
+                                        data-destination-city="{{ current_order.receiver.city }}"
+                                        data-destination-state="{{ current_order.receiver.state }}"
+                                        data-destination-postal-code="{{ current_order.receiver.postal_code }}"
+                                        data-destination-country="{{ current_order.receiver.country|default:'USA' }}"
                                         {% if selected_order_id == current_order.pk|stringformat:'s' %}selected{% endif %}>
                                         {{ current_order.order_number }}
                                     </option>
@@ -247,7 +265,7 @@
                                     <option value="{{ warehouse.id }}" 
                                         {% if not is_create and shipment.pickup_location_id == warehouse.id %}selected{% endif %}
                                         data-company-id="{{ warehouse.company_id }}" data-address="{{ warehouse.address }}" data-city="{{ warehouse.city }}" data-state="{{ warehouse.state }}" data-postal-code="{{ warehouse.postal_code }}" data-country="{{ warehouse.country }}">
-                                        {{ warehouse.display_name }}
+                                        {{ warehouse.full_address }}
                                     </option>
                                     {% endfor %}
                                     {% if not is_create and not shipment.pickup_location and shipment.origin_address and shipment.origin_address != user.company.full_address %}
@@ -344,7 +362,7 @@
                                     <option value="{{ warehouse.id }}"
                                         {% if not is_create and shipment.destination_location_id == warehouse.id %}selected{% endif %}
                                         data-address="{{ warehouse.address }}" data-city="{{ warehouse.city }}" data-state="{{ warehouse.state }}" data-postal-code="{{ warehouse.postal_code }}" data-country="{{ warehouse.country }}">
-                                        {{ warehouse.display_name }}
+                                        {{ warehouse.full_address }}
                                     </option>
                                     {% endfor %}
                                     {% if not is_create and not shipment.destination_location and shipment.destination_address %}
@@ -435,14 +453,8 @@
                     <div class="card-body">
                         <div class="mb-3">
                             <label class="form-label">Tags</label>
-                            <select name="tags_ui" class="form-select" multiple>
-                                {% if tags %}
-                                    {% for tag in tags %}
-                                    <option value="{{ tag.pk }}" {% if not is_create %}{% if tag in shipment.order.tags.all %}selected{% endif %}{% elif is_create %}{% if tag in order.tags.all %}selected{% endif %}{% endif %}>{{ tag.name }}</option>
-                                    {% endfor %}
-                                {% else %}
-                                    <option value="" disabled>Select tags</option>
-                                {% endif %}
+                            <select name="tags" id="tags-select" class="form-select select2-basic" multiple style="width: 100%;" autocomplete="off">
+                                <!-- Existing tags removed per user request to keep dropdown empty -->
                             </select>
                         </div>
 
@@ -498,7 +510,7 @@
                                             <div class="input-group">
                                                 <select name="items_ui[{{ forloop.counter0 }}][material]" class="form-select shipment-material-select" required>
                                                     <option value="">Select a material</option>
-                                                    <option value="{{ item.material }}" selected 
+                                                    <option value="{{ item.inventory_item_id|default:item.material }}" selected 
                                                         data-company-id="{{ order.supplier_id }}"
                                                         data-name="{{ item.material }}">
                                                         {{ item.material }}
@@ -525,7 +537,7 @@
                                             <label class="form-label">Weight / Qty <span class="text-danger">*</span></label>
                                             <div class="row g-0">
                                                 <div class="col-8">
-                                                    <input type="number" name="items_ui[{{ forloop.counter0 }}][weight]" class="form-control rounded-end-0" placeholder="Qty" step="0.01" required value="{{ item.weight|floatformat:2 }}">
+                                                    <input type="number" name="items_ui[{{ forloop.counter0 }}][weight]" class="form-control rounded-end-0 item-weight-input" placeholder="Qty" step="0.01" required value="{{ item.weight|floatformat:2 }}">
                                                 </div>
                                                 <div class="col-4">
                                                     <select name="items_ui[{{ forloop.counter0 }}][unit]" class="form-select rounded-start-0 border-start-0 weight-unit-select">
@@ -543,7 +555,7 @@
                                             <label class="form-label">Gross Weight</label>
                                             <div class="row g-0">
                                                 <div class="col-8">
-                                                    <input type="number" name="items_ui[{{ forloop.counter0 }}][gross_weight]" class="form-control rounded-end-0" placeholder="Gross Wt." step="0.01">
+                                                    <input type="number" name="items_ui[{{ forloop.counter0 }}][gross_weight]" class="form-control rounded-end-0 item-gross-input" placeholder="Gross Wt." step="0.01">
                                                 </div>
                                                 <div class="col-4">
                                                     <select name="items_ui[{{ forloop.counter0 }}][gross_unit]" class="form-select rounded-start-0 border-start-0">
@@ -561,7 +573,7 @@
                                             <label class="form-label">Tare Weight</label>
                                             <div class="row g-0">
                                                 <div class="col-8">
-                                                    <input type="number" name="items_ui[{{ forloop.counter0 }}][tare_weight]" class="form-control rounded-end-0" placeholder="Tare Wt." step="0.01">
+                                                    <input type="number" name="items_ui[{{ forloop.counter0 }}][tare_weight]" class="form-control rounded-end-0 item-tare-input" placeholder="Tare Wt." step="0.01">
                                                 </div>
                                                 <div class="col-4">
                                                     <select name="items_ui[{{ forloop.counter0 }}][tare_unit]" class="form-select rounded-start-0 border-start-0">
@@ -572,14 +584,6 @@
                                                         <option value="pcs">pcs</option>
                                                     </select>
                                                 </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="col-md-6">
-                                            <label class="form-label">Pieces</label>
-                                            <div class="input-group">
-                                                <input type="number" name="items_ui[{{ forloop.counter0 }}][pieces]" class="form-control" placeholder="Pcs" step="1" value="{{ item.pieces|default:1 }}">
-                                                <span class="input-group-text">pcs</span>
                                             </div>
                                         </div>
 
@@ -595,6 +599,10 @@
                                                 <input class="form-check-input" type="checkbox" value="on" id="palletized_{{ forloop.counter0 }}" name="items_ui[{{ forloop.counter0 }}][palletized]" {% if item.is_palletized %}checked{% endif %}>
                                                 <label class="form-check-label" for="palletized_{{ forloop.counter0 }}">Is the packaging palletized?</label>
                                             </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Pieces</label>
+                                            <input type="number" name="items_ui[{{ forloop.counter0 }}][pieces]" class="form-control" placeholder="Pieces" min="0" value="{{ item.pieces|default:0 }}">
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label">Buy Price <span class="text-danger">*</span></label>
@@ -657,7 +665,7 @@
                                             <label class="form-label">Weight / Qty <span class="text-danger">*</span></label>
                                             <div class="row g-0">
                                                 <div class="col-8">
-                                                    <input type="number" name="items_ui[{{ forloop.counter0 }}][weight]" class="form-control rounded-end-0" placeholder="Qty" step="0.01" required value="{{ item.weight|floatformat:2 }}">
+                                                    <input type="number" name="items_ui[{{ forloop.counter0 }}][weight]" class="form-control rounded-end-0 item-weight-input" placeholder="Qty" step="0.01" required value="{{ item.weight|floatformat:2 }}">
                                                 </div>
                                                 <div class="col-4">
                                                     <select name="items_ui[{{ forloop.counter0 }}][unit]" class="form-select rounded-start-0 border-start-0 weight-unit-select">
@@ -675,7 +683,7 @@
                                             <label class="form-label">Gross Weight</label>
                                             <div class="row g-0">
                                                 <div class="col-8">
-                                                    <input type="number" name="items_ui[{{ forloop.counter0 }}][gross_weight]" class="form-control rounded-end-0" placeholder="Gross Wt." step="0.01" value="{{ item.gross_weight|floatformat:2 }}">
+                                                    <input type="number" name="items_ui[{{ forloop.counter0 }}][gross_weight]" class="form-control rounded-end-0 item-gross-input" placeholder="Gross Wt." step="0.01" value="{{ item.gross_weight|floatformat:2 }}">
                                                 </div>
                                                 <div class="col-4">
                                                     <select name="items_ui[{{ forloop.counter0 }}][gross_unit]" class="form-select rounded-start-0 border-start-0">
@@ -693,7 +701,7 @@
                                             <label class="form-label">Tare Weight</label>
                                             <div class="row g-0">
                                                 <div class="col-8">
-                                                    <input type="number" name="items_ui[{{ forloop.counter0 }}][tare_weight]" class="form-control rounded-end-0" placeholder="Tare Wt." step="0.01" value="{{ item.tare_weight|floatformat:2 }}">
+                                                    <input type="number" name="items_ui[{{ forloop.counter0 }}][tare_weight]" class="form-control rounded-end-0 item-tare-input" placeholder="Tare Wt." step="0.01" value="{{ item.tare_weight|floatformat:2 }}">
                                                 </div>
                                                 <div class="col-4">
                                                     <select name="items_ui[{{ forloop.counter0 }}][tare_unit]" class="form-select rounded-start-0 border-start-0">
@@ -704,14 +712,6 @@
                                                         <option value="pcs" {% if item.tare_weight_unit == 'pcs' %}selected{% endif %}>pcs</option>
                                                     </select>
                                                 </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="col-md-6">
-                                            <label class="form-label">Pieces</label>
-                                            <div class="input-group">
-                                                <input type="number" name="items_ui[{{ forloop.counter0 }}][pieces]" class="form-control" placeholder="Pcs" step="1" value="{{ item.pieces|default:1 }}">
-                                                <span class="input-group-text">pcs</span>
                                             </div>
                                         </div>
 
@@ -727,6 +727,10 @@
                                                 <input class="form-check-input" type="checkbox" value="on" id="palletized_{{ forloop.counter0 }}" name="items_ui[{{ forloop.counter0 }}][palletized]" {% if item.is_palletized %}checked{% endif %}>
                                                 <label class="form-check-label" for="palletized_{{ forloop.counter0 }}">Is the packaging palletized?</label>
                                             </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Number of Pieces</label>
+                                            <input type="number" name="items_ui[{{ forloop.counter0 }}][pieces]" class="form-control" placeholder="Pieces" min="0" value="{{ item.pieces|default:0 }}">
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label">Buy Price <span class="text-danger">*</span></label>
@@ -762,15 +766,13 @@
                                             <select name="items_ui[0][material]" class="form-select shipment-material-select" required>
                                                 <option value="">Select a material</option>
                                                 {% for item in inventory_items %}
-                                                {% if item.quantity > 0 %}
                                                 <option value="{{ item.id }}"
                                                     data-max="{{ item.quantity }}"
                                                     data-unit="{{ item.unit_of_measure }}"
                                                     data-name="{{ item.product_name }}"
                                                     data-company-id="{{ item.warehouse.company_id|default:'' }}">
-                                                    {{ item.product_name }} - {{ item.display_stock }}
+                                                    {{ item.product_name }}
                                                 </option>
-                                                {% endif %}
                                                 {% endfor %}
                                             </select>
                                             <button class="btn btn-outline-secondary" type="button" title="Search">
@@ -783,7 +785,7 @@
                                         <label class="form-label">Weight / Qty <span class="text-danger">*</span></label>
                                         <div class="row g-0">
                                             <div class="col-8">
-                                                <input type="number" name="items_ui[0][weight]" class="form-control rounded-end-0" placeholder="Qty" step="0.01" required>
+                                                <input type="number" name="items_ui[0][weight]" class="form-control rounded-end-0 item-weight-input" placeholder="Qty" step="0.01" required>
                                             </div>
                                             <div class="col-4">
                                                 <select name="items_ui[0][unit]" class="form-select rounded-start-0 border-start-0 weight-unit-select">
@@ -801,7 +803,7 @@
                                         <label class="form-label">Gross Weight</label>
                                         <div class="row g-0">
                                             <div class="col-8">
-                                                <input type="number" name="items_ui[0][gross_weight]" class="form-control rounded-end-0" placeholder="Gross Wt." step="0.01">
+                                                <input type="number" name="items_ui[0][gross_weight]" class="form-control rounded-end-0 item-gross-input" placeholder="Gross Wt." step="0.01">
                                             </div>
                                             <div class="col-4">
                                                 <select name="items_ui[0][gross_unit]" class="form-select rounded-start-0 border-start-0">
@@ -819,7 +821,7 @@
                                         <label class="form-label">Tare Weight</label>
                                         <div class="row g-0">
                                             <div class="col-8">
-                                                <input type="number" name="items_ui[0][tare_weight]" class="form-control rounded-end-0" placeholder="Tare Wt." step="0.01">
+                                                <input type="number" name="items_ui[0][tare_weight]" class="form-control rounded-end-0 item-tare-input" placeholder="Tare Wt." step="0.01">
                                             </div>
                                             <div class="col-4">
                                                 <select name="items_ui[0][tare_unit]" class="form-select rounded-start-0 border-start-0">
@@ -830,14 +832,6 @@
                                                     <option value="pcs">pcs</option>
                                                 </select>
                                             </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <label class="form-label">Pieces</label>
-                                        <div class="input-group">
-                                            <input type="number" name="items_ui[0][pieces]" class="form-control" placeholder="Pcs" step="1" value="1">
-                                            <span class="input-group-text">pcs</span>
                                         </div>
                                     </div>
 
@@ -853,6 +847,10 @@
                                             <input class="form-check-input" type="checkbox" value="on" id="palletized_0" name="items_ui[0][palletized]">
                                             <label class="form-check-label" for="palletized_0">Is the packaging palletized?</label>
                                         </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Pieces</label>
+                                        <input type="number" name="items_ui[0][pieces]" class="form-control" placeholder="Pieces" min="0" value="0">
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label">Buy Price <span class="text-danger">*</span></label>
@@ -898,17 +896,13 @@
                     </div>
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-4 mb-3">
+                            <div class="col-md-6 mb-3">
                                 <label class="form-label">Weight (kg)</label>
                                 <input type="number" name="total_weight" class="form-control" value="{% if is_create %}{{ default_weight|floatformat:2 }}{% else %}{{ shipment.total_weight|default:'0' }}{% endif %}" step="0.01">
                             </div>
-                            <div class="col-md-4 mb-3">
+                            <div class="col-md-6 mb-3">
                                 <label class="form-label">Volume (m³)</label>
                                 <input type="number" name="total_volume" class="form-control" value="{{ shipment.total_volume|default:'0' }}" step="0.0001">
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Number of Pieces</label>
-                                <input type="number" name="number_of_pieces" class="form-control" value="{% if is_create %}{{ default_pieces }}{% else %}{{ shipment.number_of_pieces|default:'1' }}{% endif %}">
                             </div>
                         </div>
                         <div class="mb-3">
@@ -940,26 +934,6 @@
                 </div>
                 {% endif %}
 
-                <!-- Tracking -->
-                <div class="card mb-4">
-                    <div class="card-header bg-white">
-                        <h5 class="card-title mb-0"><i class="fas fa-location-dot me-2 text-primary"></i>Tracking Setup</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label class="form-label">Vehicle Number</label>
-                            <input type="text" name="vehicle_number" class="form-control" value="{{ shipment.vehicle_number|default:'' }}" placeholder="e.g. RJ14-GA-1020">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Driver Name</label>
-                            <input type="text" name="driver_name" class="form-control" value="{{ shipment.driver_name|default:'' }}" placeholder="Driver / operator name">
-                        </div>
-                        <div class="mb-0">
-                            <label class="form-label">Driver Phone</label>
-                            <input type="text" name="driver_phone" class="form-control" value="{{ shipment.driver_phone|default:'' }}" placeholder="Phone for tracking coordination">
-                        </div>
-                    </div>
-                </div>
                 
                 <!-- Special Requirements -->
                 <div class="card mb-4">
@@ -1058,16 +1032,16 @@
             </div>
             <div class="mb-3">
                 <label class="form-label">Mobile number</label>
-                <input type="text" id="contactDrawerMobile" class="form-control" placeholder="(000) 000-0000">
+                <input type="text" id="contactDrawerMobile" class="form-control" placeholder="(000) 000-0000" inputmode="numeric" maxlength="14">
             </div>
             <div class="row">
                 <div class="col-8">
                     <label class="form-label">Office Number</label>
-                    <input type="text" id="contactDrawerOffice" class="form-control" placeholder="(000) 000-0000">
+                    <input type="text" id="contactDrawerOffice" class="form-control" placeholder="(000) 000-0000" inputmode="numeric" maxlength="14">
                 </div>
                 <div class="col-4">
                     <label class="form-label">Extension</label>
-                    <input type="text" id="contactDrawerExtension" class="form-control" placeholder="00000">
+                    <input type="text" id="contactDrawerExtension" class="form-control" placeholder="00000" inputmode="numeric" maxlength="6">
                 </div>
             </div>
         </form>
@@ -1095,7 +1069,7 @@
             </div>
             <div class="mb-3">
                 <label class="form-label">Phone Number</label>
-                <input type="text" class="form-control" id="locationDrawerPhone" placeholder="(000) 000-0000">
+                <input type="text" class="form-control" id="locationDrawerPhone" placeholder="(000) 000-0000" inputmode="numeric" maxlength="14">
             </div>
             <div class="mb-3">
                 <label class="form-label">Shipping Requirements</label>
@@ -1135,8 +1109,47 @@
 {% endblock %}
 
 {% block extra_js %}
+<!-- jQuery and Select2 JS -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
 (function() {
+    $(document).ready(function() {
+        // Initialize Select2 for Tags
+        if ($.fn.select2) {
+            $('.select2-basic').select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                placeholder: 'Select or type to create tags...',
+                tags: true,
+                tokenSeparators: [','],
+                createTag: function (params) {
+                    var term = $.trim(params.term);
+                    if (term === '') return null;
+                    return {
+                        id: term,
+                        text: term,
+                        newTag: true
+                    };
+                },
+                templateResult: function (data) {
+                    if (data.newTag) {
+                        return "Hit Enter to create new '" + data.text + "'";
+                    }
+                    return data.text;
+                }
+            });
+
+            // FORCE EMPTY ON LOAD
+            $('#tags-select').val(null).trigger('change');
+        }
+
+        // Clear tags when order changes
+        $('#order-select').on('change', function() {
+            $('#tags-select').val(null).trigger('change');
+        });
+    });
+
     function assignMyCompany(selectId, companyId, companyName, companyAddress) {
         const select = document.getElementById(selectId);
         if (!select || !companyId) return;
@@ -1379,6 +1392,29 @@
     let activeLocationSelectId = '';
     let activeContactSelectId = '';
 
+    function formatPhoneNumber(digits) {
+        const cleaned = (digits || '').replace(/\D/g, '').slice(0, 10);
+        if (!cleaned) return '';
+        if (cleaned.length <= 3) return `(${cleaned}`;
+        if (cleaned.length <= 6) return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3)}`;
+        return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
+    }
+
+    function enforceNumericLimit(inputId, maxLength, formatter) {
+        const input = document.getElementById(inputId);
+        if (!input) return;
+
+        input.addEventListener('input', function() {
+            const digits = (this.value || '').replace(/\D/g, '').slice(0, maxLength);
+            this.value = formatter ? formatter(digits) : digits;
+        });
+    }
+
+    enforceNumericLimit('contactDrawerMobile', 10, formatPhoneNumber);
+    enforceNumericLimit('contactDrawerOffice', 10, formatPhoneNumber);
+    enforceNumericLimit('contactDrawerExtension', 6);
+    enforceNumericLimit('locationDrawerPhone', 10, formatPhoneNumber);
+
     function toggleShipmentFieldLock(select, shouldLock) {
         if (!select) return;
         select.disabled = shouldLock;
@@ -1601,12 +1637,14 @@
     document.querySelectorAll('.location-drawer-trigger').forEach(function(button) {
         button.addEventListener('click', function() {
             activeLocationSelectId = this.dataset.locationSelectTarget || '';
+            document.getElementById('locationDrawerForm')?.reset();
         });
     });
 
     document.querySelectorAll('.contact-drawer-trigger').forEach(function(button) {
         button.addEventListener('click', function() {
             activeContactSelectId = this.dataset.contactSelectTarget || '';
+            document.getElementById('contactDrawerForm')?.reset();
         });
     });
 
@@ -1824,7 +1862,7 @@
                 if (el.type === 'checkbox' || el.type === 'radio') {
                     el.checked = false;
                 } else {
-                    el.value = el.name && el.name.includes('[pieces]') ? '1' : '';
+                    el.value = '';
                 }
             });
             clone.querySelectorAll('select').forEach(function(el) {
@@ -1887,6 +1925,24 @@
                 // Sync tare weight unit
                 const tareUnitSelect = itemContainer.querySelector('select[name*="[tare_unit]"]');
                 if (tareUnitSelect) tareUnitSelect.value = selectedUnit;
+            }
+        });
+
+        function calculateGrossForItem(container) {
+            const weightInput = container.querySelector('.item-weight-input');
+            const tareInput = container.querySelector('.item-tare-input');
+            const grossInput = container.querySelector('.item-gross-input');
+            if (weightInput && tareInput && grossInput) {
+                const weight = parseFloat(weightInput.value) || 0;
+                const tare = parseFloat(tareInput.value) || 0;
+                grossInput.value = (weight + tare).toFixed(2);
+            }
+        }
+
+        root.addEventListener('input', function(e) {
+            if (e.target.classList.contains('item-weight-input') || e.target.classList.contains('item-tare-input')) {
+                const itemContainer = e.target.closest('.shipment-item');
+                if (itemContainer) calculateGrossForItem(itemContainer);
             }
         });
     })();

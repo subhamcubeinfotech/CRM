@@ -37,7 +37,21 @@
     #dest-location-select.location-select-locked {
         cursor: not-allowed;
     }
+
+    /* Select2 Bootstrap 5 Theme Adjustments */
+    .select2-container--bootstrap-5 .select2-selection {
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        min-height: 38px;
+    }
+    .select2-container--bootstrap-5.select2-container--focus .select2-selection {
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
 </style>
+<!-- Select2 CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
 {% endblock %}
 
 {% block content %}
@@ -80,7 +94,7 @@
                 </div>
 
                 <div class="mb-4">
-                    <label class="form-label fw-bold small text-uppercase">Source Location<span
+                    <label class="form-label mb-1 fw-bold small text-uppercase">Source Location<span
                             class="text-danger">*</span></label>
                     <div class="input-group">
                         <select name="source_location" id="source-location-select"
@@ -97,6 +111,11 @@
                                 {{ warehouse.display_name }}</option>
                             {% endfor %}
                         </select>
+                        <button type="button" class="btn btn-outline-primary location-add-btn" id="source-location-add-btn" 
+                                title="Add New Location" data-bs-toggle="offcanvas" data-bs-target="#offcanvasAddWarehouse" 
+                                data-select-id="source-location-select" data-company-select-id="supplier-select" disabled>
+                            + Add
+                        </button>
                     </div>
                 </div>
 
@@ -132,7 +151,7 @@
                 </div>
 
                 <div class="mb-4">
-                    <label class="form-label fw-bold small text-uppercase">Destination Location<span
+                    <label class="form-label mb-1 fw-bold small text-uppercase">Destination Location<span
                             class="text-danger">*</span></label>
                     <div class="input-group">
                         <select name="destination_location" id="dest-location-select"
@@ -149,6 +168,11 @@
                                 {{ warehouse.display_name }}</option>
                             {% endfor %}
                         </select>
+                        <button type="button" class="btn btn-outline-primary location-add-btn" id="dest-location-add-btn" 
+                                title="Add New Location" data-bs-toggle="offcanvas" data-bs-target="#offcanvasAddWarehouse" 
+                                data-select-id="dest-location-select" data-company-select-id="receiver-select" disabled>
+                            + Add
+                        </button>
                     </div>
                 </div>
 
@@ -164,13 +188,8 @@
         <div class="row g-4 mb-5 border-top pt-4">
             <div class="col-md-4">
                 <label class="form-label fw-bold small text-uppercase">Tags</label>
-                <select class="form-select" name="tags" multiple>
-                    {% for tag in tags %}
-                    <option value="{{ tag.id }}" {% if tag in copied_order.tags.all %}selected{% endif %}>{{ tag.name }}
-                    </option>
-                    {% empty %}
-                    <option disabled>No tags available — add via Admin</option>
-                    {% endfor %}
+                <select class="form-select select2-basic" id="tags-select" name="tags" multiple>
+                    <!-- Existing tags removed per user request -->
                 </select>
             </div>
             <div class="col-md-4">
@@ -218,13 +237,11 @@
                                 <select name="material[]" class="form-select material-select" required>
                                     <option value="" data-max="0">Select Material</option>
                                     {% for item in inventory_items %}
-                                    {% if item.quantity > 0 %}
                                     <option value="{{ item.id }}" data-max="{{ item.quantity }}"
                                         data-unit="{{ item.unit_of_measure }}" data-name="{{ item.product_name }}"
-                                        data-company-id="{{ item.warehouse.company_id|default:'' }}" {% if c_item.material == item.product_name %}selected{% endif %}>
-                                        {{ item.product_name }} - {{ item.display_stock }}
+                                        data-company-id="{{ item.company_id|default:item.warehouse.company_id|default:'' }}" {% if c_item.material == item.product_name %}selected{% endif %}>
+                                        {{ item.product_name }}
                                     </option>
-                                    {% endif %}
                                     {% endfor %}
                                 </select>
                             </div>
@@ -248,8 +265,6 @@
                                         <option value="mt" {% if c_item.weight_unit == "mt" %}selected{% endif %}>MT
                                         </option>
                                         <option value="st" {% if c_item.weight_unit == "st" %}selected{% endif %}>ST
-                                        </option>
-                                        <option value="pcs" {% if c_item.weight_unit == "pcs" %}selected{% endif %}>pcs
                                         </option>
                                     </select>
                                 </div>
@@ -275,7 +290,6 @@
                                         <option value="per kgs" {% if c_item.buy_price_unit == "per kgs" %}selected{% endif %}>per kgs</option>
                                         <option value="per mt" {% if c_item.buy_price_unit == "per mt" %}selected{% endif %}>per MT</option>
                                         <option value="per st" {% if c_item.buy_price_unit == "per st" %}selected{% endif %}>per ST</option>
-                                        <option value="per pcs" {% if c_item.buy_price_unit == "per pcs" %}selected{% endif %}>per pcs</option>
                                     </select>
                                 </div>
                             </div>
@@ -298,7 +312,6 @@
                                         <option value="per kgs" {% if c_item.sell_price_unit == "per kgs" %}selected{% endif %}>per kgs</option>
                                         <option value="per mt" {% if c_item.sell_price_unit == "per mt" %}selected{% endif %}>per MT</option>
                                         <option value="per st" {% if c_item.sell_price_unit == "per st" %}selected{% endif %}>per ST</option>
-                                        <option value="per pcs" {% if c_item.sell_price_unit == "per pcs" %}selected{% endif %}>per pcs</option>
                                     </select>
                                 </div>
                             </div>
@@ -335,13 +348,11 @@
                                 <select name="material[]" class="form-select material-select" required>
                                     <option value="" data-max="0">Select Material</option>
                                     {% for item in inventory_items %}
-                                    {% if item.quantity > 0 %}
                                     <option value="{{ item.id }}" data-max="{{ item.quantity }}"
                                         data-unit="{{ item.unit_of_measure }}" data-name="{{ item.product_name }}"
-                                        data-company-id="{{ item.warehouse.company_id|default:'' }}">
-                                        {{ item.product_name }} - {{ item.display_stock }}
+                                        data-company-id="{{ item.company_id|default:item.warehouse.company_id|default:'' }}">
+                                        {{ item.product_name }}
                                     </option>
-                                    {% endif %}
                                     {% endfor %}
                                 </select>
                             </div>
@@ -362,7 +373,6 @@
                                         <option value="kgs">kgs</option>
                                         <option value="mt">MT</option>
                                         <option value="st">ST</option>
-                                        <option value="pcs">pcs</option>
                                     </select>
                                 </div>
                             </div>
@@ -386,7 +396,6 @@
                                         <option value="per kgs">per kgs</option>
                                         <option value="per mt">per MT</option>
                                         <option value="per st">per ST</option>
-                                        <option value="per pcs">per pcs</option>
                                     </select>
                                 </div>
                             </div>
@@ -408,7 +417,6 @@
                                         <option value="per kgs">per kgs</option>
                                         <option value="per mt">per MT</option>
                                         <option value="per st">per ST</option>
-                                        <option value="per pcs">per pcs</option>
                                     </select>
                                 </div>
                             </div>
@@ -435,7 +443,7 @@
                 {% endif %}
             </div>
 
-            <button type="button" class="btn btn-outline-primary btn-sm mt-2" id="add-item-btn">
+            <button type="button" class="btn btn-outline-primary btn-sm mt-2" onclick="addManifestItemManual(event)">
                 <i class="fas fa-plus me-1"></i>Add Item
             </button>
         </div>
@@ -510,7 +518,7 @@
             </div>
 
             <!-- KPI Stats Row -->
-            <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; border-bottom: 1px solid #f0f2f8;">
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; border-bottom: 1px solid #f0f2f8;">
                 <div style="padding: 18px 22px; border-right: 1px solid #f0f2f8;">
                     <div style="display:flex; align-items:center; gap:7px; margin-bottom:6px;">
                         <div
@@ -551,19 +559,7 @@
                     </div>
                     <div style="font-size:0.7rem;color:#9ca3af;margin-top:3px;" id="est-margin-text">Margin: —</div>
                 </div>
-                <div style="padding: 18px 22px;">
-                    <div style="display:flex; align-items:center; gap:7px; margin-bottom:6px;">
-                        <div
-                            style="width:28px;height:28px;border-radius:7px;background:#e0f2fe;display:flex;align-items:center;justify-content:center;">
-                            <i class="fas fa-cubes" style="font-size:0.7rem;color:#0ea5e9;"></i>
-                        </div>
-                        <span
-                            style="font-size:0.72rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">Total
-                            Pieces</span>
-                    </div>
-                    <div id="est-pieces" style="font-size:1.45rem;font-weight:800;color:#1a1f36;line-height:1;">0</div>
-                    <div style="font-size:0.7rem;color:#9ca3af;margin-top:3px;">From manifest</div>
-                </div>
+
             </div>
 
             <!-- Margin Bar -->
@@ -608,13 +604,41 @@
             }
         </style>
 
-        <!-- Total Weight Target -->
+        <!-- Total Weight  -->
         <div class="card bg-light border-0 mb-4">
             <div class="card-body">
-                <label class="form-label fw-bold small text-uppercase">Total Weight Target (lbs)<span
+                <label class="form-label fw-bold small text-uppercase">Total Weight <span
                         class="text-danger">*</span></label>
-                <input type="number" name="total_weight_target" class="form-control" placeholder="e.g. 200000" required
-                    value="{{ copied_order.total_weight_target|stringformat:'f'|default:'' }}">
+                <div class="row g-2">
+                    <div class="col-8">
+                        <input type="number" name="total_weight_target" class="form-control" placeholder="e.g. 200000" required
+                            value="{% if order %}{{ order.total_weight_target|stringformat:'f' }}{% elif copied_order %}{{ copied_order.total_weight_target|stringformat:'f' }}{% endif %}">
+                    </div>
+                    <div class="col-4">
+                        <select name="total_weight_unit" class="form-select">
+                            {% if order %}
+                                {% with current_unit=order.total_weight_unit %}
+                                    <option value="lbs" {% if current_unit == 'lbs' %}selected{% endif %}>lbs</option>
+                                    <option value="kgs" {% if current_unit == 'kgs' %}selected{% endif %}>kgs</option>
+                                    <option value="mt" {% if current_unit == 'mt' %}selected{% endif %}>MT</option>
+                                    <option value="st" {% if current_unit == 'st' %}selected{% endif %}>ST</option>
+                                {% endwith %}
+                            {% elif copied_order %}
+                                {% with current_unit=copied_order.total_weight_unit %}
+                                    <option value="lbs" {% if current_unit == 'lbs' %}selected{% endif %}>lbs</option>
+                                    <option value="kgs" {% if current_unit == 'kgs' %}selected{% endif %}>kgs</option>
+                                    <option value="mt" {% if current_unit == 'mt' %}selected{% endif %}>MT</option>
+                                    <option value="st" {% if current_unit == 'st' %}selected{% endif %}>ST</option>
+                                {% endwith %}
+                            {% else %}
+                                <option value="lbs" selected>lbs</option>
+                                <option value="kgs">kgs</option>
+                                <option value="mt">MT</option>
+                                <option value="st">ST</option>
+                            {% endif %}
+                        </select>
+                    </div>
+                </div>
                 <div class="form-text">Used for calculating progress bar in dashboard.</div>
             </div>
         </div>
@@ -625,7 +649,83 @@
     </form>
 </div>
 
+
+
+<!-- Add Material Offcanvas -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasAddMaterial" aria-labelledby="offcanvasAddMaterialLabel" style="width: 500px; border-left: none; box-shadow: -10px 0 30px rgba(0,0,0,0.1); z-index: 1060;">
+    <div class="offcanvas-header border-bottom p-4">
+        <h5 class="offcanvas-title fw-bold text-primary" id="offcanvasAddMaterialLabel">New Material</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body p-4">
+        <form id="addMaterialForm">
+            {% csrf_token %}
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase mb-2">Usage <span class="text-danger">*</span></label>
+                <div class="d-flex gap-4">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="usage" id="usageOngoing" value="ongoing" checked>
+                        <label class="form-check-label small" for="usageOngoing">Ongoing <span class="text-muted">(reusable)</span></label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="usage" id="usageSpot" value="spot">
+                        <label class="form-check-label small" for="usageSpot">Spot <span class="text-muted">(one-time use)</span></label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase mb-1">Display Name</label>
+                {{ material_form.name }}
+                <div class="form-text mt-1" style="font-size: 0.75rem;">Add a clear, descriptive name to help others quickly identify this material.</div>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase mb-1">Description</label>
+                {{ material_form.description }}
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase mb-2">Images and Documents</label>
+                <div class="border rounded-3 p-4 text-center bg-light" style="border-style: dashed !important; border-width: 2px !important;" id="materialUploadZone">
+                    <div class="mb-3">
+                        <input type="file" id="materialImageInput" name="image" hidden>
+                        <input type="file" id="materialDocumentInput" name="document" hidden>
+                        <button type="button" class="btn btn-primary btn-sm px-3 me-2" id="btnChooseMaterialFile"><i class="fas fa-plus me-1"></i> Choose</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm px-3" id="btnCancelMaterialFile"><i class="fas fa-times me-1"></i> Cancel</button>
+                    </div>
+                    <p class="text-muted small mb-0" id="materialFileStatus">Drag and drop files here to upload</p>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-6">
+                    <label class="form-label fw-bold small text-uppercase mb-1">Material <span class="text-danger">*</span></label>
+                    {{ material_form.material_type }}
+                </div>
+                <div class="col-6">
+                    <label class="form-label fw-bold small text-uppercase mb-1">Material Type <span class="text-danger">*</span></label>
+                    {{ material_form.product_type }}
+                </div>
+            </div>
+
+            <div class="mt-5 d-flex gap-2 pt-3 border-top">
+                <button type="submit" class="btn btn-primary px-4 fw-bold" id="btnSubmitMaterial">Submit</button>
+                <button type="button" class="btn btn-outline-primary px-4 fw-bold">Review</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+
+{% block extra_js %}
+<!-- jQuery and Select2 JS -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
 <script>
+    // --- Shared Functions ---
     function syncLocationSelectState(selectId) {
         const select = document.getElementById(selectId);
         if (!select) return;
@@ -671,12 +771,12 @@
                 }
                 noMaterialOption.hidden = false;
                 noMaterialOption.style.display = '';
-                placeholderOption.text = 'Select a material';
+                placeholderOption.text = 'No materials found';
                 materialSelect.value = '';
             } else if (noMaterialOption) {
                 noMaterialOption.hidden = true;
                 noMaterialOption.style.display = 'none';
-                placeholderOption.text = 'Select a material';
+                placeholderOption.text = 'Select material';
             }
             materialSelect.disabled = false;
         });
@@ -703,22 +803,6 @@
         select.dispatchEvent(new Event('change'));
     }
 
-    document.getElementById('assign-supplier-mine')?.addEventListener('click', function (e) {
-        e.preventDefault();
-        assignMyCompany('supplier-select', this.dataset.companyId, "{{ assign_company.name|default:'My Company' }}", this.dataset.address);
-        filterMaterialOptions();
-    });
-
-    document.getElementById('assign-receiver-mine')?.addEventListener('click', function (e) {
-        e.preventDefault();
-        assignMyCompany('receiver-select', this.dataset.companyId, "{{ assign_company.name|default:'My Company' }}", this.dataset.address);
-    });
-
-    document.getElementById('assign-rep-me')?.addEventListener('click', function (e) {
-        e.preventDefault();
-        document.getElementById('rep-select').value = this.dataset.userId;
-    });
-
     function assignCompanyLocation(selectId, partySelectId, force = false) {
         const partySelect = document.getElementById(partySelectId);
         const locationSelect = document.getElementById(selectId);
@@ -742,19 +826,20 @@
         let totalRevenue = 0, totalCost = 0, totalPieces = 0;
         const freightCost = parseFloat(document.getElementById('freight-cost-input')?.value) || 0;
         const breakdownList = document.getElementById('profit-items-list');
+        if (!breakdownList) return;
+        
         breakdownList.innerHTML = '';
         let hasAny = false;
 
         items.forEach((item, idx) => {
             const materialSelect = item.querySelector('.material-select');
             const qty = parseFloat(item.querySelector('.weight-input')?.value) || 0;
-            const unit = item.querySelector('.unit-display')?.value || 'lbs';
             const buyP = parseFloat(item.querySelector('[name="buy_price[]"]')?.value) || 0;
             const sellP = parseFloat(item.querySelector('[name="sell_price[]"]')?.value) || 0;
             const material = materialSelect?.selectedOptions[0]?.dataset.name || materialSelect?.value || `Item ${idx + 1}`;
             if (!materialSelect?.value || qty === 0 || (buyP === 0 && sellP === 0)) return;
             hasAny = true;
-            if (unit === 'pcs') totalPieces += qty;
+
             const cost = buyP * qty, revenue = sellP * qty, profit = revenue - cost;
             totalRevenue += revenue; totalCost += cost;
             const isPos = profit >= 0, sign = isPos ? '+' : '';
@@ -763,11 +848,12 @@
         totalCost += freightCost;
         const totalProfit = totalRevenue - totalCost, marginVal = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
         const isProfit = totalProfit >= 0, profitColor = isProfit ? '#16a34a' : '#dc2626';
+        
         document.getElementById('est-revenue').textContent = '$' + totalRevenue.toFixed(2);
         document.getElementById('est-cost').textContent = '$' + totalCost.toFixed(2);
         document.getElementById('est-profit').textContent = (isProfit ? '+' : '') + '$' + totalProfit.toFixed(2);
         document.getElementById('est-profit').style.color = profitColor;
-        document.getElementById('est-pieces').textContent = Math.round(totalPieces);
+        
         document.getElementById('est-margin-text').textContent = totalRevenue > 0 ? `Margin: ${marginVal.toFixed(1)}%` : 'Margin: —';
         const iconBg = document.getElementById('profit-icon-bg'), icon = document.getElementById('profit-icon');
         if (iconBg && icon) { iconBg.style.background = isProfit ? '#dcfce7' : '#fee2e2'; icon.style.color = profitColor; icon.className = isProfit ? 'fas fa-star' : 'fas fa-exclamation-triangle'; }
@@ -775,10 +861,6 @@
         if (barFill && barLabel) { const barWidth = Math.min(Math.max(Math.abs(marginVal), 0), 100); barFill.style.width = barWidth + '%'; barFill.style.background = isProfit ? 'linear-gradient(90deg,#4f46e5,#22c55e)' : 'linear-gradient(90deg,#f97316,#dc2626)'; barLabel.textContent = totalRevenue > 0 ? marginVal.toFixed(1) + '%' : '—'; barLabel.style.color = profitColor; }
         document.getElementById('profit-items-breakdown').style.display = hasAny ? 'block' : 'none';
     }
-
-    document.getElementById('manifest-items-container').addEventListener('input', recalcProfit);
-    document.getElementById('manifest-items-container').addEventListener('change', recalcProfit);
-    document.getElementById('freight-cost-input').addEventListener('input', recalcProfit);
 
     function setupInventoryValidation(container) {
         const select = container.querySelector('.material-select'), input = container.querySelector('.weight-input'), warning = container.querySelector('.weight-warning'), unitDisplay = container.querySelector('.unit-display');
@@ -808,10 +890,10 @@
         sellUnit.addEventListener('change', function () { syncManifestUnits(container, this.value.replace(/^per\s+/i, '')); });
     }
 
-    document.querySelectorAll('.manifest-item').forEach(item => { setupInventoryValidation(item); setupManifestUnitSync(item); });
-
     function filterLocations(partySelectId, locationSelectId) {
         const partySelect = document.getElementById(partySelectId), locationSelect = document.getElementById(locationSelectId);
+        if (!partySelect || !locationSelect) return;
+
         function updateFilter() {
             const companyId = partySelect.value, companyAddress = partySelect.selectedOptions[0]?.dataset.address;
             [...locationSelect.options].forEach(opt => { if (opt.value.startsWith('temp_addr_')) opt.remove(); });
@@ -834,22 +916,335 @@
         updateFilter();
     }
 
-    filterLocations('supplier-select', 'source-location-select'); filterLocations('receiver-select', 'dest-location-select');
-    syncLocationSelectState('source-location-select'); syncLocationSelectState('dest-location-select');
-    syncLocationLockState('source-location-select', 'supplier-select'); syncLocationLockState('dest-location-select', 'receiver-select');
-    filterMaterialOptions(); document.getElementById('supplier-select')?.addEventListener('change', filterMaterialOptions);
-    recalcProfit();
+    function toggleAddButtons() {
+        const supplierSelect = document.getElementById('supplier-select');
+        const receiverSelect = document.getElementById('receiver-select');
+        const sourceAddBtn = document.getElementById('source-location-add-btn');
+        const destAddBtn = document.getElementById('dest-location-add-btn');
 
-    document.getElementById('add-item-btn').addEventListener('click', function () {
-        const container = document.getElementById('manifest-items-container'), firstItem = container.querySelector('.manifest-item'), newItem = firstItem.cloneNode(true);
-        newItem.querySelectorAll('input').forEach(input => { if (input.type === 'checkbox') input.checked = false; else input.value = ''; input.classList.remove('is-invalid'); });
-        newItem.querySelectorAll('select').forEach(select => { select.value = ''; });
-        const hiddenPallet = newItem.querySelector('.palletized-hidden'); if (hiddenPallet) hiddenPallet.value = 'false';
-        newItem.querySelector('.weight-warning').style.display = 'none';
-        const removeBtn = newItem.querySelector('.remove-item-btn'); if (removeBtn) removeBtn.style.display = 'block';
-        container.appendChild(newItem); setupInventoryValidation(newItem); setupManifestUnitSync(newItem); syncManifestUnits(newItem, 'lbs'); filterMaterialOptions();
+        if (sourceAddBtn) sourceAddBtn.disabled = !supplierSelect.value;
+        if (destAddBtn) destAddBtn.disabled = !receiverSelect.value;
+    }
+
+    // --- DOM Ready Initialization ---
+    document.addEventListener('DOMContentLoaded', function() {
+        // 1. Logistics Initialization
+        filterLocations('supplier-select', 'source-location-select'); 
+        filterLocations('receiver-select', 'dest-location-select');
+        syncLocationSelectState('source-location-select'); 
+        syncLocationSelectState('dest-location-select');
+        syncLocationLockState('source-location-select', 'supplier-select'); 
+        syncLocationLockState('dest-location-select', 'receiver-select');
+        filterMaterialOptions(); 
+        document.getElementById('supplier-select')?.addEventListener('change', filterMaterialOptions);
+        
+        document.getElementById('supplier-select')?.addEventListener('change', toggleAddButtons);
+        document.getElementById('receiver-select')?.addEventListener('change', toggleAddButtons);
+        toggleAddButtons();
+
+        // 2. Button Event Listeners
+        document.getElementById('assign-supplier-mine')?.addEventListener('click', function (e) {
+            e.preventDefault();
+            assignMyCompany('supplier-select', this.dataset.companyId, "{{ assign_company.name|default:'My Company' }}", this.dataset.address);
+            filterMaterialOptions();
+        });
+
+        document.getElementById('assign-receiver-mine')?.addEventListener('click', function (e) {
+            e.preventDefault();
+            assignMyCompany('receiver-select', this.dataset.companyId, "{{ assign_company.name|default:'My Company' }}", this.dataset.address);
+        });
+
+        document.getElementById('assign-rep-me')?.addEventListener('click', function (e) {
+            e.preventDefault();
+            document.getElementById('rep-select').value = this.dataset.userId;
+        });
+
+        // 3. Manifest Item Logic
+        document.querySelectorAll('.manifest-item').forEach(item => { 
+            setupInventoryValidation(item); 
+            setupManifestUnitSync(item); 
+        });
+
+        document.getElementById('manifest-items-container')?.addEventListener('input', recalcProfit);
+        document.getElementById('manifest-items-container')?.addEventListener('change', recalcProfit);
+        document.getElementById('freight-cost-input')?.addEventListener('input', recalcProfit);
+        recalcProfit();
+
+        let isAddingItem = false;
+        window.addManifestItemManual = function(e) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            if (isAddingItem) return;
+            isAddingItem = true;
+            
+            console.log("Add Item logic triggered via named function");
+            const container = document.getElementById('manifest-items-container');
+            const firstItem = container.querySelector('.manifest-item');
+            if (!firstItem) { isAddingItem = false; return; }
+            
+            const newItem = firstItem.cloneNode(true);
+            newItem.querySelectorAll('input').forEach(input => { 
+                if (input.type === 'checkbox') input.checked = false; 
+                else input.value = ''; 
+                input.classList.remove('is-invalid'); 
+            });
+            newItem.querySelectorAll('select').forEach(select => { select.value = ''; });
+            const hiddenPallet = newItem.querySelector('.palletized-hidden'); 
+            if (hiddenPallet) hiddenPallet.value = 'false';
+            newItem.querySelector('.weight-warning').style.display = 'none';
+            const removeBtn = newItem.querySelector('.remove-item-btn'); 
+            if (removeBtn) removeBtn.style.display = 'block';
+            
+            container.appendChild(newItem); 
+            if (typeof setupInventoryValidation === 'function') setupInventoryValidation(newItem); 
+            if (typeof setupManifestUnitSync === 'function') setupManifestUnitSync(newItem); 
+            if (typeof syncManifestUnits === 'function') syncManifestUnits(newItem, 'lbs'); 
+            if (typeof filterMaterialOptions === 'function') filterMaterialOptions();
+            
+            setTimeout(() => { isAddingItem = false; }, 500);
+        };
+
+        document.getElementById('manifest-items-container')?.addEventListener('click', function (e) { 
+            if (e.target.classList.contains('remove-item-btn')) e.target.closest('.manifest-item').remove(); 
+        });
+
+        // 4. New Material Drawer Logic
+        const btnChoose = document.getElementById('btnChooseMaterialFile');
+        const btnCancel = document.getElementById('btnCancelMaterialFile');
+        const imgInput = document.getElementById('materialImageInput');
+        const statusText = document.getElementById('materialFileStatus');
+
+        if (btnChoose) btnChoose.addEventListener('click', () => imgInput.click());
+        if (imgInput) {
+            imgInput.addEventListener('change', function() {
+                if (this.files && this.files[0] && statusText) {
+                    statusText.innerHTML = `<i class="fas fa-image me-1"></i> ${this.files[0].name}`;
+                    statusText.classList.remove('text-muted');
+                    statusText.classList.add('text-primary', 'fw-bold');
+                }
+            });
+        }
+        if (btnCancel) {
+            btnCancel.addEventListener('click', () => {
+                if (imgInput) imgInput.value = '';
+                if (statusText) {
+                    statusText.innerHTML = 'Drag and drop files here to upload';
+                    statusText.classList.add('text-muted');
+                    statusText.classList.remove('text-primary', 'fw-bold');
+                }
+            });
+        }
+
+        const addMaterialForm = document.getElementById('addMaterialForm');
+        if (addMaterialForm) {
+            addMaterialForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const form = this;
+                const submitBtn = document.getElementById('btnSubmitMaterial');
+                const formData = new FormData(form);
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+                
+                fetch("{% url 'inventory:create_material_ajax' %}", {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const materialDropdowns = document.querySelectorAll('.material-select');
+                        materialDropdowns.forEach(dropdown => {
+                            const val = data.id || data.name;
+                            const newOption = new Option(data.name, val, true, true);
+                            newOption.dataset.max = "999999"; newOption.dataset.unit = "lbs"; newOption.dataset.name = data.name;
+                            dropdown.add(newOption);
+                        });
+                        const offcanvas = bootstrap.Offcanvas.getInstance(document.getElementById('offcanvasAddMaterial'));
+                        if (offcanvas) offcanvas.hide();
+                        form.reset();
+                        if (statusText) { statusText.innerHTML = 'Drag and drop files here to upload'; statusText.classList.add('text-muted'); statusText.classList.remove('text-primary', 'fw-bold'); }
+                    } else { alert('Error creating material.'); }
+                })
+                .finally(() => { submitBtn.disabled = false; submitBtn.innerHTML = 'Submit'; });
+            });
+        }
+
+        // 5. Add Location Drawer Logic
+        let activeLocationSelectId = null;
+        let activeCompanySelectId = null;
+
+        document.querySelectorAll('.location-add-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                activeLocationSelectId = this.dataset.selectId;
+                activeCompanySelectId = this.dataset.companySelectId;
+            });
+        });
+
+        const ajaxAddWarehouseForm = document.getElementById('ajaxAddWarehouseForm');
+        if (ajaxAddWarehouseForm) {
+            ajaxAddWarehouseForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const form = this;
+                const formData = new FormData(form);
+                const submitBtn = form.querySelector('button[type="submit"]');
+                const companySelect = document.getElementById(activeCompanySelectId);
+
+                if (!companySelect || !companySelect.value) {
+                    alert('Please select a company first!'); return;
+                }
+                formData.append('company_id', companySelect.value);
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+
+                fetch("{% url 'inventory:ajax_warehouse_create' %}", {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const warehouseSelect = document.getElementById(activeLocationSelectId);
+                        const newOption = new Option(data.full_label, data.id, true, true);
+                        newOption.dataset.companyId = data.company_id;
+                        warehouseSelect.add(newOption);
+                        warehouseSelect.dispatchEvent(new Event('change'));
+                        const offcanvas = bootstrap.Offcanvas.getInstance(document.getElementById('offcanvasAddWarehouse'));
+                        if (offcanvas) offcanvas.hide();
+                        form.reset();
+                    } else {
+                        let errorMsg = 'Error creating location:\n';
+                        for (const field in data.errors) errorMsg += `${field}: ${data.errors[field][0].message}\n`;
+                        alert(errorMsg);
+                    }
+                })
+                .catch(err => alert('An error occurred.'))
+                .finally(() => { submitBtn.disabled = false; submitBtn.innerHTML = 'Submit'; });
+            });
+        }
+
+        // 6. Select2 Initialization
+        if ($.fn.select2) {
+            $('.select2-basic').each(function() {
+                $(this).select2({
+                    theme: 'bootstrap-5',
+                    width: '100%',
+                    placeholder: $(this).attr('placeholder') || 'Select or type to create tags...',
+                    tags: true,
+                    tokenSeparators: [','],
+                    createTag: function (params) {
+                        var term = $.trim(params.term);
+                        if (term === '') return null;
+                        return { id: term, text: term, newTag: true };
+                    },
+                    templateResult: function (data) {
+                        if (data.newTag) return "Hit Enter to create new '" + data.text + "'";
+                        return data.text;
+                    }
+                });
+                // Force empty on load if requested
+                if ($(this).attr('id') === 'tags-select') $(this).val(null).trigger('change');
+            });
+        }
     });
-
-    document.getElementById('manifest-items-container').addEventListener('click', function (e) { if (e.target.classList.contains('remove-item-btn')) e.target.closest('.manifest-item').remove(); });
 </script>
 {% endblock %}
+
+<!-- Add Warehouse Offcanvas -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasAddWarehouse" aria-labelledby="offcanvasAddWarehouseLabel" style="width: 450px; border-left: none; box-shadow: -10px 0 30px rgba(0,0,0,0.1); z-index: 1060;">
+    <div class="offcanvas-header border-bottom p-4">
+        <h5 class="offcanvas-title fw-bold text-primary" id="offcanvasAddWarehouseLabel">Add New Location</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body p-4">
+        <form id="ajaxAddWarehouseForm" method="POST">
+            {% csrf_token %}
+            
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase mb-1">Location Name <span class="text-danger">*</span></label>
+                <input type="text" name="name" class="form-control rounded-3" placeholder="Name for this location" required>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase mb-1">Address <span class="text-danger">*</span></label>
+                <input type="text" name="address" class="form-control rounded-3" placeholder="Address" required>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-6">
+                    <label class="form-label fw-bold small text-uppercase mb-1">City <span class="text-danger">*</span></label>
+                    <input type="text" name="city" class="form-control rounded-3" required>
+                </div>
+                <div class="col-6">
+                    <label class="form-label fw-bold small text-uppercase mb-1">State <span class="text-danger">*</span></label>
+                    <input type="text" name="state" class="form-control rounded-3" required>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase mb-1">Postal Code <span class="text-danger">*</span></label>
+                <input type="text" name="postal_code" class="form-control rounded-3" required>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase mb-1">Phone Number</label>
+                <input type="text" name="phone" class="form-control rounded-3" placeholder="(000) 000-0000">
+            </div>
+
+            <hr class="my-4 opacity-5">
+
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase mb-1">Shipping Requirements</label>
+                <textarea name="shipping_requirements" class="form-control rounded-3" rows="2" placeholder="Insert Scales, Packing list, etc."></textarea>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase mb-1 d-block">Default Delivery Appointment <span class="text-danger">*</span></label>
+                <div class="d-flex gap-4 mt-2">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="delivery_appointment_type" id="delivery_fcfs" value="fcfs" checked>
+                        <label class="form-check-label small fw-bold text-muted" for="delivery_fcfs">FCFS</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="delivery_appointment_type" id="delivery_required" value="required">
+                        <label class="form-check-label small fw-bold text-muted" for="delivery_required">Required</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase mb-1 d-block">Default Pickup Appointment <span class="text-danger">*</span></label>
+                <div class="d-flex gap-4 mt-2">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="pickup_appointment_type" id="pickup_fcfs" value="fcfs" checked>
+                        <label class="form-check-label small fw-bold text-muted" for="pickup_fcfs">FCFS</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="pickup_appointment_type" id="pickup_required" value="required">
+                        <label class="form-check-label small fw-bold text-muted" for="pickup_required">Required</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-check form-switch mb-1">
+                <input class="form-check-input" type="checkbox" name="is_remit_to" id="id_is_remit_to_drawer">
+                <label class="form-check-label small fw-bold text-muted" for="id_is_remit_to_drawer">Remit To</label>
+            </div>
+            <p class="text-muted mb-4" style="font-size: 0.75rem; margin-left: 2.5rem; line-height: 1.4;">
+                Note: a company can only have one remittance location at a time, so adding a new remittance location will unset any previously set one
+            </p>
+
+            <div class="mt-4 pt-3 border-top">
+                <button type="submit" class="btn btn-primary w-100 py-2 fw-bold rounded-3 shadow-sm" style="background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%); border: none;">Submit</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -2,33 +2,52 @@
 Invoicing Views
 """
 from django.shortcuts import render, get_object_or_404, redirect
+from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import HttpResponse, Http404
 from django.core.paginator import Paginator
 from django.db.models import Sum, Q
 from django.utils import timezone
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 
-from .models import Invoice, InvoiceLineItem, Payment
+from .models import Invoice, InvoiceLineItem, Payment, RecurringInvoice, RecurringInvoiceLineItem, CreditMemo
 from apps.accounts.models import Company
 from apps.shipments.models import Shipment
 from apps.accounts.utils import filter_by_user_company, check_company_access
 import logging
+from django.http import JsonResponse
+from reportlab.platypus import Image
+import os
 
 logger = logging.getLogger('apps.invoicing')
+
+
+class CircleImage(Image):
+    """Custom Image flowable to draw a circular clipped image"""
+    def draw(self):
+        self.canv.saveState()
+        # Calculate radius and center
+        radius = min(self.drawWidth, self.drawHeight) / 2.0
+        # Clip as circle
+        path = self.canv.beginPath()
+        path.circle(self.drawWidth/2.0, self.drawHeight/2.0, radius)
+        self.canv.clipPath(path, stroke=0)
+        # Draw standard image
+        super().draw()
+        self.canv.restoreState()
 
 
 def _get_invoice(pk):
     """Helper to find invoice by ID or invoice_number"""
     try:
-        # Try finding by invoice_number first
-        return Invoice.objects.select_related('customer', 'shipment').get(invoice_number=pk)
+        # Try finding by invoice_number first using plain_objects to bypass tenant filtering
+        return Invoice.plain_objects.select_related('customer', 'shipment').get(invoice_number=pk)
     except Invoice.DoesNotExist:
         try:
-            # Then by primary key
-            return get_object_or_404(Invoice.objects.select_related('customer', 'shipment'), pk=pk)
+            # Then by primary key using plain_objects
+            return get_object_or_404(Invoice.plain_objects.select_related('customer', 'shipment'), pk=pk)
         except (ValueError, Http404):
             raise Http404("Invoice not found")
 
@@ -124,6 +143,13 @@ def invoice_create(request):
         customer_id = request.POST.get('customer')
         shipment_id = request.POST.get('shipment') or None
         
+        if shipment_id:
+            # Check for existing invoice using plain_objects to bypass tenant filtering for unique constraint checks
+            existing = Invoice.plain_objects.filter(shipment_id=shipment_id).first()
+            if existing:
+                messages.error(request, f'An invoice already exists for this shipment (Invoice #{existing.invoice_number}).')
+                return redirect('invoicing:invoice_create')
+        
         invoice = Invoice(
             customer_id=customer_id,
             shipment_id=shipment_id,
@@ -138,12 +164,26 @@ def invoice_create(request):
             created_by=request.user,
             tenant=request.user.tenant,
         )
-        # Handle empty date string
+        # Parse dates
         if request.POST.get('invoice_date'):
             try:
                 invoice.invoice_date = datetime.strptime(request.POST.get('invoice_date'), '%Y-%m-%d').date()
             except ValueError:
                 invoice.invoice_date = timezone.now().date()
+        
+        if request.POST.get('due_date'):
+            try:
+                invoice.due_date = datetime.strptime(request.POST.get('due_date'), '%Y-%m-%d').date()
+            except ValueError:
+                # Default to 30 days if invalid
+                invoice.due_date = invoice.invoice_date + timedelta(days=30)
+        else:
+            # Default to 30 days if missing
+            invoice.due_date = invoice.invoice_date + timedelta(days=30)
+        
+        # Pre-generate and check uniqueness to prevent IntegrityError
+        if not invoice.invoice_number:
+            invoice.invoice_number = Invoice.generate_invoice_number(invoice.shipment)
         
         # Save invoice first
         invoice.save()
@@ -178,7 +218,8 @@ def invoice_create(request):
         return redirect('invoicing:invoice_detail', pk=invoice.pk)
     
     customers = Company.objects.filter(company_type='customer', is_active=True)
-    shipments = Shipment.objects.filter(status='delivered')
+    # Don't pre-load all shipments - will be loaded via AJAX when customer is selected
+    shipments = Shipment.objects.none()
     
     context = {
         'customers': customers,
@@ -229,7 +270,8 @@ def invoice_edit(request, pk):
         return redirect('invoicing:invoice_detail', pk=invoice.pk)
     
     customers = Company.objects.filter(company_type='customer', is_active=True)
-    shipments = Shipment.objects.filter(status='delivered')
+    # Only load shipments for this customer
+    shipments = Shipment.objects.filter(customer=invoice.customer, status='delivered')
     
     context = {
         'invoice': invoice,
@@ -253,28 +295,28 @@ def invoice_print(request, pk):
     return render(request, 'invoices/print.html', context)
 
 
-@login_required
-def invoice_pdf(request, pk):
-    """Generate a real PDF invoice using ReportLab"""
+def _generate_invoice_pdf_buffer(invoice, request):
+    """Internal helper to generate PDF buffer"""
     from reportlab.lib.pagesizes import A4
     from reportlab.lib import colors
     from reportlab.lib.units import mm
-    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, HRFlowable
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, HRFlowable, Image
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.lib.enums import TA_RIGHT, TA_CENTER, TA_LEFT
     from io import BytesIO
+    import os
 
-    invoice = _get_invoice(pk)
     line_items = list(invoice.line_items.all())
 
     buffer = BytesIO()
     doc = SimpleDocTemplate(
         buffer,
         pagesize=A4,
-        rightMargin=20*mm, leftMargin=20*mm,
-        topMargin=20*mm, bottomMargin=20*mm,
+        rightMargin=15*mm, leftMargin=10*mm,
+        topMargin=10*mm, bottomMargin=15*mm,
     )
 
+    # ... (styles omitted for brevity in instruction, but kept in replacement)
     styles = getSampleStyleSheet()
     primary_color = colors.HexColor('#1e40af')
     light_gray = colors.HexColor('#f1f5f9')
@@ -292,128 +334,221 @@ def invoice_pdf(request, pk):
 
     elements = []
 
-    # ─── HEADER ROW ───────────────────────────────────────
+    # --- Logo & Header Row ---
+    tenant = getattr(invoice, 'tenant', None) or request.user.tenant
+    
+    # Fallback for admins/superusers generating PDFs on the server
+    if not tenant and request.user.is_superuser:
+        from apps.accounts.models_tenant import Tenant
+        tenant = Tenant.objects.first()
+
+    logo = None
+    logo_file = tenant.platform_logo if tenant else None
+    
+    if not logo_file and request.user.company and request.user.company.logo:
+        logo_file = request.user.company.logo
+        
+
+
+    if logo_file:
+        try:
+            logo_path = logo_file.path
+            if os.path.exists(logo_path):
+                # Using CircleImage to force circular crop in top corner
+                logo = CircleImage(logo_path, width=22*mm, height=22*mm)
+                logo.hAlign = 'LEFT'
+        except Exception as e:
+            logger.error(f"Error loading logo for PDF: {e}")
+
     invoice_info = [
         Paragraph("INVOICE", title_style),
-        Paragraph(f"<b>Invoice #:</b> {invoice.invoice_number}", normal_style),
-        Paragraph(f"<b>Date:</b> {invoice.invoice_date.strftime('%B %d, %Y')}", normal_style),
-        Paragraph(f"<b>Due Date:</b> {invoice.due_date.strftime('%B %d, %Y')}", normal_style),
-        Paragraph(f"<b>Terms:</b> {invoice.terms or 'Net 30'}", normal_style),
+        Paragraph(f"<b>INVOICE #:</b> {invoice.invoice_number}", normal_style),
+        Paragraph(f"<b>DATE:</b> {invoice.invoice_date.strftime('%m/%d/%Y')}", normal_style),
+        Paragraph(f"<b>DUE:</b> {invoice.due_date.strftime('%m/%d/%Y')}", normal_style),
     ]
 
+    # --- Dynamic Branding ---
+    my_company = request.user.company
+    company_name = my_company.name if my_company else (tenant.display_name if tenant else "FreightPro Logistics")
+    company_address = my_company.full_address if my_company else ""
+    
     company_info = [
-        Paragraph("FreightPro Logistics", company_style),
-        Paragraph("123 Logistics Way", right_style),
-        Paragraph("Chicago, IL 60601", right_style),
-        Paragraph("(555) 123-4567", right_style),
-        Paragraph("billing@freightpro.com", right_style),
+        Paragraph(company_name, company_style),
     ]
+    if company_address:
+        company_info.append(Paragraph(company_address, right_style))
+    if my_company and my_company.phone: company_info.append(Paragraph(my_company.phone, right_style))
+    if my_company and my_company.email: company_info.append(Paragraph(my_company.email, right_style))
 
-    header_table = Table([[invoice_info, company_info]], colWidths=[95*mm, 75*mm])
+    # --- Header Table ---
+    if logo:
+        # Logo on left, Invoice Info in middle, Company Info on right
+        header_table = Table([[logo, invoice_info, company_info]], colWidths=[40*mm, 65*mm, 65*mm])
+    else:
+        header_table = Table([[invoice_info, company_info]], colWidths=[95*mm, 75*mm])
+        
     header_table.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
-        ('LEFTPADDING', (0,0), (-1,-1), 0),
+        ('LEFTPADDING', (0,0), (0,0), 0), # Logo cell
+        ('TOPPADDING', (0,0), (-1,-1), 0), # Move everything to absolute top
         ('RIGHTPADDING', (0,0), (-1,-1), 0),
     ]))
     elements.append(header_table)
-    elements.append(Spacer(1, 8*mm))
-    elements.append(HRFlowable(width="100%", thickness=1, color=primary_color))
-    elements.append(Spacer(1, 6*mm))
-
-    # ─── BILL TO / SHIPMENT INFO ───────────────────────────
-    cust = invoice.customer
-    bill_to_lines = [
-        Paragraph("BILL TO", label_style),
-        Paragraph(cust.name, bold_style),
-    ]
-    if cust.address_line1:
-        bill_to_lines.append(Paragraph(cust.address_line1, normal_style))
-    if cust.address_line2:
-        bill_to_lines.append(Paragraph(cust.address_line2, normal_style))
-    if cust.city or cust.state:
-        bill_to_lines.append(Paragraph(f"{cust.city}, {cust.state} {cust.postal_code}", normal_style))
-    bill_to_lines.append(Paragraph(cust.country or "USA", normal_style))
-
-    shipment_lines = [Paragraph("SHIPMENT REFERENCE", label_style)]
+    elements.append(Spacer(1, 10*mm))
+    
+    # ─── REFERENCE SECTION ─────────────────────────────
     if invoice.shipment:
         s = invoice.shipment
-        shipment_lines += [
-            Paragraph(f"<b>Shipment #:</b> {s.shipment_number}", normal_style),
-            Paragraph(f"<b>Route:</b> {s.origin_city} → {s.destination_city}", normal_style),
-            Paragraph(f"<b>Delivery:</b> {s.actual_delivery_date.strftime('%B %d, %Y') if s.actual_delivery_date else 'Pending'}", normal_style),
-            Paragraph(f"<b>Status:</b> {s.get_status_display()}", normal_style),
+        ref_data = [
+            [Paragraph(f"<b>SHIPMENT ID:</b> {s.shipment_number}", normal_style)],
+            [Paragraph(f"<b>ORDER ID:</b> {s.order.order_number if s.order else '-'}", normal_style)],
+            [Paragraph(f"<b>PURCHASE ORDER:</b> {s.order.po_number if s.order else '-'}", normal_style)],
         ]
-    else:
-        shipment_lines.append(Paragraph("No shipment linked", normal_style))
+        ref_table = Table(ref_data, colWidths=[170*mm])
+        ref_table.setStyle(TableStyle([
+            ('LEFTPADDING', (0,0), (-1,-1), 0),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 1),
+            ('TOPPADDING', (0,0), (-1,-1), 1),
+        ]))
+        elements.append(ref_table)
+        elements.append(Spacer(1, 6*mm))
 
-    parties_table = Table([[bill_to_lines, shipment_lines]], colWidths=[95*mm, 75*mm])
-    parties_table.setStyle(TableStyle([
+    # ─── SOLD TO / SHIP TO BOXES ───────────────────────────
+    # Sold To Column
+    cust = invoice.customer
+    sold_to_content = [
+        Paragraph(cust.name, bold_style),
+    ]
+    if cust.address_line1: sold_to_content.append(Paragraph(cust.address_line1, normal_style))
+    if cust.address_line2: sold_to_content.append(Paragraph(cust.address_line2, normal_style))
+    city_state = f"{cust.city}, {cust.state} {cust.postal_code}".strip(', ')
+    if city_state: sold_to_content.append(Paragraph(city_state, normal_style))
+    sold_to_content.append(Paragraph(cust.country or "USA", normal_style))
+    if cust.phone: sold_to_content.append(Paragraph(cust.phone, normal_style))
+
+    # Ship To Column
+    ship_to_content = []
+    if invoice.shipment:
+        s = invoice.shipment
+        # Use Consignee if available, otherwise Destination details
+        ship_name = s.consignee.name if s.consignee else (s.customer.name if not s.consignee else "-")
+        ship_to_content.append(Paragraph(ship_name, bold_style))
+        
+        addr = s.destination_address or (s.consignee.address_line1 if s.consignee else "")
+        if addr: ship_to_content.append(Paragraph(addr, normal_style))
+        
+        city = s.destination_city or (s.consignee.city if s.consignee else "")
+        state = s.destination_state or (s.consignee.state if s.consignee else "")
+        zip_code = s.destination_postal_code or (s.consignee.postal_code if s.consignee else "")
+        csz = f"{city}, {state} {zip_code}".strip(', ')
+        if csz: ship_to_content.append(Paragraph(csz, normal_style))
+        
+        country = s.destination_country or (s.consignee.country if s.consignee else "USA")
+        ship_to_content.append(Paragraph(country, normal_style))
+        
+        phone = s.delivery_contact_phone or (s.consignee.phone if s.consignee else "")
+        if phone: ship_to_content.append(Paragraph(phone, normal_style))
+        
+        # Requirements line
+        reqs = s.special_instructions or (s.order.notes if s.order else "")
+        if reqs:
+            ship_to_content.append(Spacer(1, 2*mm))
+            ship_to_content.append(Paragraph(f"<b>Requirements:</b> {reqs}", normal_style))
+    else:
+        ship_to_content.append(Paragraph("No shipment info", normal_style))
+
+    # Create the tables for the boxes with blue headers
+    box_header_style = TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#94a3b8')), # Soft blue-grey like Sagar
+        ('TEXTCOLOR', (0,0), (-1,0), colors.black),
+        ('ALIGN', (0,0), (-1,0), 'CENTER'),
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0,0), (-1,0), 9),
+        ('BOTTOMPADDING', (0,0), (-1,0), 4),
+        ('TOPPADDING', (0,0), (-1,0), 4),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.black),
+        ('VALIGN', (0,1), (-1,-1), 'TOP'),
+        ('LEFTPADDING', (0,1), (-1,-1), 5),
+        ('RIGHTPADDING', (0,1), (-1,-1), 5),
+        ('TOPPADDING', (0,1), (-1,-1), 5),
+        ('BOTTOMPADDING', (0,1), (-1,-1), 10),
+    ])
+
+    sold_to_table = Table([["Sold To:"], [sold_to_content]], colWidths=[82*mm])
+    sold_to_table.setStyle(box_header_style)
+    
+    ship_to_table = Table([["Ship To:"], [ship_to_content]], colWidths=[82*mm])
+    ship_to_table.setStyle(box_header_style)
+
+    box_container = Table([[sold_to_table, Spacer(1, 6*mm), ship_to_table]], colWidths=[82*mm, 6*mm, 82*mm])
+    box_container.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
         ('LEFTPADDING', (0,0), (-1,-1), 0),
         ('RIGHTPADDING', (0,0), (-1,-1), 0),
     ]))
-    elements.append(parties_table)
+    
+    elements.append(box_container)
     elements.append(Spacer(1, 8*mm))
 
     # ─── LINE ITEMS TABLE ──────────────────────────────────
     item_header = [
-        Paragraph("DESCRIPTION", label_style),
-        Paragraph("QTY", label_style),
-        Paragraph("UNIT PRICE", label_style),
-        Paragraph("AMOUNT", label_style),
+        Paragraph("Description", label_style),
+        Paragraph("Quantity", label_style),
+        Paragraph("Unit Price", label_style),
+        Paragraph("Amount", label_style),
     ]
     table_data = [item_header]
     for item in line_items:
         table_data.append([
             Paragraph(item.description, normal_style),
-            Paragraph(str(int(item.quantity) if item.quantity == int(item.quantity) else item.quantity), normal_style),
-            Paragraph(f"${item.unit_price:,.2f}", right_style),
-            Paragraph(f"${item.total:,.2f}", right_style),
+            Paragraph(f"{int(item.quantity) if item.quantity == int(item.quantity) else item.quantity} lbs", normal_style),
+            Paragraph(f"${item.unit_price:,.2f} / lbs", normal_style),
+            Paragraph(f"${item.total:,.2f}", normal_style),
         ])
     if not line_items:
         table_data.append([Paragraph("No items", normal_style), '', '', ''])
 
-    items_table = Table(table_data, colWidths=[95*mm, 20*mm, 35*mm, 20*mm])
+    items_table = Table(table_data, colWidths=[85*mm, 30*mm, 25*mm, 30*mm])
     items_table.setStyle(TableStyle([
         # Header
-        ('BACKGROUND', (0,0), (-1,0), primary_color),
-        ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#94a3b8')),
+        ('TEXTCOLOR', (0,0), (-1,0), colors.black),
         ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0,0), (-1,0), 8),
-        ('BOTTOMPADDING', (0,0), (-1,0), 8),
-        ('TOPPADDING', (0,0), (-1,0), 8),
+        ('FONTSIZE', (0,0), (-1,0), 9),
+        ('ALIGN', (0,0), (-1,0), 'CENTER'),
+        ('BOTTOMPADDING', (0,0), (-1,0), 6),
+        ('TOPPADDING', (0,0), (-1,0), 6),
         # Rows
-        ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, light_gray]),
         ('FONTSIZE', (0,1), (-1,-1), 9),
-        ('TOPPADDING', (0,1), (-1,-1), 6),
-        ('BOTTOMPADDING', (0,1), (-1,-1), 6),
-        ('ALIGN', (2,0), (-1,-1), 'RIGHT'),
-        ('LINEBELOW', (0,-1), (-1,-1), 0.5, colors.HexColor('#e5e7eb')),
-        ('LEFTPADDING', (0,0), (-1,-1), 6),
-        ('RIGHTPADDING', (0,0), (-1,-1), 6),
+        ('TOPPADDING', (0,1), (-1,-1), 4),
+        ('BOTTOMPADDING', (0,1), (-1,-1), 4),
+        ('ALIGN', (1,1), (-1,-1), 'LEFT'),
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.black),
+        ('LEFTPADDING', (0,0), (-1,-1), 5),
+        ('RIGHTPADDING', (0,0), (-1,-1), 5),
     ]))
     elements.append(items_table)
-    elements.append(Spacer(1, 6*mm))
+    elements.append(Spacer(1, 4*mm))
 
     # ─── TOTALS ────────────────────────────────────────────
+    total_qty = sum(item.quantity for item in line_items)
     totals_data = [
-        [Paragraph("Subtotal:", right_style), Paragraph(f"${invoice.subtotal:,.2f}", right_style)],
-        [Paragraph(f"Tax ({invoice.tax_rate}%):", right_style), Paragraph(f"${invoice.tax_amount:,.2f}", right_style)],
-        [Paragraph("TOTAL:", right_bold_style), Paragraph(f"${invoice.total:,.2f}", right_bold_style)],
+        [Paragraph("Total Quantity:", bold_style), Paragraph(f"{total_qty:,.2f} lbs", bold_style)],
+        [Paragraph("Subtotal:", bold_style), Paragraph(f"${invoice.subtotal:,.2f}", bold_style)],
+        [Paragraph("Total Amount:", bold_style), Paragraph(f"${invoice.total:,.2f}", bold_style)],
     ]
-    if invoice.amount_paid > 0:
-        totals_data.append([Paragraph("Amount Paid:", right_style), Paragraph(f"${invoice.amount_paid:,.2f}", right_style)])
-        totals_data.append([Paragraph("Balance Due:", right_bold_style), Paragraph(f"${invoice.balance_due:,.2f}", right_bold_style)])
-
-    totals_table = Table(totals_data, colWidths=[130*mm, 40*mm])
-    total_row = 2
+    
+    totals_table = Table(totals_data, colWidths=[140*mm, 30*mm])
     totals_table.setStyle(TableStyle([
-        ('LEFTPADDING', (0,0), (-1,-1), 4),
-        ('RIGHTPADDING', (0,0), (-1,-1), 4),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.black),
+        ('LEFTPADDING', (0,0), (-1,-1), 10),
+        ('RIGHTPADDING', (0,0), (-1,-1), 10),
         ('TOPPADDING', (0,0), (-1,-1), 4),
         ('BOTTOMPADDING', (0,0), (-1,-1), 4),
-        ('LINEABOVE', (0, total_row), (-1, total_row), 1.5, dark_gray),
-        ('BACKGROUND', (0, total_row), (-1, total_row), light_gray),
+        ('ALIGN', (0,0), (0,-1), 'LEFT'),
+        ('ALIGN', (1,0), (1,-1), 'LEFT'),
+        ('BACKGROUND', (0,0), (-1,-1), colors.white),
     ]))
     elements.append(totals_table)
 
@@ -432,6 +567,15 @@ def invoice_pdf(request, pk):
 
     doc.build(elements)
     buffer.seek(0)
+    return buffer
+
+
+@login_required
+def invoice_pdf(request, pk):
+    """Generate a real PDF invoice using helper"""
+    invoice = _get_invoice(pk)
+    buffer = _generate_invoice_pdf_buffer(invoice, request)
+    
     logger.info(f'PDF generated for invoice {invoice.invoice_number} by {request.user}')
     response = HttpResponse(buffer, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{invoice.invoice_number}.pdf"'
@@ -444,18 +588,62 @@ def add_payment(request, pk):
     invoice = _get_invoice(pk)
     
     if request.method == 'POST':
+        payment_date = request.POST.get('payment_date')
+        if payment_date:
+            try:
+                payment_date = datetime.strptime(payment_date, '%Y-%m-%d').date()
+            except ValueError:
+                payment_date = timezone.now().date()
+        else:
+            payment_date = timezone.now().date()
+            
         payment = Payment(
             invoice=invoice,
-            amount=request.POST.get('amount', 0),
+            amount=Decimal(request.POST.get('amount', 0)),
             payment_method=request.POST.get('payment_method', 'check'),
-            payment_date=request.POST.get('payment_date') or timezone.now().date(),
+            payment_date=payment_date,
             transaction_id=request.POST.get('transaction_id', ''),
             notes=request.POST.get('notes', ''),
             created_by=request.user,
         )
         payment.save()
         
-        messages.success(request, f'Payment of ${payment.amount} recorded successfully!')
+        # Notify Customer via Email
+        if invoice.customer.email:
+            try:
+                from django.core.mail import EmailMessage
+                from django.conf import settings
+                
+                subject = f"Payment Received - Invoice {invoice.invoice_number}"
+                body = f"""Dear {invoice.customer.name},
+                
+Thank you for your payment of ${payment.amount:,.2f} recorded on {payment.payment_date.strftime('%m/%d/%Y')}.
+
+Invoice: {invoice.invoice_number}
+Amount Paid: ${payment.amount:,.2f}
+Remaining Balance: ${invoice.balance_due:,.2f}
+
+You can view the updated invoice and payment history here:
+{request.scheme}://{request.get_host()}{reverse('invoicing:public_invoice_detail', kwargs={'token': invoice.portal_token})}
+
+Thank you for your business!
+Best regards,
+The FreightPro Team"""
+                
+                email = EmailMessage(
+                    subject=subject,
+                    body=body,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    to=[invoice.customer.email],
+                )
+                email.send(fail_silently=True)
+                messages.success(request, f'Payment recorded and confirmation sent to {invoice.customer.email}.')
+            except Exception as e:
+                logger.error(f'Failed to send payment confirmation: {str(e)}')
+                messages.warning(request, f'Payment recorded, but email confirmation failed: {str(e)}')
+        else:
+            messages.success(request, f'Payment of ${payment.amount} recorded successfully!')
+            
         logger.info(f'Payment of ${payment.amount} recorded for invoice {invoice.invoice_number} by {request.user}')
         return redirect('invoicing:invoice_detail', pk=pk)
     
@@ -468,16 +656,322 @@ def add_payment(request, pk):
 
 @login_required
 def send_invoice(request, pk):
-    """Send invoice to customer"""
+    """Send invoice to customer via email with PDF attachment"""
+    from django.core.mail import EmailMessage
+    from django.conf import settings
+    
     invoice = _get_invoice(pk)
     
     if request.method == 'POST':
-        invoice.status = 'sent'
-        invoice.save()
-        messages.success(request, f'Invoice {invoice.invoice_number} marked as sent!')
+        if not invoice.customer.email:
+            messages.error(request, f"Customer {invoice.customer.name} does not have an email address!")
+            return redirect('invoicing:invoice_detail', pk=pk)
+            
+        try:
+            # 1. Generate PDF
+            buffer = _generate_invoice_pdf_buffer(invoice, request)
+            
+            # 2. Compose Email
+            subject = f"Invoice {invoice.invoice_number} from FreightPro Logistics"
+            body = f"""Dear {invoice.customer.name},
+
+Please find attached your invoice {invoice.invoice_number} for the amount of ${invoice.total:,.2f}.
+
+Payment is due by {invoice.invoice_date.strftime('%m/%d/%Y')}.
+
+Thank you for your business!
+
+Best regards,
+The FreightPro Team"""
+            
+            email = EmailMessage(
+                subject=subject,
+                body=body,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[invoice.customer.email],
+            )
+            
+            # 3. Attach PDF
+            email.attach(f"{invoice.invoice_number}.pdf", buffer.getvalue(), 'application/pdf')
+            
+            # 4. Send
+            email.send(fail_silently=False)
+            
+            # 5. Update Status
+            invoice.status = 'sent'
+            invoice.save()
+            
+            messages.success(request, f'Invoice {invoice.invoice_number} sent to {invoice.customer.email} successfully!')
+            logger.info(f'Invoice {invoice.invoice_number} emailed to {invoice.customer.email} by {request.user}')
+        except Exception as e:
+            logger.error(f'Failed to send invoice {invoice.invoice_number}: {str(e)}')
         return redirect('invoicing:invoice_detail', pk=pk)
     
+    return redirect('invoicing:invoice_detail', pk=pk)
+    
+@login_required
+def aging_report(request):
+    """
+    Accounts Receivable Aging Report
+    Buckets: Current, 1-30, 31-60, 61-90, 90+ days
+    """
+    now = timezone.now().date()
+    
+    # Get all unpaid invoices
+    unpaid_invoices = Invoice.objects.filter(
+        status__in=['draft', 'reviewed', 'sent', 'overdue', 'partial']
+    ).exclude(status__in=['paid', 'cancelled']).select_related('customer')
+    
+    # Alternatively, any invoice where balance_due > 0
+    # (Using the filter above for safety, but we could also filter by total > amount_paid)
+    
+    aging_data = []
+    customers = Company.objects.filter(invoices__in=unpaid_invoices).distinct()
+    
+    total_current = Decimal('0')
+    total_1_30 = Decimal('0')
+    total_31_60 = Decimal('0')
+    total_61_90 = Decimal('0')
+    total_90_plus = Decimal('0')
+    grand_total = Decimal('0')
+
+    for customer in customers:
+        cust_invoices = unpaid_invoices.filter(customer=customer)
+        
+        row = {
+            'customer': customer,
+            'current': Decimal('0'),
+            '1_30': Decimal('0'),
+            '31_60': Decimal('0'),
+            '61_90': Decimal('0'),
+            '90_plus': Decimal('0'),
+            'total': Decimal('0'),
+        }
+        
+        for inv in cust_invoices:
+            balance = inv.balance_due
+            if balance <= 0:
+                continue
+                
+            days = (now - inv.due_date).days if inv.due_date < now else 0
+            
+            if days <= 0:
+                row['current'] += balance
+                total_current += balance
+            elif days <= 30:
+                row['1_30'] += balance
+                total_1_30 += balance
+            elif days <= 60:
+                row['31_60'] += balance
+                total_31_60 += balance
+            elif days <= 90:
+                row['61_90'] += balance
+                total_61_90 += balance
+            else:
+                row['90_plus'] += balance
+                total_90_plus += balance
+            
+            row['total'] += balance
+            grand_total += balance
+            
+        if row['total'] > 0:
+            aging_data.append(row)
+            
+    context = {
+        'aging_data': aging_data,
+        'report_date': now,
+        'totals': {
+            'current': total_current,
+            '1_30': total_1_30,
+            '31_60': total_31_60,
+            '61_90': total_61_90,
+            '90_plus': total_90_plus,
+            'grand_total': grand_total,
+        }
+    }
+    return render(request, 'invoices/aging_report.html', context)
+
+@login_required
+def recurring_invoice_list(request):
+    """List all recurring invoice templates"""
+    templates = RecurringInvoice.objects.filter(tenant=request.user.tenant).select_related('customer')
+    context = {
+        'templates': templates,
+    }
+    return render(request, 'invoices/recurring_list.html', context)
+
+
+@login_required
+def recurring_invoice_create(request):
+    """Create a new recurring invoice template"""
+    if request.method == 'POST':
+        customer_id = request.POST.get('customer')
+        frequency = request.POST.get('frequency')
+        start_date = request.POST.get('start_date') or timezone.now().date()
+        tax_rate = Decimal(request.POST.get('tax_rate', 0) or 0)
+        terms = request.POST.get('terms', 'Net 30 days')
+        
+        template = RecurringInvoice.objects.create(
+            customer_id=customer_id,
+            frequency=frequency,
+            start_date=start_date,
+            tax_rate=tax_rate,
+            terms=terms,
+            created_by=request.user,
+            tenant=request.user.tenant,
+        )
+        
+        # Add line items
+        descriptions = request.POST.getlist('description[]')
+        quantities = request.POST.getlist('quantity[]')
+        unit_prices = request.POST.getlist('unit_price[]')
+        
+        for i in range(len(descriptions)):
+            if descriptions[i]:
+                RecurringInvoiceLineItem.objects.create(
+                    recurring_invoice=template,
+                    description=descriptions[i],
+                    quantity=Decimal(quantities[i] or 1),
+                    unit_price=Decimal(unit_prices[i] or 0),
+                )
+        
+        messages.success(request, 'Recurring invoice template created successfully!')
+        return redirect('invoicing:recurring_invoice_list')
+        
+    customers = Company.objects.filter(company_type='customer', is_active=True)
+    context = {
+        'customers': customers,
+        'frequencies': RecurringInvoice.FREQUENCY_CHOICES,
+        'today': timezone.now().date(),
+    }
+    return render(request, 'invoices/recurring_form.html', context)
+
+
+@login_required
+def trigger_recurring_generation(request):
+    """Manually trigger the recurring generation task"""
+    from .tasks import process_recurring_invoices
+    count = process_recurring_invoices()
+    if count > 0:
+        messages.success(request, f'Successfully generated {count} recurring invoices.')
+    else:
+        messages.info(request, 'No invoices were due for generation.')
+    return redirect('invoicing:recurring_invoice_list')
+
+
+@login_required
+def add_credit_memo(request, pk):
+    """Add a credit memo to an invoice"""
+    invoice = _get_invoice(pk)
+    
+    if request.method == 'POST':
+        amount = Decimal(request.POST.get('amount', 0))
+        reason = request.POST.get('reason', 'Adjustment')
+        
+        memo = CreditMemo.objects.create(
+            invoice=invoice,
+            amount=amount,
+            reason=reason,
+            created_by=request.user,
+            tenant=request.user.tenant,
+        )
+        
+        # Notify Customer via Email
+        if invoice.customer.email:
+            try:
+                from django.core.mail import EmailMessage
+                from django.conf import settings
+                
+                subject = f"Credit Memo Applied - Invoice {invoice.invoice_number}"
+                body = f"""Dear {invoice.customer.name},
+                
+A credit memo of ${amount:,.2f} has been applied to your invoice {invoice.invoice_number}.
+Reason: {reason}
+
+Updated Balance Due: ${invoice.balance_due:,.2f}
+
+You can view the updated invoice here:
+{request.scheme}://{request.get_host()}{reverse('invoicing:public_invoice_detail', kwargs={'token': invoice.portal_token})}
+
+Thank you for your business!
+Best regards,
+The FreightPro Team"""
+                
+                email = EmailMessage(
+                    subject=subject,
+                    body=body,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    to=[invoice.customer.email],
+                )
+                email.send(fail_silently=True)
+                messages.success(request, f'Credit memo of ${amount} applied and email sent to {invoice.customer.email}.')
+            except Exception as e:
+                logger.error(f'Failed to send credit memo email: {str(e)}')
+                messages.warning(request, f'Credit memo applied, but email failed: {str(e)}')
+        else:
+            messages.success(request, f'Credit memo of ${amount} applied successfully.')
+            
+        return redirect('invoicing:invoice_detail', pk=pk)
+        
     context = {
         'invoice': invoice,
     }
-    return render(request, 'invoices/send_confirm.html', context)
+    return render(request, 'invoices/add_credit_memo.html', context)
+
+@login_required
+def update_invoice_status(request, pk):
+    """Update invoice status (e.g. Draft -> Reviewed)"""
+    if request.method == 'POST':
+        invoice = _get_invoice(pk)
+        new_status = request.POST.get('status')
+        
+        if new_status in dict(Invoice.STATUS_CHOICES):
+            invoice.status = new_status
+            invoice.save()
+            messages.success(request, f'Invoice status updated to {invoice.get_status_display()}.')
+        else:
+            messages.error(request, 'Invalid status.')
+            
+        return redirect('invoicing:invoice_detail', pk=pk)
+    
+    return redirect('invoicing:invoice_list')
+
+
+def public_invoice_detail(request, token):
+    """Public view of an invoice via a secure token"""
+    try:
+        invoice = Invoice.objects.get(portal_token=token)
+    except Invoice.DoesNotExist:
+        return HttpResponse('Invalid or expired invoice link.', status=404)
+        
+    context = {
+        'invoice': invoice,
+        'line_items': invoice.line_items.all(),
+        'payments': invoice.payments.all(),
+        'public_view': True,
+    }
+    return render(request, 'invoices/public_detail.html', context)
+
+
+@login_required
+def get_customer_shipments(request, customer_id):
+    """AJAX view to get delivered shipments for a specific customer"""
+    # Only show shipments that don't have an invoice yet
+    # We exclude shipments that are already linked to an Invoice
+    shipments = Shipment.objects.filter(
+        customer_id=customer_id, 
+        status='delivered'
+    ).exclude(
+        id__in=Invoice.objects.filter(shipment__isnull=False).values_list('shipment_id', flat=True)
+    ).select_related('order').order_by('-created_at')
+    
+    data = [
+        {
+            'id': s.id,
+            'shipment_number': s.shipment_number,
+            'order_number': s.order.order_number if s.order else 'No Order',
+            'origin': s.origin_city,
+            'destination': s.destination_city
+        } for s in shipments
+    ]
+    return JsonResponse({'shipments': data})

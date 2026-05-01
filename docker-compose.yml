@@ -10,7 +10,16 @@ services:
       - .:/app
     environment:
       - DJANGO_DEBUG=True
+      - REDIS_URL=redis://redis:6379/1
+    depends_on:
+      - redis
     command: >
       sh -c "python manage.py makemigrations &&
              python manage.py migrate &&
              python manage.py runserver 0.0.0.0:8000"
+
+  redis:
+    image: redis:7-alpine
+    container_name: freightpro_redis
+    ports:
+      - "6379:6379"

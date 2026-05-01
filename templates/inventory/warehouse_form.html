@@ -94,6 +94,48 @@
                             </div>
 
 
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-uppercase">{{ form.pickup_appointment_type.label }}</label>
+                                <div class="mt-2">
+                                    {% for radio in form.pickup_appointment_type %}
+                                        <div class="form-check form-check-inline">
+                                            {{ radio.tag }}
+                                            <label class="form-check-label" for="{{ radio.id_for_label }}">
+                                                {{ radio.choice_label }}
+                                            </label>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                {% if form.pickup_appointment_type.errors %}
+                                    <div class="text-danger small">{{ form.pickup_appointment_type.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-uppercase">{{ form.delivery_appointment_type.label }}</label>
+                                <div class="mt-2">
+                                    {% for radio in form.delivery_appointment_type %}
+                                        <div class="form-check form-check-inline">
+                                            {{ radio.tag }}
+                                            <label class="form-check-label" for="{{ radio.id_for_label }}">
+                                                {{ radio.choice_label }}
+                                            </label>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                {% if form.delivery_appointment_type.errors %}
+                                    <div class="text-danger small">{{ form.delivery_appointment_type.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label fw-bold small text-uppercase">{{ form.shipping_requirements.label }}</label>
+                                {{ form.shipping_requirements }}
+                                {% if form.shipping_requirements.errors %}
+                                    <div class="text-danger small">{{ form.shipping_requirements.errors }}</div>
+                                {% endif %}
+                            </div>
+
                             <div class="col-12">
                                 <div class="form-check">
                                     {{ form.is_active }}

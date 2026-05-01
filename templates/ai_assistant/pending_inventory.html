@@ -1,0 +1,409 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+    .inbox-page {
+        background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
+        min-height: calc(100vh - 60px);
+        padding: 40px 20px;
+    }
+
+    .glass-card {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        border-radius: 20px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.05);
+        margin-bottom: 30px;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        overflow: hidden;
+    }
+
+    .glass-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 45px rgba(0, 0, 0, 0.1);
+    }
+
+    .card-header-gradient {
+        background: linear-gradient(90deg, #4a90e2 0%, #63b3ed 100%);
+        color: white;
+        padding: 20px 25px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .email-meta {
+        padding: 20px 25px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        background: rgba(255, 255, 255, 0.4);
+    }
+
+    .email-meta p {
+        margin-bottom: 5px;
+        color: #4a5568;
+        font-size: 0.95rem;
+    }
+
+    .email-meta i {
+        width: 20px;
+        color: #4a90e2;
+        margin-right: 8px;
+    }
+
+    .item-grid {
+        padding: 25px;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+    }
+
+    .inventory-item-card {
+        background: #ffffff;
+        border-radius: 15px;
+        border: 1px solid #edf2f7;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+    }
+
+    .item-title {
+        font-weight: 700;
+        color: #2d3748;
+        font-size: 1.1rem;
+        margin-bottom: 8px;
+    }
+
+    .item-stats {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+
+    .stat-badge {
+        font-size: 0.85rem;
+        font-weight: 600;
+        padding: 4px 12px;
+        border-radius: 999px;
+        background: #edf2f7;
+        color: #4a5568;
+    }
+
+    .btn-action {
+        border-radius: 12px;
+        font-weight: 700;
+        padding: 10px 20px;
+        letter-spacing: 0.5px;
+        transition: all 0.2s;
+        border: none;
+        flex: 1;
+    }
+
+    .btn-approve {
+        background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+        color: white;
+    }
+
+    .btn-approve:hover {
+        background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
+        box-shadow: 0 4px 12px rgba(72, 187, 120, 0.3);
+    }
+
+    .btn-reject {
+        background: #fed7d7;
+        color: #c53030;
+    }
+
+    .btn-reject:hover {
+        background: #feb2b2;
+    }
+
+    .btn-group {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    .page-title {
+        font-weight: 800;
+        color: #1a202c;
+        margin-bottom: 40px;
+        text-align: center;
+        letter-spacing: -1px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 100px 20px;
+        color: #718096;
+    }
+
+    .empty-state i {
+        font-size: 4rem;
+        margin-bottom: 20px;
+        opacity: 0.3;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="inbox-page">
+    <div class="container">
+        <h1 class="page-title"><i class="fas fa-inbox me-2"></i>AI Ingestion Inbox</h1>
+
+        {% if pending_emails %}
+        {% for email in pending_emails %}
+        <div class="glass-card" id="email-card-{{ email.id }}">
+            <div class="card-header-gradient">
+                <h4 class="m-0"><i class="fas fa-envelope-open-text me-2"></i>{{ email.subject|default:"New Inventory List" }}</h4>
+                <div class="d-flex gap-2">
+                    <button onclick="processEmail({{ email.id }}, 'approve-all')" class="btn btn-sm btn-light fw-bold"
+                        style="color: #38a169;">
+                        <i class="fas fa-check-double me-1"></i>Approve All
+                    </button>
+                    <button onclick="processEmail({{ email.id }}, 'reject-all')" class="btn btn-sm btn-light fw-bold"
+                        style="color: #c53030;">
+                        <i class="fas fa-times me-1"></i>Reject All
+                    </button>
+                </div>
+            </div>
+
+            <div class="email-meta d-flex justify-content-between align-items-center">
+                <div>
+                    <p><i class="fas fa-user-circle"></i> <strong>From:</strong> {{ email.sender_name|default:"Supplier" }}
+                        ({{ email.sender_email }})</p>
+                    <p><i class="fas fa-clock"></i> <strong>Received:</strong> {{ email.received_at|date:"M d, Y — h:i A" }}</p>
+                    <p class="mb-0">
+                        <i class="fas fa-wave-square"></i>
+                        <strong>Priority:</strong>
+                        <span class="badge {% if email.priority_level == 'urgent' %}bg-danger{% elif email.priority_level == 'high' %}bg-warning text-dark{% elif email.priority_level == 'low' %}bg-success{% else %}bg-secondary{% endif %}">
+                            {{ email.priority_level|upper }}
+                        </span>
+                        <span class="text-muted small ms-2">{{ email.sentiment_label }} ({{ email.sentiment_score }})</span>
+                    </p>
+                </div>
+                <div style="min-width: 280px; background: rgba(255,255,255,0.5); padding: 10px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                    <label class="match-label mb-1" style="font-size: 0.7rem;">
+                        {% if email.matched_company %}<i class="fas fa-lock me-1 text-success"></i>AI Verified Supplier:{% else %}Assign to Supplier:{% endif %}
+                    </label>
+                    <select class="form-select form-select-sm rounded-pill" id="company-select-{{ email.id }}" 
+                        {% if email.matched_company %}disabled style="background-color: #f7fafc; border-color: #cbd5e0; color: #4a5568; font-weight: 600;"{% endif %}>
+                        {% if email.matched_company and email.matched_company.tenant == request.user.tenant %}
+                            <option value="{{ email.matched_company.id }}" selected>{{ email.matched_company.name }}</option>
+                        {% else %}
+                            <option value="">-- Select Supplier --</option>
+                            {% for company in companies %}
+                                {% if company.tenant == request.user.tenant %}
+                                    <option value="{{ company.id }}">{{ company.name }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="row g-0">
+                <!-- Left Column: Original Email Body -->
+                <div class="col-md-5 border-end" style="background: rgba(255,255,255,0.2);">
+                    <div class="p-4 h-100">
+                        <h6 class="text-uppercase text-muted small fw-bold mb-3"><i
+                                class="fas fa-file-alt me-2"></i>Original Email Body</h6>
+                        <div class="original-body"
+                            style="white-space: pre-wrap; font-family: 'Inter', monospace; font-size: 0.9rem; line-height: 1.6; color: #2d3748; max-height: 500px; overflow-y: auto;">
+                            {{ email.body_text }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Extracted Items -->
+                <div class="col-md-7">
+                    <div class="item-grid" style="display: block; padding: 25px;">
+                        <h6 class="text-uppercase text-muted small fw-bold mb-4"><i class="fas fa-robot me-2"></i>AI
+                            Extracted Items</h6>
+                        <div class="row g-3">
+                            {% for item in email.items.all %}
+                            <div class="col-12">
+                                <div class="inventory-item-card" id="item-card-{{ item.id }}">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <div class="item-title">{{ item.product_name }}</div>
+                                            <div class="item-stats">
+                                                <span class="stat-badge"><i class="fas fa-weight-hanging me-1"></i>{{ item.quantity }} {{ item.unit }}</span>
+                                                <span class="stat-badge"><i class="fas fa-tag me-1"></i>${{ item.price|floatformat:2 }} {{ item.price_unit }}</span>
+                                            </div>
+                                            <p class="text-muted small mb-0">
+                                                {{ item.description|default:"Extracted via AI from email body."|truncatechars:100 }}
+                                            </p>
+                                        </div>
+
+                                        <div class="btn-group-vertical ms-3" id="actions-{{ item.id }}"
+                                            style="width: 140px; margin-top: 0;">
+                                            {% if item.status == 'pending' %}
+                                            <button onclick="processItem({{ item.id }}, 'approve')"
+                                                class="btn btn-action btn-approve mb-2">
+                                                <i class="fas fa-check me-1"></i>Approve
+                                            </button>
+                                            <button onclick="processItem({{ item.id }}, 'reject')"
+                                                class="btn btn-action btn-reject">
+                                                <i class="fas fa-trash me-1"></i> Reject
+                                            </button>
+                                            {% elif item.status == 'approved' %}
+                                            <button class="btn btn-action w-100" disabled
+                                                style="background: #e6fffa; color: #234e52; border: 1px solid #81e6d9;">
+                                                <i class="fas fa-check-circle me-1"></i>Approved
+                                            </button>
+                                            {% else %}
+                                            <button class="btn btn-action w-100" disabled
+                                                style="background: #fff5f5; color: #822727; border: 1px solid #feb2b2;">
+                                                <i class="fas fa-times-circle me-1"></i>Rejected
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-mailbox"></i>
+            <h3>No pending inventory emails.</h3>
+            <p>Emails from your suppliers with stock lists will appear here automatically.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function processItem(itemId, action) {
+        let url;
+        if (action === 'approve') {
+            url = "{% url 'ai_assistant:approve_item' 0 %}".replace('0', itemId);
+        } else {
+            url = "{% url 'ai_assistant:reject_item' 0 %}".replace('0', itemId);
+        }
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status) {
+                    const card = document.getElementById('item-card-' + itemId);
+                    card.style.opacity = '0.5';
+                    const btnGroup = document.getElementById('actions-' + itemId);
+                    if (action === 'approve') {
+                        btnGroup.innerHTML = '<button class="btn btn-action w-100" disabled style="background: #e6fffa; color: #234e52; border: 1px solid #81e6d9;"><i class="fas fa-check-circle me-1"></i>Approved</button>';
+                    } else {
+                        btnGroup.innerHTML = '<button class="btn btn-action w-100" disabled style="background: #fff5f5; color: #822727; border: 1px solid #feb2b2;"><i class="fas fa-times-circle me-1"></i>Rejected</button>';
+                    }
+                } else if (data.error) {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    function processItem(itemId, action) {
+        let url;
+        if (action === 'approve') {
+            url = "{% url 'ai_assistant:approve_item' 0 %}".replace('0', itemId);
+        } else {
+            url = "{% url 'ai_assistant:reject_item' 0 %}".replace('0', itemId);
+        }
+
+        // Get parent email ID from card context to find company selector
+        const card = document.getElementById('item-card-' + itemId);
+        const emailCard = card.closest('.glass-card');
+        const emailId = emailCard.id.split('-').pop();
+        const companyId = document.getElementById('company-select-' + emailId).value;
+
+        const formData = new FormData();
+        formData.append('company_id', companyId);
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+            body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status) {
+                    card.style.opacity = '0.5';
+                    const btnGroup = document.getElementById('actions-' + itemId);
+                    if (action === 'approve') {
+                        btnGroup.innerHTML = '<button class="btn btn-action w-100" disabled style="background: #e6fffa; color: #234e52; border: 1px solid #81e6d9;"><i class="fas fa-check-circle me-1"></i>Approved</button>';
+                    } else {
+                        btnGroup.innerHTML = '<button class="btn btn-action w-100" disabled style="background: #fff5f5; color: #822727; border: 1px solid #feb2b2;"><i class="fas fa-times-circle me-1"></i>Rejected</button>';
+                    }
+                } else if (data.error) {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    function processEmail(emailId, action) {
+        let url;
+        if (action === 'approve-all') {
+            url = "{% url 'ai_assistant:approve_all' 0 %}".replace('0', emailId);
+        } else {
+            url = "{% url 'ai_assistant:reject_all' 0 %}".replace('0', emailId);
+        }
+
+        const companyId = document.getElementById('company-select-' + emailId).value;
+        const formData = new FormData();
+        formData.append('company_id', companyId);
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+            body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status) {
+                    const card = document.getElementById('email-card-' + emailId);
+                    card.style.transition = 'all 0.5s ease';
+                    card.style.opacity = '0';
+                    card.style.transform = 'translateX(100px)';
+                    setTimeout(() => card.remove(), 500);
+                } else if (data.error) {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => console.error('Error:', error));
+    }
+</script>
+{% endblock %}

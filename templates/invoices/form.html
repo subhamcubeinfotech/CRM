@@ -259,6 +259,47 @@
         });
         
         calculateTotals();
+        
+        // Dynamic shipments loading
+        const customerSelect = document.querySelector('select[name="customer"]');
+        const shipmentSelect = document.querySelector('select[name="shipment"]');
+        
+        if (customerSelect) {
+            customerSelect.addEventListener('change', function() {
+                const customerId = this.value;
+                if (!customerId) {
+                    shipmentSelect.innerHTML = '<option value="">None</option>';
+                    return;
+                }
+                
+                shipmentSelect.innerHTML = '<option value="">Loading...</option>';
+                
+                // Using a more robust URL approach
+                const url = "{% url 'invoicing:get_customer_shipments' 0 %}".replace('0', customerId);
+                
+                fetch(url)
+                    .then(response => {
+                        if (!response.ok) throw new Error('Network response was not ok');
+                        return response.json();
+                    })
+                    .then(data => {
+                        let html = '<option value="">None</option>';
+                        data.shipments.forEach(s => {
+                            html += `<option value="${s.id}">${s.shipment_number} | Order: ${s.order_number} - ${s.origin} to ${s.destination}</option>`;
+                        });
+                        shipmentSelect.innerHTML = html;
+                        
+                        // Auto-select the first shipment if it's a new invoice
+                        if (data.shipments.length > 0 && !shipmentSelect.value) {
+                            shipmentSelect.selectedIndex = 1; // 0 is 'None'
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching shipments:', error);
+                        shipmentSelect.innerHTML = '<option value="">Error loading shipments</option>';
+                    });
+            });
+        }
     });
 </script>
 {% endblock %}

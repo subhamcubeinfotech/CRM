@@ -1,0 +1,207 @@
+{% extends 'base.html' %}
+{% block title %}AI Enhancements{% endblock %}
+
+{% block extra_css %}
+<style>
+    .ai-enh-page { padding: 24px 10px; }
+    .ai-panel { border: 1px solid #e5e7eb; border-radius: 16px; background: #fff; box-shadow: 0 8px 24px rgba(15,23,42,.05); }
+    .ai-panel .panel-head { padding: 16px 18px; border-bottom: 1px solid #eef2f7; display: flex; justify-content: space-between; align-items: center; }
+    .ai-panel .panel-body { padding: 16px 18px; }
+    .mono-lite { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size: 12px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid ai-enh-page">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+        <div>
+            <h3 class="mb-1"><i class="fas fa-sparkles text-primary me-2"></i>AI Enhancements Center</h3>
+            <p class="text-muted mb-0">Demand Forecasting, Automated Quotes, Sentiment Alerts, and Document Vision OCR</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-primary" onclick="refreshForecasts()"><i class="fas fa-rotate me-1"></i>Refresh Forecasts</button>
+            <a href="{% url 'ai_assistant:smart_matches' %}" class="btn btn-primary"><i class="fas fa-brain me-1"></i>Open Smart Matches</a>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <!-- 1. Predictive Demand -->
+        <div class="col-12 col-xl-6">
+            <div class="ai-panel h-100">
+                <div class="panel-head">
+                    <h5 class="mb-0"><i class="fas fa-chart-line text-danger me-2"></i>Predictive Demand Forecasting</h5>
+                    <span class="badge bg-light text-dark">{{ forecasts|length }} items</span>
+                </div>
+                <div class="panel-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="ps-3">SKU</th>
+                                    <th>Product</th>
+                                    <th>Avg/day</th>
+                                    <th>Runout</th>
+                                    <th>Alert</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for f in forecasts %}
+                                <tr>
+                                    <td class="ps-3">{{ f.inventory_item.sku }}</td>
+                                    <td>{{ f.inventory_item.product_name|truncatechars:28 }}</td>
+                                    <td>{{ f.avg_daily_usage }}</td>
+                                    <td>{% if f.days_to_runout is not None %}{{ f.days_to_runout }} days{% else %}N/A{% endif %}</td>
+                                    <td>
+                                        <span class="badge {% if f.alert_level == 'critical' %}bg-danger{% elif f.alert_level == 'risk' %}bg-warning text-dark{% elif f.alert_level == 'watch' %}bg-info text-dark{% else %}bg-success{% endif %}">
+                                            {{ f.get_alert_level_display }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="5" class="text-center text-muted py-4">No forecast data yet. Press 'Refresh' to compute.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Automated Quotes -->
+        <div class="col-12 col-xl-6">
+            <div class="ai-panel h-100">
+                <div class="panel-head">
+                    <h5 class="mb-0"><i class="fas fa-file-signature text-primary me-2"></i>Automated Quote Generation</h5>
+                    <span class="badge bg-light text-dark">{{ quote_drafts|length }} drafts</span>
+                </div>
+                <div class="panel-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="ps-3">Buyer</th>
+                                    <th>Material</th>
+                                    <th>Price</th>
+                                    <th>Status</th>
+                                    <th class="text-end pe-3">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for q in quote_drafts %}
+                                <tr>
+                                    <td class="ps-3">{{ q.buyer.name|truncatechars:20 }}</td>
+                                    <td>{{ q.inventory_item.product_name|truncatechars:22 }}</td>
+                                    <td>${{ q.quoted_unit_price|floatformat:2 }}</td>
+                                    <td>
+                                        <span class="badge {% if q.status == 'sent' %}bg-success{% else %}bg-secondary{% endif %}">{{ q.get_status_display }}</span>
+                                    </td>
+                                    <td class="text-end pe-3">
+                                        {% if q.status == 'draft' %}
+                                        <button class="btn btn-sm btn-outline-primary" onclick="sendQuoteDraft({{ q.id }}, this)">Send</button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="5" class="text-center text-muted py-4">No quote drafts yet.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Document Vision OCR -->
+        <div class="col-12 col-xl-6">
+            <div class="ai-panel h-100">
+                <div class="panel-head">
+                    <h5 class="mb-0"><i class="fas fa-file-image text-info me-2"></i>Document Vision AI (OCR)</h5>
+                </div>
+                <div class="panel-body">
+                    <form id="ocrUploadForm" onsubmit="uploadOcrDocument(event)" class="mb-3">
+                        {% csrf_token %}
+                        <div class="input-group">
+                            <input type="file" class="form-control form-control-sm" name="file" required>
+                            <button class="btn btn-primary btn-sm" type="submit">Run OCR</button>
+                        </div>
+                    </form>
+                    <div id="ocrResult" class="border rounded p-2 bg-light mono-lite text-muted overflow-auto" style="max-height:120px; min-height:60px; font-size:11px;">Result will appear here...</div>
+                    <hr class="my-3">
+                    <div class="table-responsive" style="max-height:160px;">
+                        <table class="table table-sm mb-0">
+                            <thead><tr><th>ID</th><th>Status</th><th>Date</th></tr></thead>
+                            <tbody>
+                                {% for r in vision_records %}
+                                <tr>
+                                    <td>#{{ r.id }}</td>
+                                    <td><span class="badge {% if r.status == 'completed' %}bg-success{% else %}bg-danger{% endif %}">{{ r.status }}</span></td>
+                                    <td class="small">{{ r.created_at|date:'M d, H:i' }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="3" class="text-center text-muted py-3">No records yet.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Sentiment Alerts -->
+        <div class="col-12 col-xl-6">
+            <div class="ai-panel h-100">
+                <div class="panel-head">
+                    <h5 class="mb-0"><i class="fas fa-triangle-exclamation text-warning me-2"></i>Sentiment Alerts</h5>
+                    <span class="badge bg-light text-dark">{{ sentiment_emails|length }} flagged</span>
+                </div>
+                <div class="panel-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle mb-0">
+                            <thead class="bg-light">
+                                <tr><th class="ps-3">Sender</th><th>Sentiment</th><th>Priority</th></tr>
+                            </thead>
+                            <tbody>
+                                {% for em in sentiment_emails %}
+                                <tr>
+                                    <td class="ps-3">
+                                        <div class="fw-bold small">{{ em.sender_raw|truncatechars:30 }}</div>
+                                        <div class="text-muted" style="font-size:10px;">{{ em.subject|truncatechars:40 }}</div>
+                                    </td>
+                                    <td><span class="badge {% if em.sentiment_label == 'negative' %}bg-danger{% else %}bg-success{% endif %}">{{ em.sentiment_label|title }}</span></td>
+                                    <td><span class="badge {% if em.priority_level == 'urgent' %}bg-dark{% else %}bg-warning text-dark{% endif %}">{{ em.priority_level|upper }}</span></td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="3" class="text-center text-muted py-4">No critical alerts found.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function csrfToken(){ return document.querySelector('input[name="csrfmiddlewaretoken"]').value; }
+function refreshForecasts(){
+    fetch('{% url "ai_assistant:refresh_forecasts" %}', {method:'POST', headers:{'X-CSRFToken': csrfToken()}})
+    .then(r=>r.json()).then(data=>location.reload());
+}
+function sendQuoteDraft(id, btn){
+    btn.disabled = true; btn.innerText = '...';
+    fetch(`/ai/enhancements/quote-drafts/${id}/send/`, {method:'POST', headers:{'X-CSRFToken': csrfToken()}})
+    .then(r=>r.json()).then(data=>{ if(data.status==='success') { btn.innerText='Sent'; btn.className='btn btn-sm btn-success'; } else { btn.disabled=false; btn.innerText='Send'; }});
+}
+function uploadOcrDocument(e){
+    e.preventDefault(); const box = document.getElementById('ocrResult'); box.innerText = 'Processing...';
+    fetch('{% url "ai_assistant:document_vision_upload" %}', {method:'POST', headers:{'X-CSRFToken': csrfToken()}, body:new FormData(e.target)})
+    .then(r=>r.json()).then(resp=>{
+        box.innerText = JSON.stringify(resp.extracted_json || {error: resp.error_message}, null, 2);
+        if(resp.status==='success') setTimeout(()=>location.reload(), 1500);
+    });
+}
+</script>
+{% endblock %}

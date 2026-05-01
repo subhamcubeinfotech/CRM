@@ -99,8 +99,8 @@ class Shipment(TenantAwareModel):
     actual_delivery_date = models.DateField(null=True, blank=True)
     
     # Cargo details
-    total_weight = models.DecimalField(max_digits=12, decimal_places=2, default=0, help_text='Weight in kg')
-    total_volume = models.DecimalField(max_digits=12, decimal_places=4, default=0, help_text='Volume in cubic meters')
+    total_weight = models.DecimalField(max_digits=20, decimal_places=2, default=0, help_text='Weight in kg')
+    total_volume = models.DecimalField(max_digits=20, decimal_places=4, default=0, help_text='Volume in cubic meters')
     number_of_pieces = models.IntegerField(default=1)
     commodity_description = models.TextField(blank=True)
     
@@ -110,9 +110,9 @@ class Shipment(TenantAwareModel):
     requires_insurance = models.BooleanField(default=False)
     
     # Financial
-    quoted_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    revenue = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    quoted_amount = models.DecimalField(max_digits=20, decimal_places=2, default=0)
+    cost = models.DecimalField(max_digits=20, decimal_places=2, default=0)
+    revenue = models.DecimalField(max_digits=20, decimal_places=2, default=0)
     
     # Notes
     special_instructions = models.TextField(blank=True)
@@ -152,6 +152,19 @@ class Shipment(TenantAwareModel):
         if self.estimated_delivery_date and self.status != 'delivered':
             return self.estimated_delivery_date < timezone.now().date()
         return False
+
+    def update_financials(self):
+        """Calculate and sync total revenue and cost from shipment items"""
+        total_revenue = 0
+        total_cost = 0
+        for item in self.items.all():
+            weight = float(item.weight or 0)
+            total_revenue += float(item.sell_price or 0) * weight
+            total_cost += float(item.buy_price or 0) * weight
+        
+        self.revenue = total_revenue
+        self.cost = total_cost
+        self.save(update_fields=['revenue', 'cost', 'updated_at'])
     
     @property
     def ordered_statuses(self):
@@ -208,7 +221,60 @@ class Shipment(TenantAwareModel):
         """Return route as string"""
         return f"{self.origin_full} → {self.destination_full}"
     
+    def sync_from_order(self, force=False):
+        """Sync addresses and coordinates from linked Order and Companies"""
+        if not self.order:
+            return
+        
+        # 1. Pickup / Origin
+        supplier = self.order.supplier
+        pickup_loc = self.pickup_location or self.order.source_location
+        
+        # If origin_address is empty or contains "Bangalore" or force=True
+        is_stale_origin = not self.origin_address or "Bangalore" in self.origin_address
+        if is_stale_origin or force:
+            if pickup_loc:
+                self.origin_address = pickup_loc.address
+                self.origin_city = pickup_loc.city
+                self.origin_state = pickup_loc.state
+                self.origin_postal_code = pickup_loc.postal_code
+                self.origin_country = pickup_loc.country
+            elif supplier:
+                self.origin_address = supplier.address_line1
+                self.origin_city = supplier.city
+                self.origin_state = supplier.state
+                self.origin_postal_code = supplier.postal_code
+                self.origin_country = supplier.country
+                # Also sync coordinates if they are available
+                if supplier.latitude: self.origin_latitude = supplier.latitude
+                if supplier.longitude: self.origin_longitude = supplier.longitude
+
+        # 2. Destination
+        receiver = self.order.receiver
+        dest_loc = self.destination_location or self.order.destination_location
+        
+        is_stale_dest = not self.destination_address or "Bangalore" in self.destination_address
+        if is_stale_dest or force:
+            if dest_loc:
+                self.destination_address = dest_loc.address
+                self.destination_city = dest_loc.city
+                self.destination_state = dest_loc.state
+                self.destination_postal_code = dest_loc.postal_code
+                self.destination_country = dest_loc.country
+            elif receiver:
+                self.destination_address = receiver.address_line1
+                self.destination_city = receiver.city
+                self.destination_state = receiver.state
+                self.destination_postal_code = receiver.postal_code
+                self.destination_country = receiver.country
+                # Also sync coordinates if they are available
+                if receiver.latitude: self.destination_latitude = receiver.latitude
+                if receiver.longitude: self.destination_longitude = receiver.longitude
+
     def save(self, *args, **kwargs):
+        # Auto-sync addresses from order if they are stale/placeholders
+        self.sync_from_order()
+
         # Auto-generate shipment number if not set with proper transaction handling
         if not self.shipment_number:
             from django.db import transaction
@@ -278,7 +344,7 @@ class Container(models.Model):
     container_number = models.CharField(max_length=50)
     seal_number = models.CharField(max_length=50, blank=True)
     size = models.CharField(max_length=10, choices=SIZE_CHOICES, default='40ft')
-    weight = models.DecimalField(max_digits=12, decimal_places=2, default=0, help_text='Weight in kg')
+    weight = models.DecimalField(max_digits=20, decimal_places=2, default=0, help_text='Weight in kg')
     
     class Meta:
         ordering = ['container_number']
@@ -341,19 +407,19 @@ class ShipmentItem(models.Model):
     material_name = models.CharField(max_length=255)
     
     # Quantity/Weight
-    weight = models.DecimalField(max_digits=12, decimal_places=2)
+    weight = models.DecimalField(max_digits=20, decimal_places=2)
     weight_unit = models.CharField(max_length=10, default='lbs')
-    gross_weight = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    gross_weight = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True)
     gross_weight_unit = models.CharField(max_length=10, default='lbs', blank=True)
-    tare_weight = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    tare_weight = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True)
     tare_weight_unit = models.CharField(max_length=10, default='lbs', blank=True)
     packaging = models.CharField(max_length=100, blank=True)
     is_palletized = models.BooleanField(default=False)
     pieces = models.IntegerField(default=1, null=True, blank=True)
     
     # Financial
-    buy_price = models.DecimalField(max_digits=12, decimal_places=4, default=0)
-    sell_price = models.DecimalField(max_digits=12, decimal_places=4, default=0)
+    buy_price = models.DecimalField(max_digits=20, decimal_places=4, default=0)
+    sell_price = models.DecimalField(max_digits=20, decimal_places=4, default=0)
     price_unit = models.CharField(max_length=20, default='per lbs')
     
     class Meta:
@@ -361,6 +427,31 @@ class ShipmentItem(models.Model):
         
     def __str__(self):
         return f"{self.material_name} ({self.weight} {self.weight_unit})"
+
+
+class ShipmentCommission(models.Model):
+    COMMISSION_TYPE_CHOICES = [
+        ('fixed', 'Fixed'),
+        ('gross_profit_pct', '% Gross Profit'),
+        ('material_cost_pct', '% Material Cost'),
+        ('material_sale_pct', '% Material Sale'),
+    ]
+
+    shipment = models.ForeignKey(Shipment, on_delete=models.CASCADE, related_name='commissions')
+    representative = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    commission_type = models.CharField(max_length=30, choices=COMMISSION_TYPE_CHOICES, default='fixed')
+    percentage = models.DecimalField(max_digits=8, decimal_places=4, null=True, blank=True)
+    amount = models.DecimalField(max_digits=20, decimal_places=2, default=0)
+    paid_date = models.DateField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        rep = getattr(self.representative, 'username', None) or 'Unknown'
+        return f"{self.shipment.shipment_number} - {rep} - {self.amount}"
+
 
 class ShipmentHistory(models.Model):
     """Detailed audit log for shipment changes"""
@@ -378,3 +469,19 @@ class ShipmentHistory(models.Model):
 
     def __str__(self):
         return f"{self.shipment.shipment_number} - {self.action} at {self.created_at}"
+
+
+class ShipmentComment(models.Model):
+    """Real-time conversation comments for a shipment"""
+    shipment = models.ForeignKey(Shipment, on_delete=models.CASCADE, related_name='comments')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='shipment_comments')
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Shipment Comment'
+        verbose_name_plural = 'Shipment Comments'
+
+    def __str__(self):
+        return f"Comment by {self.user.username} on {self.shipment.shipment_number}"

@@ -12,7 +12,7 @@
     </div>
 
     <div class="d-flex align-items-start gap-4">
-        <div class="company-logo-wrapper">
+        <div class="company-logo-wrapper" id="company-logo-wrapper">
             {% if company.logo %}
             <img src="{{ company.logo.url }}" alt="{{ company.name }}" class="company-logo-img">
             {% else %}
@@ -24,7 +24,15 @@
         <div class="flex-grow-1 pt-1">
             <div class="d-flex align-items-center gap-2 mb-1">
                 <h1 class="h2 mb-0 fw-bold">{{ company.name }}</h1>
-                <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-1 small">AS</span>
+                {% if company.is_active %}<span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">Active</span>{% else %}<span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill">Inactive</span>{% endif %}
+            </div>
+            {% if company.legal_name %}
+            <div class="text-muted mb-2 fw-medium">{{ company.legal_name }}</div>
+            {% endif %}
+            <div class="d-flex flex-wrap gap-2 mb-2">
+                {% for tag in company.company_tags.all %}
+                    <span class="badge bg-light text-dark border rounded-pill px-2 py-1 small"><i class="fas fa-tag me-1 opacity-50"></i>{{ tag.name }}</span>
+                {% endfor %}
             </div>
             <div class="d-flex align-items-center gap-3 text-muted small">
                 {% if company.website %}
@@ -33,18 +41,6 @@
                 </a>
                 {% endif %}
                 <span><i class="fas fa-tags me-1"></i>{{ company.get_company_type_display }}</span>
-            </div>
-        </div>
-        <div class="d-flex gap-2">
-            <div class="dropdown">
-                <button class="btn btn-primary rounded-pill px-4 dropdown-toggle no-caret" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="fas fa-chevron-down me-2 small rotate-icon"></i>Actions
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg rounded-4 p-2 mt-2" style="min-width: 160px;">
-                    <li><a class="dropdown-item rounded-3 py-2 px-3 small d-flex align-items-center" href="#"><i class="fas fa-pencil-alt me-3 text-muted" style="width: 14px;"></i>Edit</a></li>
-                    <li><hr class="dropdown-divider opacity-50"></li>
-                    <li><a class="dropdown-item rounded-3 py-2 px-3 small d-flex align-items-center text-danger" href="#"><i class="fas fa-trash-alt me-3 text-danger" style="width: 14px;"></i>Archive</a></li>
-                </ul>
             </div>
         </div>
     </div>
@@ -113,8 +109,12 @@
                                     data-bs-toggle="offcanvas" data-bs-target="#offcanvasTouchpoint">Add</button>
                             </div>
                             <div class="d-flex gap-4 small text-muted align-items-center">
-                                <div>Next: <input type="text" class="flatpickr-date border-0 bg-transparent text-primary text-decoration-underline p-0 w-auto cursor-pointer" style="font-size: 0.85rem;" placeholder="Add Date" readonly></div>
-                                <div>Last: <input type="text" class="flatpickr-date border-0 bg-transparent text-primary text-decoration-underline p-0 w-auto cursor-pointer" style="font-size: 0.85rem;" placeholder="Add Date" readonly></div>
+                                <div>Next: <input type="text"
+                                        class="flatpickr-date border-0 bg-transparent text-primary text-decoration-underline p-0 w-auto cursor-pointer"
+                                        style="font-size: 0.85rem;" placeholder="Add Date" readonly></div>
+                                <div>Last: <input type="text"
+                                        class="flatpickr-date border-0 bg-transparent text-primary text-decoration-underline p-0 w-auto cursor-pointer"
+                                        style="font-size: 0.85rem;" placeholder="Add Date" readonly></div>
                             </div>
                         </div>
 
@@ -125,16 +125,18 @@
                             </div>
                             <div class="d-flex justify-content-between align-items-center mb-2 about-edit d-none">
                                 <h6 class="fw-bold mb-0 small text-uppercase tracking-wider">About</h6>
-                                <button class="btn btn-light btn-xs rounded px-2 cancel-btn text-primary border-0" style="background-color: #f1f5f9;">Cancel</button>
+                                <button class="btn btn-light btn-xs rounded px-2 cancel-btn text-primary border-0"
+                                    style="background-color: #f1f5f9;">Cancel</button>
                             </div>
-                            
+
                             <div class="about-view">
                                 <p class="text-muted small mb-0 about-text">
                                     {{ company.description|default:"No description provided for this company." }}
                                 </p>
                             </div>
                             <div class="about-edit d-none">
-                                <textarea class="form-control form-control-sm mb-2 rounded-3 border-light-subtle" rows="3" placeholder="About">{{ company.description|default:"" }}</textarea>
+                                <textarea class="form-control form-control-sm mb-2 rounded-3 border-light-subtle"
+                                    rows="3" placeholder="About">{{ company.description|default:"" }}</textarea>
                                 <div class="d-flex justify-content-center">
                                     <button class="btn btn-primary btn-sm px-4 rounded-pill save-btn">Save</button>
                                 </div>
@@ -144,25 +146,79 @@
                         <div class="mb-4">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h6 class="fw-bold mb-0 small text-uppercase tracking-wider">Contacts</h6>
-                                <button class="btn btn-primary btn-xs rounded-pill px-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasAddContact">Add</button>
+                                <button class="btn btn-primary btn-xs rounded-pill px-2" type="button"
+                                    data-bs-toggle="offcanvas" data-bs-target="#offcanvasAddContact">Add</button>
                             </div>
+
+                            <div class="d-flex justify-content-end align-items-center mb-3">
+                                <span class="text-muted fw-bold me-2" style="font-size: 0.65rem;">Archived</span>
+                                <div class="form-check form-switch p-0 m-0 d-flex align-items-center">
+                                    <input class="form-check-input ms-0" type="checkbox" id="showArchivedContacts"
+                                        style="width: 25px; height: 14px; cursor: pointer;">
+                                </div>
+                            </div>
+
+
                             <div class="contacts-list">
+                                <div id="noArchivedMsg" class="text-center py-4 text-muted border rounded-3 mb-3 d-none" style="background-color: #f8f9fa;">
+                                    <p class="mb-0 italic" style="font-size: 0.75rem; font-style: italic;">No archived contacts found. Toggle "Archived" to see any active contacts.</p>
+                                </div>
                                 {% if company.users.all %}
-                                {% for user in company.users.all %}
-                                <div class="d-flex align-items-center gap-3 mb-3">
-                                    <div
-                                        class="avatar-sm bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center">
-                                        {{ user.first_name|first|default:user.username|first }}
-                                    </div>
-                                    <div>
-                                        <div class="fw-bold small">{{ user.get_full_name|default:user.username }}</div>
-                                        <div class="small text-muted">{{ user.email }}</div>
+                                {% for contact in company.users.all %}
+                                <div class="contact-item mb-3 {% if contact.is_contact_archived %}archived-contact{% endif %}"
+                                    {% if contact.is_contact_archived %}style="display: none !important;" {% endif %}>
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="flex-grow-1">
+                                            <div class="fw-bold text-dark" style="font-size: 0.8rem;">
+                                                {{ contact.get_full_name|default:contact.username }}</div>
+                                            <div class="text-primary small mb-1" style="font-size: 0.7rem;">
+                                                {{ contact.email }}</div>
+                                            <div class="text-muted small" style="font-size: 0.7rem;">
+                                                Mobile: <span class="text-dark">{{ contact.phone|default:"(---) --- ----" }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="ms-2">
+                                            {% if not contact.is_contact_archived %}
+                                            <div class="dropdown">
+                                                <button
+                                                    class="btn btn-light btn-sm rounded-circle p-0 d-flex align-items-center justify-content-center no-caret"
+                                                    type="button" data-bs-toggle="dropdown" aria-expanded="false"
+                                                    style="width: 24px; height: 24px; background-color: #f0f4f8; border: none;">
+                                                    <i class="fas fa-ellipsis-h text-primary"
+                                                        style="font-size: 10px;"></i>
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end shadow border-0 py-2 animate__animated animate__fadeIn animate__faster"
+                                                    style="font-size: 0.75rem; border-radius: 10px; min-width: 110px; box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;">
+                                                    <li><a class="dropdown-item edit-contact-btn py-2 d-flex align-items-center"
+                                                            href="javascript:void(0)" data-id="{{ contact.id }}"
+                                                            data-name="{{ contact.get_full_name|default:contact.username }}"
+                                                            data-email="{{ contact.email }}"
+                                                            data-phone="{{ contact.phone|default:'' }}">
+                                                            <i class="fas fa-edit me-2 opacity-50"
+                                                                style="width: 14px;"></i>Edit</a></li>
+                                                    <li><a class="dropdown-item archive-contact-btn py-2 text-danger d-flex align-items-center"
+                                                            href="javascript:void(0)" data-id="{{ contact.id }}">
+                                                            <i class="fas fa-archive me-2 opacity-50"
+                                                                style="width: 14px;"></i>Archive</a></li>
+                                                </ul>
+                                            </div>
+                                            {% else %}
+                                            <div class="restore-action-wrapper">
+                                                <a href="javascript:void(0)" class="restore-contact-btn text-primary text-decoration-none" data-id="{{ contact.id }}">
+                                                    <i class="fas fa-trash-alt position-relative" style="font-size: 1.1rem;">
+                                                        <span style="position: absolute; top: 50%; left: -2px; width: 120%; height: 2px; background: currentColor; transform: translateY(-50%) rotate(-45deg); pointer-events: none;"></span>
+                                                    </i>
+                                                </a>
+                                            </div>
+                                            {% endif %}
+                                        </div>
                                     </div>
                                 </div>
                                 {% endfor %}
                                 {% else %}
-                                <div class="text-center py-3 text-muted small border-top border-bottom">
-                                    No contacts found.
+                                <div class="text-center py-4 text-muted bg-light bg-opacity-50 border rounded-3 mb-3">
+                                    <i class="fas fa-user-friends d-block mb-2 opacity-50"></i>
+                                    <span style="font-size: 0.7rem;">No contacts linked yet.</span>
                                 </div>
                                 {% endif %}
                             </div>
@@ -185,11 +241,13 @@
                                     style="box-shadow: none; resize: none;"></textarea>
                                 <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top">
                                     <span class="small text-muted">Tip: Notify someone with @</span>
-                                    <button id="submitComment" class="btn btn-primary btn-xs rounded-pill px-3 shadow-sm">Submit</button>
+                                    <button id="submitComment"
+                                        class="btn btn-primary btn-xs rounded-pill px-3 shadow-sm">Submit</button>
                                 </div>
                             </div>
                             <div id="commentsList">
-                                <div class="text-center p-4 text-muted border rounded-4 bg-light bg-opacity-50 no-comments-placeholder">
+                                <div
+                                    class="text-center p-4 text-muted border rounded-4 bg-light bg-opacity-50 no-comments-placeholder">
                                     <i class="fas fa-comment-slash d-block mb-2 opacity-50"></i>
                                     <span class="small">No comments yet</span>
                                 </div>
@@ -213,23 +271,42 @@
                                 <button class="btn btn-outline-secondary border-0"><i
                                         class="fas fa-chevron-right small"></i></button>
                             </div>
-                            <button class="btn btn-primary btn-xs rounded-pill px-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasAddCompanyMaterial">Add</button>
                         </div>
                     </div>
                     <div class="card-body p-0">
-                        <div class="material-list">
+                        <div class="material-list" id="company-material-list">
                             {% for material in materials %}
                             <div class="material-item p-4 border-top">
                                 <div class="d-flex align-items-center gap-4">
-                                    <div class="material-icon bg-light rounded-circle d-flex align-items-center justify-content-center"
-                                        style="width: 60px; height: 60px; font-size: 1.5rem;">
-                                        <i class="fas fa-recycle text-muted opacity-50"></i>
+                                    <div class="material-icon bg-light rounded-4 d-flex align-items-center justify-content-center overflow-hidden {% if not material.image and not material.inventory_image %}clickable-img-placeholder{% endif %}"
+                                        style="width: 60px; height: 60px; font-size: 1.5rem;"
+                                        {% if not material.image and not material.inventory_image %}
+                                        onclick="triggerQuickMaterialUpload('{{ material.pk }}')"
+                                        id="img-placeholder-material-{{ material.pk }}"
+                                        {% endif %}>
+                                        {% if material.image %}
+                                            <img src="{{ material.image.url }}" class="w-100 h-100 object-fit-cover" alt="{{ material.name }}">
+                                        {% elif material.inventory_image %}
+                                            <img src="{{ material.inventory_image.url }}" class="w-100 h-100 object-fit-cover" alt="{{ material.name }}">
+                                        {% else %}
+                                            <i class="fas fa-recycle text-muted opacity-50"></i>
+                                        {% endif %}
                                     </div>
                                     <div class="flex-grow-1">
                                         <div class="d-flex justify-content-between align-items-start mb-2">
                                             <h6 class="fw-bold mb-0">{{ material.name }}</h6>
-                                            <button class="btn btn-link text-muted p-0"><i
-                                                    class="fas fa-ellipsis-h"></i></button>
+                                            <div class="dropdown">
+                                                <button class="btn btn-link text-muted p-0 no-caret" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="fas fa-ellipsis-h"></i>
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end shadow border-0 py-2" style="font-size: 0.8rem; border-radius: 10px;">
+                                                    <li>
+                                                        <a class="dropdown-item disassociate-material-btn text-danger py-2" href="javascript:void(0)" data-id="{{ material.pk }}">
+                                                            <i class="fas fa-trash-alt me-2 opacity-50"></i>Delete
+                                                        </a>
+                                                    </li>
+                                                </ul>
+                                            </div>
                                         </div>
                                         <div class="row g-2">
                                             <div class="col-md-3">
@@ -237,7 +314,7 @@
                                                 <div class="small fw-medium">{{ material.material_type|default:"—" }}
                                                 </div>
                                             </div>
-                                            <div class="col-md-3">
+                                            <div class="col-md-3 d-none">
                                                 <div class="small text-muted mb-1">Grade</div>
                                                 <div class="small fw-medium">{{ material.grade|default:"—" }}</div>
                                             </div>
@@ -246,7 +323,7 @@
                                                 <div class="small fw-medium">{{ material.product_type|default:"—" }}
                                                 </div>
                                             </div>
-                                            <div class="col-md-3 text-end pt-2">
+                                            <div class="col-md-3 text-end pt-2 d-none">
                                                 <button class="btn btn-outline-secondary btn-xs rounded-pill"
                                                     type="button" data-bs-toggle="collapse"
                                                     data-bs-target="#material-{{ material.pk }}">
@@ -254,7 +331,7 @@
                                                 </button>
                                             </div>
                                         </div>
-                                        <div class="collapse mt-3" id="material-{{ material.pk }}">
+                                        <div class="collapse mt-3 d-none" id="material-{{ material.pk }}">
                                             <div class="bg-light p-3 rounded-3 small">
                                                 <p class="mb-0 text-muted">{{ material.description|default:"No additional details available." }}</p>
                                             </div>
@@ -272,17 +349,6 @@
                     </div>
                 </div>
 
-                <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-                    <div
-                        class="card-header bg-white border-0 px-4 py-3 d-flex justify-content-between align-items-center">
-                        <h6 class="fw-bold mb-0">Buy Profiles</h6>
-                    </div>
-                    <div class="card-body p-5 text-center text-muted">
-                        <i class="fas fa-shopping-cart fa-3x mb-3 opacity-10"></i>
-                        <h5 class="fw-bold mb-1">No Buy Profiles found</h5>
-                        <p class="small mb-0">Create a buy profile to start tracking demand.</p>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
@@ -314,11 +380,15 @@
                             {% for order in orders %}
                             <tr data-activity-type="order">
                                 <td class="ps-4">
-                                    <a href="{% url 'orders:order_detail' order.pk %}" class="fw-bold text-primary">{{ order.order_number }}</a>
+                                    <a href="{% url 'orders:order_detail' order.pk %}"
+                                        class="fw-bold text-primary">{{ order.order_number }}</a>
                                 </td>
-                                <td><span class="badge bg-primary-subtle text-primary border rounded-pill px-2">Order</span></td>
+                                <td><span
+                                        class="badge bg-primary-subtle text-primary border rounded-pill px-2">Order</span>
+                                </td>
                                 <td>
-                                    <span class="badge rounded-pill bg-{% if order.status == 'delivered' or order.status == 'closed' %}success{% elif order.status == 'cancelled' %}danger{% elif order.status == 'draft' %}secondary{% else %}info{% endif %}-subtle text-{% if order.status == 'delivered' or order.status == 'closed' %}success{% elif order.status == 'cancelled' %}danger{% elif order.status == 'draft' %}secondary{% else %}info{% endif %} border border-{% if order.status == 'delivered' or order.status == 'closed' %}success{% elif order.status == 'cancelled' %}danger{% elif order.status == 'draft' %}secondary{% else %}info{% endif %}-subtle">
+                                    <span
+                                        class="badge rounded-pill bg-{% if order.status == 'delivered' or order.status == 'closed' %}success{% elif order.status == 'cancelled' %}danger{% elif order.status == 'draft' %}secondary{% else %}info{% endif %}-subtle text-{% if order.status == 'delivered' or order.status == 'closed' %}success{% elif order.status == 'cancelled' %}danger{% elif order.status == 'draft' %}secondary{% else %}info{% endif %} border border-{% if order.status == 'delivered' or order.status == 'closed' %}success{% elif order.status == 'cancelled' %}danger{% elif order.status == 'draft' %}secondary{% else %}info{% endif %}-subtle">
                                         {{ order.get_status_display }}
                                     </span>
                                 </td>
@@ -329,18 +399,22 @@
                                     <span class="small text-muted">Receiver</span>
                                     {% endif %}
                                 </td>
-                                <td class="small fw-bold">{{ order.total_weight_target|floatformat:0 }} lbs</td>
+                                <td class="small fw-bold">{{ order.total_weight_target|floatformat:0 }} {{ order.total_weight_unit }}</td>
                                 <td class="text-end pe-4 small text-muted">{{ order.created_at|date:"M d, Y" }}</td>
                             </tr>
                             {% endfor %}
                             {% for shipment in shipments %}
                             <tr data-activity-type="shipment" style="display: none;">
                                 <td class="ps-4">
-                                    <a href="{% url 'shipments:shipment_detail' shipment.pk %}" class="fw-bold text-primary">{{ shipment.shipment_number }}</a>
+                                    <a href="{% url 'shipments:shipment_detail' shipment.pk %}"
+                                        class="fw-bold text-primary">{{ shipment.shipment_number }}</a>
                                 </td>
-                                <td><span class="badge bg-info-subtle text-info border rounded-pill px-2">Shipment</span></td>
+                                <td><span
+                                        class="badge bg-info-subtle text-info border rounded-pill px-2">Shipment</span>
+                                </td>
                                 <td>
-                                    <span class="badge rounded-pill bg-{% if shipment.status == 'delivered' or shipment.status == 'paid' %}success{% elif shipment.status == 'rejected' %}danger{% else %}info{% endif %}-subtle text-{% if shipment.status == 'delivered' or shipment.status == 'paid' %}success{% elif shipment.status == 'rejected' %}danger{% else %}info{% endif %} border border-{% if shipment.status == 'delivered' or shipment.status == 'paid' %}success{% elif shipment.status == 'rejected' %}danger{% else %}info{% endif %}-subtle">
+                                    <span
+                                        class="badge rounded-pill bg-{% if shipment.status == 'delivered' or shipment.status == 'paid' %}success{% elif shipment.status == 'rejected' %}danger{% else %}info{% endif %}-subtle text-{% if shipment.status == 'delivered' or shipment.status == 'paid' %}success{% elif shipment.status == 'rejected' %}danger{% else %}info{% endif %} border border-{% if shipment.status == 'delivered' or shipment.status == 'paid' %}success{% elif shipment.status == 'rejected' %}danger{% else %}info{% endif %}-subtle">
                                         {{ shipment.get_status_display }}
                                     </span>
                                 </td>
@@ -374,6 +448,8 @@
                     <div class="col-md-5 border-end" style="max-height: 650px; overflow-y: auto;">
                         <div class="p-4 bg-light border-bottom d-flex justify-content-between align-items-center">
                             <h6 class="mb-0 fw-bold">Warehouses & Offices</h6>
+                            <button class="btn btn-primary btn-xs rounded-pill px-3" type="button"
+                                data-bs-toggle="offcanvas" data-bs-target="#offcanvasAddLocation">Add</button>
                         </div>
                         <div class="list-group list-group-flush">
                             {% for loc in locations %}
@@ -430,7 +506,8 @@
                 <h6 class="fw-bold mb-0">Company Documents</h6>
                 <div class="d-flex gap-2">
                     <input type="file" id="directDocUpload" class="d-none">
-                    <button class="btn btn-primary btn-sm rounded-pill px-3" onclick="document.getElementById('directDocUpload').click()">
+                    <button class="btn btn-primary btn-sm rounded-pill px-3"
+                        onclick="document.getElementById('directDocUpload').click()">
                         <i class="fas fa-upload me-2"></i>Upload
                     </button>
                 </div>
@@ -453,7 +530,8 @@
                                 <td class="ps-4">
                                     <div class="d-flex align-items-center gap-2">
                                         <i class="fas fa-file-pdf text-danger"></i>
-                                        <a href="{{ doc.file.url }}" target="_blank" class="fw-bold text-dark text-decoration-none">{{ doc.title }}</a>
+                                        <a href="{{ doc.file.url }}" target="_blank"
+                                            class="fw-bold text-dark text-decoration-none">{{ doc.title }}</a>
                                     </div>
                                 </td>
                                 <td><span class="badge bg-light text-muted border rounded-pill">{{ doc.get_document_type_display }}</span></td>
@@ -461,10 +539,12 @@
                                 <td class="small text-muted">{{ doc.uploaded_at|date:"M d, Y" }}</td>
                                 <td class="text-end pe-4">
                                     <div class="d-flex gap-2 justify-content-end">
-                                        <a href="{{ doc.file.url }}" target="_blank" class="btn btn-outline-secondary btn-xs rounded-pill">
+                                        <a href="{{ doc.file.url }}" target="_blank"
+                                            class="btn btn-outline-secondary btn-xs rounded-pill">
                                             <i class="fas fa-download"></i>
                                         </a>
-                                        <button class="btn btn-outline-danger btn-xs rounded-pill delete-doc-btn" data-id="{{ doc.id }}">
+                                        <button class="btn btn-outline-danger btn-xs rounded-pill delete-doc-btn"
+                                            data-id="{{ doc.id }}">
                                             <i class="fas fa-trash-alt"></i>
                                         </button>
                                     </div>
@@ -485,12 +565,46 @@
         </div>
     </div>
 
-    <!-- History Pane -->
     <div class="tab-pane fade" id="history-pane" role="tabpanel" tabindex="0">
-        <div class="card border-0 shadow-sm rounded-4 overflow-hidden p-5 text-center text-muted">
-            <i class="fas fa-history fa-3x mb-3 opacity-10"></i>
-            <h5 class="fw-bold mb-1">Historical Audit Log</h5>
-            <p class="small mb-0">Track all changes and interactions with this account over time.</p>
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+            <div class="card-header bg-white border-bottom p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold mb-0">Activity Timeline</h6>
+                    <span class="badge bg-light text-muted border rounded-pill small">{{ history|length }} Events</span>
+                </div>
+            </div>
+            <div class="card-body p-4">
+                <div class="timeline-container pe-2" style="max-height: 600px; overflow-y: auto;">
+                    {% for record in history %}
+                    <div class="timeline-item d-flex gap-3 mb-4 position-relative">
+                        {% if not forloop.last %}
+                        <div class="timeline-line position-absolute start-0 top-0 h-100 border-start border-light-subtle"
+                            style="left: 15px !important; z-index: 0; margin-top: 32px;"></div>
+                        {% endif %}
+                        <div class="timeline-icon flex-shrink-0 bg-white border rounded-circle d-flex align-items-center justify-content-center shadow-sm"
+                            style="width: 32px; height: 32px; z-index: 1;">
+                            <i class="{{ record.icon|default:'fas fa-circle' }} text-primary"
+                                style="font-size: 0.75rem;"></i>
+                        </div>
+                        <div class="timeline-content flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-start mb-1">
+                                <h6 class="fw-bold mb-0 small">{{ record.action }}</h6>
+                                <span class="text-muted extra-small">{{ record.created_at|date:"M d, Y H:i" }}</span>
+                            </div>
+                            <p class="text-muted small mb-0">{{ record.description }}</p>
+                            <div class="text-muted extra-small mt-1 italic">
+                                <i class="fas fa-user me-1 opacity-50"></i>{{ record.user.get_full_name|default:record.user.username }}
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-5 text-muted">
+                        <i class="fas fa-history fa-3x mb-3 opacity-10"></i>
+                        <p class="mb-0">No history records found for this company.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -506,8 +620,12 @@
         <form>
             <div class="mb-4">
                 <label class="form-label small fw-bold text-muted text-uppercase mb-2">Date *</label>
-                <input type="date" class="form-control rounded-pill bg-light border-0 px-3" value="{% now 'Y-m-d' %}"
-                    required>
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-0 rounded-start-pill ps-3"><i
+                            class="fas fa-calendar-alt text-primary"></i></span>
+                    <input type="text" class="form-control flatpickr-date-today rounded-end-pill bg-light border-0 px-3"
+                        required readonly>
+                </div>
             </div>
 
             <div class="mb-4">
@@ -521,8 +639,8 @@
                 <div class="input-group">
                     <span class="input-group-text bg-light border-0 rounded-start-pill ps-3"><i
                             class="fas fa-calendar-plus text-primary"></i></span>
-                    <input type="text" class="form-control rounded-end-pill bg-light border-0 px-3"
-                        placeholder="Click to set reminder date...">
+                    <input type="text" class="form-control flatpickr-date rounded-end-pill bg-light border-0 px-3"
+                        placeholder="Click to set reminder date..." readonly>
                 </div>
             </div>
 
@@ -556,6 +674,38 @@
         align-items: center;
         justify-content: center;
         overflow: hidden;
+        position: relative;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .company-logo-wrapper:hover {
+        transform: scale(1.02);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    .company-logo-wrapper::after {
+        content: '\f030';
+        font-family: 'Font Awesome 5 Free';
+        font-weight: 900;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.4);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        border-radius: 1.5rem;
+        font-size: 1.2rem;
+    }
+
+    .company-logo-wrapper:hover::after {
+        opacity: 1;
     }
 
     .company-logo-img {
@@ -596,6 +746,36 @@
         font-size: 0.75rem;
     }
 
+    .segmented-control-wrapper {
+        display: flex;
+        gap: 10px;
+    }
+
+    .segmented-control-wrapper .btn {
+        border: 1px solid #e2e8f0 !important;
+        background-color: #fff;
+        color: #64748b;
+        border-radius: 0.5rem !important;
+        font-size: 0.75rem;
+        padding: 5px 25px;
+        font-weight: 600;
+        transition: all 0.2s ease;
+        min-width: 100px;
+    }
+
+    .segmented-control-wrapper .btn:hover {
+        background-color: #f8fafc;
+        border-color: #cbd5e1 !important;
+    }
+
+    .segmented-control-wrapper .btn-check:checked+.btn {
+        background-color: #0061f2 !important;
+        border-color: #0061f2 !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 97, 242, 0.1);
+    }
+
+
     .tracking-wider {
         letter-spacing: 0.05em;
         font-size: 0.65rem !important;
@@ -629,6 +809,31 @@
 
     .material-item:hover {
         background-color: #f8fafc;
+    }
+
+    /* Clickable Image Placeholder */
+    .clickable-img-placeholder {
+        cursor: pointer;
+        transition: all 0.2s ease;
+        position: relative;
+    }
+    .clickable-img-placeholder:hover {
+        background-color: #e2e8f0 !important;
+        color: #2563eb !important;
+    }
+    .clickable-img-placeholder:hover::after {
+        content: '\f030';
+        font-family: 'Font Awesome 5 Free';
+        font-weight: 900;
+        position: absolute;
+        font-size: 1rem;
+        opacity: 0.8;
+    }
+    .clickable-img-placeholder i {
+        transition: opacity 0.2s;
+    }
+    .clickable-img-placeholder:hover i {
+        opacity: 0;
     }
 
     .rounded-4 {
@@ -665,22 +870,26 @@
     .form-control,
     .form-label,
     .btn {
-        font-size: 0.85rem !important; /* ~13.6px */
+        font-size: 0.85rem !important;
+        /* ~13.6px */
     }
 
     .small,
     .sub-text,
     .text-muted:not(h6) {
-        font-size: 0.75rem !important; /* 12px */
+        font-size: 0.75rem !important;
+        /* 12px */
     }
 
     h6.fw-bold {
-        font-size: 0.95rem !important; /* ~15px */
+        font-size: 0.95rem !important;
+        /* ~15px */
     }
 
     .status-badge,
     .badge:not(.h2 .badge) {
-        font-size: 0.7rem !important; /* 11.2px */
+        font-size: 0.7rem !important;
+        /* 11.2px */
         padding: 3px 10px !important;
     }
 
@@ -706,6 +915,7 @@
         background-color: #f1f5f9 !important;
         border-color: var(--primary-color) !important;
     }
+
     .no-caret::after {
         display: none !important;
     }
@@ -713,24 +923,54 @@
     .dropdown-item:active {
         background-color: var(--primary-color) !important;
     }
+
+    /* Timeline Utilities */
+    .extra-small {
+        font-size: 0.7rem !important;
+    }
+
+    .italic {
+        font-style: italic;
+    }
+
+    .timeline-container::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .timeline-container::-webkit-scrollbar-track {
+        background: #f1f5f9;
+    }
+
+    .timeline-container::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 10px;
+    }
+
+    .timeline-container::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
 </style>
 
 <!-- Add Contact Drawer -->
-<div class="offcanvas offcanvas-end border-0 shadow" tabindex="-1" id="offcanvasAddContact" aria-labelledby="offcanvasAddContactLabel" style="width: 400px;">
+<div class="offcanvas offcanvas-end border-0 shadow" tabindex="-1" id="offcanvasAddContact"
+    aria-labelledby="offcanvasAddContactLabel" style="width: 400px;">
     <div class="offcanvas-header bg-white border-bottom py-3">
         <h5 class="offcanvas-title fw-bold h6 mb-0" id="offcanvasAddContactLabel">Add Contact</h5>
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>
     <div class="offcanvas-body p-4">
-        <form>
+        <form id="addContactForm">
+            {% csrf_token %}
+            <input type="hidden" name="company_id" value="{{ company.id }}">
             <div class="mb-3">
                 <label class="form-label fw-bold text-dark mb-1 small">Name <span class="text-danger">*</span></label>
-                <input type="text" class="form-control form-control-sm rounded-3 border-light-subtle" placeholder="Full name" required>
+                <input type="text" name="name" class="form-control form-control-sm rounded-3 border-light-subtle"
+                    placeholder="Full name" required>
             </div>
-            
+
             <div class="mb-3">
                 <label class="form-label fw-bold text-dark mb-1 small">Contact Type</label>
-                <select class="form-select form-select-sm rounded-3 border-light-subtle">
+                <select name="contact_type" class="form-select form-select-sm rounded-3 border-light-subtle">
                     <option value="">Select a contact type</option>
                     <option value="primary">Primary Contact</option>
                     <option value="billing">Billing</option>
@@ -738,33 +978,39 @@
                     <option value="other">Other</option>
                 </select>
             </div>
-            
+
             <div class="mb-3">
                 <label class="form-label fw-bold text-dark mb-1 small">Email <span class="text-danger">*</span></label>
-                <input type="email" class="form-control form-control-sm rounded-3 border-light-subtle" placeholder="Insert an email" required>
+                <input type="email" name="email" class="form-control form-control-sm rounded-3 border-light-subtle"
+                    placeholder="Insert an email" required>
             </div>
-            
+
             <div class="mb-3">
                 <label class="form-label fw-bold text-dark mb-1 small">Mobile number</label>
-                <input type="text" class="form-control form-control-sm rounded-3 border-light-subtle" placeholder="(000) 000-0000">
+                <input type="text" name="phone" class="form-control form-control-sm rounded-3 border-light-subtle"
+                    placeholder="(000) 000-0000">
             </div>
-            
+
             <div class="mb-4">
                 <div class="row g-2">
                     <div class="col-8">
                         <label class="form-label fw-bold text-dark mb-1 small">Office Number</label>
-                        <input type="text" class="form-control form-control-sm rounded-3 border-light-subtle" placeholder="(000) 000-0000">
+                        <input type="text" name="office_phone"
+                            class="form-control form-control-sm rounded-3 border-light-subtle"
+                            placeholder="(000) 000-0000">
                     </div>
                     <div class="col-4">
                         <label class="form-label fw-bold text-dark mb-1 small">Extension</label>
-                        <input type="text" class="form-control form-control-sm rounded-3 border-light-subtle" placeholder="00000">
+                        <input type="text" name="extension"
+                            class="form-control form-control-sm rounded-3 border-light-subtle" placeholder="00000">
                     </div>
                 </div>
             </div>
-            
+
             <div class="d-grid mt-5">
                 <div class="d-flex justify-content-center">
-                    <button type="submit" class="btn btn-primary px-5 rounded-pill">Submit</button>
+                    <button type="submit" class="btn btn-primary px-5 rounded-pill"
+                        id="submitContactBtn">Submit</button>
                 </div>
             </div>
         </form>
@@ -772,25 +1018,136 @@
 </div>
 
 
-<!-- Add Company Material Drawer -->
-<div class="offcanvas offcanvas-end border-0 shadow" tabindex="-1" id="offcanvasAddCompanyMaterial" aria-labelledby="offcanvasAddCompanyMaterialLabel" style="width: 400px;">
+<!-- Edit Contact Drawer -->
+<div class="offcanvas offcanvas-end border-0 shadow" tabindex="-1" id="offcanvasEditContact"
+    aria-labelledby="offcanvasEditContactLabel" style="width: 400px;">
+    <div class="offcanvas-header bg-white border-bottom py-3">
+        <h5 class="offcanvas-title fw-bold h6 mb-0" id="offcanvasEditContactLabel">Edit Contact</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body p-4">
+        <form id="editContactForm">
+            {% csrf_token %}
+            <input type="hidden" name="contact_id" id="edit_contact_id">
+            <div class="mb-3">
+                <label class="form-label fw-bold text-dark mb-1 small">Name <span class="text-danger">*</span></label>
+                <input type="text" name="name" id="edit_contact_name"
+                    class="form-control form-control-sm rounded-3 border-light-subtle" placeholder="Full name" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-bold text-dark mb-1 small">Contact Type</label>
+                <select name="contact_type" id="edit_contact_type"
+                    class="form-select form-select-sm rounded-3 border-light-subtle">
+                    <option value="">Select a contact type</option>
+                    <option value="primary">Primary Contact</option>
+                    <option value="billing">Billing</option>
+                    <option value="shipping">Shipping</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-bold text-dark mb-1 small">Email <span class="text-danger">*</span></label>
+                <input type="email" name="email" id="edit_contact_email"
+                    class="form-control form-control-sm rounded-3 border-light-subtle" placeholder="Insert an email"
+                    required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-bold text-dark mb-1 small">Mobile number</label>
+                <input type="text" name="phone" id="edit_contact_phone"
+                    class="form-control form-control-sm rounded-3 border-light-subtle" placeholder="(000) 000-0000">
+            </div>
+
+            <div class="mb-4">
+                <div class="row g-2">
+                    <div class="col-8">
+                        <label class="form-label fw-bold text-dark mb-1 small">Office Number</label>
+                        <input type="text" name="office_phone" id="edit_contact_office"
+                            class="form-control form-control-sm rounded-3 border-light-subtle"
+                            placeholder="(000) 000-0000">
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label fw-bold text-dark mb-1 small">Extension</label>
+                        <input type="text" name="extension" id="edit_contact_extension"
+                            class="form-control form-control-sm rounded-3 border-light-subtle" placeholder="00000">
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-grid mt-5">
+                <div class="d-flex justify-content-center">
+                    <button type="submit" class="btn btn-primary px-5 rounded-pill"
+                        id="submitEditContactBtn">Submit</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<!-- Archive Contact Modal -->
+<div class="modal fade" id="archiveContactModal" tabindex="-1" aria-labelledby="archiveContactModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 380px;">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+            <div class="modal-body p-4 text-center">
+                <h5 class="modal-title fw-bold mb-3" id="archiveContactModalLabel">Archive Contact</h5>
+                <p class="text-muted small mb-4">Are you sure you want to archive this contact?</p>
+                <input type="hidden" id="archive_contact_id">
+                <div class="d-flex justify-content-center gap-2">
+                    <button type="button" class="btn btn-outline-primary px-4 rounded-pill small"
+                        data-bs-dismiss="modal" style="font-size: 0.75rem;">Cancel</button>
+                    <button type="button" class="btn btn-danger px-4 rounded-pill small" id="confirmArchiveBtn"
+                        style="font-size: 0.75rem; background-color: #dc3545; border: none;">Submit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Restore Contact Modal -->
+<div class="modal fade" id="restoreContactModal" tabindex="-1" aria-labelledby="restoreContactModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 380px;">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+            <div class="modal-body p-4 text-center">
+                <h5 class="modal-title fw-bold mb-3" id="restoreContactModalLabel">Restore Contact</h5>
+                <p class="text-muted small mb-4">Are you sure you want to restore this contact?</p>
+                <input type="hidden" id="restore_contact_id">
+                <div class="d-flex justify-content-center gap-2">
+                    <button type="button" class="btn btn-outline-primary px-4 rounded-pill small"
+                        data-bs-dismiss="modal" style="font-size: 0.75rem;">Cancel</button>
+                    <button type="button" class="btn btn-danger px-4 rounded-pill small" id="confirmRestoreBtn"
+                        style="font-size: 0.75rem; background-color: #dc3545; border: none;">Submit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="offcanvas offcanvas-end border-0 shadow" tabindex="-1" id="offcanvasAddCompanyMaterial"
+    aria-labelledby="offcanvasAddCompanyMaterialLabel" style="width: 400px;">
     <div class="offcanvas-header bg-white border-bottom py-3">
         <h5 class="offcanvas-title fw-bold h6 mb-0" id="offcanvasAddCompanyMaterialLabel">Add Company Material</h5>
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>
     <div class="offcanvas-body p-4">
-        <form>
+        <form id="addCompanyMaterialForm">
             <div class="mb-4">
                 <div class="d-flex justify-content-between align-items-center mb-1">
-                    <label class="form-label fw-bold text-dark mb-0 small">Material <span class="text-danger">*</span></label>
-                    <button type="button" class="btn btn-outline-primary btn-xs rounded-pill px-2" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNewMaterial">
+                    <label class="form-label fw-bold text-dark mb-0 small">Material <span
+                            class="text-danger">*</span></label>
+                    <button type="button" class="btn btn-outline-primary btn-xs rounded-pill px-2"
+                        data-bs-toggle="modal" data-bs-target="#materialModal">
                         <i class="fas fa-plus me-1"></i>Add
                     </button>
                 </div>
                 <div class="input-group input-group-sm">
-                    <select class="form-select rounded-3 border-light-subtle">
+                    <select class="form-select rounded-3 border-light-subtle" name="material_id" id="materialSelect">
                         <option value="">Select a material</option>
-                        {% for mat in materials %}
+                        {% for mat in available_materials %}
                         <option value="{{ mat.id }}">{{ mat.name }}</option>
                         {% endfor %}
                     </select>
@@ -799,96 +1156,247 @@
                     </span>
                 </div>
             </div>
-            
+
             <div class="d-grid mt-5">
-                <button type="submit" class="btn btn-primary rounded-pill shadow-sm py-2">Submit</button>
+                <button type="submit" class="btn btn-primary rounded-pill shadow-sm py-2"
+                    id="submitAssociateBtn">Submit</button>
             </div>
         </form>
     </div>
 </div>
 
-<!-- New Material Drawer -->
-<div class="offcanvas offcanvas-end border-0 shadow" tabindex="-1" id="offcanvasNewMaterial" aria-labelledby="offcanvasNewMaterialLabel" style="width: 450px; z-index: 1060;">
-    <div class="offcanvas-header bg-white border-bottom py-3">
-        <h5 class="offcanvas-title fw-bold h6 mb-0" id="offcanvasNewMaterialLabel">New Material</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-    </div>
-    <div class="offcanvas-body p-4">
-        <form enctype="multipart/form-data">
-            <div class="mb-3">
-                <label class="form-label fw-bold text-dark mb-1 small">Display Name <span class="text-danger">*</span></label>
-                <input type="text" class="form-control form-control-sm rounded-3 border-light-subtle" placeholder="Custom display name for this material">
-                <div class="form-text mt-1" style="font-size: 10px;">Add a clear, descriptive name to help others quickly identify this material.</div>
+<!-- New Material Modal (formerly offcanvas) -->
+<div class="modal fade" id="materialModal" tabindex="-1" aria-labelledby="materialModalLabel" aria-hidden="true"
+    style="z-index: 1070;">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 480px;">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-white border-bottom py-3">
+                <h5 class="modal-title fw-bold h6 mb-0" id="materialModalLabel">New Material</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            
-            <div class="mb-3">
-                <label class="form-label fw-bold text-dark mb-1 small">Description</label>
-                <textarea class="form-control form-control-sm rounded-3 border-light-subtle" rows="3" placeholder="Optional description of this material"></textarea>
-            </div>
-            
-            <div class="mb-3">
-                <label class="form-label fw-bold text-dark mb-1 small">Images and Documents</label>
-                <div class="border rounded-4 p-4 text-center border-light-subtle bg-light bg-opacity-50">
-                    <div class="d-flex justify-content-center gap-2 mb-3">
-                        <button type="button" class="btn btn-primary btn-sm px-3 rounded-pill"><i class="fas fa-plus me-1"></i>Choose</button>
-                        <button type="button" class="btn btn-light btn-sm px-3 rounded-pill border text-muted">Cancel</button>
+            <div class="modal-body p-4">
+                <form id="newMaterialForm" enctype="multipart/form-data">
+                    <input type="hidden" name="company_id_context" value="{{ company.id }}">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark mb-1 small">Display Name <span
+                                class="text-danger">*</span></label>
+                        <input type="text" name="name"
+                            class="form-control form-control-sm rounded-3 border-light-subtle"
+                            placeholder="Custom display name for this material" required>
+                        <div class="form-text mt-1" style="font-size: 10px;">Add a clear, descriptive name to help
+                            others quickly identify this material.</div>
                     </div>
-                    <p class="mb-0 small text-muted">Drag and drop files to here to upload</p>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark mb-1 small">Description</label>
+                        <textarea name="description" class="form-control form-control-sm rounded-3 border-light-subtle"
+                            rows="3" placeholder="Optional description of this material"></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark mb-1 small">Material Image</label>
+                        <div class="border rounded-4 p-4 text-center border-light-subtle bg-light bg-opacity-50">
+                            <input type="file" name="image" id="materialImageInput" class="d-none" accept="image/*">
+                            <div class="d-flex justify-content-center mb-2">
+                                <button type="button" class="btn btn-primary btn-sm px-4 rounded-pill"
+                                    onclick="document.getElementById('materialImageInput').click()">
+                                    <i class="fas fa-camera me-1"></i>Choose Image
+                                </button>
+                            </div>
+                            <div id="fileStatus" class="small text-muted mb-0" style="font-size: 10px;">No image
+                                selected</div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-6">
+                            <label class="form-label fw-bold text-dark mb-1 small">Material <span
+                                    class="text-danger">*</span></label>
+                            <input type="text" name="grade"
+                                class="form-control form-control-sm rounded-3 border-light-subtle" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold text-dark mb-1 small">Material Type <span
+                                    class="text-danger">*</span></label>
+                            <select name="material_type"
+                                class="form-select form-select-sm rounded-3 border-light-subtle">
+                                <option value="PE">PE</option>
+                                <option value="PP">PP</option>
+                                <option value="PVC">PVC</option>
+                                <option value="PET">PET</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-center gap-2 mt-5">
+                        <button type="submit"
+                            class="btn btn-outline-primary btn-sm px-4 rounded-3 fw-bold">Submit</button>
+                        <button type="button" class="btn btn-primary btn-sm px-4 rounded-3 fw-bold shadow-sm"
+                            style="background: #7ca3ff; border-color: #7ca3ff;">Review</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Logo Modal -->
+<div class="modal fade" id="modalUploadLogo" tabindex="-1" aria-labelledby="modalUploadLogoLabel" aria-hidden="true" style="z-index: 1080;">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header border-0 pb-3 pe-4 pt-4 bg-light bg-opacity-50">
+                <h5 class="modal-title fw-bold h5 mb-0" id="modalUploadLogoLabel">Upload Logo</h5>
+                <button type="button" class="btn-close shadow-none border rounded-circle bg-white d-flex align-items-center justify-content-center" 
+                        data-bs-dismiss="modal" aria-label="Close" style="width: 28px; height: 28px; padding: 0;">
+                    <i class="fas fa-times small text-muted" style="font-size: 10px;"></i>
+                </button>
+            </div>
+            <div class="modal-body p-4">
+                <div id="logo-drop-zone" class="border rounded-3 p-4 text-center mb-4" 
+                     style="border-color: #e2e8f0 !important; background-color: #fff; transition: all 0.2s ease;">
+                    
+                    <!-- Buttons Container -->
+                    <div class="d-flex justify-content-center gap-2 mb-3" id="logo-buttons-container">
+                        <button type="button" class="btn btn-light border px-4 d-flex align-items-center gap-2 fw-semibold text-muted" 
+                                id="btn-choose-logo-v2" onclick="document.getElementById('input-logo-file').click()" style="background: #f1f5f9; font-size: 0.85rem;">
+                            <i class="fas fa-plus" style="font-size: 12px;"></i> Choose
+                        </button>
+                        <button type="button" class="btn btn-primary px-4 d-flex align-items-center gap-2 fw-semibold" 
+                                id="btn-set-logo" disabled style="background: #7ca3ff; border-color: #7ca3ff; font-size: 0.85rem;">
+                            <i class="fas fa-upload" style="font-size: 12px;"></i> Set Logo
+                        </button>
+                    </div>
+
+                    <!-- Preview Container (Internal to box) -->
+                    <div id="logo-preview-container" class="mb-3 d-none">
+                        <div class="position-relative d-inline-block p-2 border rounded bg-white">
+                            <img id="logo-preview-img" src="" alt="Preview" class="img-fluid" style="max-height: 80px; object-fit: contain;">
+                            <button type="button" class="btn btn-danger btn-sm rounded-circle position-absolute top-0 start-100 translate-middle shadow-sm" 
+                                    id="btn-clear-preview" style="width: 20px; height: 20px; padding: 0;">
+                                <i class="fas fa-times" style="font-size: 8px;"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <p class="text-muted small mb-0 fw-medium" id="drop-text">Drag and drop a file here to upload</p>
+                    <input type="file" id="input-logo-file" class="d-none" accept="image/*">
+                </div>
+
+                <div class="d-flex justify-content-center">
+                    {% if company.logo %}
+                    <button type="button" class="btn btn-danger px-4 py-2 fw-bold" id="btn-remove-logo" 
+                            style="background-color: #c53030; border: none; border-radius: 8px; font-size: 0.9rem;">
+                        Remove Current Logo
+                    </button>
+                    {% endif %}
                 </div>
             </div>
-            
-            <div class="row g-3 mb-4">
-                <div class="col-6">
-                    <label class="form-label fw-bold text-dark mb-1 small">Material <span class="text-danger">*</span></label>
-                    <select class="form-select form-select-sm rounded-3 border-light-subtle">
-                        <option value="plastic">Plastic</option>
-                        <option value="metal">Metal</option>
-                        <option value="paper">Paper</option>
-                    </select>
-                </div>
-                <div class="col-6">
-                    <label class="form-label fw-bold text-dark mb-1 small">Material Type <span class="text-danger">*</span></label>
-                    <select class="form-select form-select-sm rounded-3 border-light-subtle">
-                        <option value="">Select a value</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="d-flex justify-content-center gap-2 mt-5">
-                <button type="submit" class="btn btn-outline-primary btn-sm px-4 rounded-3 fw-bold">Submit</button>
-                <button type="button" class="btn btn-primary btn-sm px-4 rounded-3 fw-bold shadow-sm" style="background: #7ca3ff; border-color: #7ca3ff;">Review</button>
-            </div>
-        </form>
+        </div>
     </div>
 </div>
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"><!-- Hidden Global Material Upload Input -->
+<input type="file" id="globalMaterialQuickUploadInput" style="display: none;" accept="image/*">
+
+<script>
+    let currentMaterialUploadId = null;
+
+    function triggerQuickMaterialUpload(id) {
+        currentMaterialUploadId = id;
+        document.getElementById('globalMaterialQuickUploadInput').click();
+    }
+
+    document.getElementById('globalMaterialQuickUploadInput').addEventListener('change', function() {
+        if (!this.files || !this.files[0] || !currentMaterialUploadId) return;
+        
+        const file = this.files[0];
+        const formData = new FormData();
+        formData.append('image', file);
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        const baseUrl = `/inventory/materials/${currentMaterialUploadId}/upload-image/`;
+
+        // Update UI to show loading
+        const placeholder = document.getElementById(`img-placeholder-material-${currentMaterialUploadId}`);
+        const originalContent = placeholder.innerHTML;
+        placeholder.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+        placeholder.classList.remove('clickable-img-placeholder');
+
+        fetch(baseUrl, {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Replace placeholder with the new image
+                placeholder.innerHTML = `<img src="${data.image_url}" class="w-100 h-100 object-fit-cover animate__animated animate__fadeIn">`;
+                placeholder.classList.remove('clickable-img-placeholder');
+                placeholder.removeAttribute('onclick');
+            } else {
+                alert('Upload failed: ' + (data.message || 'Unknown error'));
+                placeholder.innerHTML = originalContent;
+                placeholder.classList.add('clickable-img-placeholder');
+            }
+        })
+        .catch(err => {
+            console.error('Upload error:', err);
+            alert('An error occurred during upload.');
+            placeholder.innerHTML = originalContent;
+            placeholder.classList.add('clickable-img-placeholder');
+        })
+        .finally(() => {
+            this.value = ''; // Reset input
+        });
+    });
+</script>
 {% endblock %}
 
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const locationsTab = document.getElementById('locations-tab');
+
+        // Handle tab switching from URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const tabParam = urlParams.get('tab');
+        if (tabParam === 'locations' && locationsTab) {
+            bootstrap.Tab.getOrCreateInstance(locationsTab).show();
+            // Call initMap directly for ?tab=locations to avoid event race conditions
+            setTimeout(initMap, 500);
+        }
+
         let mapInitialized = false;
         let map;
         let markers = [];
 
         function initMap() {
             if (mapInitialized) return;
+            if (typeof L === 'undefined') {
+                console.error('Leaflet (L) is not defined. Map cannot be initialized.');
+                return;
+            }
 
             // Map container div clear
             const mapContainer = document.getElementById('map');
             if (!mapContainer) return;
             mapContainer.innerHTML = '';
 
-            // Initialize map
-            map = L.map('map').setView([20, 0], 2);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                attribution: '&copy; OpenStreetMap &copy; CARTO',
-                subdomains: 'abcd',
-                maxZoom: 20
-            }).addTo(map);
+            try {
+                // Initialize map
+                map = L.map('map').setView([20, 0], 2);
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                    attribution: '&copy; OpenStreetMap &copy; CARTO',
+                    subdomains: 'abcd',
+                    maxZoom: 20
+                }).addTo(map);
+            } catch (err) {
+                console.error('Map initialization error:', err);
+                mapContainer.innerHTML = '<div class="text-center p-4 text-danger">Failed to initialize map.</div>';
+                return;
+            }
 
             const locationCards = document.querySelectorAll('.location-card');
             const bounds = L.latLngBounds();
@@ -963,7 +1471,15 @@
         }
 
         flatpickr(".flatpickr-date", {
-            dateFormat: "D, M j",
+            dateFormat: "Y-m-d",
+            allowInput: true,
+            altInput: true,
+            altFormat: "F j, Y",
+        });
+
+        flatpickr(".flatpickr-date-today", {
+            dateFormat: "Y-m-d",
+            defaultDate: "today",
             allowInput: true,
             altInput: true,
             altFormat: "F j, Y",
@@ -989,8 +1505,48 @@
             });
 
             saveBtn.addEventListener('click', () => {
-                views.forEach(v => v.classList.remove('d-none'));
-                edits.forEach(e => e.classList.add('d-none'));
+                const textarea = aboutSection.querySelector('textarea');
+                if (!textarea) return;
+
+                const description = textarea.value;
+
+                // Show loading state
+                const originalBtnHtml = saveBtn.innerHTML;
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
+
+                fetch("{% url 'accounts:ajax_update_company_about' company.pk %}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: new URLSearchParams({
+                        'description': description
+                    })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        saveBtn.disabled = false;
+                        saveBtn.innerHTML = originalBtnHtml;
+
+                        if (data.success) {
+                            const aboutText = aboutSection.querySelector('.about-text');
+                            if (aboutText) {
+                                aboutText.innerText = data.description || "No description provided for this company.";
+                            }
+                            views.forEach(v => v.classList.remove('d-none'));
+                            edits.forEach(e => e.classList.add('d-none'));
+                        } else {
+                            alert('Failed to save: ' + (data.message || 'Unknown error'));
+                        }
+                    })
+                    .catch(err => {
+                        saveBtn.disabled = false;
+                        saveBtn.innerHTML = originalBtnHtml;
+                        console.error('Save error:', err);
+                        alert('An error occurred while saving.');
+                    });
             });
         }
 
@@ -1001,9 +1557,9 @@
             const rows = document.querySelectorAll('#activity-table tbody tr');
 
             buttons.forEach(btn => {
-                btn.addEventListener('click', function() {
+                btn.addEventListener('click', function () {
                     const filter = this.getAttribute('data-filter');
-                    
+
                     // Update active button
                     buttons.forEach(b => {
                         b.classList.remove('active', 'btn-primary');
@@ -1030,7 +1586,7 @@
         const commentsList = document.getElementById('commentsList');
 
         if (submitBtn && commentInput && commentsList) {
-            submitBtn.addEventListener('click', function() {
+            submitBtn.addEventListener('click', function () {
                 const text = commentInput.value.trim();
                 if (!text) return;
 
@@ -1041,7 +1597,7 @@
                 // Create comment element
                 const now = new Date();
                 const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                
+
                 const commentHtml = `
                     <div class="d-flex gap-3 mb-3 animate__animated animate__fadeIn">
                         <div class="avatar-sm bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px; font-size: 12px;">
@@ -1070,7 +1626,7 @@
         const noDocsRow = () => document.getElementById('no-docs-row');
 
         if (docInput) {
-            docInput.addEventListener('change', function() {
+            docInput.addEventListener('change', function () {
                 const file = this.files[0];
                 if (!file) return;
 
@@ -1092,18 +1648,18 @@
                         'X-CSRFToken': '{{ csrf_token }}'
                     }
                 })
-                .then(response => response.json())
-                .then(data => {
-                    uploadBtn.disabled = false;
-                    uploadBtn.innerHTML = originalBtnHtml;
-                    docInput.value = '';
+                    .then(response => response.json())
+                    .then(data => {
+                        uploadBtn.disabled = false;
+                        uploadBtn.innerHTML = originalBtnHtml;
+                        docInput.value = '';
 
-                    if (data.success) {
-                        const noDocs = noDocsRow();
-                        if (noDocs) noDocs.remove();
-                        
-                        const doc = data.document;
-                        const rowHtml = `
+                        if (data.success) {
+                            const noDocs = noDocsRow();
+                            if (noDocs) noDocs.remove();
+
+                            const doc = data.document;
+                            const rowHtml = `
                             <tr id="doc-row-${doc.id}" class="animate__animated animate__fadeIn">
                                 <td class="ps-4">
                                     <div class="d-flex align-items-center gap-2">
@@ -1126,25 +1682,25 @@
                                 </td>
                             </tr>
                         `;
-                        docListBody.insertAdjacentHTML('afterbegin', rowHtml);
-                        attachDeleteHandler(doc.id);
-                    } else {
-                        alert('Upload failed: ' + (data.message || 'Unknown error'));
-                    }
-                })
-                .catch(err => {
-                    uploadBtn.disabled = false;
-                    uploadBtn.innerHTML = originalBtnHtml;
-                    console.error('Upload error:', err);
-                    alert('Error uploading document.');
-                });
+                            docListBody.insertAdjacentHTML('afterbegin', rowHtml);
+                            attachDeleteHandler(doc.id);
+                        } else {
+                            alert('Upload failed: ' + (data.message || 'Unknown error'));
+                        }
+                    })
+                    .catch(err => {
+                        uploadBtn.disabled = false;
+                        uploadBtn.innerHTML = originalBtnHtml;
+                        console.error('Upload error:', err);
+                        alert('Error uploading document.');
+                    });
             });
         }
 
         function attachDeleteHandler(docId) {
             const btn = document.querySelector(`.delete-doc-btn[data-id="${docId}"]`);
             if (btn) {
-                btn.addEventListener('click', function() {
+                btn.addEventListener('click', function () {
                     const id = this.dataset.id;
                     if (!confirm('Are you sure you want to delete this document?')) return;
 
@@ -1155,12 +1711,12 @@
                             'X-Requested-With': 'XMLHttpRequest'
                         }
                     })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            document.getElementById(`doc-row-${id}`).remove();
-                            if (docListBody.children.length === 0) {
-                                docListBody.innerHTML = `
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                document.getElementById(`doc-row-${id}`).remove();
+                                if (docListBody.children.length === 0) {
+                                    docListBody.innerHTML = `
                                     <tr id="no-docs-row">
                                         <td colspan="5" class="text-center py-5 text-muted">
                                             <i class="fas fa-file-alt fa-3x mb-3 opacity-10"></i>
@@ -1168,12 +1724,12 @@
                                         </td>
                                     </tr>
                                 `;
+                                }
+                            } else {
+                                alert('Delete failed.');
                             }
-                        } else {
-                            alert('Delete failed.');
-                        }
-                    })
-                    .catch(err => console.error('Delete error:', err));
+                        })
+                        .catch(err => console.error('Delete error:', err));
                 });
             }
         }
@@ -1182,6 +1738,834 @@
         document.querySelectorAll('.delete-doc-btn').forEach(btn => {
             attachDeleteHandler(btn.dataset.id);
         });
+        // Handle Add Location Form
+        const locationForm = document.getElementById('addLocationForm');
+        if (locationForm) {
+            locationForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                const btn = document.getElementById('submitLocationBtn');
+                const originalHtml = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+
+                const formData = new FormData(this);
+                fetch('{% url "inventory:ajax_warehouse_create" %}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            location.reload();
+                        } else {
+                            btn.disabled = false;
+                            btn.innerHTML = originalHtml;
+                            console.error('Form Errors:', data.errors);
+                            let errorMsg = 'Failed to add location. ';
+                            if (data.errors) {
+                                const firstField = Object.keys(data.errors)[0];
+                                const firstError = data.errors[firstField][0].message;
+                                errorMsg += `(${firstField}: ${firstError})`;
+                            }
+                            alert(errorMsg);
+                        }
+                    })
+                    .catch(err => {
+                        btn.disabled = false;
+                        btn.innerHTML = originalHtml;
+                        console.error('Error:', err);
+                        alert('An error occurred.');
+                    });
+            });
+        }
+
+        // --- AJAX for Company Materials ---
+
+        // 1. Submit New Material (Modal)
+        const newMaterialForm = document.getElementById('newMaterialForm');
+        if (newMaterialForm) {
+            newMaterialForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                const btn = this.querySelector('button[type="submit"]');
+                const originalHtml = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating...';
+
+                const formData = new FormData(this);
+                fetch('{% url "inventory:create_material_ajax" %}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            // Add to main select
+                            const select = document.getElementById('materialSelect');
+                            const option = new Option(data.name, data.id, true, true);
+                            select.add(option);
+
+                            // Also add to the Company Material list if associated
+                            addMaterialToUI({
+                                id: data.id,
+                                name: data.name,
+                                type: data.type,
+                                grade: data.grade,
+                                form: data.form,
+                                description: data.description
+                            });
+
+                            // Close modal
+                            const modal = bootstrap.Modal.getInstance(document.getElementById('materialModal'));
+                            modal.hide();
+
+                            // Clean form
+                            newMaterialForm.reset();
+                            btn.disabled = false;
+                            btn.innerHTML = originalHtml;
+                        } else {
+                            btn.disabled = false;
+                            btn.innerHTML = originalHtml;
+                            alert('Error: ' + JSON.stringify(data.errors));
+                        }
+                    })
+                    .catch(err => {
+                        btn.disabled = false;
+                        btn.innerHTML = originalHtml;
+                        console.error('Error:', err);
+                    });
+            });
+        }
+
+        // 2. Associate Existing Material (Drawer)
+        const associateForm = document.getElementById('addCompanyMaterialForm');
+        if (associateForm) {
+            associateForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                const btn = document.getElementById('submitAssociateBtn');
+                const originalHtml = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
+
+                const formData = new FormData(this);
+                fetch('{% url "accounts:ajax_associate_material" company.pk %}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            addMaterialToUI(data.material);
+
+                            // Close offcanvas
+                            const offcanvas = bootstrap.Offcanvas.getInstance(document.getElementById('offcanvasAddCompanyMaterial'));
+                            offcanvas.hide();
+
+                            // Reset form
+                            associateForm.reset();
+                            btn.disabled = false;
+                            btn.innerHTML = originalHtml;
+                        } else {
+                            btn.disabled = false;
+                            btn.innerHTML = originalHtml;
+                            alert(data.message || 'Error associating material.');
+                        }
+                    })
+                    .catch(err => {
+                        btn.disabled = false;
+                        btn.innerHTML = originalHtml;
+                        console.error('Error:', err);
+                    });
+            });
+        }
+
+        function addMaterialToUI(material) {
+            const list = document.getElementById('company-material-list');
+
+            // Remove placeholder if it exists
+            const placeholder = list.querySelector('.text-center.py-5.text-muted');
+            if (placeholder) placeholder.remove();
+
+            const materialHtml = `
+                <div class="material-item p-4 border-top animate__animated animate__fadeIn" id="material-item-${material.id}">
+                    <div class="d-flex align-items-center gap-4">
+                        <div class="material-icon bg-light rounded-circle d-flex align-items-center justify-content-center clickable-img-placeholder"
+                            style="width: 60px; height: 60px; font-size: 1.5rem;"
+                            onclick="triggerQuickMaterialUpload('${material.id}')"
+                            id="img-placeholder-material-${material.id}">
+                            <i class="fas fa-recycle text-muted opacity-50"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6 class="fw-bold mb-0">${material.name}</h6>
+                                <div class="dropdown">
+                                    <button class="btn btn-link text-muted p-0 no-caret" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="fas fa-ellipsis-h"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 py-2" style="font-size: 0.8rem; border-radius: 10px;">
+                                        <li>
+                                            <a class="dropdown-item disassociate-material-btn text-danger py-2" href="javascript:void(0)" data-id="${material.id}">
+                                                <i class="fas fa-trash-alt me-2 opacity-50"></i>Delete
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="row g-2">
+                                <div class="col-md-3">
+                                    <div class="small text-muted mb-1">Type</div>
+                                    <div class="small fw-medium">${material.type}</div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="small text-muted mb-1">Grade</div>
+                                    <div class="small fw-medium">${material.grade}</div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="small text-muted mb-1">Form</div>
+                                    <div class="small fw-medium">${material.form}</div>
+                                </div>
+                                <div class="col-md-3 text-end pt-2">
+                                    <button class="btn btn-outline-secondary btn-xs rounded-pill"
+                                        type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#material-new-${material.id}">
+                                        Show More <i class="fas fa-chevron-down ms-1"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="collapse mt-3" id="material-new-${material.id}">
+                                <div class="bg-light p-3 rounded-3 small">
+                                    <p class="mb-0 text-muted">${material.description || "No additional details available."}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            list.insertAdjacentHTML('afterbegin', materialHtml);
+        }
+
+        // 3. Disassociate Material
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.disassociate-material-btn')) {
+                const btn = e.target.closest('.disassociate-material-btn');
+                const materialId = btn.dataset.id;
+                
+                if (!confirm('Are you sure you want to remove this material from the company?')) return;
+                
+                const formData = new FormData();
+                formData.append('material_id', materialId);
+                
+                fetch('{% url "accounts:ajax_disassociate_material" company.pk %}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Remove from UI with animation
+                        const item = btn.closest('.material-item');
+                        item.classList.add('animate__fadeOut');
+                        setTimeout(() => {
+                            item.remove();
+                            // If list is empty, show placeholder
+                            const list = document.getElementById('company-material-list');
+                            if (list.querySelectorAll('.material-item').length === 0) {
+                                list.innerHTML = `
+                                    <div class="text-center py-5 text-muted bg-light bg-opacity-50 border-top">
+                                        <i class="fas fa-boxes fa-2x mb-3 opacity-25"></i>
+                                        <p>No materials found for this company.</p>
+                                    </div>
+                                `;
+                            }
+                        }, 500);
+                    } else {
+                        alert(data.message || 'Error removing material.');
+                    }
+                })
+                .catch(err => {
+                    console.error('Error:', err);
+                    alert('An error occurred.');
+                });
+            }
+        });
+
+        // Image selection feedback
+        const materialImgInput = document.getElementById('materialImageInput');
+        const fileStatus = document.getElementById('fileStatus');
+
+        if (materialImgInput && fileStatus) {
+            materialImgInput.addEventListener('change', function () {
+                if (this.files && this.files[0]) {
+                    fileStatus.innerText = 'Selected: ' + this.files[0].name;
+                    fileStatus.classList.remove('text-muted');
+                    fileStatus.classList.add('text-primary', 'fw-bold');
+                } else {
+                    fileStatus.innerText = 'No image selected';
+                    fileStatus.classList.remove('text-primary', 'fw-bold');
+                }
+            });
+        }
+
+        // --- AJAX for Add Contact ---
+        const contactForm = document.getElementById('addContactForm');
+        if (contactForm) {
+            contactForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                const btn = document.getElementById('submitContactBtn');
+                const originalHtml = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+
+                const formData = new FormData(this);
+                fetch('{% url "accounts:ajax_add_contact" %}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            const contact = data.contact;
+                            const list = document.querySelector('.contacts-list');
+
+                            // Remove placeholder if it exists
+                            const placeholder = list.querySelector('.text-center.py-4');
+                            if (placeholder) placeholder.remove();
+
+                            const contactHtml = `
+                            <div class="contact-item mb-3 animate__animated animate__fadeIn">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <div class="fw-bold text-dark" style="font-size: 0.8rem;">${contact.name}</div>
+                                        <div class="text-primary small mb-1" style="font-size: 0.7rem;">${contact.email}</div>
+                                        <div class="text-muted small" style="font-size: 0.7rem;">
+                                            Mobile: <span class="text-dark">${contact.phone}</span>
+                                        </div>
+                                    </div>
+                                    <div class="ms-2">
+                                        <div class="dropdown">
+                                            <button class="btn btn-light btn-sm rounded-circle p-0 d-flex align-items-center justify-content-center no-caret" 
+                                                    type="button" data-bs-toggle="dropdown" aria-expanded="false" 
+                                                    style="width: 24px; height: 24px; background-color: #f0f4f8; border: none;">
+                                                <i class="fas fa-ellipsis-h text-primary" style="font-size: 10px;"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end shadow border-0 py-2 animate__animated animate__fadeIn animate__faster" 
+                                                style="font-size: 0.75rem; border-radius: 10px; min-width: 110px; box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;">
+                                                <li><a class="dropdown-item edit-contact-btn py-2 d-flex align-items-center" href="javascript:void(0)" 
+                                                    data-id="${contact.id}" 
+                                                    data-name="${contact.name}" 
+                                                    data-email="${contact.email}" 
+                                                    data-phone="${contact.phone}">
+                                                    <i class="fas fa-edit me-2 opacity-50" style="width: 14px;"></i>Edit</a></li>
+                                                <li><a class="dropdown-item archive-contact-btn py-2 text-danger d-flex align-items-center" href="javascript:void(0)" data-id="${contact.id}">
+                                                    <i class="fas fa-trash-alt me-2 opacity-50" style="width: 14px;"></i>Archive</a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                            list.insertAdjacentHTML('afterbegin', contactHtml);
+
+                            // Close offcanvas
+                            const offcanvas = bootstrap.Offcanvas.getInstance(document.getElementById('offcanvasAddContact'));
+                            offcanvas.hide();
+
+                            // Reset form
+                            contactForm.reset();
+                            btn.disabled = false;
+                            btn.innerHTML = originalHtml;
+                        } else {
+                            btn.disabled = false;
+                            btn.innerHTML = originalHtml;
+                            alert(data.message || 'Error adding contact.');
+                        }
+                    })
+                    .catch(err => {
+                        btn.disabled = false;
+                        btn.innerHTML = originalHtml;
+                        console.error('Error:', err);
+                    });
+            });
+        }
+
+        // --- ARCHIVED CONTACTS TOGGLE ---
+        const archivedToggle = document.getElementById('showArchivedContacts');
+        if (archivedToggle) {
+            // Restore state on load
+            const savedState = sessionStorage.getItem('contacts_show_archived');
+            if (savedState === 'true') {
+                archivedToggle.checked = true;
+            } else if (savedState === 'false') {
+                archivedToggle.checked = false;
+            }
+
+            archivedToggle.addEventListener('change', function () {
+                const isToggleOn = this.checked;
+                sessionStorage.setItem('contacts_show_archived', isToggleOn);
+                
+                const items = document.querySelectorAll('.contact-item');
+                const archivedItems = document.querySelectorAll('.contact-item.archived-contact');
+                const noArchivedMsg = document.getElementById('noArchivedMsg');
+
+                items.forEach(item => {
+                    const isArchived = item.classList.contains('archived-contact');
+                    
+                    // Logic: OFF shows only Active. ON shows only Archived.
+                    let shouldShow = false;
+                    if (isToggleOn) {
+                        shouldShow = isArchived;
+                    } else {
+                        shouldShow = !isArchived;
+                    }
+
+                    if (shouldShow) {
+                        item.style.setProperty('display', 'block', 'important');
+                        item.classList.add('animate__fadeIn');
+                    } else {
+                        item.style.setProperty('display', 'none', 'important');
+                        item.classList.remove('animate__fadeIn');
+                    }
+                });
+
+                // Show empty message if Toggle is ON and no archived contacts exist
+                if (isToggleOn && archivedItems.length === 0) {
+                    noArchivedMsg.classList.remove('d-none');
+                } else {
+                    noArchivedMsg.classList.add('d-none');
+                }
+            });
+
+            // Trigger initial state
+            archivedToggle.dispatchEvent(new Event('change'));
+        }
+
+        // --- CONTACT EDIT/ARCHIVE HANDLERS ---
+
+        // Handle Edit Button Click
+        document.addEventListener('click', function (e) {
+            if (e.target.closest('.edit-contact-btn')) {
+                const btn = e.target.closest('.edit-contact-btn');
+                const id = btn.dataset.id;
+                const name = btn.dataset.name;
+                const email = btn.dataset.email;
+                const phone = btn.dataset.phone;
+
+                document.getElementById('edit_contact_id').value = id;
+                document.getElementById('edit_contact_name').value = name;
+                document.getElementById('edit_contact_email').value = email;
+                document.getElementById('edit_contact_phone').value = phone;
+
+                // Open the offcanvas (Bootstrap 5)
+                const editOffcanvas = new bootstrap.Offcanvas(document.getElementById('offcanvasEditContact'));
+                editOffcanvas.show();
+            }
+
+            if (e.target.closest('.restore-contact-btn')) {
+                const btn = e.target.closest('.restore-contact-btn');
+                const id = btn.dataset.id;
+
+                // Store ID and show custom modal
+                document.getElementById('restore_contact_id').value = id;
+                const restoreModal = new bootstrap.Modal(document.getElementById('restoreContactModal'));
+                restoreModal.show();
+            }
+
+            if (e.target.closest('.archive-contact-btn')) {
+                const btn = e.target.closest('.archive-contact-btn');
+                const id = btn.dataset.id;
+
+                // Store ID and show custom modal
+                document.getElementById('archive_contact_id').value = id;
+                const archiveModal = new bootstrap.Modal(document.getElementById('archiveContactModal'));
+                archiveModal.show();
+            }
+
+        });
+
+        // Handle Confirm Restore Button Click
+        const confirmRestoreBtn = document.getElementById('confirmRestoreBtn');
+        if (confirmRestoreBtn) {
+            confirmRestoreBtn.addEventListener('click', function () {
+                const id = document.getElementById('restore_contact_id').value;
+                const btn = this;
+                const originalHtml = btn.innerHTML;
+
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Restoring...';
+
+                fetch('{% url "accounts:ajax_unarchive_contact" %}', {
+                    method: 'POST',
+                    body: JSON.stringify({ contact_id: id }),
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // On success, set toggle to OFF and reload to see in active list
+                            sessionStorage.setItem('contacts_show_archived', 'false');
+                            bootstrap.Modal.getInstance(document.getElementById('restoreContactModal')).hide();
+                            location.reload(); 
+                        } else {
+                            btn.disabled = false;
+                            btn.innerHTML = originalHtml;
+                            alert(data.message || 'Error restoring contact.');
+                        }
+                    })
+                    .catch(err => {
+                        btn.disabled = false;
+                        btn.innerHTML = originalHtml;
+                        console.error('Error:', err);
+                    });
+            });
+        }
+
+        // Handle Confirm Archive Button Click
+        const confirmArchiveBtn = document.getElementById('confirmArchiveBtn');
+        if (confirmArchiveBtn) {
+            confirmArchiveBtn.addEventListener('click', function () {
+                const id = document.getElementById('archive_contact_id').value;
+                const btn = this;
+                const originalHtml = btn.innerHTML;
+
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Archiving...';
+
+                fetch('{% url "accounts:ajax_archive_contact" %}', {
+                    method: 'POST',
+                    body: JSON.stringify({ contact_id: id }),
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // On success, set toggle to ON and reload to see in archived list
+                            sessionStorage.setItem('contacts_show_archived', 'true');
+                            bootstrap.Modal.getInstance(document.getElementById('archiveContactModal')).hide();
+                            location.reload(); 
+                        } else {
+                            btn.disabled = false;
+                            btn.innerHTML = originalHtml;
+                            alert(data.message || 'Error archiving contact.');
+                        }
+                    })
+                    .catch(err => {
+                        btn.disabled = false;
+                        btn.innerHTML = originalHtml;
+                        console.error('Error:', err);
+                    });
+            });
+        }
+
+        // Handle Edit Form Submission
+        const editContactForm = document.getElementById('editContactForm');
+        if (editContactForm) {
+            editContactForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                const btn = document.getElementById('submitEditContactBtn');
+                const originalHtml = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Updating...';
+
+                const formData = new FormData(this);
+                fetch('{% url "accounts:ajax_edit_contact" %}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Refresh the page or update the specific contact item
+                            // For simplicity and accuracy of joined data, let's refresh or update the specific item
+                            const contact = data.contact;
+                            // Find the contact item and update its content
+                            const items = document.querySelectorAll('.contact-item');
+                            items.forEach(item => {
+                                const editBtn = item.querySelector('.edit-contact-btn');
+                                if (editBtn && editBtn.dataset.id == contact.id) {
+                                    item.querySelector('.text-dark.fw-bold').innerText = contact.name;
+                                    item.querySelector('.text-primary.small').innerText = contact.email;
+                                    item.querySelector('.text-muted.small span').innerText = contact.phone;
+
+                                    // Update dataset
+                                    editBtn.dataset.name = contact.name;
+                                    editBtn.dataset.email = contact.email;
+                                    editBtn.dataset.phone = contact.phone;
+                                }
+                            });
+
+                            bootstrap.Offcanvas.getInstance(document.getElementById('offcanvasEditContact')).hide();
+                            btn.disabled = false;
+                            btn.innerHTML = originalHtml;
+                        } else {
+                            btn.disabled = false;
+                            btn.innerHTML = originalHtml;
+                            alert(data.message || 'Error updating contact.');
+                        }
+                    })
+                    .catch(err => {
+                        btn.disabled = false;
+                        btn.innerHTML = originalHtml;
+                        console.error('Error:', err);
+                    });
+            });
+        }
+
+        // --- COMPANY LOGO UPLOAD ---
+        const logoWrapper = document.getElementById('company-logo-wrapper');
+        const modalUploadLogoEl = document.getElementById('modalUploadLogo');
+        const modalUploadLogo = modalUploadLogoEl ? new bootstrap.Modal(modalUploadLogoEl) : null;
+        const logoDropZone = document.getElementById('logo-drop-zone');
+        const logoFileInput = document.getElementById('input-logo-file');
+        const btnSetLogo = document.getElementById('btn-set-logo');
+        const btnRemoveLogo = document.getElementById('btn-remove-logo');
+        const logoPreviewContainer = document.getElementById('logo-preview-container');
+        const logoPreviewImg = document.getElementById('logo-preview-img');
+        const btnClearPreview = document.getElementById('btn-clear-preview');
+
+        const logoButtonsContainer = document.getElementById('logo-buttons-container');
+        const dropText = document.getElementById('drop-text');
+
+        if (logoWrapper) {
+            logoWrapper.addEventListener('click', () => modalUploadLogo.show());
+        }
+
+        function handleLogoFile(file) {
+            if (!file || !file.type.startsWith('image/')) return;
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                logoPreviewImg.src = e.target.result;
+                logoPreviewContainer.classList.remove('d-none');
+                btnSetLogo.disabled = false;
+                if (dropText) dropText.classList.add('d-none');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        if (logoDropZone) {
+            logoDropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                logoDropZone.style.borderColor = '#4a6cf7';
+                logoDropZone.style.backgroundColor = '#eff6ff';
+            });
+
+            logoDropZone.addEventListener('dragleave', () => {
+                logoDropZone.style.borderColor = '#cbd5e1';
+                logoDropZone.style.backgroundColor = '#f8fafc';
+            });
+
+            logoDropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                logoDropZone.style.borderColor = '#cbd5e1';
+                logoDropZone.style.backgroundColor = '#f8fafc';
+                const file = e.dataTransfer.files[0];
+                if (file) {
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(file);
+                    logoFileInput.files = dataTransfer.files;
+                    handleLogoFile(file);
+                }
+            });
+        }
+
+        if (logoFileInput) {
+            logoFileInput.addEventListener('change', (e) => {
+                handleLogoFile(e.target.files[0]);
+            });
+        }
+
+        if (btnClearPreview) {
+            btnClearPreview.addEventListener('click', () => {
+                logoPreviewContainer.classList.add('d-none');
+                logoPreviewImg.src = '';
+                btnSetLogo.disabled = true;
+                if (dropText) dropText.classList.remove('d-none');
+                logoFileInput.value = '';
+            });
+        }
+
+        if (btnSetLogo) {
+            btnSetLogo.addEventListener('click', () => {
+                if (!logoFileInput.files[0]) return;
+
+                const formData = new FormData();
+                formData.append('logo', logoFileInput.files[0]);
+
+                btnSetLogo.disabled = true;
+                btnSetLogo.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+                fetch('{% url "accounts:ajax_update_company_logo" company.id %}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert(data.message);
+                        btnSetLogo.disabled = false;
+                        btnSetLogo.innerHTML = '<i class="fas fa-upload" style="font-size: 12px;"></i> Set Logo';
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    btnSetLogo.disabled = false;
+                    btnSetLogo.innerHTML = '<i class="fas fa-upload" style="font-size: 12px;"></i> Set Logo';
+                });
+            });
+        }
+
+        if (btnRemoveLogo) {
+            btnRemoveLogo.addEventListener('click', () => {
+                if (!confirm('Are you sure you want to remove the logo?')) return;
+
+                btnRemoveLogo.disabled = true;
+                btnRemoveLogo.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+                fetch('{% url "accounts:ajax_remove_company_logo" company.id %}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert(data.message);
+                        btnRemoveLogo.disabled = false;
+                        btnRemoveLogo.innerHTML = 'Remove Current Logo';
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    btnRemoveLogo.disabled = false;
+                    btnRemoveLogo.innerHTML = 'Remove Current Logo';
+                });
+            });
+        }
     });
 </script>
+
+<!-- Offcanvas: Add New Location -->
+<div class="offcanvas offcanvas-end border-0 shadow" tabindex="-1" id="offcanvasAddLocation"
+    aria-labelledby="offcanvasAddLocationLabel" style="width: 480px;">
+    <div class="offcanvas-header bg-white border-bottom px-4 py-3">
+        <h5 class="offcanvas-title fw-bold" id="offcanvasAddLocationLabel">Add New Location</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body p-4">
+        <form id="addLocationForm" method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="company_id" value="{{ company.id }}">
+
+            <div class="mb-4">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-2"
+                    style="font-size: 0.7rem; letter-spacing: 0.5px;">Address <span class="text-danger">*</span></label>
+                {{ location_form.address }}
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-md-7">
+                    <label class="form-label small fw-bold text-muted text-uppercase mb-2"
+                        style="font-size: 0.7rem; letter-spacing: 0.5px;">Location Name</label>
+                    {{ location_form.name }}
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label small fw-bold text-muted text-uppercase mb-2"
+                        style="font-size: 0.7rem; letter-spacing: 0.5px;">Phone Number</label>
+                    {{ location_form.phone }}
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-2"
+                    style="font-size: 0.7rem; letter-spacing: 0.5px;">Shipping Requirements</label>
+                {{ location_form.shipping_requirements }}
+            </div>
+
+            <div class="mb-4 border-top pt-4">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-3 d-block"
+                    style="font-size: 0.7rem; letter-spacing: 0.5px;">Default Delivery Appointment</label>
+                <div class="segmented-control-wrapper" role="group">
+                    {% for radio in location_form.delivery_appointment_type %}
+                    <input type="radio" class="btn-check" name="{{ radio.name }}" id="{{ radio.id_for_label }}_v2"
+                        value="{{ radio.data.value }}" {% if radio.data.selected %}checked{% endif %}>
+                    <label class="btn" for="{{ radio.id_for_label }}_v2">{{ radio.choice_label }}</label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-3 d-block"
+                    style="font-size: 0.7rem; letter-spacing: 0.5px;">Default Pickup Appointment</label>
+                <div class="segmented-control-wrapper" role="group">
+                    {% for radio in location_form.pickup_appointment_type %}
+                    <input type="radio" class="btn-check" name="{{ radio.name }}" id="{{ radio.id_for_label }}_v2"
+                        value="{{ radio.data.value }}" {% if radio.data.selected %}checked{% endif %}>
+                    <label class="btn" for="{{ radio.id_for_label }}_v2">{{ radio.choice_label }}</label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="mb-4 border-top pt-4">
+                <div class="form-check p-0">
+                    <input class="form-check-input ms-0 border-light-subtle rounded-1" type="checkbox"
+                        name="{{ location_form.is_remit_to.name }}" id="{{ location_form.is_remit_to.id_for_label }}"
+                        style="width: 1.2rem; height: 1.2rem; cursor: pointer; float: none; vertical-align: middle;">
+                    <label class="form-check-label fw-bold text-dark small ms-2"
+                        for="{{ location_form.is_remit_to.id_for_label }}" style="vertical-align: middle;">Remit
+                        To</label>
+                </div>
+                <div class="mt-2 text-muted" style="font-size: 0.65rem; line-height: 1.4;">
+                    Note: a company can only have one remittance location at a time, so adding a new remittance location
+                    will unset any previously set one.
+                </div>
+            </div>
+
+            <div class="mt-5 pb-3 d-flex justify-content-center">
+                <button type="submit" class="btn btn-primary rounded-pill py-2 px-5 fw-bold shadow-sm border-0"
+                    id="submitLocationBtn" style="background: #0061f2; min-width: 180px;">Submit</button>
+            </div>
+        </form>
+    </div>
+</div>
 {% endblock %}

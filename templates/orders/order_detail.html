@@ -1,5 +1,7 @@
 {% extends 'base.html' %}
 {% load humanize %}
+{% load inventory_tags %}
+
 
 {% block title %}Order #{{ order.order_number }} Details - FreightPro{% endblock %}
 
@@ -97,8 +99,25 @@
 
     .nav-tabs-premium .nav-link.active {
         color: var(--accent-blue);
+    }
+    
+    .manifest-row {
+        transition: background-color 0.15s ease-in-out;
+    }
+    .manifest-row:hover {
+        background-color: #f8f9fc !important;
+        cursor: pointer;
+    }
+    .manifest-row a {
+        position: relative;
+        z-index: 2;
+    }
+
+    .nav-tabs-premium .nav-link.active {
+        color: var(--accent-blue);
         background: transparent;
     }
+
 
     .nav-tabs-premium .nav-link.active::after {
         content: '';
@@ -145,7 +164,73 @@
         text-transform: uppercase;
         border: none;
     }
+
+    /* Select2 Bootstrap 5 Theme Adjustments */
+    .select2-container--bootstrap-5 .select2-selection {
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        min-height: 38px;
+    }
+    .select2-container--bootstrap-5.select2-container--focus .select2-selection {
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+
+    /* Location Modal UI matching Matium */
+    .location-modal .modal-content {
+        border-radius: 12px;
+        border: none;
+        overflow: hidden;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+    }
+    .location-modal .modal-header {
+        background-color: #f8fafc;
+        border-bottom: 1px solid #f1f5f9;
+        padding: 1.5rem 2rem;
+    }
+    .location-modal .modal-body {
+        padding: 2rem;
+    }
+    .location-modal .modal-footer {
+        background-color: #f8fafc;
+        border-top: none;
+        padding: 1rem 2rem 2rem;
+        justify-content: center;
+    }
+    .location-modal .detail-item {
+        margin-bottom: 1.5rem;
+    }
+    .location-modal .detail-label {
+        color: #64748b;
+        font-size: 0.75rem;
+        text-transform: none;
+        letter-spacing: normal;
+        margin-bottom: 0.25rem;
+        font-weight: 500;
+    }
+    .location-modal .detail-value {
+        color: #1e293b;
+        font-weight: 700;
+        font-size: 0.95rem;
+    }
+    .location-modal .btn-view-more {
+        background-color: #2563eb;
+        color: white;
+        font-weight: 600;
+        border-radius: 6px;
+        padding: 0.6rem 2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .location-modal .btn-view-more:hover {
+        background-color: #1d4ed8;
+        color: white;
+    }
 </style>
+<!-- Select2 CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
 
 <div class="container-fluid p-0">
     <!-- Header Section -->
@@ -157,12 +242,21 @@
                 <div class="ms-4 mt-1" style="width: 300px;">
                     <div class="progress rounded-pill bg-light"
                         style="height: 24px; position: relative; border: 1px solid #e3e6f0;"
-                        title="Manifested: {{ order.total_manifest_weight|floatformat:2 }} / Target: {{ order.total_weight_target|floatformat:2 }} lbs (Shipped: {{ order.shipped_weight|floatformat:2 }} lbs)">
-                        <div class="progress-bar bg-info opacity-50"
-                            style="width: {{ order.manifest_progress_percentage }}%"></div>
+                        title="Manifested: {{ order.total_manifest_weight_in_unit|floatformat:2 }} / Total: {{ order.total_weight_target|floatformat:2 }} {{ order.total_weight_unit }} (Shipped: {{ order.shipped_weight_in_unit|floatformat:2 }} {{ order.total_weight_unit }})">
+                        <!-- Manifested Progress (Light Blue) -->
+                        <div class="progress-bar bg-info opacity-25 position-absolute h-100"
+                            style="width: {{ order.manifest_progress_percentage }}%; z-index: 1;"></div>
+                        <!-- Shipped Progress (Solid Blue) -->
+                        <div class="progress-bar bg-primary position-absolute h-100"
+                            style="width: {{ order.weight_progress_percentage }}%; z-index: 2;"></div>
+                        
                         <div class="position-absolute w-100 text-center fw-bold"
-                            style="font-size: 0.75rem; line-height: 22px; color: #2d3748;">
-                            {{ order.total_manifest_weight|intcomma }} / {{ order.total_weight_target|intcomma }} lbs
+                            style="font-size: 0.75rem; line-height: 22px; color: #1e293b; z-index: 3;">
+                            {% if order.shipped_weight_in_unit > 0 %}
+                                {{ order.shipped_weight_in_unit|format_short }} / {{ order.total_weight_target|format_short }} {{ order.total_weight_unit }}
+                            {% else %}
+                                {{ order.total_manifest_weight_in_unit|format_short }} / {{ order.total_weight_target|format_short }} {{ order.total_weight_unit }}
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -225,25 +319,47 @@
         </div>
 
         <div class="row mt-4 g-0">
-            <div class="col-md-4 px-3 border-end">
+            <div class="col-md-4 px-3">
                 <div class="detail-label">Supplier</div>
                 <div class="party-title mb-1">{{ order.supplier.name }}</div>
-                <div class="small text-primary mb-2">
-                    <i class="fas fa-map-marker-alt me-1"></i> {{ order.supplier.full_address }}
+                <div class="small mb-2">
+                    {% with loc=order.source_location supp=order.supplier ship=order.shipments.first %}
+                    <a href="javascript:void(0)" class="text-primary text-decoration-none location-modal-trigger fw-semibold" 
+                       data-address="{% if loc %}{{ loc.address }}, {{ loc.city }}, {{ loc.state }} {{ loc.postal_code }}, {{ loc.country }}{% else %}{{ supp.full_address }}{% endif %}"
+                       data-name="{% if loc and loc.name %}{{ loc.name }}{% else %}{{ supp.name }}{% endif %}"
+                       data-phone="{% if loc and loc.phone %}{{ loc.phone }}{% else %}{{ supp.phone|default:'-' }}{% endif %}"
+                       data-shipping-req="{% if loc and loc.shipping_requirements %}{{ loc.shipping_requirements }}{% else %}-{% endif %}"
+                       data-pickup-appt="{% if loc and loc.pickup_appointment_type %}{{ loc.get_pickup_appointment_type_display }}{% elif ship %}{{ ship.get_pickup_appointment_type_display }}{% else %}FCFS{% endif %}"
+                       data-delivery-appt="{% if loc and loc.delivery_appointment_type %}{{ loc.get_delivery_appointment_type_display }}{% elif ship %}{{ ship.get_delivery_appointment_type_display }}{% else %}FCFS{% endif %}"
+                       data-id="{% if loc %}{{ loc.pk }}{% endif %}"
+                       data-company-id="{{ supp.id }}">
+                        <i class="fas fa-map-marker-alt me-1"></i> {{ supp.full_address }}
+                    </a>
+                    {% endwith %}
                 </div>
                 <div class="small text-muted mb-1"><i class="fas fa-file-alt me-2"></i>SO#: {{ order.so_number|default:"-" }}</div>
                 <div class="small text-muted mb-1"><i class="fas fa-handshake me-2"></i>FOB Origin</div>
-                <div class="small text-muted"><i class="fas fa-calendar me-2"></i>{{ order.expected_pickup_date|date:"M d, Y"|default:"-" }}</div>
             </div>
             <div class="col-md-4 px-3">
                 <div class="detail-label">Receiver</div>
                 <div class="party-title mb-1">{{ order.receiver.name }}</div>
-                <div class="small text-primary mb-2">
-                    <i class="fas fa-map-marker-alt me-1"></i> {{ order.receiver.full_address }}
+                <div class="small mb-2">
+                    {% with loc=order.destination_location rec=order.receiver ship=order.shipments.first %}
+                    <a href="javascript:void(0)" class="text-primary text-decoration-none location-modal-trigger fw-semibold" 
+                       data-address="{% if loc %}{{ loc.address }}, {{ loc.city }}, {{ loc.state }} {{ loc.postal_code }}, {{ loc.country }}{% else %}{{ rec.full_address }}{% endif %}"
+                       data-name="{% if loc and loc.name %}{{ loc.name }}{% else %}{{ rec.name }}{% endif %}"
+                       data-phone="{% if loc and loc.phone %}{{ loc.phone }}{% else %}{{ rec.phone|default:'-' }}{% endif %}"
+                       data-shipping-req="{% if loc and loc.shipping_requirements %}{{ loc.shipping_requirements }}{% else %}-{% endif %}"
+                       data-pickup-appt="{% if loc and loc.pickup_appointment_type %}{{ loc.get_pickup_appointment_type_display }}{% elif ship %}{{ ship.get_pickup_appointment_type_display }}{% else %}FCFS{% endif %}"
+                       data-delivery-appt="{% if loc and loc.delivery_appointment_type %}{{ loc.get_delivery_appointment_type_display }}{% elif ship %}{{ ship.get_delivery_appointment_type_display }}{% else %}FCFS{% endif %}"
+                       data-id="{% if loc %}{{ loc.pk }}{% endif %}"
+                       data-company-id="{{ rec.id }}">
+                        <i class="fas fa-map-marker-alt me-1"></i> {{ rec.full_address }}
+                    </a>
+                    {% endwith %}
                 </div>
                 <div class="small text-muted mb-1"><i class="fas fa-file-invoice me-2"></i>PO#: {{ order.po_number|default:"-" }}</div>
                 <div class="small text-muted mb-1"><i class="fas fa-handshake me-2"></i>FOB Origin</div>
-                <div class="small text-muted"><i class="fas fa-calendar me-2"></i>{{ order.expected_delivery_date|date:"M d, Y"|default:"-" }}</div>
             </div>
         </div>
 
@@ -286,13 +402,24 @@
                                 </thead>
                                 <tbody>
                                     {% for item in manifest_items %}
-                                    <tr>
+                                    <tr class="manifest-row" 
+                                        data-item-id="{{ item.id }}"
+                                        data-material="{{ item.material }}"
+                                        data-weight="{{ item.weight }}"
+                                        data-weight-unit="{{ item.weight_unit }}"
+                                        data-buy-price="{{ item.buy_price }}"
+                                        data-buy-price-unit="{{ item.buy_price_unit }}"
+                                        data-sell-price="{{ item.sell_price }}"
+                                        data-sell-price-unit="{{ item.sell_price_unit }}"
+                                        data-packaging="{{ item.packaging }}"
+                                        data-palletized="{{ item.is_palletized|yesno:'true,false' }}">
                                         <td class="ps-3"><a href="{% url 'materials:material_lookup' %}?name={{ item.material|urlencode }}" class="text-primary fw-600 text-decoration-none">{{ item.material }}</a></td>
                                         <td>${{ item.buy_price|floatformat:2 }} / {{ item.buy_price_unit|default:"lb" }}</td>
                                         <td>${{ item.sell_price|floatformat:2 }} / {{ item.sell_price_unit|default:"lb" }}</td>
                                         <td>
-                                            {{ item.weight|intcomma }} {{ item.weight_unit }}
+                                            {{ item.weight|format_short }} {{ item.weight_unit }} / {{ order.total_weight_target|format_short }} {{ item.weight_unit }}
                                         </td>
+
                                         <td class="pe-3">
                                             {{ item.packaging|default:"-" }}
                                             {% if item.is_palletized %}
@@ -301,6 +428,7 @@
                                         </td>
                                     </tr>
                                     {% endfor %}
+
                                 </tbody>
                             </table>
                         </div>
@@ -318,6 +446,7 @@
                             class="btn btn-outline-primary btn-sm px-3 rounded-3" style="border-width: 2px; text-decoration: none; display: inline-flex; align-items: center;">Add
                             Shipment</a>
                         {% endif %}
+
                     </div>
                     <div class="card border-0 bg-white mb-4" style="border-radius: 12px; overflow: hidden;">
                         <div class="table-responsive">
@@ -490,11 +619,11 @@
                     <i class="fas fa-strikethrough"></i>
                     <i class="fas fa-link"></i>
                 </div>
-                <textarea class="form-control border-0 p-0 mb-3" rows="3" placeholder="Join the conversation..."
+                <textarea id="historyNoteText" class="form-control border-0 p-0 mb-3" rows="3" placeholder="Join the conversation..."
                     style="box-shadow: none; font-size: 0.850rem;"></textarea>
                 <div class="d-flex justify-content-between align-items-center">
                     <span class="text-muted smaller">Tip: Notify someone with @</span>
-                    <button class="btn btn-outline-primary btn-sm px-4">Submit</button>
+                    <button id="btnSubmitNote" class="btn btn-outline-primary btn-sm px-4">Submit</button>
                 </div>
             </div>
         </div>
@@ -612,16 +741,11 @@
                 </div>
             </div>
 
-            <!-- Tags -->
             <div class="mb-4">
                 <label class="form-label fw-bold small text-uppercase mb-1">Tags</label>
-                <select name="tags" class="form-select" multiple style="height: 100px;">
-                    {% for tag in tags %}
-                    <option value="{{ tag.id }}" {% if tag in order.tags.all %}selected{% endif %}>{{ tag.name }}
-                    </option>
-                    {% endfor %}
+                <select name="tags" id="tags-select-edit-order" class="form-select select2-basic" multiple>
+                    <!-- Existing tags removed per user request -->
                 </select>
-                <div class="smaller text-muted mt-1">Hold Ctrl/Cmd to select multiple</div>
             </div>
 
             <!-- Shipping Terms -->
@@ -784,18 +908,19 @@
                     <!-- Material -->
                     <div class="mb-4">
                         <label class="form-label fw-bold small text-uppercase mb-1">Material <span class="text-danger">*</span></label>
-                        <div class="d-flex gap-2 align-items-center">
-                            <select name="material[]" class="form-select border-primary-subtle rounded-3" required>
+                        <div class="input-group input-group-sm">
+                            <select name="material[]" class="form-select border-primary-subtle rounded-3 material-select" required>
                                 <option value="">Select a material</option>
                                 {% for item in inventory_items %}
                                 <option value="{{ item.id }}" data-unit="{{ item.unit_of_measure }}">
-                                    {{ item.product_name }} - {{ item.display_stock }}
+                                    {{ item.product_name }}
                                 </option>
                                 {% endfor %}
                             </select>
-                            <div class="bg-primary-subtle p-2 rounded-3 text-primary">
-                                <i class="fas fa-search"></i>
-                            </div>
+                            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#materialModal">
+                                + Add
+                            </button>
+
                         </div>
                     </div>
 
@@ -812,7 +937,6 @@
                                 <option value="kgs">kgs</option>
                                 <option value="mt">MT</option>
                                 <option value="st">ST</option>
-                                <option value="pcs">pcs</option>
                             </select>
                         </div>
                     </div>
@@ -833,7 +957,6 @@
                                 <option value="per kgs">per kgs</option>
                                 <option value="per mt">per MT</option>
                                 <option value="per st">per ST</option>
-                                <option value="per pcs">per pcs</option>
                             </select>
                         </div>
                     </div>
@@ -854,7 +977,6 @@
                                 <option value="per kgs">per kgs</option>
                                 <option value="per mt">per MT</option>
                                 <option value="per st">per ST</option>
-                                <option value="per pcs">per pcs</option>
                             </select>
                         </div>
                     </div>
@@ -894,9 +1016,162 @@
     </div>
 </div>
 
+<!-- Edit Manifest Item Offcanvas -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasEditItem"
+    style="width: 500px; border-left: none; box-shadow: -10px 0 30px rgba(0,0,0,0.1);">
+    <div class="offcanvas-header border-bottom p-4">
+        <h5 class="offcanvas-title fw-bold text-primary">Edit Item: <span id="editItemMaterialName" class="text-dark"></span></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body p-4">
+        <form id="editItemForm" method="POST">
+            {% csrf_token %}
+            
+            <!-- Weight & Unit -->
+            <div class="row g-3 mb-4">
+                <div class="col-8">
+                    <label class="form-label fw-bold small text-uppercase mb-1">Weight<span class="text-danger">*</span></label>
+                    <input type="number" step="0.01" name="weight" id="editItemWeight" class="form-control rounded-3" placeholder="Weight" required>
+                </div>
+                <div class="col-4">
+                    <label class="form-label fw-bold small text-uppercase mb-1">Unit</label>
+                    <select name="weight_unit" id="editItemWeightUnit" class="form-select rounded-3 manifest-unit-select">
+                        <option value="lbs">lbs</option>
+                        <option value="kgs">kgs</option>
+                        <option value="mt">MT</option>
+                        <option value="st">ST</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Buy Price & Unit -->
+            <div class="row g-3 mb-4">
+                <div class="col-8">
+                    <label class="form-label fw-bold small text-uppercase mb-1">Buy Price<span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0 rounded-start-3">$</span>
+                        <input type="number" step="0.0001" name="buy_price" id="editItemBuyPrice" class="form-control border-start-0 rounded-end-3" placeholder="Price" required>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <label class="form-label fw-bold small text-uppercase mb-1">Unit</label>
+                    <select name="buy_price_unit" id="editItemBuyPriceUnit" class="form-select rounded-3 manifest-unit-select">
+                        <option value="per lbs">per lbs</option>
+                        <option value="per kgs">per kgs</option>
+                        <option value="per mt">per MT</option>
+                        <option value="per st">per ST</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Sell Price & Unit -->
+            <div class="row g-3 mb-4">
+                <div class="col-8">
+                    <label class="form-label fw-bold small text-uppercase mb-1">Sell Price<span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0 rounded-start-3">$</span>
+                        <input type="number" step="0.0001" name="sell_price" id="editItemSellPrice" class="form-control border-start-0 rounded-end-3" placeholder="Price" required>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <label class="form-label fw-bold small text-uppercase mb-1">Unit</label>
+                    <select name="sell_price_unit" id="editItemSellPriceUnit" class="form-select rounded-3 manifest-unit-select">
+                        <option value="per lbs">per lbs</option>
+                        <option value="per kgs">per kgs</option>
+                        <option value="per mt">per MT</option>
+                        <option value="per st">per ST</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Packaging -->
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase mb-1">Packaging</label>
+                <select name="packaging" id="editItemPackaging" class="form-select rounded-3">
+                    <option value="">Select packaging type</option>
+                    {% for ptype in packaging_types %}
+                    <option value="{{ ptype.name }}">{{ ptype.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Palletized Checkbox -->
+            <div class="form-check mb-4">
+                <input class="form-check-input" type="checkbox" name="is_palletized" id="editItemIsPalletized">
+                <label class="form-check-label small fw-bold text-muted" for="editItemIsPalletized">Is the packaging palletized?</label>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="mt-4 pt-3 border-top">
+                <button type="submit" class="btn btn-primary w-100 py-2 fw-bold rounded-3 shadow-sm" style="background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%); border: none; font-size: 0.9rem;">Submit</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Manifest row quick-edit logic
+    document.querySelectorAll('.manifest-row').forEach(row => {
+        row.addEventListener('click', function(e) {
+            // Prevent drawer if clicking a link or interactive element
+            if (e.target.tagName === 'A' || e.target.closest('a') || e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
+            
+            // NEW: Prevent drawer if clicking in the first column (Material column)
+            const td = e.target.closest('td');
+            if (td && td.cellIndex === 0) return;
+
+            const data = this.dataset;
+
+            const offcanvasElement = document.getElementById('offcanvasEditItem');
+            const drawer = new bootstrap.Offcanvas(offcanvasElement);
+
+            // Populate fields
+            document.getElementById('editItemMaterialName').innerText = data.material;
+            document.getElementById('editItemWeight').value = data.weight;
+            document.getElementById('editItemWeightUnit').value = data.weightUnit;
+            document.getElementById('editItemBuyPrice').value = data.buyPrice;
+            document.getElementById('editItemBuyPriceUnit').value = data.buyPriceUnit;
+            document.getElementById('editItemSellPrice').value = data.sellPrice;
+            document.getElementById('editItemSellPriceUnit').value = data.sellPriceUnit;
+            document.getElementById('editItemPackaging').value = data.packaging;
+            document.getElementById('editItemIsPalletized').checked = data.palletized === 'true';
+
+            // Set form action
+            const editUrl = "{% url 'orders:order_edit_manifest_item' 0 %}".replace('0', data.itemId);
+            document.getElementById('editItemForm').action = editUrl;
+
+            drawer.show();
+        });
+    });
+
+    // Unit Synchronization Logic
+    function syncUnits(sourceSelect) {
+        const block = sourceSelect.closest('.item-block') || sourceSelect.closest('form');
+        if (!block) return;
+
+        let selectedVal = sourceSelect.value.replace('per ', '');
+        
+        const weightUnit = block.querySelector('.manifest-unit-select[name*="weight_unit"], #editItemWeightUnit');
+        const buyUnit = block.querySelector('.manifest-unit-select[name*="buy_price_unit"], #editItemBuyPriceUnit');
+        const sellUnit = block.querySelector('.manifest-unit-select[name*="sell_price_unit"], #editItemSellPriceUnit');
+
+        if (weightUnit && weightUnit !== sourceSelect) weightUnit.value = selectedVal;
+        if (buyUnit && buyUnit !== sourceSelect) buyUnit.value = 'per ' + selectedVal;
+        if (sellUnit && sellUnit !== sourceSelect) sellUnit.value = 'per ' + selectedVal;
+    }
+
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('manifest-unit-select') || 
+            ['editItemWeightUnit', 'editItemBuyPriceUnit', 'editItemSellPriceUnit'].includes(e.target.id)) {
+            syncUnits(e.target);
+        }
+    });
+
     document.getElementById('addAnotherItemBtn').addEventListener('click', function() {
+
+
         const container = document.getElementById('itemsContainer');
         const firstItem = container.querySelector('.item-block');
         const newItem = firstItem.cloneNode(true);
@@ -983,16 +1258,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Auto-calculate Net Weight if Gross and Tare are filled
+    // Auto-calculate Gross Weight: Net + Tare
     document.getElementById('shipmentItemsContainer')?.addEventListener('input', function(e) {
-        if (e.target.classList.contains('gross-weight-input') || e.target.classList.contains('tare-weight-input')) {
+        if (e.target.classList.contains('net-weight-input') || e.target.classList.contains('tare-weight-input')) {
             const block = e.target.closest('.shipment-item-block');
-            const gross = parseFloat(block.querySelector('.gross-weight-input').value) || 0;
+            const net = parseFloat(block.querySelector('.net-weight-input').value) || 0;
             const tare = parseFloat(block.querySelector('.tare-weight-input').value) || 0;
-            const netInput = block.querySelector('.net-weight-input');
+            const grossInput = block.querySelector('.gross-weight-input');
             
-            if (gross > 0) {
-                netInput.value = (gross - tare).toFixed(2);
+            if (net > 0 || tare > 0) {
+                grossInput.value = (net + tare).toFixed(2);
             }
         }
     });
@@ -1030,6 +1305,19 @@ document.addEventListener('DOMContentLoaded', function() {
     
     let activeLocationSelectId = '';
     let activeContactSelectId = '';
+
+    const enforceNumericLimit = (inputId, maxLength) => {
+        const input = document.getElementById(inputId);
+        if (!input) return;
+
+        input.addEventListener('input', function() {
+            this.value = (this.value || '').replace(/\D/g, '').slice(0, maxLength);
+        });
+    };
+
+    enforceNumericLimit('contactModalMobile', 10);
+    enforceNumericLimit('contactModalOffice', 10);
+    enforceNumericLimit('locationModalPhone', 10);
 
     // Date sequence validation
     const pickupDateInput = document.querySelector('input[name="pickup_date"]');
@@ -1070,16 +1358,56 @@ document.addEventListener('DOMContentLoaded', function() {
     pickupContactSelect?.addEventListener('change', handleContactChange);
     deliveryContactSelect?.addEventListener('change', handleContactChange);
 
+    // --- Auto-fill Shipment Prices Logic --- //
+    const shipmentContainer = document.getElementById('shipmentItemsContainer');
+    if (shipmentContainer) {
+        shipmentContainer.addEventListener('change', function(e) {
+            // Adjust the check to be more specific to our selection
+            if (e.target && e.target.name && e.target.name.includes('[material]')) {
+                const select = e.target;
+                const option = select.options[select.selectedIndex];
+                if (!option) return;
+
+                const block = select.closest('.shipment-item-block');
+                if (!block) return;
+
+                // Select inputs using partial name match
+                const buyPriceInput = block.querySelector('[name*="[buy_price]"]');
+                const sellPriceInput = block.querySelector('[name*="[sell_price]"]');
+                const buyUnitSelect = block.querySelector('[name*="[buy_unit]"]');
+                const sellUnitSelect = block.querySelector('[name*="[sell_unit]"]');
+
+                if (option.dataset.buyPrice) buyPriceInput.value = option.dataset.buyPrice;
+                if (option.dataset.sellPrice) sellPriceInput.value = option.dataset.sellPrice;
+                if (option.dataset.buyUnit) buyUnitSelect.value = option.dataset.buyUnit;
+                if (option.dataset.sellUnit) sellUnitSelect.value = option.dataset.sellUnit;
+            }
+        });
+    }
+
+    // Pre-fill on drawer open if material is already selected
+    document.getElementById('offcanvasAddShipment')?.addEventListener('shown.bs.offcanvas', function() {
+        if (shipmentContainer) {
+            const firstMaterialSelect = shipmentContainer.querySelector('select[name*="[material]"]');
+            if (firstMaterialSelect && firstMaterialSelect.value) {
+                // Manually trigger change to auto-fill (using plain JS for reliability)
+                firstMaterialSelect.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        }
+    });
+
     // Track active selects for support modals
     document.querySelectorAll('[data-bs-target="#locationModal"]').forEach(btn => {
         btn.addEventListener('click', function() {
             activeLocationSelectId = this.dataset.locationSelectTarget;
+            document.getElementById('locationModalForm')?.reset();
         });
     });
     
     document.querySelectorAll('[data-bs-target="#contactModal"]').forEach(btn => {
         btn.addEventListener('click', function() {
             activeContactSelectId = this.dataset.contactSelectTarget;
+            document.getElementById('contactModalForm')?.reset();
         });
     });
     
@@ -1127,8 +1455,44 @@ document.addEventListener('DOMContentLoaded', function() {
     // Auto-sync contact details when Add Shipment drawer is shown
     const addShipmentOffcanvas = document.getElementById('offcanvasAddShipment');
     if (addShipmentOffcanvas) {
-        addShipmentOffcanvas.addEventListener('show.bs.offcanvas', function() {
-            // Trigger sync for both selects
+        addShipmentOffcanvas.addEventListener('shown.bs.offcanvas', function() {
+            // Force location auto-fill if nothing is selected
+            const pickupSelect = document.getElementById('shipment-pickup-location-select');
+            const destSelect = document.getElementById('shipment-destination-location-select');
+            
+            if (pickupSelect && (pickupSelect.value === "" || pickupSelect.selectedIndex === 0)) {
+                // Try to find an option that has 'selected' attribute from template or just pick index 1
+                if (pickupSelect.options.length > 1) {
+                    // Look for the option with 'selected' attribute
+                    let found = false;
+                    for (let i = 0; i < pickupSelect.options.length; i++) {
+                        if (pickupSelect.options[i].hasAttribute('selected')) {
+                            pickupSelect.selectedIndex = i;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) pickupSelect.selectedIndex = 1;
+                    pickupSelect.dispatchEvent(new Event('change'));
+                }
+            }
+            
+            if (destSelect && (destSelect.value === "" || destSelect.selectedIndex === 0)) {
+                if (destSelect.options.length > 1) {
+                    let found = false;
+                    for (let i = 0; i < destSelect.options.length; i++) {
+                        if (destSelect.options[i].hasAttribute('selected')) {
+                            destSelect.selectedIndex = i;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) destSelect.selectedIndex = 1;
+                    destSelect.dispatchEvent(new Event('change'));
+                }
+            }
+
+            // Trigger sync for both contacts
             if (pickupContactSelect) handleContactChange({ target: pickupContactSelect });
             if (deliveryContactSelect) handleContactChange({ target: deliveryContactSelect });
         });
@@ -1147,6 +1511,25 @@ document.addEventListener('DOMContentLoaded', function() {
         <form id="addShipmentForm" action="{% url 'shipments:shipment_create' %}?order_id={{ order.pk }}&next={{ request.path }}" method="POST">
             {% csrf_token %}
             
+            <!-- Shipment Info -->
+            <div class="mb-4 pt-2">
+                <h6 class="fw-bold text-primary mb-3"><i class="fas fa-info-circle me-2"></i>SHIPMENT INFO</h6>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small text-uppercase mb-1">Shipment Type <span class="text-danger">*</span></label>
+                        <select name="shipment_type" class="form-select rounded-3" required>
+                            {% for code, label in shipment_types %}
+                            <option value="{{ code }}" {% if code == "road" %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small text-uppercase mb-1">Tracking Number</label>
+                        <input type="text" name="tracking_number" class="form-control rounded-3" placeholder="Auto-generated if empty">
+                    </div>
+                </div>
+            </div>
+            
             <!-- Pickup Details -->
             <div class="mb-4">
                 <h6 class="fw-bold text-primary mb-3"><i class="fas fa-arrow-up me-2"></i>PICKUP DETAILS</h6>
@@ -1159,10 +1542,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         </button>
                     </div>
                     <select name="pickup_location_ui" id="shipment-pickup-location-select" class="form-select rounded-3" required>
-                        <option value="">Select a Location</option>
+                        <option value="" {% if not order.source_location_id and order.supplier.full_address %}disabled{% endif %}>Select a Location</option>
                         {% if order.supplier and order.supplier.full_address %}
                         <option value="temp_addr_{{ order.supplier.full_address }}" 
-                            {% if not order.source_location %}selected{% endif %}
+                            {% if not order.source_location_id %}selected{% endif %}
                             data-company-id="{{ order.supplier.id }}"
                             data-address="{{ order.supplier.address_line1 }}"
                             data-city="{{ order.supplier.city }}"
@@ -1172,11 +1555,12 @@ document.addEventListener('DOMContentLoaded', function() {
                             {{ order.supplier.full_address }}
                         </option>
                         {% endif %}
-                        {% for warehouse in warehouses %}
+                        {% for warehouse in supplier_warehouses %}
                         <option value="{{ warehouse.id }}" 
                             {% if order.source_location_id == warehouse.id %}selected{% endif %}
+                            {% if not order.source_location_id and forloop.first and not order.supplier.full_address %}selected{% endif %}
                             data-address="{{ warehouse.address }}" data-city="{{ warehouse.city }}" data-state="{{ warehouse.state }}" data-postal-code="{{ warehouse.postal_code }}" data-country="{{ warehouse.country }}">
-                            {{ warehouse.display_name }}
+                            {{ warehouse.full_address }}
                         </option>
                         {% endfor %}
                     </select>
@@ -1237,10 +1621,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         </button>
                     </div>
                     <select name="destination_location_ui" id="shipment-destination-location-select" class="form-select rounded-3" required>
-                        <option value="">Select a Location</option>
+                        <option value="" {% if not order.destination_location_id and order.receiver.full_address %}disabled{% endif %}>Select a Location</option>
                         {% if order.receiver and order.receiver.full_address %}
                         <option value="temp_addr_{{ order.receiver.full_address }}" 
-                            {% if not order.destination_location %}selected{% endif %}
+                            {% if not order.destination_location_id %}selected{% endif %}
                             data-company-id="{{ order.receiver.id }}"
                             data-address="{{ order.receiver.address_line1 }}"
                             data-city="{{ order.receiver.city }}"
@@ -1250,11 +1634,12 @@ document.addEventListener('DOMContentLoaded', function() {
                             {{ order.receiver.full_address }}
                         </option>
                         {% endif %}
-                        {% for warehouse in warehouses %}
+                        {% for warehouse in receiver_warehouses %}
                         <option value="{{ warehouse.id }}"
                             {% if order.destination_location_id == warehouse.id %}selected{% endif %}
+                            {% if not order.destination_location_id and forloop.first and not order.receiver.full_address %}selected{% endif %}
                             data-address="{{ warehouse.address }}" data-city="{{ warehouse.city }}" data-state="{{ warehouse.state }}" data-postal-code="{{ warehouse.postal_code }}" data-country="{{ warehouse.country }}">
-                            {{ warehouse.display_name }}
+                            {{ warehouse.full_address }}
                         </option>
                         {% endfor %}
                     </select>
@@ -1307,7 +1692,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             <!-- Commercials -->
             <div class="mb-4">
-                <label class="form-label fw-bold small text-uppercase mb-1">Representative <span class="text-danger">*</span></label>
+                <label class="form-label fw-bold small text-uppercase mb-1">Representative (Logged In User) <span class="text-danger">*</span></label>
                 <select name="representative_ui" class="form-select rounded-3" required>
                     <option value="">Select individual</option>
                     {% for rep in all_representatives %}
@@ -1328,10 +1713,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
                 <div class="col-md-6">
                     <label class="form-label fw-bold small text-uppercase mb-1">Tags</label>
-                    <select name="tags_ui" class="form-select rounded-3" multiple>
-                        {% for tag in all_tags %}
-                        <option value="{{ tag.id }}" {% if tag in order.tags.all %}selected{% endif %}>{{ tag.name }}</option>
-                        {% endfor %}
+                    <select name="tags_ui" id="tags-select-add-shipment" class="form-select select2-basic" multiple>
+                        <!-- Existing tags removed per user request -->
                     </select>
                 </div>
             </div>
@@ -1354,8 +1737,13 @@ document.addEventListener('DOMContentLoaded', function() {
                         <select name="items_ui[0][material]" class="form-select rounded-3" required>
                             <option value="">Select a material</option>
                             {% for item in inventory_items %}
-                            <option value="{{ item.id }}" data-unit="{{ item.unit_of_measure }}">
-                                {{ item.product_name }} - {{ item.display_stock }}
+                            <option value="{{ item.id }}" data-unit="{{ item.unit_of_measure }}"
+                                    data-buy-price="{{ item.manifest_buy_price|default:'' }}"
+                                    data-sell-price="{{ item.manifest_sell_price|default:'' }}"
+                                    data-buy-unit="{{ item.manifest_buy_unit|default:'per lbs' }}"
+                                    data-sell-unit="{{ item.manifest_sell_unit|default:'per lbs' }}"
+                                    {% if inventory_items|length == 1 %}selected{% endif %}>
+                                {{ item.product_name }}{% if item.order_balance is not None %} - {{ item.order_balance|format_short }}{% endif %}
                             </option>
                             {% endfor %}
                         </select>
@@ -1374,7 +1762,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <option value="kgs">kgs</option>
                                 <option value="mt">MT</option>
                                 <option value="st">ST</option>
-                                <option value="pcs">pcs</option>
                             </select>
                         </div>
                     </div>
@@ -1392,7 +1779,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <option value="kgs">kgs</option>
                                 <option value="mt">MT</option>
                                 <option value="st">ST</option>
-                                <option value="pcs">pcs</option>
                             </select>
                         </div>
                     </div>
@@ -1410,7 +1796,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <option value="kgs">kgs</option>
                                 <option value="mt">MT</option>
                                 <option value="st">ST</option>
-                                <option value="pcs">pcs</option>
                             </select>
                         </div>
                     </div>
@@ -1428,7 +1813,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                         <div class="col-4">
                             <label class="form-label fw-bold small text-uppercase mb-1">Pieces</label>
-                            <input type="number" name="items_ui[0][pieces]" class="form-control rounded-3" value="1">
+                            <input type="number" name="items_ui[0][pieces]" class="form-control rounded-3" placeholder="Qty">
                         </div>
                     </div>
 
@@ -1454,7 +1839,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <option value="per kgs">per kgs</option>
                                 <option value="per mt">per MT</option>
                                 <option value="per st">per ST</option>
-                                <option value="per pcs">per pcs</option>
                             </select>
                         </div>
                     </div>
@@ -1475,7 +1859,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <option value="per kgs">per kgs</option>
                                 <option value="per mt">per MT</option>
                                 <option value="per st">per ST</option>
-                                <option value="per pcs">per pcs</option>
                             </select>
                         </div>
                     </div>
@@ -1517,12 +1900,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <div class="mb-3">
                         <label class="form-label small fw-bold text-uppercase">Mobile Number</label>
-                        <input type="text" id="contactModalMobile" class="form-control rounded-3" placeholder="Mobile #">
+                        <input type="text" id="contactModalMobile" class="form-control rounded-3" placeholder="Mobile #" inputmode="numeric" maxlength="10">
                     </div>
                     <div class="row mb-3">
                         <div class="col-12">
                             <label class="form-label small fw-bold text-uppercase">Office Number</label>
-                            <input type="text" id="contactModalOffice" class="form-control rounded-3" placeholder="Office #">
+                            <input type="text" id="contactModalOffice" class="form-control rounded-3" placeholder="Office #" inputmode="numeric" maxlength="10">
                         </div>
                     </div>
                 </form>
@@ -1555,12 +1938,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <div class="mb-3">
                         <label class="form-label small fw-bold text-uppercase">Phone Number</label>
-                        <input type="text" id="locationModalPhone" class="form-control rounded-3" placeholder="(000) 000-0000">
+                        <input type="text" id="locationModalPhone" class="form-control rounded-3" placeholder="(000) 000-0000" inputmode="numeric" maxlength="10">
                     </div>
-                    <div class="mb-4">
-                        <label class="form-label small fw-bold text-uppercase">Shipping Requirements</label>
-                        <textarea id="locationModalShippingReqs" class="form-control rounded-3" rows="2" placeholder="Insert Scales, Packing list, etc."></textarea>
-                    </div>
+
 
                     <div class="row g-3 mb-4">
                         <div class="col-12">
@@ -1604,6 +1984,49 @@ document.addEventListener('DOMContentLoaded', function() {
 {% endblock %}
 
 {% block extra_js %}
+<!-- jQuery and Select2 JS -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(document).ready(function() {
+        if ($.fn.select2) {
+            $('.select2-basic').select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                placeholder: 'Select or type to create tags...',
+                tags: true,
+                tokenSeparators: [','],
+                createTag: function (params) {
+                    var term = $.trim(params.term);
+                    if (term === '') return null;
+                    return {
+                        id: term,
+                        text: term,
+                        newTag: true
+                    };
+                },
+                templateResult: function (data) {
+                    if (data.newTag) {
+                        return "Hit Enter to create new '" + data.text + "'";
+                    }
+                    return data.text;
+                }
+            });
+
+            // Force empty on load for BOTH drawers (Per user request)
+            $('#tags-select-edit-order').val(null).trigger('change');
+            $('#tags-select-add-shipment').val(null).trigger('change');
+            
+            // Re-clear when drawers are shown just to be absolutely sure
+            document.getElementById('offcanvasEditOrder')?.addEventListener('show.bs.offcanvas', function() {
+                $('#tags-select-edit-order').val(null).trigger('change');
+            });
+            document.getElementById('offcanvasAddShipment')?.addEventListener('show.bs.offcanvas', function() {
+                $('#tags-select-add-shipment').val(null).trigger('change');
+            });
+        }
+    });
+</script>
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         // --- Document Upload Logic --- //
@@ -1758,4 +2181,378 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 </script>
+
+<!-- Add Material Modal -->
+<div class="modal fade" id="materialModal" tabindex="-1" aria-labelledby="materialModalLabel" aria-hidden="true" style="z-index: 1070;">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 500px;">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-bottom p-4">
+                <h5 class="modal-title fw-bold text-primary" id="materialModalLabel">New Material</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="addMaterialForm">
+                    {% csrf_token %}
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small text-uppercase mb-2">Usage <span class="text-danger">*</span></label>
+                        <div class="d-flex gap-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="usage" id="usageOngoing" value="ongoing" checked>
+                                <label class="form-check-label small" for="usageOngoing">Ongoing <span class="text-muted">(reusable)</span></label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="usage" id="usageSpot" value="spot">
+                                <label class="form-check-label small" for="usageSpot">Spot <span class="text-muted">(one-time use)</span></label>
+                            </div>
+                        </div>
+                    </div>
+        
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small text-uppercase mb-1">Display Name</label>
+                        {{ material_form.name }}
+                        <div class="form-text mt-1" style="font-size: 0.75rem;">Add a clear, descriptive name to help others quickly identify this material.</div>
+                    </div>
+        
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small text-uppercase mb-1">Description</label>
+                        {{ material_form.description }}
+                    </div>
+        
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small text-uppercase mb-2">Images and Documents</label>
+                        <div class="border rounded-3 p-4 text-center bg-light" style="border-style: dashed !important; border-width: 2px !important;" id="materialUploadZone">
+                            <div class="mb-3">
+                                <input type="file" id="materialImageInput" name="image" hidden>
+                                <input type="file" id="materialDocumentInput" name="document" hidden>
+                                <button type="button" class="btn btn-primary btn-sm px-3 me-2" id="btnChooseMaterialFile"><i class="fas fa-plus me-1"></i> Choose</button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm px-3" id="btnCancelMaterialFile"><i class="fas fa-times me-1"></i> Cancel</button>
+                            </div>
+                            <p class="text-muted small mb-0" id="materialFileStatus">Drag and drop files here to upload</p>
+                        </div>
+                    </div>
+        
+                    <div class="row g-3 mb-4">
+                        <div class="col-6">
+                            <label class="form-label fw-bold small text-uppercase mb-1">Material <span class="text-danger">*</span></label>
+                            {{ material_form.material_type }}
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold small text-uppercase mb-1">Material Type <span class="text-danger">*</span></label>
+                            {{ material_form.product_type }}
+                        </div>
+                    </div>
+        
+                    <div class="mt-4 pt-3 border-top">
+                        <button type="submit" class="btn btn-primary w-100 py-2 fw-bold rounded-3 shadow-sm" id="btnSubmitMaterial">Submit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    // New Material File Selection Logic
+    const btnChoose = document.getElementById('btnChooseMaterialFile');
+    const btnCancel = document.getElementById('btnCancelMaterialFile');
+    const imgInput = document.getElementById('materialImageInput');
+    const docInput = document.getElementById('materialDocumentInput');
+    const statusText = document.getElementById('materialFileStatus');
+
+    if (btnChoose) {
+        btnChoose.addEventListener('click', () => {
+            imgInput.click();
+        });
+    }
+
+    if (imgInput) {
+        imgInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                statusText.innerHTML = `<i class="fas fa-image me-1"></i> ${this.files[0].name}`;
+                statusText.classList.remove('text-muted');
+                statusText.classList.add('text-primary', 'fw-bold');
+            }
+        });
+    }
+
+    if (btnCancel) {
+        btnCancel.addEventListener('click', () => {
+            if (imgInput) imgInput.value = '';
+            if (docInput) docInput.value = '';
+            statusText.innerHTML = 'Drag and drop files here to upload';
+            statusText.classList.add('text-muted');
+            statusText.classList.remove('text-primary', 'fw-bold');
+        });
+    }
+
+    // New Material AJAX Submission
+    const addMaterialForm = document.getElementById('addMaterialForm');
+    if (addMaterialForm) {
+        addMaterialForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const form = this;
+            const submitBtn = document.getElementById('btnSubmitMaterial');
+            const formData = new FormData(form);
+            
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+            
+            fetch("{% url 'inventory:create_material_ajax' %}", {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Update ALL material dropdowns in the main form (both drawers)
+                    const materialSelectors = [
+                        'select[name="material[]"]',
+                        'select[name^="items_ui"][name$="[material]"]'
+                    ];
+                    
+                    materialSelectors.forEach(selector => {
+                        document.querySelectorAll(selector).forEach(dropdown => {
+                            const val = data.id || data.name;
+                            const newOption = new Option(data.name, val, true, true);
+                            newOption.dataset.unit = "lbs"; // Default
+                            dropdown.add(newOption);
+                        });
+                    });
+                    
+                    // Hide modal
+                    const modalElement = document.getElementById('materialModal');
+                    const modal = bootstrap.Modal.getInstance(modalElement);
+                    if (modal) modal.hide();
+
+                    
+                    // Reset form
+                    form.reset();
+                    if (statusText) {
+                        statusText.innerHTML = 'Drag and drop files here to upload';
+                        statusText.classList.add('text-muted');
+                        statusText.classList.remove('text-primary', 'fw-bold');
+                    }
+                } else {
+                    let errorMsg = 'Error creating material:\n';
+                    if (data.errors) {
+                        for (const field in data.errors) {
+                            const errorItem = data.errors[field][0];
+                            const msg = (typeof errorItem === 'string') ? errorItem : (errorItem.message || 'Unknown error');
+                            errorMsg += `${field}: ${msg}\n`;
+                        }
+                    } else if (data.message) {
+                        errorMsg += data.message;
+                    } else {
+                        errorMsg += 'Unknown server error.';
+                    }
+                    alert(errorMsg);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An unexpected error occurred.');
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Submit';
+            });
+        });
+    }
+
+    // Lifecycle Events / History Note Submission
+    const btnSubmitNote = document.getElementById('btnSubmitNote');
+    const historyNoteText = document.getElementById('historyNoteText');
+    const eventContainer = document.querySelector('.conversation-sidebar .overflow-auto');
+    const timelineContainer = document.querySelector('.timeline-container');
+
+    if (btnSubmitNote && historyNoteText) {
+        btnSubmitNote.addEventListener('click', function() {
+            const note = historyNoteText.value.trim();
+            if (!note) return;
+
+            btnSubmitNote.disabled = true;
+            btnSubmitNote.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+            const formData = new FormData();
+            formData.append('note', note);
+            formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+            fetch("{% url 'orders:order_add_note' order.pk %}", {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // 1. Add to sidebar
+                    if (eventContainer) {
+                        const emptyState = eventContainer.querySelector('.text-center');
+                        if (emptyState) emptyState.remove();
+
+                        const bubbleHtml = `
+                            <div class="chat-bubble mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span class="fw-bold small text-primary">${data.event.type_display}</span>
+                                    <span class="text-muted smaller">${data.event.created_at_relative}</span>
+                                </div>
+                                <div class="small text-dark">${data.event.description}</div>
+                            </div>`;
+                        eventContainer.insertAdjacentHTML('afterbegin', bubbleHtml);
+                    }
+
+                    // 2. Add to History tab timeline if it exists
+                    if (timelineContainer) {
+                        const emptyTimeline = timelineContainer.querySelector('.text-center');
+                        if (emptyTimeline) emptyTimeline.remove();
+
+                        const timelineHtml = `
+                            <div class="timeline-item d-flex gap-4 mb-4 position-relative">
+                                <div class="timeline-marker bg-primary rounded-circle" style="width: 12px; height: 12px; margin-top: 6px; z-index: 2;"></div>
+                                <div class="timeline-content">
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <h6 class="fw-bold mb-0">${data.event.type_display}</h6>
+                                        <span class="text-muted smaller">${data.event.created_at_display}</span>
+                                    </div>
+                                    <p class="text-muted small mb-0">${data.event.description}</p>
+                                </div>
+                                <div class="timeline-line position-absolute h-100 border-start border-2 border-light" style="left: 5px; top: 18px; z-index: 1;"></div>
+                            </div>`;
+                        timelineContainer.insertAdjacentHTML('afterbegin', timelineHtml);
+                    }
+
+                    // 3. Clear textarea
+                    historyNoteText.value = '';
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An unexpected error occurred.');
+            })
+            .finally(() => {
+                btnSubmitNote.disabled = false;
+                btnSubmitNote.innerHTML = 'Submit';
+            });
+        });
+    }
+</script>
+
+<!-- jQuery and Select2 JS -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(document).ready(function() {
+        if ($.fn.select2) {
+            $('.select2-basic').select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                placeholder: 'Select or type to create tags...',
+                tags: true,
+                tokenSeparators: [','],
+                createTag: function (params) {
+                    var term = $.trim(params.term);
+                    if (term === '') return null;
+                    return {
+                        id: term,
+                        text: term,
+                        newTag: true
+                    };
+                },
+                templateResult: function (data) {
+                    if (data.newTag) {
+                        return "Hit Enter to create new '" + data.text + "'";
+                    }
+                    return data.text;
+                }
+            });
+        }
+        
+        // Location Modal Logic
+        const modalTriggers = document.querySelectorAll('.location-modal-trigger');
+        const locModal = new bootstrap.Modal(document.getElementById('locationDetailModal'));
+        
+        modalTriggers.forEach(el => {
+            el.addEventListener('click', function() {
+                const data = this.dataset;
+                document.getElementById('locModalTitle').innerText = data.address;
+                document.getElementById('locModalAddress').innerText = data.address;
+                document.getElementById('locModalName').innerText = data.name;
+                document.getElementById('locModalPhone').innerText = data.phone;
+
+                document.getElementById('locModalPickupAppt').innerText = data.pickupAppt;
+                document.getElementById('locModalDeliveryAppt').innerText = data.deliveryAppt;
+                
+                const viewMoreBtn = document.getElementById('locModalViewMore');
+                if (data.companyId) {
+                    viewMoreBtn.href = `/companies/${data.companyId}/?tab=locations`;
+                    viewMoreBtn.style.display = 'flex';
+                } else if (data.id) {
+                    viewMoreBtn.href = `/inventory/warehouses/${data.id}/`;
+                    viewMoreBtn.style.display = 'flex';
+                } else {
+                    viewMoreBtn.style.display = 'none';
+                }
+                
+                locModal.show();
+            });
+        });
+    });
+</script>
+
+<!-- Location Detail Modal -->
+<div class="modal fade location-modal" id="locationDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header d-block position-relative">
+                <button type="button" class="btn btn-outline-secondary rounded-circle p-0 position-absolute d-flex align-items-center justify-content-center bg-white" 
+                        style="top: 24px; right: 24px; width: 36px; height: 36px; border-color: #cbd5e1;" data-bs-dismiss="modal">
+                    <i class="fas fa-times" style="font-size: 1rem; color: #475569;"></i>
+                </button>
+                <div class="d-flex align-items-center text-muted mb-2 fw-medium" style="font-size: 1rem;">
+                    <i class="far fa-paper-plane me-2"></i> Location
+                </div>
+                <h3 class="modal-title fw-bold text-dark pe-5" id="locModalTitle" style="font-size: 1.75rem; line-height: 1.2;">-</h3>
+            </div>
+            <div class="modal-body">
+                <div class="detail-item">
+                    <div class="detail-label">Address</div>
+                    <div class="detail-value d-flex align-items-start">
+                        <i class="fas fa-map-marker-alt text-muted mt-1 me-2" style="font-size: 0.9rem;"></i>
+                        <span id="locModalAddress">-</span>
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Name</div>
+                    <div class="detail-value" id="locModalName">-</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Phone Number</div>
+                    <div class="detail-value" id="locModalPhone">-</div>
+                </div>
+
+                <div class="detail-item">
+                    <div class="detail-label">Pickup Appointment</div>
+                    <div class="detail-value text-uppercase" id="locModalPickupAppt">-</div>
+                </div>
+                <div class="detail-item mb-0">
+                    <div class="detail-label">Delivery Appointment</div>
+                    <div class="detail-value text-uppercase" id="locModalDeliveryAppt">-</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a href="#" class="btn btn-view-more" id="locModalViewMore">
+                    View more <i class="fas fa-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
